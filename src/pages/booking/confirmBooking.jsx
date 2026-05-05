@@ -1167,11 +1167,14 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <span className="text-gray-500 font-semibold">Rating:</span>
                                 <span className="text-gray-900 font-medium flex items-center gap-1">
                                     <span className="text-yellow-500">★</span>
-                                    {customerFeedback?.rating}
+                                    {customerFeedback?.rating || 0}
                                 </span>
+                                {customerFeedback?.rating <= 2 && (
+                                    <> 
                                  <span className="italic">
                                         {customerFeedback?.comment || 'N/A'}
                                     </span>
+                                </>)}
                             </div>
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Total Enquiries:</span>
@@ -1359,11 +1362,13 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <span className="text-gray-500 font-semibold">Rating:</span>
                                     <span className="text-gray-900 font-medium flex items-center gap-1">
                                         <span className="text-yellow-500">★</span>
-                                        {driverFeedback?.rating}
+                                        {driverFeedback?.rating || 0}
                                     </span>
+                                    {driverFeedback?.rating <= 2  && (<>
                                      <span className="italic">
                                         {driverFeedback?.comment || 'N/A'}
                                     </span>
+                                    </>)}
                                 </div>
                             </div>
                         </CardBody>
