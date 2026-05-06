@@ -31,6 +31,7 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/leads");
 
   const isVendorsSection =
+    path.startsWith("/dashboard/vendors/account/new") ||
     path.startsWith("/dashboard/vendors/account") ||
     path.startsWith("/dashboard/vendors/account/drivers") ||
     path.startsWith("/dashboard/vendors/vehiclelist") ||

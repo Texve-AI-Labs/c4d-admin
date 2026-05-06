@@ -40,7 +40,7 @@ const menuItems = [
   },
   { type: "item", name: "Calls", path: "/dashboard/exotel-calls/list", permission: "Calls" },
   { type: "item", name: "All Inquiries", path: "/dashboard/booking/list", permission: "All bookings" },
-  { type: "item", name: "Vendors", path: "/dashboard/vendors/account", permission: "Vendors" },
+  { type: "item", name: "Vendors", path: "/dashboard/vendors/account/new", permission: "Vendors" },
   { type: "item", name: "Customers", path: "/dashboard/customers", permission: "Customers" },
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
@@ -205,7 +205,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
         return currentPath.startsWith("/dashboard/booking/list");
       case "Vendors":
         return (
-          currentPath.startsWith("/dashboard/vendors/account") ||
+          currentPath.startsWith("/dashboard/vendors/account/new") ||
           currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
           currentPath.startsWith("/dashboard/vendors/onlinevehicleslist") ||
           currentPath.startsWith("/dashboard/doc-verification") || 

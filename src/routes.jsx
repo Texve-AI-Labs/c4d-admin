@@ -144,6 +144,7 @@ import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
 import DriverMonitoringList from "./pages/DriverEngagementModule/DriverMonitoring/list";
 import IncentivePayoutList from "./pages/DriverEngagementModule/IncentivePayout/list";
 import DriverEngagementAuditLogs from "./pages/DriverEngagementModule/AuditLogs/list";
+import AccountList from "./pages/account/new/list";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -597,6 +598,14 @@ export const routes = [
         name: "Account",
         path: "/vendors/account",
         element: <AccountView />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account List",
+        path: "/vendors/account/new",
+        element: <AccountList />,
         display: true,
         permission: "Vendors",
       },
