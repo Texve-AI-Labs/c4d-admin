@@ -12,6 +12,9 @@ import { RentalTariffRateCard } from "@/pages/public/rentalRateCard";
 
 import { CustomerView } from "@/pages/customer";
 import { AccountView } from "@/pages/account";
+import AddNewAccount from "@/pages/account/addNewAccount";
+import AddNewAccountStep1 from "@/pages/account/addNewAccountStep1";
+import AddNewAccountStep2 from "@/pages/account/addNewAccountStep2";
 import { DriverView } from "@/pages/driver";
 import { UserView } from "@/pages/users";
 import DriverAdd from "./pages/driver/add";
@@ -32,6 +35,7 @@ import Commission from "./pages/commission/add";
 import DriverEdit from "./pages/driver/edit";
 import { CabView } from "./pages/cab";
 import CabAdd from "./pages/cab/add";
+import CabAddNew from "./pages/cab/addCabNew";
 import CabDetails from "./pages/cab/details";
 import CabEdit from "./pages/cab/edit";
 import AccountAdd from "./pages/account/add";
@@ -222,6 +226,38 @@ export const routes = [
         path: "/vendors/account/drivers",
         element: <DriverView />,
         display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Account",
+        path: "/vendors/account/add/new",
+        element: <AddNewAccount />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Account Step 1",
+        path: "/vendors/account/add/new/step-1",
+        element: <AddNewAccountStep1 />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Account Step 2",
+        path: "/vendors/account/add/new/step-2",
+        element: <AddNewAccountStep2 />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Account Step 3",
+        path: "/vendors/account/add/new/step-3",
+        element: <CabAddNew />,
+        display: false,
         permission: "Vendors",
       },
       {
