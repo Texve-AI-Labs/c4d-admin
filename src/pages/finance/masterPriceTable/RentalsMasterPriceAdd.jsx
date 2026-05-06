@@ -21,7 +21,7 @@ const PRICE_SCHEMA = Yup.object().shape({
     period: Yup.string().required('Package Type is required'),
     baseKm: Yup.number().required('Base Km is required'),
     baseFare: Yup.number().required('Base Fare is required'),
-    kilometer: Yup.number().required('Kilometer is required'),
+    kilometer: Yup.number().required('Package Kilometer is required'),
     kilometerPrice: Yup.number().required('Kilometer Rate is required'),
 
     // kilometerRoundPrice: Yup.number().required('kilometer Round Price  is required'),
@@ -289,7 +289,7 @@ useEffect(() => {
                                 <ErrorMessage name="baseKm" component="div" className="text-red-500 text-sm" />
                             </div>
                             {values.type !== 'Outstation' && <div>
-                                <label className="text-sm font-medium text-gray-700">KM</label>
+                                <label className="text-sm font-medium text-gray-700">Package Km</label>
                                 <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="kilometer" component="div" className="text-red-500 text-sm" />
                             </div>}
