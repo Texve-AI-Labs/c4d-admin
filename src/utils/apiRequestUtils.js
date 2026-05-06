@@ -13,8 +13,8 @@ export const ApiRequestUtils = {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning' : true,
-            // 'ngrok-skip-browser-warning': '69420',
+            'ngrok-skip-browser-warning' : true,
+            'ngrok-skip-browser-warning': '69420',
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -36,7 +36,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            'ngrok-skip-browser-warning': '69420',
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -63,7 +63,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
                 'Content-Type': 'application/json',
                 'token': token,
                 'custID': 63,
-                // 'ngrok-skip-browser-warning': '69420',
+                'ngrok-skip-browser-warning': '69420',
             },
             params: params
         });
@@ -84,7 +84,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            'ngrok-skip-browser-warning': '69420',
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -106,7 +106,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            'ngrok-skip-browser-warning': '69420',
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -133,7 +133,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
                 'Content-Type': 'application/json',
                 'token': token,
                 'custID': 63,
-                // 'ngrok-skip-browser-warning': '69420',
+                'ngrok-skip-browser-warning': '69420',
             },
             data: body
         });
@@ -195,8 +195,8 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'token': token,
-            // 'ngrok-skip-browser-warning' : true,
-            // 'ngrok-skip-browser-warning': '69420',
+            'ngrok-skip-browser-warning' : true,
+            'ngrok-skip-browser-warning': '69420',
         };
 
         if (custID !== 0) {
