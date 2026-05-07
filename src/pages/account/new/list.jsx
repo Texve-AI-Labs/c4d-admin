@@ -394,69 +394,6 @@ export function AccountList() {
   Company: "Travels"
 };
 
-  const getOnboardingStatusDisplay = (account) => {
-    const accountDocStatus = account?.accountDocumentStatus?.status;
-    const accountPending = ["PENDING UPLOAD", "PENDING VERIFICATION"].includes(accountDocStatus);
-    const accountHint =
-      accountDocStatus === "PENDING VERIFICATION"
-        ? "Owner doc verification pending"
-        : accountDocStatus === "PENDING UPLOAD"
-          ? "Owner doc upload pending"
-          : accountDocStatus === "DECLINED"
-            ? "Owner doc declined"
-            : accountDocStatus === "INVALID"
-              ? "Owner doc invalid"
-              : accountDocStatus === "NOT_INTERESTED"
-                ? "Owner doc not interested"
-                : accountDocStatus === "NO_RESPONSE"
-                  ? "Owner doc no response"
-                  : accountDocStatus === "VERIFIED"
-                    ? "Owner doc verified"
-          : "";
-
-    if (account?.onboardingStage === "ACCOUNT" && accountPending) {
-      return { label: "", hint: accountHint };
-    }
-    if (account?.onboardingStage === "COMPLETED") {
-      return { label: "Owner Creation  Successfully", hint: accountHint };
-    }
-    if (account?.onboardingStage === "ACCOUNT" || account?.onboardingStage === "VEHICLE") {
-      return { label: "", hint: accountHint };
-    }
-    return { label: "", hint: accountHint };
-  };
-
-  const getVehicleOnboardingStatusDisplay = (account) => {
-    const vehicleDocStatus = account?.vehicleDocumentStatus?.status;
-    const vehiclePending = ["PENDING UPLOAD", "PENDING VERIFICATION"].includes(vehicleDocStatus);
-    const vehicleHint =
-      vehicleDocStatus === "PENDING VERIFICATION"
-        ? "Vehicle doc verification pending"
-        : vehicleDocStatus === "PENDING UPLOAD"
-          ? "Vehicle doc upload pending"
-          : vehicleDocStatus === "DECLINED"
-            ? "Vehicle doc declined"
-            : vehicleDocStatus === "INVALID"
-              ? "Vehicle doc invalid"
-              : vehicleDocStatus === "NOT_INTERESTED"
-                ? "Vehicle doc not interested"
-                : vehicleDocStatus === "NO_RESPONSE"
-                  ? "Vehicle doc no response"
-                  : vehicleDocStatus === "VERIFIED"
-                    ? "Vehicle doc verified"
-                    : "";
-
-    if (account?.onboardingStage === "VEHICLE" && account?.hasVehicle === false) {
-      return { label: "", hint: vehicleHint };
-    }
-    if (account?.onboardingStage === "VEHICLE" && account?.hasVehicle === true && vehiclePending) {
-      return { label: "", hint: vehicleHint };
-    }
-    if (account?.onboardingStage === "COMPLETED") {
-      return { label: "Vehicle Creation Successfully", hint: vehicleHint };
-    }
-    return { label: "", hint: vehicleHint };
-  };
 
 
     const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
@@ -595,7 +532,18 @@ export function AccountList() {
                   <tr>
                     {["Created Date",
                     // "ID",
-                    "Account Name","Email","Phone Number","Service Type","Source","Onboarding Status Owner","Account KYC","Onboarding Status Vehicle","Vehicle KYC","Zone"].map((el) => (
+                    "Account Name",
+                    // "Email",
+                    "Phone Number",
+                    "Service Type",
+                    "Source",
+                    "Onboarding Stage",
+                    "Onboarding Status",
+                    // "Onboarding Status Owner",
+                    // "Account KYC",
+                    // "Onboarding Status Vehicle",
+                    // "Vehicle KYC",
+                    "Zone"].map((el) => (
                       <th
                         key={el}
                         className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -678,19 +626,6 @@ export function AccountList() {
                         ? ""
                         : "border-b border-blue-gray-50"
                         }`;
-                      const onboardingContext = {
-                        onboardingStage,
-                        hasVehicle,
-                        accountDocumentStatus,
-                        vehicleDocumentStatus,
-                      };
-                      const vehicleOnboardingContext = {
-                        onboardingStage,
-                        hasVehicle,
-                        vehicleDocumentStatus,
-                      };
-                      const onboardingStatus = getOnboardingStatusDisplay(onboardingContext);
-                      const vehicleOnboardingStatus = getVehicleOnboardingStatusDisplay(vehicleOnboardingContext);
 
                       return (
                         <tr key={id}>
@@ -699,11 +634,6 @@ export function AccountList() {
                               {moment(created_at).format("DD-MM-YYYY")}
                             </Typography>
                           </td>
-                          {/* <td className={className}>
-                            <Typography className="text-xs font-semibold text-blue-gray-900">
-                              {id}
-                            </Typography>
-                          </td> */}
                           <td className={className}>
                             <div className="flex items-center gap-4">
                               <Link to={`/dashboard/vendors/account/details/${id}`}>
@@ -716,11 +646,6 @@ export function AccountList() {
                                 </Typography>
                               </Link>
                             </div>
-                          </td>
-                           <td className={className}>
-                            <Typography className="text-xs font-semibold text-blue-gray-900">
-                              {email}
-                            </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-900">
@@ -739,44 +664,69 @@ export function AccountList() {
                             </Typography>
                           </td>
                           <td className={className}>
-                            {onboardingStatus.label ? (
-                              <Typography className="text-xs font-semibold text-blue-gray-900">
-                                {onboardingStatus.label}
-                              </Typography>
-                            ) : null}
-                            {onboardingStatus.hint ? (
-                              <Typography className="text-xs text-blue-gray-600 mt-1">
-                                {onboardingStatus.hint}
-                              </Typography>
-                            ) : null}                          
-                          </td>
-                        
-                          <td className={className}>
                             <Chip
                               variant="ghost"
-                              color={accountDocumentStatus?.status == "VERIFIED" ? "green" : accountDocumentStatus?.status == "DECLINED" ? "red" : "black"}
-                              value={accountDocumentStatus?.status || "-"}
-                              className="py-0.5 px-2 text-[11px] font-medium w-fit"
+                              color={
+                                onboardingStage === "ACCOUNT"   && accountDocumentStatus?.status === "VERIFIED" ? "green" :
+                                  onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "VERIFIED" ? "green" :
+                                    onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "DECLINED" ? "red" :
+                                      onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "DECLINED" ? "red" :
+                                        onboardingStage === "COMPLETED" && accountDocumentStatus?.status === "VERIFIED" && vehicleDocumentStatus?.status === "VERIFIED" ? "green" :
+                                          "blue-gray"
+                              }
+                              value={onboardingStage === 'ACCOUNT'? "Owner Documents" : onboardingStage === "VEHICLE" ? "Vehicle Documents" : onboardingStage === "COMPLETED" ? " Completed" : "-"                          
+                              }
+                              className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
                             />
                           </td>
-                          <td className={className}>
-                            {vehicleOnboardingStatus.label ? (
-                              <Typography className="text-xs font-semibold text-blue-gray-900">
-                                {vehicleOnboardingStatus.label}
-                              </Typography>
-                            ) : null}
-                            {vehicleOnboardingStatus.hint ? (
-                              <Typography className="text-xs text-blue-gray-600 mt-1">
-                                {vehicleOnboardingStatus.hint}
-                              </Typography>
-                            ) : null}
-                          </td>
-                          <td className={className}>
+                            <td className={className}>
                             <Chip
                               variant="ghost"
-                              color={vehicleDocumentStatus?.status == "VERIFIED" ? "green" : vehicleDocumentStatus?.status == "DECLINED" ? "red" : "black"}
-                              value={vehicleDocumentStatus?.status || "-"}
-                              className="py-0.5 px-2 text-[11px] font-medium w-fit"
+                              color={
+                                onboardingStage === "COMPLETED" ? "green" :
+                                  onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "DECLINED" ? "red" :
+                                    onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "DECLINED" ? "red" :
+                                      onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "VERIFIED" ? "green" :
+                                        onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "VERIFIED" ? "green" :
+                                          "blue-gray"
+                              }
+                              value={
+                                onboardingStage === "ACCOUNT" &&
+                                  accountDocumentStatus?.status === "PENDING UPLOAD"
+                                  ? "Upload pending"
+                                  : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "PENDING VERIFICATION"
+                                    ? "Verification pending"
+                                    : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "DECLINED"
+                                      ? "Declined"
+                                      : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "INVALID"
+                                        ? "Invalid"
+                                        : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "NOT_INTERESTED"
+                                          ? "Not Interested"
+                                          : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "NO_RESPONSE"
+                                            ? "No Response"
+                                            : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "VERIFIED"
+                                              ? "Verified"
+                                              : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "PENDING UPLOAD"
+                                                ? "Upload pending"
+                                                : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "PENDING VERIFICATION"
+                                                  ? "Verification pending"
+                                                  : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "DECLINED"
+                                                    ? "Declined"
+                                                    : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "INVALID"
+                                                      ? "Invalid"
+                                                      : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "NOT_INTERESTED"
+                                                        ? "Not Interested"
+                                                        : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "NO_RESPONSE"
+                                                          ? "No Response"
+                                                          : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "VERIFIED"
+                                                            ? "Verified"
+                                                            : onboardingStage === "VEHICLE" && hasVehicle === false
+                                                              ? "Need to Add Vehicle"
+                                                              : onboardingStage === "COMPLETED"
+                                                                ? "Onboarding Verified"
+                                                                : "-"
+                              }
+                              className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
                             />
                           </td>
                            <td className={className}>
