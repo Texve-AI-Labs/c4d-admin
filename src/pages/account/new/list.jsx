@@ -170,10 +170,9 @@ export function AccountList() {
         district: zoneValue ? JSON.stringify(zoneValue) : undefined,
         stage: stageParam,
         filterType: JSON.stringify({
-       
-          status: documentTypeFilter,
+          // status: documentTypeFilter, // KYC Filter UI is commented
           source: sourceFilter,
-          serviceType: serviceTypeFilter,
+          // serviceType: serviceTypeFilter, // Service Type Filter UI is commented
           //  district: zoneValue
           
           
@@ -395,6 +394,70 @@ export function AccountList() {
   Company: "Travels"
 };
 
+  const getOnboardingStatusDisplay = (account) => {
+    const accountDocStatus = account?.accountDocumentStatus?.status;
+    const accountPending = ["PENDING UPLOAD", "PENDING VERIFICATION"].includes(accountDocStatus);
+    const accountHint =
+      accountDocStatus === "PENDING VERIFICATION"
+        ? "Owner doc verification pending"
+        : accountDocStatus === "PENDING UPLOAD"
+          ? "Owner doc upload pending"
+          : accountDocStatus === "DECLINED"
+            ? "Owner doc declined"
+            : accountDocStatus === "INVALID"
+              ? "Owner doc invalid"
+              : accountDocStatus === "NOT_INTERESTED"
+                ? "Owner doc not interested"
+                : accountDocStatus === "NO_RESPONSE"
+                  ? "Owner doc no response"
+                  : accountDocStatus === "VERIFIED"
+                    ? "Owner doc verified"
+          : "";
+
+    if (account?.onboardingStage === "ACCOUNT" && accountPending) {
+      return { label: "", hint: accountHint };
+    }
+    if (account?.onboardingStage === "COMPLETED") {
+      return { label: "Owner Creation  Successfully", hint: accountHint };
+    }
+    if (account?.onboardingStage === "ACCOUNT" || account?.onboardingStage === "VEHICLE") {
+      return { label: "", hint: accountHint };
+    }
+    return { label: "", hint: accountHint };
+  };
+
+  const getVehicleOnboardingStatusDisplay = (account) => {
+    const vehicleDocStatus = account?.vehicleDocumentStatus?.status;
+    const vehiclePending = ["PENDING UPLOAD", "PENDING VERIFICATION"].includes(vehicleDocStatus);
+    const vehicleHint =
+      vehicleDocStatus === "PENDING VERIFICATION"
+        ? "Vehicle doc verification pending"
+        : vehicleDocStatus === "PENDING UPLOAD"
+          ? "Vehicle doc upload pending"
+          : vehicleDocStatus === "DECLINED"
+            ? "Vehicle doc declined"
+            : vehicleDocStatus === "INVALID"
+              ? "Vehicle doc invalid"
+              : vehicleDocStatus === "NOT_INTERESTED"
+                ? "Vehicle doc not interested"
+                : vehicleDocStatus === "NO_RESPONSE"
+                  ? "Vehicle doc no response"
+                  : vehicleDocStatus === "VERIFIED"
+                    ? "Vehicle doc verified"
+                    : "";
+
+    if (account?.onboardingStage === "VEHICLE" && account?.hasVehicle === false) {
+      return { label: "", hint: vehicleHint };
+    }
+    if (account?.onboardingStage === "VEHICLE" && account?.hasVehicle === true && vehiclePending) {
+      return { label: "", hint: vehicleHint };
+    }
+    if (account?.onboardingStage === "COMPLETED") {
+      return { label: "Vehicle Creation Successfully", hint: vehicleHint };
+    }
+    return { label: "", hint: vehicleHint };
+  };
+
 
     const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
       <Popover placement="bottom-start">
@@ -532,7 +595,7 @@ export function AccountList() {
                   <tr>
                     {["Created Date",
                     // "ID",
-                    "Account Name","Email","Phone Number","Service Type","Source","Account KYC","Vehicle KYC","Zone"].map((el) => (
+                    "Account Name","Email","Phone Number","Service Type","Source","Onboarding Status Owner","Account KYC","Onboarding Status Vehicle","Vehicle KYC","Zone"].map((el) => (
                       <th
                         key={el}
                         className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -594,7 +657,7 @@ export function AccountList() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={10} className="py-3 px-5">
+                      <td colSpan={12} className="py-3 px-5">
                         <div className="flex justify-center items-center">
                           <Spinner className="h-12 w-12" />
                         </div>
@@ -602,7 +665,7 @@ export function AccountList() {
                     </tr>
                   ) : accounts.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-6 px-5 text-center">
+                      <td colSpan={12} className="py-6 px-5 text-center">
                         <Typography variant="small" className="font-semibold text-blue-gray-700">
                           No Accounts
                         </Typography>
@@ -610,11 +673,24 @@ export function AccountList() {
                     </tr>
                   ) : (
                     accounts.map(
-                    ({id, created_at, name, email,phoneNumber,district, serviceType, source, type, accountDocumentStatus, vehicleDocumentStatus}, key) => {
+                    ({id, created_at, name, email,phoneNumber,district, source, onboardingStage, hasVehicle, type, accountDocumentStatus, vehicleDocumentStatus}, key) => {
                       const className = `py-3 px-5 ${key === accounts.length - 1
                         ? ""
                         : "border-b border-blue-gray-50"
                         }`;
+                      const onboardingContext = {
+                        onboardingStage,
+                        hasVehicle,
+                        accountDocumentStatus,
+                        vehicleDocumentStatus,
+                      };
+                      const vehicleOnboardingContext = {
+                        onboardingStage,
+                        hasVehicle,
+                        vehicleDocumentStatus,
+                      };
+                      const onboardingStatus = getOnboardingStatusDisplay(onboardingContext);
+                      const vehicleOnboardingStatus = getVehicleOnboardingStatusDisplay(vehicleOnboardingContext);
 
                       return (
                         <tr key={id}>
@@ -662,6 +738,18 @@ export function AccountList() {
                               {source}
                             </Typography>
                           </td>
+                          <td className={className}>
+                            {onboardingStatus.label ? (
+                              <Typography className="text-xs font-semibold text-blue-gray-900">
+                                {onboardingStatus.label}
+                              </Typography>
+                            ) : null}
+                            {onboardingStatus.hint ? (
+                              <Typography className="text-xs text-blue-gray-600 mt-1">
+                                {onboardingStatus.hint}
+                              </Typography>
+                            ) : null}                          
+                          </td>
                         
                           <td className={className}>
                             <Chip
@@ -670,6 +758,18 @@ export function AccountList() {
                               value={accountDocumentStatus?.status || "-"}
                               className="py-0.5 px-2 text-[11px] font-medium w-fit"
                             />
+                          </td>
+                          <td className={className}>
+                            {vehicleOnboardingStatus.label ? (
+                              <Typography className="text-xs font-semibold text-blue-gray-900">
+                                {vehicleOnboardingStatus.label}
+                              </Typography>
+                            ) : null}
+                            {vehicleOnboardingStatus.hint ? (
+                              <Typography className="text-xs text-blue-gray-600 mt-1">
+                                {vehicleOnboardingStatus.hint}
+                              </Typography>
+                            ) : null}
                           </td>
                           <td className={className}>
                             <Chip
