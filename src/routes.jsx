@@ -115,6 +115,7 @@ import ParcelDetailsList from "./pages/parcel/list";
 import ParcelCabAdd from "./pages/cab/addParcelCab";
 import ParcelCabDetails from "./pages/cab/parcelCabDetails";
 import ParcelCabEdit from "./pages/cab/parcelCabEdit";
+import CabAddNew from "./pages/cab/new/add";
 import ParcelMasterPriceAdd from "./pages/finance/masterPriceTable/ParcelMasterPriceTableAdd";
 import ParcelMasterPriceEdit from "./pages/finance/masterPriceTable/ParcelMasterPriceTableEdit";
 import ParcelMasterPriceDetails from "./pages/finance/masterPriceTable/ParcelMasterPriceTableDetails";
@@ -145,6 +146,9 @@ import DriverMonitoringList from "./pages/DriverEngagementModule/DriverMonitorin
 import IncentivePayoutList from "./pages/DriverEngagementModule/IncentivePayout/list";
 import DriverEngagementAuditLogs from "./pages/DriverEngagementModule/AuditLogs/list";
 import AccountList from "./pages/account/new/list";
+import AddAccountNew from "./pages/account/new/add";
+import AccountDocuments from "./pages/account/new/documents";
+import VehicleDocuments from "./pages/account/new/vehicleDocuments";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -599,6 +603,38 @@ export const routes = [
         path: "/vendors/account",
         element: <AccountView />,
         display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add Account New",
+        path: "/vendors/account/new/add",
+        element: <AddAccountNew />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account Documents",
+        path: "/vendors/account/new/documents/:id",
+        element: <AccountDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vehicle Documents",
+        path: "/vendors/account/new/vehicle-documents/:id",
+        element: <VehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Cab",
+        path: "/vendors/account/new/cab/add/:id",
+        element: <CabAddNew />,
+        display: false,
         permission: "Vendors",
       },
       {
