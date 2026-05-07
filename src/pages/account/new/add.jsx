@@ -171,8 +171,8 @@ const AddAccountNew = () => {
         <div className="p-4 bg-white rounded-lg shadow-md">
             <AccountCreationTabs activeStage={1} />
             <div className="mb-4">
-                <h2 className="text-2xl font-bold">Add new Account</h2>
-                <span className='text-xs text-blue-gray-600 mt-1'>All fields are required</span>
+                {/* <h2 className="text-2xl font-bold">Add new Account</h2> */}
+                {/* <span className='text-xs text-blue-gray-600 mt-1'>All fields are required</span> */}
             </div>
             <Formik
                 initialValues={initialValues}
@@ -189,7 +189,7 @@ const AddAccountNew = () => {
                                     <Field as="select" name="type" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                         <option value="">Select Type</option>
                                         <option value="Individual">Owner cum Driver</option>
-                                        <option value="Company">Travels</option>
+                                        {/* <option value="Company">Travels</option> */}
                                     </Field>
                                     <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                                 </div>

@@ -52,6 +52,71 @@ const setItemSafe = (key, value) => {
     console.error(`Error writing sessionStorage key "${key}":`, err);
   }
 };
+
+const getDocumentTypeChipColor = (onboardingStage, accountStatus, vehicleStatus) => {
+  if (onboardingStage === "ACCOUNT" && accountStatus === "VERIFIED") return "green";
+  if (onboardingStage === "VEHICLE" && vehicleStatus === "VERIFIED") return "green";
+  if (onboardingStage === "ACCOUNT" && accountStatus === "DECLINED") return "red";
+  if (onboardingStage === "VEHICLE" && vehicleStatus === "DECLINED") return "red";
+  if (
+    onboardingStage === "COMPLETED" &&
+    accountStatus === "VERIFIED" &&
+    vehicleStatus === "VERIFIED"
+  ) {
+    return "green";
+  }
+  return "blue-gray";
+};
+
+const getDocumentTypeChipValue = (onboardingStage) => {
+  if (onboardingStage === "ACCOUNT") return "Owner Documents";
+  if (onboardingStage === "VEHICLE") return "Vehicle Documents";
+  if (onboardingStage === "COMPLETED") return " Completed";
+  return "-";
+};
+
+const getOnboardingStatusChipColor = (onboardingStage, accountStatus, vehicleStatus) => {
+  if (onboardingStage === "COMPLETED") return "green";
+  if (onboardingStage === "ACCOUNT" && accountStatus === "DECLINED") return "red";
+  if (onboardingStage === "VEHICLE" && vehicleStatus === "DECLINED") return "red";
+  if (onboardingStage === "ACCOUNT" && accountStatus === "VERIFIED") return "green";
+  if (onboardingStage === "VEHICLE" && vehicleStatus === "VERIFIED") return "green";
+  return "blue-gray";
+};
+
+const getStatusLabelByDocStatus = (status, uploadPendingLabel = "Upload pending") => {
+  if (status === "PENDING UPLOAD") return uploadPendingLabel;
+  if (status === "PENDING VERIFICATION") return "Verification pending";
+  if (status === "DECLINED") return "Declined";
+  if (status === "INVALID") return "Invalid";
+  if (status === "NOT_INTERESTED") return "Not Interested";
+  if (status === "NO_RESPONSE") return "No Response";
+  if (status === "VERIFIED") return "Verified";
+  return null;
+};
+
+const getOnboardingStatusChipValue = (
+  onboardingStage,
+  hasVehicle,
+  accountStatus,
+  vehicleStatus
+) => {
+  if (onboardingStage === "ACCOUNT") {
+    return getStatusLabelByDocStatus(accountStatus) || "-";
+  }
+
+  if (onboardingStage === "VEHICLE") {
+    if (hasVehicle === true) {
+      return getStatusLabelByDocStatus(vehicleStatus) || "-";
+    }
+    if (hasVehicle === false) {
+      return getStatusLabelByDocStatus(vehicleStatus, "upload pending") || "-";
+    }
+  }
+
+  if (onboardingStage === "COMPLETED") return "Onboarding Verified";
+  return "-";
+};
 export function AccountList() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
@@ -666,66 +731,29 @@ export function AccountList() {
                           <td className={className}>
                             <Chip
                               variant="ghost"
-                              color={
-                                onboardingStage === "ACCOUNT"   && accountDocumentStatus?.status === "VERIFIED" ? "green" :
-                                  onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "VERIFIED" ? "green" :
-                                    onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "DECLINED" ? "red" :
-                                      onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "DECLINED" ? "red" :
-                                        onboardingStage === "COMPLETED" && accountDocumentStatus?.status === "VERIFIED" && vehicleDocumentStatus?.status === "VERIFIED" ? "green" :
-                                          "blue-gray"
-                              }
-                              value={onboardingStage === 'ACCOUNT'? "Owner Documents" : onboardingStage === "VEHICLE" ? "Vehicle Documents" : onboardingStage === "COMPLETED" ? " Completed" : "-"                          
-                              }
+                              color={getDocumentTypeChipColor(
+                                onboardingStage,
+                                accountDocumentStatus?.status,
+                                vehicleDocumentStatus?.status
+                              )}
+                              value={getDocumentTypeChipValue(onboardingStage)}
                               className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
                             />
                           </td>
                             <td className={className}>
                             <Chip
                               variant="ghost"
-                              color={
-                                onboardingStage === "COMPLETED" ? "green" :
-                                  onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "DECLINED" ? "red" :
-                                    onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "DECLINED" ? "red" :
-                                      onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "VERIFIED" ? "green" :
-                                        onboardingStage === "VEHICLE" && vehicleDocumentStatus?.status === "VERIFIED" ? "green" :
-                                          "blue-gray"
-                              }
-                              value={
-                                onboardingStage === "ACCOUNT" &&
-                                  accountDocumentStatus?.status === "PENDING UPLOAD"
-                                  ? "Upload pending"
-                                  : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "PENDING VERIFICATION"
-                                    ? "Verification pending"
-                                    : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "DECLINED"
-                                      ? "Declined"
-                                      : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "INVALID"
-                                        ? "Invalid"
-                                        : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "NOT_INTERESTED"
-                                          ? "Not Interested"
-                                          : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "NO_RESPONSE"
-                                            ? "No Response"
-                                            : onboardingStage === "ACCOUNT" && accountDocumentStatus?.status === "VERIFIED"
-                                              ? "Verified"
-                                              : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "PENDING UPLOAD"
-                                                ? "Upload pending"
-                                                : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "PENDING VERIFICATION"
-                                                  ? "Verification pending"
-                                                  : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "DECLINED"
-                                                    ? "Declined"
-                                                    : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "INVALID"
-                                                      ? "Invalid"
-                                                      : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "NOT_INTERESTED"
-                                                        ? "Not Interested"
-                                                        : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "NO_RESPONSE"
-                                                          ? "No Response"
-                                                          : onboardingStage === "VEHICLE" && hasVehicle === true && vehicleDocumentStatus?.status === "VERIFIED"
-                                                            ? "Verified"
-                                                            : onboardingStage === "VEHICLE" && hasVehicle === false
-                                                              ? "Need to Add Vehicle"
-                                                              : onboardingStage === "COMPLETED"
-                                                                ? "Onboarding Verified"
-                                                                : "-"
-                              }
+                              color={getOnboardingStatusChipColor(
+                                onboardingStage,
+                                accountDocumentStatus?.status,
+                                vehicleDocumentStatus?.status
+                              )}
+                              value={getOnboardingStatusChipValue(
+                                onboardingStage,
+                                hasVehicle,
+                                accountDocumentStatus?.status,
+                                vehicleDocumentStatus?.status
+                              )}
                               className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
                             />
                           </td>
