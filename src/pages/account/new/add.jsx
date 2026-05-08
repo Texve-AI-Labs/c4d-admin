@@ -65,6 +65,7 @@ const AddAccountNew = () => {
             let data;
             data = await ApiRequestUtils.post(API_ROUTES.CREATE_ACCOUNT, reqBody);
             if (!data?.success && data?.code === 203) {
+                setSubmitting(false);
                 return;
             }
             const accountId = data?.data?.id;
@@ -114,7 +115,7 @@ const AddAccountNew = () => {
             const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, {
                 address: query
             });
-            console.log("data", data)
+            // console.log("data", data);
             if (data?.success && data?.data) {
                 setAddressSuggestions(data?.data)
             }
@@ -202,7 +203,7 @@ const AddAccountNew = () => {
                                     <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                                 </div>
                                 <div>
-                                    <label htmlFor="name" className="text-sm font-medium text-gray-700">{values.type == 'driverWithVehicles' ? "Full Name" : 'Company Name'}</label>
+                                    <label htmlFor="name" className="text-sm font-medium text-gray-700">{values.type === 'Individual' ? "Full Name" : "Company Name"}</label>
                                     <Field type="text" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                     <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
@@ -364,7 +365,7 @@ const AddAccountNew = () => {
                         <div className='flex flex-row'>
                             <Button
                                 fullWidth
-                                onClick={() => { navigate('/dashboard/vendors/account'); }}
+                                onClick={() => { navigate('/dashboard/vendors/account/new'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
                             >
                                 Cancel
