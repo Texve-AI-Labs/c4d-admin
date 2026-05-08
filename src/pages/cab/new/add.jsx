@@ -253,7 +253,7 @@ const CabAddNew = () => {
             });
 
             // Log only Vellore packages
-            console.log("Vellore Packages:", packageData.filter(val => val.zone === 'Vellore'));
+            // console.log("Vellore Packages:", packageData.filter(val => val.zone === 'Vellore'));
 
             const intercityPackage = orderPackages(packageData.filter(val => val.zone === 'Vellore' && val.type === 'Local'), 'Local');
             const outstationPackage = packageData.filter(val => val.zone === 'Vellore' && val.type === 'Outstation' && val.period === '1 d');
@@ -477,7 +477,7 @@ const CabAddNew = () => {
             const prices = values.prices;
             let res = { cabDetails: JSON.stringify(cabDetails), prices: JSON.stringify(prices) };
             const resp = await ApiRequestUtils.post(API_ROUTES.REGISTER_CAB, res);
-            console.log('CAB DATA :', resp);
+            // console.log('CAB DATA :', resp);
             if (!resp?.success && resp?.code === 203) {
                 resetForm();
             }
@@ -927,7 +927,7 @@ const CabAddNew = () => {
                         <div className='flex flex-row'>
                             <Button
                                 fullWidth
-                                onClick={() => { navigate('/dashboard/vendors/account'); }}
+                                onClick={() => { navigate('/dashboard/vendors/account/new'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
                             >
                                 Cancel
