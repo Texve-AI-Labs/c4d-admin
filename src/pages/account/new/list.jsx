@@ -16,7 +16,7 @@ import {
 import AccountSearch from "@/components/AccountSearch";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import moment from "moment";
 import { FaFilter } from 'react-icons/fa';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
@@ -701,15 +701,9 @@ export function AccountList() {
                           </td>
                           <td className={className}>
                             <div className="flex items-center gap-4">
-                              <Link to={`/dashboard/vendors/account/details/${id}`}>
-                                <Typography
-                                  variant="small"
-                                  color="blue"
-                                  className="font-semibold underline cursor-pointer"
-                                >
-                                  {name}
-                                </Typography>
-                              </Link>
+                              <Typography variant="small" className="font-semibold text-blue-gray-900">
+                                {name}
+                              </Typography>
                             </div>
                           </td>
                           <td className={className}>
