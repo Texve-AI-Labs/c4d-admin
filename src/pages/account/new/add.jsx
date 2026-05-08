@@ -123,7 +123,15 @@ const AddAccountNew = () => {
         }
     };
 
-    const handleGoogleAddressSelect = (place) => {
+    const extractPincode = (addressComponents = []) => {
+        if (!Array.isArray(addressComponents)) return "";
+        const postalCodeComponent = addressComponents.find((component) =>
+            Array.isArray(component?.types) && component.types.includes("postal_code")
+        );
+        return postalCodeComponent?.long_name || "";
+    };
+
+    const handleGoogleAddressSelect = (place, setFieldValue) => {
         if (!place || !place.formatted_address) {
             console.error("Google Address selection is invalid", place);
             return;
@@ -228,7 +236,7 @@ const AddAccountNew = () => {
                                                 form={form}
                                                 suggestions={addressSuggestions}
                                                 onSearch={searchLocations}
-                                                onSelect={handleGoogleAddressSelect}
+                                                onSelect={(place) =>handleGoogleAddressSelect(place, setFieldValue)}
                                             />
                                         )}
                                     </Field>
