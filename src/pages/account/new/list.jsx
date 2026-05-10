@@ -131,6 +131,15 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
   const normalizedVehicleStatus = vehicleStatus || "";
   const hasVehicleNormalized = normalizeHasVehicle(hasVehicle);
 
+  if (
+    normalizedStage === "COMPLETED" &&
+    hasVehicleNormalized &&
+    normalizedAccountStatus === "VERIFIED" &&
+    normalizedVehicleStatus === "VERIFIED"
+  ) {
+    return `/dashboard/vendors/account/new/details/completed/${id}`;
+  }
+
   if (normalizedStage === "VEHICLE" && normalizedVehicleStatus === "VERIFIED" && !hasVehicleNormalized) {
     return `/dashboard/vendors/account/new/cab/add/${id}`;
   }
@@ -164,6 +173,8 @@ export function AccountList() {
   const [zoneOptions, setZoneOptions] = useState([]);
   const [kycStatusCounts, setKycStatusCounts] = useState(EMPTY_KYC_STATUS_COUNTS);
   const prevSearchRef = useRef('');
+  const lastRequestKeyRef = useRef('');
+  const inFlightRequestKeyRef = useRef('');
 
   const [pagination, setPagination] = useState(() => {
     const stored = getItemSafe(ACCOUNT_VIEW_FILTERS_KEY);
@@ -245,6 +256,7 @@ export function AccountList() {
   }, [filtersLoaded, pagination.currentPage, statusFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, sourceFilter, zoneFilter]);
 
   const fetchAccounts = async (page = 1, searchQuery = '', showLoader = true) => {
+    const normalizedSearchQuery = (searchQuery ?? '').trim();
     if (showLoader) setLoading(true);
     try {
       const zoneValue = Array.isArray(zoneFilter)
@@ -258,10 +270,25 @@ export function AccountList() {
         : selectedStages.length === 1
           ? selectedStages[0]
           : selectedStages;
+      const requestKey = JSON.stringify({
+        page,
+        limit: pagination.itemsPerPage,
+        search: normalizedSearchQuery,
+        district: zoneValue ? JSON.stringify(zoneValue) : undefined,
+        stage: stageParam,
+        source: sourceFilter
+      });
+
+      // Prevent duplicate same-parameter hits (common in StrictMode/effect replays).
+      if (requestKey === inFlightRequestKeyRef.current || requestKey === lastRequestKeyRef.current) {
+        return;
+      }
+
+      inFlightRequestKeyRef.current = requestKey;
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
         page,
         limit: pagination.itemsPerPage,
-        search: searchQuery.trim(),
+        search: normalizedSearchQuery,
         district: zoneValue ? JSON.stringify(zoneValue) : undefined,
         stage: stageParam,
         filterType: JSON.stringify({
@@ -274,13 +301,14 @@ export function AccountList() {
         })
       });
       if (data?.success) {
+        lastRequestKeyRef.current = requestKey;
         setAccounts(data?.data);
         setPagination({
           currentPage: page,
-          totalPages: searchQuery.trim() ? 1 : data?.pagination?.totalPages || 1,
+          totalPages: normalizedSearchQuery ? 1 : data?.pagination?.totalPages || 1,
           totalItems: data?.pagination?.totalItems || 0,
           itemsPerPage: data?.pagination?.itemsPerPage || 10,
-          search: searchQuery.trim(),
+          search: normalizedSearchQuery,
         });
         setKycStatusCounts(extractKycStatusCounts(data));
       } else {
@@ -290,6 +318,7 @@ export function AccountList() {
       console.error('Error fetching accounts:', error);
       setKycStatusCounts(EMPTY_KYC_STATUS_COUNTS);
     } finally {
+      inFlightRequestKeyRef.current = '';
       setLoading(false);
     }
   };
