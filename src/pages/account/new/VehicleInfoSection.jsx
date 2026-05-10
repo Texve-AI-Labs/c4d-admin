@@ -1,12 +1,85 @@
-import React from "react";
-import { Card, CardBody, Chip, IconButton, Typography } from "@material-tailwind/react";
+import React, { useMemo, useState } from "react";
+import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
+  carTypeOptions = [],
+  getVehicleStatusBySection,
+  onVehicleStatusChange,
+  getVehicleBlockedReasonBySection,
+  onVehicleBlockedReasonChange,
+  onVehicleStatusUpdate,
+  statusUpdating = false,
+  onSaveVehicleDetails,
+  vehicleDetailsSavingId = null,
 }) => {
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
+  const [editingSectionId, setEditingSectionId] = useState(null);
+  const [draftValues, setDraftValues] = useState({});
+
+  const editableLabels = useMemo(
+    () => new Set(["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"]),
+    []
+  );
+
+  const getInitialDraft = (section) => {
+    const map = {};
+    (section?.vehicleDetailsRows || []).forEach((row) => {
+      if (editableLabels.has(row.label)) map[row.label] = row.value === "-" ? "" : row.value;
+    });
+    const rawCarType = String(section?.rawValues?.carType || "").toUpperCase();
+    if (["MINI", "SUV", "MUV", "SEDAN"].includes(rawCarType)) {
+      map["Car Type"] = rawCarType === "SEDAN" ? "Sedan" : rawCarType;
+    }
+    return map;
+  };
+
+  const normalizeCarType = (value) => {
+    const upper = String(value || "").toUpperCase();
+    if (upper === "SEDAN") return "Sedan";
+    if (upper === "MINI") return "Mini";
+    if (upper === "SUV") return "SUV";
+    if (upper === "MUV") return "MUV";
+    return "";
+  };
+
+  const getVehicleTypeOptions = (selectedCarType, currentVehicleType) => {
+    const normalizedSelected = normalizeCarType(selectedCarType);
+    let filtered = carTypeOptions.filter((item) => {
+      const itemType = String(item?.carType || "").toUpperCase();
+      return itemType === String(normalizedSelected || "").toUpperCase();
+    });
+
+    // Fallback: many datasets keep MUV models under SUV bucket.
+    if (filtered.length === 0 && String(normalizedSelected).toUpperCase() === "MUV") {
+      filtered = carTypeOptions.filter((item) => {
+        const itemType = String(item?.carType || "").toUpperCase();
+        return itemType === "SUV" || itemType === "MUV";
+      });
+    }
+
+    // Final fallback: show all unique models so dropdown is never empty.
+    if (filtered.length === 0) {
+      const seen = new Set();
+      filtered = carTypeOptions.filter((item) => {
+        const model = String(item?.carModel || "").trim().toLowerCase();
+        if (!model || seen.has(model)) return false;
+        seen.add(model);
+        return true;
+      });
+    }
+
+    const current = String(currentVehicleType || "").trim();
+    const exists = filtered.some(
+      (item) => String(item?.carModel || "").toLowerCase() === current.toLowerCase()
+    );
+    if (current && !exists) {
+      return [{ id: "current-value", carModel: current }, ...filtered];
+    }
+    return filtered;
+  };
 
   return (
     <>
@@ -23,20 +96,63 @@ const VehicleInfoSection = ({
       ) : (
         sections.map((section) => (
           <React.Fragment key={section.sectionKey || section.id}>
+            {(() => {
+              const sectionStatus = getVehicleStatusBySection?.(section.id) || "IN_ACTIVE";
+              const sectionBlockedReason = getVehicleBlockedReasonBySection?.(section.id) || "";
+              return (
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Typography variant="h5" className="text-blue-gray-900 font-semibold rounded-md px-3 py-2 inline-block">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Typography variant="h5" className="text-blue-gray-900 font-semibold inline-block">
                       Vehicle Details {section.title ? `(${section.title})` : ""}
-                    </Typography>
+                      </Typography>
+                      <IconButton
+                        variant="text"
+                        className="h-9 w-9 rounded-md bg-blue-50 text-blue-600"
+                        onClick={() => {
+                          setEditingSectionId(section.id);
+                          setDraftValues(getInitialDraft(section));
+                        }}
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </IconButton>
+                    </div>
                     <Typography className="text-xs text-blue-gray-500 px-3 -mt-1">
                       Cab ID: {section.cabId}
                     </Typography>
                   </div>
-                  <IconButton variant="text" className="h-9 w-9 rounded-md bg-blue-50 text-blue-600">
-                    <PencilIcon className="h-4 w-4" />
-                  </IconButton>
+                  <div className="w-full md:w-auto md:min-w-[260px] max-w-[260px] space-y-1.5 rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                      <select
+                        value={sectionStatus}
+                        onChange={(e) => onVehicleStatusChange?.(section.id, e.target.value)}
+                        disabled={statusUpdating}
+                        className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                      >
+                        <option value="ACTIVE">Active</option>
+                        <option value="IN_ACTIVE">In_Active</option>
+                        <option value="BLOCKED">Blocked</option>
+                      </select>
+                      {sectionStatus === "BLOCKED" && (
+                        <input
+                          type="text"
+                          value={sectionBlockedReason}
+                          onChange={(e) => onVehicleBlockedReasonChange?.(section.id, e.target.value)}
+                          disabled={statusUpdating}
+                          placeholder="Enter block reason"
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        />
+                      )}
+                      <Button
+                        onClick={() => onVehicleStatusUpdate?.(section.id)}
+                        disabled={statusUpdating}
+                        size="sm"
+                        className="h-8 px-3 w-full bg-primary text-xs normal-case"
+                      >
+                        {statusUpdating ? "Updating..." : "Update Status"}
+                      </Button>
+                  </div>
                 </div>
                 <div className="border-t border-blue-gray-50 mt-3" />
                 {section.vehicleDetailsRows.length === 0 ? (
@@ -46,17 +162,96 @@ const VehicleInfoSection = ({
                     {section.vehicleDetailsRows.map((row) => (
                       <div key={`${section.id}-${row.label}`} className="flex items-start gap-2">
                         <Typography className="text-blue-gray-400 font-semibold min-w-[170px]">{row.label}:</Typography>
-                        {row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
+                        {editingSectionId === section.id && editableLabels.has(row.label) ? (
+                          row.label === "Car Type" ? (
+                            <select
+                              value={draftValues[row.label] || ""}
+                              onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                              className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                            >
+                              <option value="">Select</option>
+                              <option value="MINI">Mini</option>
+                              <option value="SUV">SUV</option>
+                              <option value="MUV">MUV</option>
+                              <option value="Sedan">Sedan</option>
+                            </select>
+                          ) : row.label === "Vehicle Type" ? (
+                            (() => {
+                              const options = getVehicleTypeOptions(draftValues?.["Car Type"], draftValues?.["Vehicle Type"]);
+                              const currentVehicleType = String(draftValues?.["Vehicle Type"] || "").trim();
+                              const matched = options.find(
+                                (item) =>
+                                  String(item?.carModel || "").trim().toLowerCase() ===
+                                  currentVehicleType.toLowerCase()
+                              );
+                              const selectedValue = matched ? matched.carModel : currentVehicleType;
+                              return (
+                                <select
+                                  value={selectedValue || ""}
+                                  onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                                  className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                                >
+                                  <option value="">Select</option>
+                                  {options.map((item) => (
+                                    <option key={item.id} value={item.carModel}>
+                                      {item.carModel}
+                                    </option>
+                                  ))}
+                                </select>
+                              );
+                            })()
+                          ) : (
+                            <input
+                              value={draftValues[row.label] || ""}
+                              onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                              className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                            />
+                          )
+                        ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
                           <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
                         ) : (
                           <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
                         )}
                       </div>
                     ))}
+                    {editingSectionId === section.id && (
+                      <div className="md:col-span-2 flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="h-8 px-3 text-xs normal-case bg-white text-black border border-gray-300 shadow-none"
+                          onClick={() => {
+                            setEditingSectionId(null);
+                            setDraftValues({});
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-8 px-3 text-xs normal-case bg-primary"
+                          disabled={vehicleDetailsSavingId === section.id}
+                          onClick={() => {
+                            const selectedCarType = String(draftValues?.["Car Type"] || "").toUpperCase();
+                            if (!["MINI", "SUV", "MUV", "SEDAN"].includes(selectedCarType)) {
+                              window.alert("Please select a valid Car Type.");
+                              return;
+                            }
+                            onSaveVehicleDetails?.(section.id, draftValues, () => {
+                              setEditingSectionId(null);
+                              setDraftValues({});
+                            });
+                          }}
+                        >
+                          {vehicleDetailsSavingId === section.id ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardBody>
             </Card>
+              );
+            })()}
 
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>

@@ -42,6 +42,9 @@ const AccountOnboardingDetails = () => {
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [ownerStatus, setOwnerStatus] = useState("InActive");
+  const [blockedReason, setBlockedReason] = useState("");
+  const [updatingOwnerStatus, setUpdatingOwnerStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchOnboardingDetails();
@@ -67,6 +70,11 @@ const AccountOnboardingDetails = () => {
     if (onboardingData?.id) return onboardingData;
     return {};
   }, [onboardingData]);
+
+  useEffect(() => {
+    setOwnerStatus(account?.ownerStatus || "InActive");
+    setBlockedReason(account?.blockedReason || "");
+  }, [account?.ownerStatus, account?.blockedReason]);
   const requiredAccountDocs = account?.requiredDocuments?.account || [];
   const accountUploads = account?.uploads?.account || [];
   const accountStageStatus = account?.accountDocumentStatus?.status || "PENDING UPLOAD";
@@ -186,12 +194,87 @@ const AccountOnboardingDetails = () => {
     }
   };
 
+  const handleOwnerStatusUpdate = async () => {
+    if (!account?.id) return;
+    if (ownerStatus === "Blocked" && !blockedReason.trim()) {
+      window.alert("Please enter blocked reason.");
+      return;
+    }
+
+    try {
+      setUpdatingOwnerStatus(true);
+      const formData = {
+        type: account?.type || "",
+        name: account?.name || "",
+        phoneNumber: account?.phoneNumber || "",
+        email: account?.email || "",
+        address: account?.address || "",
+        street: account?.street || "",
+        thaluk: account?.thaluk || "",
+        district: account?.district || "",
+        state: account?.state || "",
+        pincode: account?.pincode || "",
+        source: account?.source || "",
+        accountId: account?.id,
+        ownerStatus,
+        blockedReason: ownerStatus === "Blocked" ? blockedReason : "",
+      };
+      const response = await ApiRequestUtils.update(API_ROUTES.UPDATE_ACCOUNT, formData);
+      if (response?.success) {
+        await fetchOnboardingDetails();
+      } else {
+        window.alert(response?.message || "Failed to update account status.");
+      }
+    } catch (error) {
+      console.error("Failed to update account status", error);
+      window.alert("Failed to update account status.");
+    } finally {
+      setUpdatingOwnerStatus(false);
+    }
+  };
+
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
       <AccountCreationTabs activeStage={2} />
       <div className="mb-4">
-        <Typography variant="h6" color="blue-gray">Account Document Details</Typography>
-        <Typography className="text-sm text-blue-gray-700 mt-1">Account ID: {id}</Typography>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+          <div>
+            <Typography variant="h6" color="blue-gray">Account Document Details</Typography>
+            <Typography className="text-sm text-blue-gray-700 mt-1">Account ID: {id}</Typography>
+          </div>
+          <div className="w-full md:w-auto md:min-w-[320px] space-y-2">
+            <select
+              value={ownerStatus}
+              onChange={(e) => {
+                setOwnerStatus(e.target.value);
+                if (e.target.value !== "Blocked") setBlockedReason("");
+              }}
+              disabled={updatingOwnerStatus}
+              className="p-2 w-full rounded-md border border-gray-300 text-sm"
+            >
+              <option value="Active">Active</option>
+              <option value="InActive">In_Active</option>
+              <option value="Blocked">Blocked</option>
+            </select>
+            {ownerStatus === "Blocked" && (
+              <input
+                type="text"
+                value={blockedReason}
+                onChange={(e) => setBlockedReason(e.target.value)}
+                disabled={updatingOwnerStatus}
+                placeholder="Enter block reason"
+                className="p-2 w-full rounded-md border border-gray-300 text-sm"
+              />
+            )}
+            <Button
+              onClick={handleOwnerStatusUpdate}
+              disabled={updatingOwnerStatus}
+              className="w-full md:w-auto bg-primary"
+            >
+              {updatingOwnerStatus ? "Updating..." : "Update Status"}
+            </Button>
+          </div>
+        </div>
         {/* <Typography className="text-sm text-blue-gray-700 mt-1">Account Name: {account?.name || "-"}</Typography> */}
         <p className="text-sm text-gray-600 mt-1">
           Document upload is required to verify your account and ensure compliance with our policies.
