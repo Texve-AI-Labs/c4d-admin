@@ -149,6 +149,8 @@ import AccountList from "./pages/account/new/list";
 import AddAccountNew from "./pages/account/new/add";
 import AccountDocuments from "./pages/account/new/documents";
 import VehicleDocuments from "./pages/account/new/vehicleDocuments";
+import AccountOnboardingDetails from "./pages/account/new/accountDetails";
+import VehicleOnboardingDetails from "./pages/account/new/vehicleDetails";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -643,6 +645,22 @@ export const routes = [
         path: "/vendors/account/new",
         element: <AccountList />,
         display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account Onboarding Details",
+        path: "/vendors/account/new/details/account/:id",
+        element: <AccountOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vehicle Onboarding Details",
+        path: "/vendors/account/new/details/vehicle/:id",
+        element: <VehicleOnboardingDetails />,
+        display: false,
         permission: "Vendors",
       },
       {

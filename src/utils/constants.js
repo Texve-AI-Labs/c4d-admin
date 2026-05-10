@@ -1033,7 +1033,8 @@ export const API_ROUTES = {
     "ASSIGN_AUTO":'/confirm-auto-booking',
     "ADD_SUPPORT_PARCEL_BOOKING":'/add-support-parcel-booking',
     'DRIVER_RETURN_TRIP_DETAILS':'/return-trips',
-    'ADMIN_REQUIRED_DOCUMENTS': '/admin/verification/required-documents'
+    'ADMIN_REQUIRED_DOCUMENTS': '/admin/verification/required-documents',
+    'ADMIN_ONBOARDING_BY_ID': '/admin/account/onboarding/',
 };
 
 export const KYC_PROCESS = {

@@ -158,6 +158,8 @@ const CabAddNew = () => {
     const location = useLocation();
     const { ownerName, type, accountId, vehicleDocuments } = location.state || {};
     const effectiveAccountId = accountId || id;
+    const [resolvedAccount, setResolvedAccount] = useState(null);
+    const effectiveType = type || resolvedAccount?.type || "";
 
     useEffect(() => {
         const fetchVehicleDocumentsData = async () => {
@@ -165,6 +167,7 @@ const CabAddNew = () => {
             try {
                 const accountRes = await ApiRequestUtils.get(`${API_ROUTES.GET_ACCOUNT_BY_ID}/${effectiveAccountId}`);
                 const accountData = accountRes?.data?.data || {};
+                setResolvedAccount(accountData);
                 const proofs = accountData?.Proofs || [];
 
                 const proofMap = {};
@@ -180,7 +183,7 @@ const CabAddNew = () => {
 
                 const requiredDocsRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_REQUIRED_DOCUMENTS, {
                     subjectType: "ACCOUNT",
-                    serviceType: type || accountData?.type || "Individual",
+                    serviceType: effectiveType || accountData?.type || "Individual",
                 });
                 const requiredList = requiredDocsRes?.data?.vehicleRequiredDocuments || [];
                 setVehicleDocTypes(requiredList);
@@ -193,7 +196,7 @@ const CabAddNew = () => {
         };
 
         fetchVehicleDocumentsData();
-    }, [effectiveAccountId, type]);
+    }, [effectiveAccountId, effectiveType]);
 
     const getAccountNames = async () => {
         try {
@@ -282,8 +285,8 @@ const CabAddNew = () => {
 
     const initialValues = {
         name: cabVal?.name || "",
-        ownerName: ownerName ? ownerName : '',
-        assignedTo: type == 'Individual' ? 'Owner' : 'Driver',
+        ownerName: ownerName || resolvedAccount?.name || '',
+        assignedTo: effectiveType == 'Individual' ? 'Owner' : 'Driver',
         carNumber: cabVal?.carNumber || "",
         address: cabVal?.curAddress || "",
         insurance: cabVal?.insurance || "",
@@ -608,14 +611,14 @@ const CabAddNew = () => {
                             </div>
                             <div>
                                 <label htmlFor="assignedTo" className="text-sm font-medium text-gray-700">Assigned To</label>
-                                <Field as="select" disabled={type == 'Individual'} name="assignedTo" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                                <Field as="select" disabled={effectiveType == 'Individual'} name="assignedTo" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                     <option value="">Select Type</option>
                                     <option value="Driver">Driver</option>
                                     <option value="Owner">Owner</option>
                                 </Field>
                                 <ErrorMessage name="assignedTo" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {type != 'Individual' && values.assignedTo == 'Driver' && <div>
+                            {effectiveType != 'Individual' && values.assignedTo == 'Driver' && <div>
                                 <p className="text-sm font-medium text-gray-700 mb-2">With Driver</p>
                                 <div className="space-x-4">
                                     <label className="inline-flex items-center">
