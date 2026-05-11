@@ -130,6 +130,7 @@ const CompletedOnboardingDetails = () => {
   const [updatingVehicleStatus, setUpdatingVehicleStatus] = useState(false);
   const [vehicleDetailsSavingId, setVehicleDetailsSavingId] = useState(null);
   const latestAddressSearchRef = useRef(0);
+  const [activeTab, setActiveTab] = useState("account_details");
 
   useEffect(() => {
     if (!id) return undefined;
@@ -689,6 +690,24 @@ const CompletedOnboardingDetails = () => {
     }
   };
 
+  const canOpenAccountDocuments = true;
+  const canOpenVehicleDocuments = true;
+  const canOpenVehicleDetails = true;
+
+  const tabs = [
+    { key: "account_details", label: "Account Details", enabled: true },
+    { key: "account_documents", label: "Account Documents", enabled: canOpenAccountDocuments },
+    { key: "vehicle_documents", label: "Vehicle Documents", enabled: canOpenVehicleDocuments },
+    { key: "vehicle_details", label: "Vehicle Details", enabled: canOpenVehicleDetails },
+  ];
+
+  useEffect(() => {
+    const activeExistsAndEnabled = tabs.some((tab) => tab.key === activeTab && tab.enabled);
+    if (activeExistsAndEnabled) return;
+    const fallback = tabs.find((tab) => tab.enabled)?.key || "account_details";
+    setActiveTab(fallback);
+  }, [activeTab, canOpenAccountDocuments, canOpenVehicleDocuments, canOpenVehicleDetails]);
+
   return (
     <div className="p-4 bg-white rounded-lg shadow-md min-h-[60vh]">
       {loading ? (
@@ -696,8 +715,31 @@ const CompletedOnboardingDetails = () => {
           <Spinner className="h-10 w-10" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  disabled={!tab.enabled}
+                  onClick={() => tab.enabled && setActiveTab(tab.key)}
+                  className={`h-9 w-full rounded-lg px-4 text-sm font-medium transition ${
+                    activeTab === tab.key
+                      ? "bg-primary text-white shadow-sm"
+                      : tab.enabled
+                        ? "bg-white text-blue-gray-700 border border-blue-gray-100 hover:border-blue-gray-200"
+                        : "bg-blue-gray-50 text-blue-gray-300 border border-blue-gray-100 cursor-not-allowed"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeTab === "account_details" ? (
+            <Card className="bg-white border border-blue-gray-100 shadow-sm">
             <CardBody>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 px-3 py-2">
@@ -902,18 +944,25 @@ const CompletedOnboardingDetails = () => {
               )}
             </CardBody>
           </Card>
+          ) : null}
 
+          {activeTab === "account_documents" ? (
           <AccountDocumentsSection
             rows={splitDocumentRows.account}
             getStatusTextClass={getStatusTextClass}
             getStatusBgClass={getStatusBgClass}
           />
+          ) : null}
+          {activeTab === "vehicle_documents" ? (
           <VehicleDocumentsSection
             rows={splitDocumentRows.vehicle}
             getStatusChipColor={getStatusChipColor}
           />
+          ) : null}
+          {activeTab === "vehicle_details" ? (
+            <div className="space-y-4">
           {cabFetchError ? (
-            <Card className="bg-amber-50 border border-amber-200 shadow-sm md:col-span-2">
+            <Card className="bg-amber-50 border border-amber-200 shadow-sm">
               <CardBody className="py-3">
                 <Typography className="text-amber-800 text-sm font-medium">{cabFetchError}</Typography>
               </CardBody>
@@ -940,7 +989,8 @@ const CompletedOnboardingDetails = () => {
             onSaveVehicleDetails={handleVehicleDetailsSave}
             vehicleDetailsSavingId={vehicleDetailsSavingId}
           />
-
+            </div>
+          ) : null}
         </div>
       )}
     </div>
