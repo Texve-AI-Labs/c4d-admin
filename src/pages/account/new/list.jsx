@@ -634,7 +634,7 @@ export function AccountList() {
           ${ColorStyles.bgColor}`}>
           <div className='flex items-center justify-between w-full'>
             <Typography variant="h6" color="white">
-              All Accounts List New
+              All Accounts List
             </Typography>
             <button
               className="bg-primary-400 text-white px-4 py-2 rounded-2xl flex items-center gap-2 hover:bg-primary-500"

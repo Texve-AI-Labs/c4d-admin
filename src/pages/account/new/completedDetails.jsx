@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, CardBody, Chip, IconButton, Spinner, Typography } from "@material-tailwind/react";
 import { useLocation, useParams } from "react-router-dom";
 import { PencilIcon } from "@heroicons/react/24/solid";
@@ -97,6 +97,16 @@ const extractCabIdsFromAccount = (account) => {
   );
 };
 
+const normalizeOnboardingPayload = (rawPayload) => {
+  const payload = rawPayload || {};
+  const rootData = payload?.data && typeof payload.data === "object" ? payload.data : null;
+  const account = rootData?.id ? rootData : payload?.id ? payload : {};
+  const accountCabs = Array.isArray(account?.cabs) ? account.cabs : [];
+  const payloadCabs = Array.isArray(payload?.cabs) ? payload.cabs : [];
+  const cabs = accountCabs.length > 0 ? accountCabs : payloadCabs;
+  return { ...account, cabs };
+};
+
 const CompletedOnboardingDetails = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -119,6 +129,7 @@ const CompletedOnboardingDetails = () => {
   const [vehicleBlockedReasonById, setVehicleBlockedReasonById] = useState({});
   const [updatingVehicleStatus, setUpdatingVehicleStatus] = useState(false);
   const [vehicleDetailsSavingId, setVehicleDetailsSavingId] = useState(null);
+  const latestAddressSearchRef = useRef(0);
 
   useEffect(() => {
     if (!id) return undefined;
@@ -164,9 +175,9 @@ const CompletedOnboardingDetails = () => {
       // Always load base details by id to avoid empty details page.
       const res = await ApiRequestUtils.get(API_ROUTES.ADMIN_ONBOARDING_BY_ID + id);
       const payload = res?.data || res?.result || null;
-      const base = payload?.data?.id ? payload.data : payload || {};
+      const base = normalizeOnboardingPayload(payload);
       const stateCabs = Array.isArray(location?.state?.prefetchedCabs) ? location.state.prefetchedCabs : [];
-      let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : payload;
+      let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : base;
 
       // Try to enrich `cabs` from onboarding list API shape when available.
       try {
@@ -239,6 +250,40 @@ const CompletedOnboardingDetails = () => {
     });
   }, [account]);
 
+  const refreshCabDetails = async (requestIds = cabRequestIds, options = {}) => {
+    const { applyState = true } = options;
+    if (!Array.isArray(requestIds) || requestIds.length === 0) {
+      if (applyState) {
+        setCabs([]);
+        setCabFetchError("");
+      }
+      return { normalized: [], rejectedCount: 0 };
+    }
+    const responses = await Promise.allSettled(
+      requestIds.map((itemId) => ApiRequestUtils.get(API_ROUTES.GET_CAB_BY_ID + `${itemId}`))
+    );
+    const normalized = responses
+      .map((result, index) => {
+        if (result.status !== "fulfilled") return null;
+        const response = result.value;
+        const payload = response?.data || null;
+        if (!payload) return null;
+        return { id: requestIds[index], payload };
+      })
+      .filter(Boolean);
+
+    const rejectedCount = responses.filter((result) => result.status === "rejected").length;
+    if (applyState) {
+      setCabs(normalized);
+      if (rejectedCount > 0) {
+        setCabFetchError(`Some vehicle details could not be loaded (${rejectedCount} failed request${rejectedCount > 1 ? "s" : ""}).`);
+      } else {
+        setCabFetchError("");
+      }
+    }
+    return { normalized, rejectedCount };
+  };
+
   useEffect(() => {
     setCabRequestIds(extractCabIdsFromAccount(account));
   }, [account]);
@@ -254,23 +299,8 @@ const CompletedOnboardingDetails = () => {
 
     const fetchAllCabs = async () => {
       try {
-        const responses = await Promise.allSettled(
-          cabRequestIds.map((itemId) => ApiRequestUtils.get(API_ROUTES.GET_CAB_BY_ID + `${itemId}`))
-        );
+        const { normalized, rejectedCount } = await refreshCabDetails(cabRequestIds, { applyState: false });
         if (!isActive) return;
-
-        const normalized = responses
-          .map((result, index) => {
-            if (result.status !== "fulfilled") return null;
-            const response = result.value;
-            const payload = response?.data || null;
-            if (!payload) return null;
-            return { id: cabRequestIds[index], payload };
-          })
-          .filter(Boolean);
-
-        const rejectedCount = responses.filter((result) => result.status === "rejected").length;
-
         setCabs(normalized);
         if (rejectedCount > 0) {
           setCabFetchError(`Some vehicle details could not be loaded (${rejectedCount} failed request${rejectedCount > 1 ? "s" : ""}).`);
@@ -506,13 +536,17 @@ const CompletedOnboardingDetails = () => {
       return { street: "", thaluk: "", district: "", state: "", pincode: "" };
     }
     const parts = address.split(",").map((item) => item.trim()).filter(Boolean);
-    const reversed = [...parts].reverse();
     const pincodeMatch = address.match(/\b\d{6}\b/);
+    const cleanedParts = pincodeMatch ? parts.map((part) => part.replace(pincodeMatch[0], "").trim()).filter(Boolean) : parts;
+    const statePart = cleanedParts[cleanedParts.length - 1] || "";
+    const districtPart = cleanedParts[cleanedParts.length - 2] || "";
+    const thalukPart = cleanedParts[cleanedParts.length - 3] || "";
+    const streetPart = cleanedParts.slice(0, Math.max(cleanedParts.length - 3, 1)).join(", ");
     return {
-      street: reversed[4] || parts[0] || "",
-      thaluk: reversed[3] || "",
-      district: reversed[2] || "",
-      state: reversed[1] || "",
+      street: streetPart || cleanedParts[0] || "",
+      thaluk: thalukPart,
+      district: districtPart,
+      state: statePart,
       pincode: pincodeMatch?.[0] || "",
     };
   };
@@ -523,7 +557,10 @@ const CompletedOnboardingDetails = () => {
       return;
     }
     try {
+      const requestId = Date.now();
+      latestAddressSearchRef.current = requestId;
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, { address: query });
+      if (latestAddressSearchRef.current !== requestId) return;
       if (data?.success && data?.data) {
         setAddressSuggestions(data.data);
       } else {
@@ -584,19 +621,7 @@ const CompletedOnboardingDetails = () => {
       });
 
       if (res?.success) {
-        const responses = await Promise.allSettled(
-          cabRequestIds.map((itemId) => ApiRequestUtils.get(API_ROUTES.GET_CAB_BY_ID + `${itemId}`))
-        );
-        const normalized = responses
-          .map((result, index) => {
-            if (result.status !== "fulfilled") return null;
-            const response = result.value;
-            const payload = response?.data || null;
-            if (!payload) return null;
-            return { id: cabRequestIds[index], payload };
-          })
-          .filter(Boolean);
-        setCabs(normalized);
+        await refreshCabDetails(cabRequestIds);
       } else {
         window.alert(res?.message || "Failed to update vehicle status.");
       }
@@ -651,19 +676,7 @@ const CompletedOnboardingDetails = () => {
       });
 
       if (res?.success) {
-        const responses = await Promise.allSettled(
-          cabRequestIds.map((itemId) => ApiRequestUtils.get(API_ROUTES.GET_CAB_BY_ID + `${itemId}`))
-        );
-        const normalized = responses
-          .map((result, index) => {
-            if (result.status !== "fulfilled") return null;
-            const response = result.value;
-            const payload = response?.data || null;
-            if (!payload) return null;
-            return { id: cabRequestIds[index], payload };
-          })
-          .filter(Boolean);
-        setCabs(normalized);
+        await refreshCabDetails(cabRequestIds);
         onDone?.();
       } else {
         window.alert(res?.message || "Failed to update vehicle details.");
