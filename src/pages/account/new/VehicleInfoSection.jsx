@@ -106,7 +106,7 @@ const VehicleInfoSection = ({
                   <div className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       <Typography variant="h5" className="text-blue-gray-900 font-semibold inline-block">
-                      Vehicle Details {section.title ? `(${section.title})` : ""}
+                      Vehicle Details
                       </Typography>
                       <IconButton
                         variant="text"
@@ -256,7 +256,7 @@ const VehicleInfoSection = ({
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>
                 <Typography variant="h5" className="text-blue-gray-900 font-semibold  rounded-md px-3 py-2 inline-block">
-                  Credit Log {section.title ? `(${section.title})` : ""}
+                  Credit Log
                 </Typography>
                 <div className="border-t border-blue-gray-50 mt-3 mb-3" />
                 {section.creditLogRows.length === 0 ? (

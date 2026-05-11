@@ -79,38 +79,22 @@ const normalizeVehicleStatus = (value) => {
 const extractCabIdsFromAccount = (account) => {
   if (!account || typeof account !== "object") return [];
 
-  const primaryIds = [];
-  const fallbackIds = [];
-  const pushId = (value) => {
-    if (value === null || value === undefined || value === "") return;
-    primaryIds.push(String(value));
-  };
-  const pushFallbackId = (value) => {
-    if (value === null || value === undefined || value === "") return;
-    fallbackIds.push(String(value));
-  };
+  const source = Array.isArray(account?.cabs) ? account.cabs : [];
+  const accountId = account?.id;
 
-  // Priority: use exact cab ids coming from onboarding payload Cabs/cabs arrays.
-  if (Array.isArray(account?.Cabs)) {
-    account.Cabs.forEach((item) => pushId(item?.id || item?.cabId || item));
-  }
-  if (Array.isArray(account?.cabs)) {
-    account.cabs.forEach((item) => pushId(item?.id || item?.cabId || item));
-  }
-  if (Array.isArray(account?.cabIds)) {
-    account.cabIds.forEach((item) => pushId(item));
-  }
-
-  // Fallback only when Cabs[] style data is absent.
-  pushFallbackId(account?.cabId);
-  pushFallbackId(account?.CabId);
-  pushFallbackId(account?.vehicleId);
-  pushFallbackId(account?.cab?.id);
-
-  if (primaryIds.length > 0) return primaryIds;
-  const uniqueFallback = Array.from(new Set(fallbackIds));
-  if (uniqueFallback.length > 0) return uniqueFallback;
-  return ["150","148"]; /// mock data fallback to ensure we show something in vehicle section for testing. Remove this when real data is available.
+  return Array.from(
+    new Set(
+      source
+        .filter((item) => {
+          if (!accountId) return true;
+          if (item?.accountId === null || item?.accountId === undefined) return true;
+          return String(item.accountId) === String(accountId);
+        })
+        .map((item) => item?.id)
+        .filter((value) => value !== null && value !== undefined && value !== "")
+        .map((value) => String(value))
+    )
+  );
 };
 
 const CompletedOnboardingDetails = () => {
@@ -121,6 +105,7 @@ const CompletedOnboardingDetails = () => {
   const [cabs, setCabs] = useState([]);
   const [carTypeOptions, setCarTypeOptions] = useState([]);
   const [cabFetchError, setCabFetchError] = useState("");
+  const [cabRequestIds, setCabRequestIds] = useState([]);
   const [ownerStatus, setOwnerStatus] = useState("InActive");
   const [ownerBlockedReason, setOwnerBlockedReason] = useState("");
   const [updatingOwnerStatus, setUpdatingOwnerStatus] = useState(false);
@@ -170,9 +155,34 @@ const CompletedOnboardingDetails = () => {
   const fetchOnboardingDetails = async () => {
     try {
       setLoading(true);
+      // Always load base details by id to avoid empty details page.
       const res = await ApiRequestUtils.get(API_ROUTES.ADMIN_ONBOARDING_BY_ID + id);
       const payload = res?.data || res?.result || null;
-      setOnboardingData(payload);
+      let nextData = payload;
+
+      // Try to enrich `cabs` from onboarding list API shape when available.
+      try {
+        const listRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
+          accountId: id,
+        });
+        const listRows = Array.isArray(listRes?.data) ? listRes.data : [];
+        const matched = listRows.find((row) => String(row?.id) === String(id)) || null;
+        if (matched && Array.isArray(matched?.cabs)) {
+          const strictCabs = matched.cabs.filter(
+            (cab) =>
+              cab &&
+              cab.id !== null &&
+              cab.id !== undefined &&
+              String(cab?.accountId) === String(id)
+          );
+          const base = payload?.data?.id ? payload.data : payload || {};
+          nextData = { ...base, cabs: strictCabs };
+        }
+      } catch (_err) {
+        // Ignore list enrichment failure; base details are already loaded.
+      }
+
+      setOnboardingData(nextData);
     } catch (err) {
       console.error("Failed to load completed onboarding details", err);
       setOnboardingData(null);
@@ -187,8 +197,6 @@ const CompletedOnboardingDetails = () => {
     if (onboardingData?.id) return onboardingData;
     return {};
   }, [onboardingData]);
-
-  const cabRequestIds = useMemo(() => extractCabIdsFromAccount(account), [account]);
 
   useEffect(() => {
     setOwnerStatus(account?.ownerStatus || "InActive");
@@ -206,6 +214,10 @@ const CompletedOnboardingDetails = () => {
       state: account?.state || "",
       pincode: account?.pincode || "",
     });
+  }, [account]);
+
+  useEffect(() => {
+    setCabRequestIds(extractCabIdsFromAccount(account));
   }, [account]);
 
   useEffect(() => {
