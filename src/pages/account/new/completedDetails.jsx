@@ -121,8 +121,13 @@ const CompletedOnboardingDetails = () => {
   const [vehicleDetailsSavingId, setVehicleDetailsSavingId] = useState(null);
 
   useEffect(() => {
-    if (id) fetchOnboardingDetails();
-  }, [id]);
+    if (!id) return undefined;
+    const timer = setTimeout(() => {
+      fetchOnboardingDetails();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [id, location?.state]);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -174,7 +179,7 @@ const CompletedOnboardingDetails = () => {
           const listRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
             page,
             limit,
-            search: id,
+            accountId: id,
           });
 
           const listRows = Array.isArray(listRes?.data) ? listRes.data : [];
