@@ -242,7 +242,7 @@ const AccountOnboardingDetails = () => {
             <Typography variant="h6" color="blue-gray">Account Document Details</Typography>
             <Typography className="text-sm text-blue-gray-700 mt-1">Account ID: {id}</Typography>
           </div>
-          <div className="w-full md:w-auto md:min-w-[320px] space-y-2">
+          {/* <div className="w-full md:w-auto md:min-w-[320px] space-y-2">
             <select
               value={ownerStatus}
               onChange={(e) => {
@@ -273,7 +273,7 @@ const AccountOnboardingDetails = () => {
             >
               {updatingOwnerStatus ? "Updating..." : "Update Status"}
             </Button>
-          </div>
+          </div> */}
         </div>
         {/* <Typography className="text-sm text-blue-gray-700 mt-1">Account Name: {account?.name || "-"}</Typography> */}
         <p className="text-sm text-gray-600 mt-1">

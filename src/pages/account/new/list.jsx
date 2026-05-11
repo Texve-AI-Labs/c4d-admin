@@ -121,7 +121,7 @@ const getOnboardingStatusChipValue = (
     return getStatusLabelByDocStatus(vehicleStatus, "Upload pending") || "-";
   }
 
-  if (onboardingStage === "COMPLETED") return "Onboarding Verified";
+  if (onboardingStage === "COMPLETED") return "Verified";
   return "-";
 };
 

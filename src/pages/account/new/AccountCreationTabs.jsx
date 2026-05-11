@@ -10,16 +10,16 @@ export const ACCOUNT_CREATION_STAGES = [
 const AccountCreationTabs = ({ activeStage = 1 }) => {
     return (
         <div className="mb-6">
-            <div className="flex w-full flex-wrap items-center gap-2 md:gap-3">
+            <div className="flex w-full flex-wrap items-stretch gap-2 md:gap-3">
                 {ACCOUNT_CREATION_STAGES.map((stage, index) => {
                     const stageNumber = index + 1;
                     const isActive = stageNumber === activeStage;
                     const isCompleted = stageNumber < activeStage;
 
                     return (
-                        <div key={stage} className="flex items-center gap-2">
+                        <div key={stage} className="flex min-w-[220px] flex-1 items-center gap-2">
                             <div
-                                className={`flex items-center gap-2 rounded-full border px-3 py-2 text-sm whitespace-nowrap ${isActive
+                                className={`flex w-full items-center gap-2 rounded-full border px-3 py-2 text-sm ${isActive
                                         ? "border-blue-600 bg-blue-50 text-blue-700"
                                         : isCompleted
                                             ? "border-green-600 bg-green-50 text-green-700"
@@ -36,11 +36,11 @@ const AccountCreationTabs = ({ activeStage = 1 }) => {
                                 >
                                     {stageNumber}
                                 </span>
-                                <span className="font-medium">{stage}</span>
+                                <span className="font-medium leading-tight">{stage}</span>
                             </div>
                             {stageNumber < ACCOUNT_CREATION_STAGES.length && (
                                 <span
-                                    className="mx-1 inline-block h-[2px] w-5 md:w-14 rounded bg-gray-300"
+                                    className="mx-1 hidden h-[2px] w-5 rounded bg-gray-300 xl:inline-block xl:w-14"
                                     aria-hidden="true"
                                 />
                             )}
