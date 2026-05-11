@@ -745,7 +745,7 @@ export function AccountList() {
                 </tr>
               ) : (
                 accounts.map(
-                  ({ id, created_at, name, email, phoneNumber, district, source, onboardingStage, hasVehicle, type, accountDocumentStatus, vehicleDocumentStatus }, key) => {
+                  ({ id, created_at, name, email, phoneNumber, district, source, onboardingStage, hasVehicle, type, accountDocumentStatus, vehicleDocumentStatus, cabs }, key) => {
                     const hasVehicleNormalized = normalizeHasVehicle(hasVehicle);
                     const className = `py-3 px-5 ${key === accounts.length - 1
                       ? ""
@@ -769,6 +769,9 @@ export function AccountList() {
                                 accountDocumentStatus?.status,
                                 vehicleDocumentStatus?.status
                               )}
+                              state={{
+                                prefetchedCabs: Array.isArray(cabs) ? cabs : [],
+                              }}
                             >
                               <Typography
                                 variant="small"

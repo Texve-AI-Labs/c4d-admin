@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button, Card, CardBody, Chip, IconButton, Spinner, Typography } from "@material-tailwind/react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
@@ -99,6 +99,7 @@ const extractCabIdsFromAccount = (account) => {
 
 const CompletedOnboardingDetails = () => {
   const { id } = useParams();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -158,7 +159,9 @@ const CompletedOnboardingDetails = () => {
       // Always load base details by id to avoid empty details page.
       const res = await ApiRequestUtils.get(API_ROUTES.ADMIN_ONBOARDING_BY_ID + id);
       const payload = res?.data || res?.result || null;
-      let nextData = payload;
+      const base = payload?.data?.id ? payload.data : payload || {};
+      const stateCabs = Array.isArray(location?.state?.prefetchedCabs) ? location.state.prefetchedCabs : [];
+      let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : payload;
 
       // Try to enrich `cabs` from onboarding list API shape when available.
       try {
@@ -190,7 +193,6 @@ const CompletedOnboardingDetails = () => {
               cab.id !== undefined &&
               String(cab?.accountId ?? cab?.AccountId) === String(id)
           );
-          const base = payload?.data?.id ? payload.data : payload || {};
           const baseCabs = Array.isArray(base?.cabs) ? base.cabs : [];
           nextData = { ...base, cabs: strictCabs.length > 0 ? strictCabs : baseCabs };
         }
