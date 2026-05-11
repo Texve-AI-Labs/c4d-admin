@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, CardBody, Chip, IconButton, Spinner, Typography } from "@material-tailwind/react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
@@ -110,6 +110,7 @@ const normalizeOnboardingPayload = (rawPayload) => {
 const CompletedOnboardingDetails = () => {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -343,14 +344,18 @@ const CompletedOnboardingDetails = () => {
       })
       .map(([key, value]) => {
         const label = toLabel(key);
+        const displayLabel = label === "Has Vehicle" ? "Isvehicle" : label;
+        if (displayLabel === "Id") return null;
+        if (["Available Status", "Service Type"].includes(label)) return null;
         if (["Phone Number", "Owner Phone Number"].includes(label)) {
-          return { label, value: formatIndianPhone(value) };
+          return { label: displayLabel, value: formatIndianPhone(value) };
         }
         if (["Created at", "Updated at"].includes(label)) {
-          return { label, value: formatDate(value) };
+          return { label: displayLabel, value: formatDate(value) };
         }
-        return { label, value: String(value) };
-      });
+        return { label: displayLabel, value: String(value) };
+      })
+      .filter(Boolean);
   }, [account]);
 
   const vehicleSections = useMemo(() => {
@@ -376,6 +381,8 @@ const CompletedOnboardingDetails = () => {
         { label: "Luggage", value: cabResult?.luggage || "-" },
         { label: "Status", value: toDisplayCase(cabResult?.status || "-") },
         { label: "Subscription Status", value: toDisplayCase(cabResult?.subscriptionStatus || "-") },
+        { label: "Subscription Start Date", value: formatDate(latestCredit?.Subscription?.startDate) },
+        { label: "Subscription End Date", value: formatDate(latestCredit?.Subscription?.endDate) },
         { label: "Wallet", value: cabResult?.wallet || "-" },
         { label: "Cashback Wallet", value: cabResult?.cashbackWallet || "-" },
         { label: "Credit Type", value: toDisplayCase(latestCredit?.type || "-") },
@@ -420,6 +427,25 @@ const CompletedOnboardingDetails = () => {
     });
   }, [cabs]);
 
+  const accountDisplayColumns = useMemo(() => {
+    const preferredLeftOrder = [
+      "Id",
+      "Type",
+      "Name",
+      "Phone Number",
+      "Email",
+      "Source",
+      "Owner Status",
+      "Onboarding Stage",
+      "Isvehicle",
+    ];
+    const rowsByLabel = new Map(accountDetailsRows.map((row) => [row.label, row]));
+    const leftRows = preferredLeftOrder.map((label) => rowsByLabel.get(label)).filter(Boolean);
+    const leftLabelSet = new Set(leftRows.map((row) => row.label));
+    const rightRows = accountDetailsRows.filter((row) => !leftLabelSet.has(row.label));
+    return { leftRows, rightRows };
+  }, [accountDetailsRows]);
+
   useEffect(() => {
     const nextStatusById = {};
     const nextBlockedReasonById = {};
@@ -450,6 +476,8 @@ const CompletedOnboardingDetails = () => {
         usersMap.get(String(item?.userId ?? item?.UserId ?? "")) ||
         "-",
       verifiedAt: formatDate(item?.verified_at || item?.updated_at),
+      image1: item?.image1 || item?.Proof?.image1 || "",
+      image2: item?.image2 || item?.Proof?.image2 || "",
     });
 
     return {
@@ -742,10 +770,15 @@ const CompletedOnboardingDetails = () => {
             <Card className="bg-white border border-blue-gray-100 shadow-sm">
             <CardBody>
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 px-3 py-2">
+                  <div className="flex items-start gap-2 px-3 py-2">
+                    <div>
                   <Typography variant="h5" className="text-blue-gray-900 font-semibold inline-block">
                     Account Details
                   </Typography>
+                      <Typography className="text-xs text-blue-gray-500 mt-1">
+                        Account ID: {account?.id || "-"}
+                      </Typography>
+                    </div>
                   <IconButton
                     variant="text"
                     className="h-9 w-9 rounded-md bg-blue-50 text-blue-600"
@@ -769,7 +802,8 @@ const CompletedOnboardingDetails = () => {
                     <PencilIcon className="h-4 w-4" />
                   </IconButton>
                 </div>
-                <div className="w-full max-w-[260px] space-y-1.5 rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                <div className="ml-auto rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <select
                       value={ownerStatus}
                       onChange={(e) => {
@@ -777,7 +811,7 @@ const CompletedOnboardingDetails = () => {
                         if (e.target.value !== "Blocked") setOwnerBlockedReason("");
                       }}
                       disabled={updatingOwnerStatus}
-                      className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                      className="h-9 w-[170px] px-2.5 rounded-md border border-gray-300 bg-white text-sm"
                     >
                       <option value="Active">Active</option>
                       <option value="InActive">In_Active</option>
@@ -790,17 +824,18 @@ const CompletedOnboardingDetails = () => {
                         onChange={(e) => setOwnerBlockedReason(e.target.value)}
                         disabled={updatingOwnerStatus}
                         placeholder="Enter block reason"
-                        className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        className="h-9 w-[220px] px-2.5 rounded-md border border-gray-300 bg-white text-sm"
                       />
                     )}
                     <Button
                       onClick={handleOwnerStatusUpdate}
                       disabled={updatingOwnerStatus}
                       size="sm"
-                      className="h-8 px-3 w-full bg-primary text-xs normal-case"
+                      className="h-9 px-4 bg-primary text-xs normal-case"
                     >
                       {updatingOwnerStatus ? "Updating..." : "Update Status"}
                     </Button>
+                  </div>
                 </div>
               </div>
               <div className="border-t border-blue-gray-50 mt-3" />
@@ -923,14 +958,15 @@ const CompletedOnboardingDetails = () => {
                     </Button>
                   </div>
                 </div>
-              ) : (
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
-                  {accountDetailsRows.map((row) => (
-                    <div key={row.label} className="flex items-start gap-2">
+                ) : (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
+                    <div className="space-y-3">
+                      {accountDisplayColumns.leftRows.map((row) => (
+                    <div key={`left-${row.label}`} className="flex items-start gap-2">
                       <Typography className="text-blue-gray-400 font-semibold min-w-[130px]">{row.label}:</Typography>
-                      {["Onboarding Stage", "Has Vehicle", "Owner Status"].includes(row.label) ? (
+                      {["Onboarding Stage", "Isvehicle", "Owner Status"].includes(row.label) ? (
                         <Chip
-                          value={row.label === "Has Vehicle" ? toDisplayCase(String(row.value)) : toDisplayCase(row.value)}
+                          value={row.label === "Isvehicle" ? toDisplayCase(String(row.value)) : toDisplayCase(row.value)}
                           color={getStatusChipColor(row.value)}
                           variant="ghost"
                           className="w-fit"
@@ -940,6 +976,24 @@ const CompletedOnboardingDetails = () => {
                       )}
                     </div>
                   ))}
+                    </div>
+                    <div className="space-y-3">
+                      {accountDisplayColumns.rightRows.map((row) => (
+                        <div key={`right-${row.label}`} className="flex items-start gap-2">
+                          <Typography className="text-blue-gray-400 font-semibold min-w-[130px]">{row.label}:</Typography>
+                          {["Onboarding Stage", "Isvehicle", "Owner Status"].includes(row.label) ? (
+                            <Chip
+                              value={row.label === "Isvehicle" ? toDisplayCase(String(row.value)) : toDisplayCase(row.value)}
+                              color={getStatusChipColor(row.value)}
+                              variant="ghost"
+                              className="w-fit"
+                            />
+                          ) : (
+                            <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                 </div>
               )}
             </CardBody>

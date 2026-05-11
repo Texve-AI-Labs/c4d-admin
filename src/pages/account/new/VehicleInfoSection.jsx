@@ -81,6 +81,26 @@ const VehicleInfoSection = ({
     return filtered;
   };
 
+  const leftDisplayOrder = useMemo(
+    () => ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"],
+    []
+  );
+
+  const rightDisplayOrder = useMemo(
+    () => [
+      "Status",
+      "Subscription Status",
+      "Subscription Start Date",
+      "Subscription End Date",
+      "Credit Status",
+      "Wallet",
+      "Cashback Wallet",
+      "Credit Remaining",
+      "Credit Created At",
+    ],
+    []
+  );
+
   return (
     <>
       {sections.length === 0 ? (
@@ -123,12 +143,13 @@ const VehicleInfoSection = ({
                       Cab ID: {section.cabId}
                     </Typography>
                   </div>
-                  <div className="w-full md:w-auto md:min-w-[260px] max-w-[260px] space-y-1.5 rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                  <div className="ml-auto rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <select
                         value={sectionStatus}
                         onChange={(e) => onVehicleStatusChange?.(section.id, e.target.value)}
                         disabled={statusUpdating}
-                        className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        className="h-9 w-[170px] px-2.5 rounded-md border border-gray-300 bg-white text-sm"
                       >
                         <option value="ACTIVE">Active</option>
                         <option value="IN_ACTIVE">In_Active</option>
@@ -141,17 +162,18 @@ const VehicleInfoSection = ({
                           onChange={(e) => onVehicleBlockedReasonChange?.(section.id, e.target.value)}
                           disabled={statusUpdating}
                           placeholder="Enter block reason"
-                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                          className="h-9 w-[220px] px-2.5 rounded-md border border-gray-300 bg-white text-sm"
                         />
                       )}
                       <Button
                         onClick={() => onVehicleStatusUpdate?.(section.id)}
                         disabled={statusUpdating}
                         size="sm"
-                        className="h-8 px-3 w-full bg-primary text-xs normal-case"
+                        className="h-9 px-4 bg-primary text-xs normal-case"
                       >
                         {statusUpdating ? "Updating..." : "Update Status"}
                       </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="border-t border-blue-gray-50 mt-3" />
@@ -159,7 +181,11 @@ const VehicleInfoSection = ({
                   <Typography className="text-black mt-2">-</Typography>
                 ) : (
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3">
-                    {section.vehicleDetailsRows.map((row) => (
+                    {(() => {
+                      const rowsByLabel = new Map((section.vehicleDetailsRows || []).map((row) => [row.label, row]));
+                      const leftRows = leftDisplayOrder.map((label) => rowsByLabel.get(label)).filter(Boolean);
+                      const rightRows = rightDisplayOrder.map((label) => rowsByLabel.get(label)).filter(Boolean);
+                      const renderRow = (row) => (
                       <div key={`${section.id}-${row.label}`} className="flex items-start gap-2">
                         <Typography className="text-blue-gray-400 font-semibold min-w-[170px]">{row.label}:</Typography>
                         {editingSectionId === section.id && editableLabels.has(row.label) ? (
@@ -213,7 +239,15 @@ const VehicleInfoSection = ({
                           <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
                         )}
                       </div>
-                    ))}
+                      );
+
+                      return (
+                        <>
+                          <div className="space-y-3">{leftRows.map(renderRow)}</div>
+                          <div className="space-y-3">{rightRows.map(renderRow)}</div>
+                        </>
+                      );
+                    })()}
                     {editingSectionId === section.id && (
                       <div className="md:col-span-2 flex justify-end gap-2">
                         <Button
