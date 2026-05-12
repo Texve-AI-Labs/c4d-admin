@@ -24,6 +24,21 @@ const AddBanner = () => {
   const [dropSuggestions, setDropSuggestions] = useState([]);
   const [dropLocation, setDropLocation] = useState(null); 
 
+  const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+  };
+
+  const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+      const [firstPart] = suggestion.split(',');
+      return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+  };
+
   const initialValues = {
     fromDate: '',
     toDate: '',
@@ -320,9 +335,14 @@ const AddBanner = () => {
                       <li
                         key={idx}
                         className="p-2 cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSelectLocation(suggestion, setFieldValue)}
+                        onClick={() => handleSelectLocation(getSuggestionText(suggestion), setFieldValue)}
                       >
-                        {suggestion}
+                        <div className="flex flex-col">
+                          <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                          {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
