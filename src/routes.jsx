@@ -167,6 +167,7 @@ import OwnerOnboardingBikeVehicleDocuments from "./pages/account/owner-onboardin
 import OwnerOnboardingBikeAccountDetails from "./pages/account/owner-onboarding-bike/accountDetails";
 import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-bike/vehicleDetails";
 import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
+import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -809,6 +810,14 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Creation",
+        path: "/vendors/account/owner-onboarding-bike/vehicle-creation/:id",
+        element: <OwnerOnboardingBikeCreation />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Return Trip Driver Details",
         path: "/vendors/driver-return-trips",
         element: <DriverReturnTripsList />,
@@ -1332,8 +1341,16 @@ export const routes = [
         {
           icon: <UserIcon {...icon} />,
           name: "bike",
-          path: "/vendors/account/parcel/allVehicles/add",
+          path: "/vendors/account/parcel/allVehicles/add/old",
           element: <ParcelCabAdd />,
+          display: true,
+          permission: "Vendors"
+        },
+         {
+          icon: <UserIcon {...icon} />,
+          name: "bike",
+          path: "/vendors/account/parcel/allVehicles/add",
+          element: <OwnerOnboardingBikeCreation />,
           display: true,
           permission: "Vendors"
         },
