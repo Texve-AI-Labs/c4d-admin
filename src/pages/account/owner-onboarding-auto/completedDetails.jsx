@@ -78,7 +78,7 @@ const normalizeVehicleStatus = (value) => {
 
 const normalizeServiceType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
-  return normalized === "auto" ? "Auto" : "Bike";
+  return normalized === "auto" ? "Auto" : "Parcel";
 };
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;

@@ -197,8 +197,8 @@ const VehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              <option value="BIKE">BIKE</option>
-                              <option value="Bike">Bike</option>
+                              {/* <option value="BIKE">BIKE</option> */}
+                              <option value="BIKE">Bike</option>
                             </select>
                           ) : row.label === "Service Area Name" ? (
                             <select
