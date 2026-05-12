@@ -20,6 +20,21 @@ import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
 import { PencilIcon } from "@heroicons/react/24/solid";
 
+const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+};
+
+const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+        const [firstPart] = suggestion.split(',');
+        return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+};
+
 const ConfirmBooking = (props) => {
     const [bookingDetails, setBookingDetails] = useState("");
     const [dateVal, setDateVal] = useState();
@@ -1995,10 +2010,15 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             key={index}
                                             className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0"
                                             onClick={() => {
-                                                handleSelectDriverEndLocation(suggestion);
+                                                handleSelectDriverEndLocation(getSuggestionText(suggestion));
                                             }}
                                             >
-                                            {suggestion}
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                    <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                )}
+                                            </div>
                                             </li>
                                         ))}
                                         </ul>
