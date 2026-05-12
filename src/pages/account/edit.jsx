@@ -169,7 +169,7 @@ const AccountEdit = () => {
     useEffect(() => {
         const fetchGeoData = async () => {
             try {
-                const response = await ApiRequestUtils.getWithQueryParam('/geo-markings', {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
                     type: 'Service Area',
                 });
                 setServiceAreas(response?.data || []);
