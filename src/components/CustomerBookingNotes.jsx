@@ -3,12 +3,12 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
-import { Button, Alert } from '@material-tailwind/react';
+import { Button } from '@material-tailwind/react';
 
-const CustomerBookingNotes = ({ customerId }) => {
+const CustomerBookingNotes = ({ customerId, onNoteAdded }) => {
   const validationSchema = Yup.object({
     noteType: Yup.string().required('Note type is required'),
-    notes: Yup.string().required('Note type is required'),
+    notes: Yup.string().required('Note is required'),
   });
 
   const initialValues = {
@@ -25,8 +25,11 @@ const CustomerBookingNotes = ({ customerId }) => {
         notes: values.notes,
       });
       resetForm();
+      if (typeof onNoteAdded === 'function') {
+        await onNoteAdded();
+      }
     } catch (error) {
-      console.error('Failed to add note. Please try again.' );
+      console.error('Failed to add note. Please try again.', error);
     } finally {
       setSubmitting(false);
     }
