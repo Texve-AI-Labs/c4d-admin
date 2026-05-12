@@ -9,6 +9,31 @@ import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const getPrimaryLabel = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (suggestion && typeof suggestion === 'object') {
+            return suggestion.title || suggestion.name || suggestion.label || '';
+        }
+        return '';
+    };
+    const getSuggestionLabel = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (suggestion && typeof suggestion === 'object') {
+            return (
+                suggestion.fullText ||
+                suggestion.name ||
+                suggestion.address ||
+                suggestion.label ||
+                suggestion.title ||
+                suggestion.subtitle ||
+                suggestion.formatted_address ||
+                suggestion.description ||
+                suggestion.display_name ||
+                ''
+            );
+        }
+        return '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -40,14 +65,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
+                                const selectedValue = getSuggestionLabel(suggestion);
+                                form.setFieldValue(field.name, selectedValue);
                                 onSelect(suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
                             }}
                             className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-semibold text-gray-900">
+                                    {getPrimaryLabel(suggestion) || getSuggestionLabel(suggestion)}
+                                </Typography>
+                                {typeof suggestion === 'object' && suggestion?.fullText ? (
+                                    <Typography variant="small" className="text-gray-600 text-xs">
+                                        {suggestion.fullText}
+                                    </Typography>
+                                ) : null}
+                            </div>
                         </ListItem>
                     ))}
                 </List>

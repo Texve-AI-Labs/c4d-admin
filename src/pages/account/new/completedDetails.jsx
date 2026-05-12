@@ -76,6 +76,25 @@ const normalizeVehicleStatus = (value) => {
   return "IN_ACTIVE";
 };
 
+const getSuggestionText = (suggestion) => {
+  if (typeof suggestion === "string") return suggestion;
+  if (suggestion && typeof suggestion === "object") {
+    return (
+      suggestion.fullText ||
+      suggestion.name ||
+      suggestion.address ||
+      suggestion.label ||
+      suggestion.title ||
+      suggestion.subtitle ||
+      suggestion.formatted_address ||
+      suggestion.description ||
+      suggestion.display_name ||
+      ""
+    );
+  }
+  return "";
+};
+
 const extractCabIdsFromAccount = (account) => {
   if (!account || typeof account !== "object") return [];
 
@@ -873,14 +892,15 @@ const CompletedOnboardingDetails = () => {
                             <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
                               {addressSuggestions.map((suggestion, index) => (
                                 <button
-                                  key={`${suggestion}-${index}`}
+                                  key={`${getSuggestionText(suggestion)}-${index}`}
                                   type="button"
                                   className="w-full text-left px-2.5 py-2 text-sm hover:bg-blue-gray-50"
                                   onClick={() => {
-                                    setAccountDraft((prev) => ({ ...prev, address: suggestion }));
+                                    const selectedAddress = getSuggestionText(suggestion);
+                                    setAccountDraft((prev) => ({ ...prev, address: selectedAddress }));
                                     setAddressSuggestions([]);
                                     if (isSameAddress) {
-                                      const parsed = parseAddress(suggestion);
+                                      const parsed = parseAddress(selectedAddress);
                                       setAccountDraft((prev) => ({
                                         ...prev,
                                         street: parsed.street,
@@ -892,7 +912,14 @@ const CompletedOnboardingDetails = () => {
                                     }
                                   }}
                                 >
-                                  {suggestion}
+                                  <span className="block font-semibold text-gray-900">
+                                    {typeof suggestion === "object" && suggestion?.title
+                                      ? suggestion.title
+                                      : getSuggestionText(suggestion)}
+                                  </span>
+                                  {typeof suggestion === "object" && suggestion?.fullText ? (
+                                    <span className="block text-xs text-blue-gray-600">{suggestion.fullText}</span>
+                                  ) : null}
                                 </button>
                               ))}
                             </div>

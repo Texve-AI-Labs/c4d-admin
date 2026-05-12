@@ -21,6 +21,24 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === "string") return suggestion;
+    if (suggestion && typeof suggestion === "object") {
+      return (
+        suggestion.fullText ||
+        suggestion.name ||
+        suggestion.address ||
+        suggestion.label ||
+        suggestion.title ||
+        suggestion.subtitle ||
+        suggestion.formatted_address ||
+        suggestion.description ||
+        suggestion.display_name ||
+        ""
+      );
+    }
+    return "";
+  };
 
   const editableLabels = useMemo(
     () =>
@@ -253,11 +271,18 @@ const VehicleInfoSection = ({
                                       type="button"
                                       className="w-full text-left px-2.5 py-2 text-sm hover:bg-blue-gray-50"
                                       onClick={() => {
-                                        setDraftValues((prev) => ({ ...prev, [row.label]: suggestion }));
+                                        setDraftValues((prev) => ({ ...prev, [row.label]: getSuggestionText(suggestion) }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
                                     >
-                                      {suggestion}
+                                      <span className="block font-semibold text-gray-900">
+                                        {typeof suggestion === "object" && suggestion?.title
+                                          ? suggestion.title
+                                          : getSuggestionText(suggestion)}
+                                      </span>
+                                      {typeof suggestion === "object" && suggestion?.fullText ? (
+                                        <span className="block text-xs text-blue-gray-600">{suggestion.fullText}</span>
+                                      ) : null}
                                     </button>
                                   ))}
                                 </div>
