@@ -10,6 +10,21 @@ import { API_ROUTES } from '@/utils/constants';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
 
+const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+};
+
+const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+        const [firstPart] = suggestion.split(',');
+        return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+};
+
 const EditBooking = (props) => {
     const [loading, setLoading] = useState(true);
     const [bookingData, setBookingData] = useState(null);
@@ -1216,10 +1231,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
-                                                                    handleSelectLocation(suggestion, true, null, setFieldValue, values);
+                                                                    handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue, values);
                                                                 }}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1245,10 +1265,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
-                                                                    handleSelectLocation(suggestion, false, null, setFieldValue, values);
+                                                                    handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue, values);
                                                                 }}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1277,9 +1302,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(suggestion, false, 'driver', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driver', setFieldValue, values)}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1307,9 +1337,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(suggestion, false, 'driverEnd', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driverEnd', setFieldValue, values)}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1796,10 +1831,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, true, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -1825,10 +1865,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, false, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -1856,9 +1901,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(suggestion, false, 'driver', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driver', setFieldValue, values)}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -2125,10 +2175,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, true, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -2156,10 +2211,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, false, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
