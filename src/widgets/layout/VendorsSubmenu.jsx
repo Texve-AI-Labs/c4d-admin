@@ -32,11 +32,11 @@ function VendorsSubmenu({ miniSidenav }) {
       case "Online Vehicles List":
         return pathname.startsWith("/dashboard/vendors/onlinevehicleslist");
       case "All Auto Owner":
-        return pathname.startsWith("/dashboard/vendors/account/autoview");
+        return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-auto");
       case "All Auto List":
         return pathname.startsWith("/dashboard/vendors/account/autolist");
       case "All Bike Owner":
-        return pathname.startsWith("/dashboard/vendors/account/parcel/list");
+        return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike");
       case "All Bike List":
         return (
           pathname.startsWith("/dashboard/vendors/account/parcel") &&
@@ -56,8 +56,8 @@ function VendorsSubmenu({ miniSidenav }) {
   const items = [
     { label: "All Cab Owners", path: "/dashboard/vendors/account/new", icon: "/img/owners.png" },
     { label: "All Acting Driver", path: "/dashboard/vendors/account/drivers", icon: "/img/acting_driver.png" },
-    { label: "All Auto Owner", path: "/dashboard/vendors/account/autoview", icon: "/img/parcel_list.png" },
-    { label: "All Bike Owner", path: "/dashboard/vendors/account/parcel/list", icon: "/img/parcel_list.png" },
+    { label: "All Auto Owner", path: "/dashboard/vendors/account/owner-onboarding-auto", icon: "/img/parcel_list.png" },
+    { label: "All Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },
     { label: "Online Vehicles List", path: "/dashboard/vendors/onlineVehiclesList", icon: "/img/vehicleslist.png" },
     { label: "All Cab List", path: "/dashboard/vendors/vehicleList", icon: "/img/vehicles.png" },
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
