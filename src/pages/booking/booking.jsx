@@ -3022,9 +3022,30 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                              <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Final Estimate Fare:</Typography>
                                                                                 <Typography>
-                                                                                    {quoteDetails.amount?.fare_after_gst || ''}
+                                                                                    ₹ {quoteDetails.amount?.fare_after_gst || ''}
                                                                                 </Typography>
                                                                             </div>
+                                                                            {quoteDetails?.walletApplicable === true  && (
+                                                                                    <>
+                                                                                    <div className="flex justify-between">
+                                                                                            <Typography color="gray" variant="h6">Wallet Amount Applied:</Typography>
+                                                                                            <Typography>
+                                                                                                ₹ {Math.round(
+                                                                                                    quoteDetails?.walletAmount ||
+                                                                                                    quoteDetails?.amount?.walletAmount ||
+                                                                                                    quoteDetails?.value?.walletAmount ||
+                                                                                                    0
+                                                                                                )}
+                                                                                            </Typography>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between">                                                                                       
+                                                                                            <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction:</Typography>
+                                                                                            <Typography>
+                                                                                                ₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}
+                                                                                            </Typography>                        
+                                                                                            </div>                                                                
+                                                                                    </>
+                                                                                )}
                                                                         {quoteDetails.discount?.percentage > 0 && <>
                                                                         <div className='flex justify-between'>
                                                                           <Typography color="gray" variant="h6">Discount Applied</Typography>
@@ -3112,6 +3133,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                                     {quoteDetails.amount?.fare_after_gst|| ''}
                                                                                 </Typography>
                                                                             </div>
+                                                                            {quoteDetails?.walletApplicable === true  && (
+                                                                                    <>
+                                                                                    <div className="flex justify-between">
+                                                                                            <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                                            <Typography>
+                                                                                                ₹ {Math.round(
+                                                                                                    quoteDetails?.walletAmount ||                                                                                                    
+                                                                                                    0
+                                                                                                )}
+                                                                                            </Typography>
+                                                                                            </div>
+                                                                                        <div className="flex justify-between">
+                                                                                            <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction : </Typography>
+                                                                                            <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                                    </div>
+                                                                                    </>
+                                                                                )}
                                                                             {quoteDetails.discount?.percentage > 0 && (
                                                                                 <>
                                                                                     <div className="flex justify-between">
@@ -3291,7 +3329,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                             </Typography>
                                                                             <Typography color="gray" variant="h6">KM</Typography>
                                                                             <Typography>
-                                                                                ₹ {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}
+                                                                                 {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}Kms
                                                                             </Typography>                                                                            
                                                                             {quoteDetails.amount?.fareBreakdown?.dropCharge > 0 && <>
                                                                                 <Typography color="gray" variant="h6">Drop Charge</Typography>
@@ -3347,6 +3385,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                         <Typography>
                                                                             ₹ {Math.round(quoteDetails.amount?.estimatedPrice)}
                                                                         </Typography>
+                                                                        {quoteDetails?.walletApplicable === true 
+                                                                            && (
+                                                                            <>                                                                                                                                                                    
+                                                                                <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {Math.round(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )}
+                                                                                </Typography>                                                                                                                                                                                                                                    
+                                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction :</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                            
+                                                                            </>)                                                                                
+                                                                            }
                                                                         {quoteDetails.discount?.percentage > 0 && <>
                                                                         
                                                                           <Typography color="gray" variant="h6">Discount Applied</Typography>
