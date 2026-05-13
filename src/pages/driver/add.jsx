@@ -6,6 +6,7 @@ import { Alert, Button, Card, CardBody, Typography, Input, List, ListItem, Dialo
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import { DRIVER_ADD_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
@@ -608,29 +609,11 @@ const DriverAdd = () => {
         }
     };
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     const extractPincode = (addressComponents) => {
         const pincodeObj = addressComponents.find((comp) =>
@@ -652,8 +635,7 @@ const DriverAdd = () => {
             return;
         }
 
-        const parsedAddress = parseAddress(resolvedAddress);
-        parsedAddress.pincode = place?.address_components ? extractPincode(place.address_components) : "";
+        const parsedAddress = parseAddress(resolvedAddress, place?.address_components);
 
         setFieldValue("address", resolvedAddress);
 

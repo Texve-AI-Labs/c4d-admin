@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, STATE_LIST, THALUK_LIST, ColorStyles } from '@/utils/constants';
 import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import { Button } from '@material-tailwind/react';
 import { useNavigate } from "react-router-dom";
 import LocationInput from './LocationInput';
@@ -155,8 +156,7 @@ const AddAccountNew = () => {
             return;
         }
 
-        const parsedAddress = parseAddress(selectedAddress);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(selectedAddress, place.address_components);
 
         setFieldValue("address", selectedAddress);
 
@@ -169,29 +169,11 @@ const AddAccountNew = () => {
         }
     };
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
