@@ -6,6 +6,7 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import * as Yup from 'yup';
+import Swal from 'sweetalert2';
 
 const validationSchema = Yup.object({
   title: Yup.string().required('Title is required'),
@@ -41,6 +42,15 @@ const toUtcIso = (dateLikeValue) => {
 };
 
 const NotificationListApp = () => {
+  const showBadRequestAlert = (message) =>
+    Swal.fire({
+      icon: 'error',
+      title: 'Alert',
+      text: message || 'Bad request',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#2563eb',
+    });
+
   const initialValues = {
     title: '',
     message: '',
@@ -74,15 +84,22 @@ const NotificationListApp = () => {
       };
       console.log('Submitting payload:', payload);
 
-      const data = await ApiRequestUtils.post(API_ROUTES.POST_NOTIFICATION_ADD, payload);
+      const data = await ApiRequestUtils.post(API_ROUTES.POST_NOTIFICATION_ADD, payload, 0, { suppressAlert: true });
       console.log('Submitted successfully:', data);
       // resetForm();
+      if (data?.code === 400) {
+        await showBadRequestAlert(data?.message);
+        return;
+      }
       if(data?.success)
       {
         navigate('/dashboard/vendors/notificationList')
       }
     } catch (error) {
       console.error('Submission error:', error);
+      if (error?.response?.status === 400) {
+        await showBadRequestAlert(error?.response?.data?.message);
+      }
     } finally {
       setSubmitting(false);
     }
