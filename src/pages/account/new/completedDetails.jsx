@@ -3,7 +3,8 @@ import { Button, Card, CardBody, Chip, IconButton, Spinner, Typography } from "@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES } from "@/utils/constants";
+import { API_ROUTES, THALUK_LIST } from "@/utils/constants";
+import { parseAddressParts } from "@/utils/addressUtils";
 import moment from "moment";
 import AccountDocumentsSection from "./AccountDocumentsSection";
 import VehicleDocumentsSection from "./VehicleDocumentsSection";
@@ -579,25 +580,10 @@ const CompletedOnboardingDetails = () => {
     }
   };
 
-  const parseAddress = (address) => {
-    if (!address || typeof address !== "string") {
-      return { street: "", thaluk: "", district: "", state: "", pincode: "" };
-    }
-    const parts = address.split(",").map((item) => item.trim()).filter(Boolean);
-    const pincodeMatch = address.match(/\b\d{6}\b/);
-    const cleanedParts = pincodeMatch ? parts.map((part) => part.replace(pincodeMatch[0], "").trim()).filter(Boolean) : parts;
-    const statePart = cleanedParts[cleanedParts.length - 1] || "";
-    const districtPart = cleanedParts[cleanedParts.length - 2] || "";
-    const thalukPart = cleanedParts[cleanedParts.length - 3] || "";
-    const streetPart = cleanedParts.slice(0, Math.max(cleanedParts.length - 3, 1)).join(", ");
-    return {
-      street: streetPart || cleanedParts[0] || "",
-      thaluk: thalukPart,
-      district: districtPart,
-      state: statePart,
-      pincode: pincodeMatch?.[0] || "",
-    };
-  };
+  const parseAddress = (address, addressComponents = []) => parseAddressParts({
+    addressText: address,
+    addressComponents,
+  });
 
   const searchLocations = async (query) => {
     if (!query || query.length <= 2) {
@@ -900,7 +886,12 @@ const CompletedOnboardingDetails = () => {
                                     setAccountDraft((prev) => ({ ...prev, address: selectedAddress }));
                                     setAddressSuggestions([]);
                                     if (isSameAddress) {
-                                      const parsed = parseAddress(selectedAddress);
+                                      const parsed = parseAddress(
+                                        selectedAddress,
+                                        Array.isArray(suggestion?.address_components)
+                                          ? suggestion.address_components
+                                          : []
+                                      );
                                       setAccountDraft((prev) => ({
                                         ...prev,
                                         street: parsed.street,
@@ -925,6 +916,23 @@ const CompletedOnboardingDetails = () => {
                             </div>
                           )}
                         </div>
+                      ) : key === "thaluk" ? (
+                        <select
+                          value={accountDraft?.[key] || ""}
+                          onChange={(e) => setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        >
+                          <option value="">Select Thaluk</option>
+                          {(accountDraft?.thaluk &&
+                          !THALUK_LIST.some((item) => item.value === accountDraft.thaluk)
+                            ? [{ label: accountDraft.thaluk, value: accountDraft.thaluk }, ...THALUK_LIST]
+                            : THALUK_LIST
+                          ).map((thaluk) => (
+                            <option key={thaluk.value} value={thaluk.value}>
+                              {thaluk.label}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
                         <input
                           value={accountDraft?.[key] || ""}

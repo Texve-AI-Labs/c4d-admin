@@ -171,55 +171,55 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [allUsers, setAllUsers] = useState([]); 
     const latestRequestRef = useRef(0);
 
-useEffect(() => {
-    try {
-        const normalizedPath = String(location.pathname || "").toLowerCase();
-        const getInquiryTypeFromPath = (path) => {
-            if (path.startsWith("/dashboard/auto")) return "AUTO";
-            if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
-            if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
-            if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB";
-            if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
-            if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
-            if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
-            if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
-            return "";
-        };
-        const normalizeType = (rawType) => {
-            const value = String(rawType || "").trim().toUpperCase();
-            if (value === "CAB_BOOKING") return "CAB";
-            return value;
-        };
-        const isHomeBookingView = normalizedPath === "/dashboard/booking" && (!type || String(type).trim() === "");
-        const isAllInquiriesView =
-            normalizedPath.startsWith("/dashboard/booking/list") ||
-            normalizedPath.startsWith("/dashboard/auto");
-        const totalPendings = String(counts?.totalPendings ?? "0");
-        const inquiryType = getInquiryTypeFromPath(normalizedPath) || normalizeType(type) || "ALL_CABS";
+// useEffect(() => {
+//     try {
+//         const normalizedPath = String(location.pathname || "").toLowerCase();
+//         const getInquiryTypeFromPath = (path) => {
+//             if (path.startsWith("/dashboard/auto")) return "AUTO";
+//             if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
+//             if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
+//             if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB";
+//             if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
+//             if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
+//             if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
+//             if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
+//             return "";
+//         };
+//         const normalizeType = (rawType) => {
+//             const value = String(rawType || "").trim().toUpperCase();
+//             if (value === "CAB_BOOKING") return "CAB";
+//             return value;
+//         };
+//         const isHomeBookingView = normalizedPath === "/dashboard/booking" && (!type || String(type).trim() === "");
+//         const isAllInquiriesView =
+//             normalizedPath.startsWith("/dashboard/booking/list") ||
+//             normalizedPath.startsWith("/dashboard/auto");
+//         const totalPendings = String(counts?.totalPendings ?? "0");
+//         const inquiryType = getInquiryTypeFromPath(normalizedPath) || normalizeType(type) || "ALL_CABS";
 
-        if (isHomeBookingView) {
-            sessionStorage.setItem("totalPendings", totalPendings);
-            sessionStorage.setItem("bookingCounts", JSON.stringify(counts || {}));
-            window.dispatchEvent(
-                new CustomEvent("booking-count-updated", {
-                    detail: { scope: "home", totalPendings },
-                })
-            );
-        }
+//         if (isHomeBookingView) {
+//             sessionStorage.setItem("totalPendings", totalPendings);
+//             sessionStorage.setItem("bookingCounts", JSON.stringify(counts || {}));
+//             window.dispatchEvent(
+//                 new CustomEvent("booking-count-updated", {
+//                     detail: { scope: "home", totalPendings },
+//                 })
+//             );
+//         }
 
-        if (isAllInquiriesView) {
-            const key = `sidebar.inquiries.${inquiryType}.totalPendings`;
-            sessionStorage.setItem(key, totalPendings);
-            window.dispatchEvent(
-                new CustomEvent("booking-count-updated", {
-                    detail: { scope: "all-inquiries", totalPendings, inquiryType },
-                })
-            );
-        }
-    } catch (error) {
-        console.error("Error syncing booking counts to sessionStorage:", error);
-    }
-}, [counts, location.pathname, type]);
+//         if (isAllInquiriesView) {
+//             const key = `sidebar.inquiries.${inquiryType}.totalPendings`;
+//             sessionStorage.setItem(key, totalPendings);
+//             window.dispatchEvent(
+//                 new CustomEvent("booking-count-updated", {
+//                     detail: { scope: "all-inquiries", totalPendings, inquiryType },
+//                 })
+//             );
+//         }
+//     } catch (error) {
+//         console.error("Error syncing booking counts to sessionStorage:", error);
+//     }
+// }, [counts, location.pathname, type]);
 
 useEffect(() => {
   const storedUser = getLocalItemSafe('loggedInUser');

@@ -5,6 +5,7 @@ import { API_ROUTES, ColorStyles, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@
 import { Alert, Button, Input, List, ListItem, Dialog, DialogHeader, DialogBody, Typography, Card, CardBody, Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ACCOUNT_EDIT_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
@@ -374,17 +375,10 @@ const ParcelEdit = () => {
         setSubmitting(false);
     };
 
-    const parseAddress = (address) => {
-        if (!address) return { street: "", taluk: "", district: "", state: "", pincode: "" };
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            pincode: "",
-        };
-    };
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen"><Spinner className="h-12 w-12" /></div>;

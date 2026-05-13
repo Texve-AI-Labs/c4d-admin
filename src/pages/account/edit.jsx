@@ -5,6 +5,7 @@ import { API_ROUTES, ColorStyles, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@
 import { Alert, Button, Input, List, ListItem, Dialog, DialogHeader, DialogBody, Typography, Card, CardBody, Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ACCOUNT_EDIT_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
@@ -466,8 +467,7 @@ const AccountEdit = () => {
             return;
         }
 
-        const parsedAddress = parseAddress(place.formatted_address);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(place.formatted_address, place.address_components);
 
         setFieldValue("address", place.formatted_address);
 
@@ -541,29 +541,11 @@ const AccountEdit = () => {
         district.name.toLowerCase().includes(districtSearchText.toLowerCase())
     );
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     const thalukOptions = THALUK_LIST.map(thaluk => ({
         id: thaluk.value,

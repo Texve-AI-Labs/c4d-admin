@@ -1479,6 +1479,38 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     ) : 'N/A'}
                                                                 </Typography>
                                                             </div>
+                                                {quoteDetails?.walletApplicable === true  && (
+                                                        <>
+                                                            <div className="flex justify-between">
+                                                                <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                <Typography>
+                                                                    ₹ {Math.round(
+                                                                        quoteDetails?.walletAmount ||
+                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                        quoteDetails?.value?.walletAmount ||
+                                                                        0
+                                                                    )}
+                                                                </Typography>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                <Typography>
+                                                                    ₹ {Math.max(
+                                                                        0,
+                                                                        Math.round(
+                                                                            Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                            Number(
+                                                                                quoteDetails?.walletAmount ||
+                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                                quoteDetails?.value?.walletAmount ||
+                                                                                0
+                                                                            )
+                                                                        )
+                                                                    )}
+                                                                </Typography>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                         </>
                                                     </div>
                                                 </div>
@@ -1589,6 +1621,38 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.amount?.estimatedPrice)}
                                                                 </Typography>
+                                                                {quoteDetails?.walletApplicable === true  && (
+                                                                        <>
+                                                                            <div className="flex justify-between items-start gap-3">
+                                                                                <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {Math.round(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )}
+                                                                                </Typography>
+                                                                            </div>
+                                                                            <div className="flex justify-between items-start gap-3">
+                                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {Math.max(
+                                                                                        0,
+                                                                                        Math.round(
+                                                                                            Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                                            Number(
+                                                                                                quoteDetails?.walletAmount ||
+                                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                                                quoteDetails?.value?.walletAmount ||
+                                                                                                0
+                                                                                            )
+                                                                                        )
+                                                                                    )}
+                                                                                </Typography>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
                                                                  </>)}
                                                                 {quoteDetails.discount?.percentage > 0 && <>
 
@@ -1981,12 +2045,41 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <Typography>
                                                                         ₹ {Math.round(quoteDetails.amount?.gst_amount)}
                                                                     </Typography>
-                                                                
+                                                                </>)}
                                                                 <Typography color="gray" variant="h6">Final Estimated Fare</Typography>
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice)}
                                                                 </Typography>
-                                                                </>)}
+                                                                {(quoteDetails?.walletApplicable === true ||
+                                                                    quoteDetails?.amount?.walletApplicable === true ||
+                                                                    quoteDetails?.value?.walletApplicable === true) && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.round(
+                                                                                quoteDetails?.walletAmount ||
+                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                                quoteDetails?.value?.walletAmount ||
+                                                                                0
+                                                                            )}
+                                                                        </Typography>
+                                                                        <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.max(
+                                                                                0,
+                                                                                Math.round(
+                                                                                    Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                                    Number(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )
+                                                                                )
+                                                                            )}
+                                                                        </Typography>
+                                                                    </>
+                                                                )}
                                                                 {quoteDetails.discount?.percentage > 0 && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Discount Applied</Typography>
@@ -2274,6 +2367,38 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <Typography>
                                                             ₹ {Math.round(quoteDetails.amount?.fare_before_gst)}
                                                         </Typography>
+                                                        {quoteDetails?.walletApplicable === true && (
+                                                            <>
+                                                                    
+                                                                        <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.round(
+                                                                                quoteDetails?.walletAmount ||
+                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                        quoteDetails?.value?.walletAmount ||
+                                                                        0
+                                                                    )} </Typography>
+                                                                
+                                                                
+                                                                    
+                                                                        <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.max(
+                                                                                0,
+                                                                                Math.round(
+                                                                                    Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                                    Number(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )
+                                                                                )
+                                                                            )}
+                                                                        </Typography>
+                                                                    
+                                                            </>
+                                                        )}
                                                         {quoteDetails.amount?.gst_amount > 0 && (<>
                                                             <Typography color="gray" variant="h6">TAX Amount</Typography>
                                                             <Typography>

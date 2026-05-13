@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from "@material-tailwind/react";
 import { useMaterialTailwindController, setOpenSidenav, setMiniSidenav } from "@/context";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/context/auth";
 import {
   HomeIcon,
@@ -84,82 +84,82 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
   const [homeTotalBookingCount, setHomeTotalBookingCount] = useState("0");
   const [allInquiriesCount, setAllInquiriesCount] = useState("0");
 
-  useEffect(() => {
-    const getInquiryTypeFromPath = (pathname = "") => {
-      const path = String(pathname || "").toLowerCase();
-      if (path.startsWith("/dashboard/auto")) return "AUTO";
-      if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
-      if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
-      if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB";
-      if (path.startsWith("/dashboard/booking/list/cab-booking")) return "CAB";
-      if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
-      if (path.startsWith("/dashboard/booking/list/car-wash")) return "CAR_WASH";
-      if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
-      if (path.startsWith("/dashboard/booking/list/acting-driver")) return "DRIVER";
-      if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
-      if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
-      return "ALL_CABS";
-    };
+  // useEffect(() => {
+  //   const getInquiryTypeFromPath = (pathname = "") => {
+  //     const path = String(pathname || "").toLowerCase();
+  //     if (path.startsWith("/dashboard/auto")) return "AUTO";
+  //     if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
+  //     if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
+  //     if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB";
+  //     if (path.startsWith("/dashboard/booking/list/cab-booking")) return "CAB";
+  //     if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
+  //     if (path.startsWith("/dashboard/booking/list/car-wash")) return "CAR_WASH";
+  //     if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
+  //     if (path.startsWith("/dashboard/booking/list/acting-driver")) return "DRIVER";
+  //     if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
+  //     if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
+  //     return "ALL_CABS";
+  //   };
 
-    const readSidebarCounts = () => {
-      try {
-        const homeDirectCount = sessionStorage.getItem("totalPendings");
-        const activeInquiryType = getInquiryTypeFromPath(currentPath);
-        const inquiriesKey = `sidebar.inquiries.${activeInquiryType}.totalPendings`;
-        const allInquiriesDirectCount = sessionStorage.getItem(inquiriesKey);
-        setAllInquiriesCount(allInquiriesDirectCount !== null ? String(allInquiriesDirectCount) : "0");
+  //   const readSidebarCounts = () => {
+  //     try {
+  //       const homeDirectCount = sessionStorage.getItem("totalPendings");
+  //       const activeInquiryType = getInquiryTypeFromPath(currentPath);
+  //       const inquiriesKey = `sidebar.inquiries.${activeInquiryType}.totalPendings`;
+  //       const allInquiriesDirectCount = sessionStorage.getItem(inquiriesKey);
+  //       setAllInquiriesCount(allInquiriesDirectCount !== null ? String(allInquiriesDirectCount) : "0");
 
-        if (homeDirectCount !== null) {
-          setHomeTotalBookingCount(String(homeDirectCount));
-          return;
-        }
+  //       if (homeDirectCount !== null) {
+  //         setHomeTotalBookingCount(String(homeDirectCount));
+  //         return;
+  //       }
 
-        const bookingCounts = sessionStorage.getItem("bookingCounts");
-        if (!bookingCounts) {
-          setHomeTotalBookingCount("0");
-          return;
-        }
+  //       const bookingCounts = sessionStorage.getItem("bookingCounts");
+  //       if (!bookingCounts) {
+  //         setHomeTotalBookingCount("0");
+  //         return;
+  //       }
 
-        const parsed = JSON.parse(bookingCounts);
-        setHomeTotalBookingCount(String(parsed?.totalPendings ?? "0"));
-      } catch {
-        setHomeTotalBookingCount("0");
-        setAllInquiriesCount("0");
-      }
-    };
+  //       const parsed = JSON.parse(bookingCounts);
+  //       setHomeTotalBookingCount(String(parsed?.totalPendings ?? "0"));
+  //     } catch {
+  //       setHomeTotalBookingCount("0");
+  //       setAllInquiriesCount("0");
+  //     }
+  //   };
 
-    const handleBookingCountUpdated = (event) => {
-      const value = event?.detail?.totalPendings;
-      const scope = event?.detail?.scope;
-      if (value !== undefined && value !== null && scope === "home") {
-        setHomeTotalBookingCount(String(value));
-        return;
-      }
-      if (value !== undefined && value !== null && scope === "all-inquiries") {
-        const inquiryType = String(event?.detail?.inquiryType || "ALL_CABS");
-        const activeInquiryType = getInquiryTypeFromPath(currentPath);
-        if (inquiryType === activeInquiryType) {
-          setAllInquiriesCount(String(value));
-          return;
-        }
-        if (!currentPath.startsWith("/dashboard/booking/list") && inquiryType === "ALL_CABS") {
-          setAllInquiriesCount(String(value));
-          return;
-        }
-        readSidebarCounts();
-        return;
-      }
-      readSidebarCounts();
-    };
+  //   const handleBookingCountUpdated = (event) => {
+  //     const value = event?.detail?.totalPendings;
+  //     const scope = event?.detail?.scope;
+  //     if (value !== undefined && value !== null && scope === "home") {
+  //       setHomeTotalBookingCount(String(value));
+  //       return;
+  //     }
+  //     if (value !== undefined && value !== null && scope === "all-inquiries") {
+  //       const inquiryType = String(event?.detail?.inquiryType || "ALL_CABS");
+  //       const activeInquiryType = getInquiryTypeFromPath(currentPath);
+  //       if (inquiryType === activeInquiryType) {
+  //         setAllInquiriesCount(String(value));
+  //         return;
+  //       }
+  //       if (!currentPath.startsWith("/dashboard/booking/list") && inquiryType === "ALL_CABS") {
+  //         setAllInquiriesCount(String(value));
+  //         return;
+  //       }
+  //       readSidebarCounts();
+  //       return;
+  //     }
+  //     readSidebarCounts();
+  //   };
 
-    readSidebarCounts();
-    window.addEventListener("booking-count-updated", handleBookingCountUpdated);
-    window.addEventListener("storage", readSidebarCounts);
-    return () => {
-      window.removeEventListener("booking-count-updated", handleBookingCountUpdated);
-      window.removeEventListener("storage", readSidebarCounts);
-    };
-  }, [location.pathname]);
+  //   readSidebarCounts();
+  //   window.addEventListener("booking-count-updated", handleBookingCountUpdated);
+  //   window.addEventListener("storage", readSidebarCounts);
+  //   return () => {
+  //     window.removeEventListener("booking-count-updated", handleBookingCountUpdated);
+  //     window.removeEventListener("storage", readSidebarCounts);
+  //   };
+  // }, [location.pathname]);
 
   const handleSignOut = async (e) => {
     //setLoading(true);
@@ -392,21 +392,21 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                         ) : null}
 
                         {!miniSidenav && (
-                          <>
                           <Typography color="inherit" className={NAV_UI.typography.sidebarLabel}>
                             {name}
                           </Typography>
-                            {name === "Home" && homeTotalBookingCount > 0 && (
-                              <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
-                                {homeTotalBookingCount}
-                              </span>
-                            )}
-                            {name === "All Inquiries" && allInquiriesCount > 0 && (
-                              <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
-                                {allInquiriesCount}
-                              </span>
-                            )}
-                          </>
+                          // <>
+                          //   {name === "Home" && homeTotalBookingCount > 0 && (
+                          //     <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          //       {homeTotalBookingCount}
+                          //     </span>
+                          //   )}
+                          //   {name === "All Inquiries" && allInquiriesCount > 0 && (
+                          //     <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          //       {allInquiriesCount}
+                          //     </span>
+                          //   )}
+                          // </>
                         )}
                       </Button>
                       );
