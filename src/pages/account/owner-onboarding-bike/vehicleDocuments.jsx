@@ -290,10 +290,10 @@ const VehicleDocuments = () => {
           <DialogBody divider>
             <div className={`flex ${modalData.image2 ? "flex-row space-x-6" : "flex-col"} justify-center`}>
               {modalData.image1 && (
-                <iframe src={modalData.image1} className="rounded-lg shadow-md" style={{ height: "45vh", width: "45%" }} />
+                <img src={modalData.image1} alt="Document 1 preview" className="rounded-lg shadow-md w-full" style={{ height: "45vh", maxWidth: "45%", objectFit: "contain" }} />
               )}
               {modalData.image2 && (
-                <iframe src={modalData.image2} className="rounded-lg shadow-md" style={{ height: "45vh", width: "45%" }} />
+                <img src={modalData.image2} alt="Document 2 preview" className="rounded-lg shadow-md w-full" style={{ height: "45vh", maxWidth: "45%", objectFit: "contain" }} />
               )}
             </div>
             <div className="flex justify-center mt-4">
