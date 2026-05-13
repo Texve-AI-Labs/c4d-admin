@@ -11,6 +11,21 @@ import Select from 'react-select'
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
 
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
+
     useEffect(() => {
         form.validateField(field.name);
     }, []);
@@ -41,14 +56,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
-                                onSelect(suggestion);
+                                const selectedText = getSuggestionText(suggestion);
+                                form.setFieldValue(field.name, selectedText);
+                                if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
                             }}
                             className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -104,7 +129,7 @@ const AutoAdd = (props) => {
     useEffect(() => {
         const fetchGeoData = async () => {
             try {
-                const response = await ApiRequestUtils.getWithQueryParam('/geo-markings', {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
                     type: 'Service Area',
                 });
                 setServiceAreas(response?.data || []);
@@ -460,16 +485,23 @@ const AutoAdd = (props) => {
     };
 
 
-    const handleGoogleAddressSelect = (place) => {
-        if (!place || !place.formatted_address) {
+    const handleGoogleAddressSelect = (addressText, place) => {
+        const resolvedAddress =
+            addressText ||
+            place?.formatted_address ||
+            place?.fullText ||
+            place?.title ||
+            '';
+
+        if (!resolvedAddress) {
             console.error("Google Address selection is invalid", place);
             return;
         }
 
-        const parsedAddress = parseAddress(place.formatted_address);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(resolvedAddress);
+        parsedAddress.pincode = place?.address_components ? extractPincode(place.address_components) : '';
 
-        setFieldValue("address", place.formatted_address);
+        setFieldValue("address", resolvedAddress);
 
         if (isSameAddress) {
             setFieldValue("street", parsedAddress.street);

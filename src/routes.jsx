@@ -115,6 +115,7 @@ import ParcelDetailsList from "./pages/parcel/list";
 import ParcelCabAdd from "./pages/cab/addParcelCab";
 import ParcelCabDetails from "./pages/cab/parcelCabDetails";
 import ParcelCabEdit from "./pages/cab/parcelCabEdit";
+import CabAddNew from "./pages/cab/new/add";
 import ParcelMasterPriceAdd from "./pages/finance/masterPriceTable/ParcelMasterPriceTableAdd";
 import ParcelMasterPriceEdit from "./pages/finance/masterPriceTable/ParcelMasterPriceTableEdit";
 import ParcelMasterPriceDetails from "./pages/finance/masterPriceTable/ParcelMasterPriceTableDetails";
@@ -144,6 +145,29 @@ import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
 import DriverMonitoringList from "./pages/DriverEngagementModule/DriverMonitoring/list";
 import IncentivePayoutList from "./pages/DriverEngagementModule/IncentivePayout/list";
 import DriverEngagementAuditLogs from "./pages/DriverEngagementModule/AuditLogs/list";
+import AccountList from "./pages/account/new/list";
+import AddAccountNew from "./pages/account/new/add";
+import AccountDocuments from "./pages/account/new/documents";
+import VehicleDocuments from "./pages/account/new/vehicleDocuments";
+import AccountOnboardingDetails from "./pages/account/new/accountDetails";
+import VehicleOnboardingDetails from "./pages/account/new/vehicleDetails";
+import CompletedOnboardingDetails from "./pages/account/new/completedDetails";
+import OwnerOnboardingAutoList from "./pages/account/owner-onboarding-auto/list";
+import OwnerOnboardingAutoAdd from "./pages/account/owner-onboarding-auto/add";
+import OwnerOnboardingAutoDocuments from "./pages/account/owner-onboarding-auto/documents";
+import OwnerOnboardingAutoVehicleDocuments from "./pages/account/owner-onboarding-auto/vehicleDocuments";
+import OwnerOnboardingAutoAccountDetails from "./pages/account/owner-onboarding-auto/accountDetails";
+import OwnerOnboardingAutoVehicleDetails from "./pages/account/owner-onboarding-auto/vehicleDetails";
+import OwnerOnboardingAutoCompletedDetails from "./pages/account/owner-onboarding-auto/completedDetails";
+import OwnerOnboardingAutoCreation from "./pages/account/owner-onboarding-auto/autoCreation";
+import OwnerOnboardingBikeList from "./pages/account/owner-onboarding-bike/list";
+import OwnerOnboardingBikeAdd from "./pages/account/owner-onboarding-bike/add";
+import OwnerOnboardingBikeDocuments from "./pages/account/owner-onboarding-bike/documents";
+import OwnerOnboardingBikeVehicleDocuments from "./pages/account/owner-onboarding-bike/vehicleDocuments";
+import OwnerOnboardingBikeAccountDetails from "./pages/account/owner-onboarding-bike/accountDetails";
+import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-bike/vehicleDetails";
+import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
+import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -598,6 +622,198 @@ export const routes = [
         path: "/vendors/account",
         element: <AccountView />,
         display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add Account New",
+        path: "/vendors/account/new/add",
+        element: <AddAccountNew />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account Documents",
+        path: "/vendors/account/new/documents/:id",
+        element: <AccountDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vehicle Documents",
+        path: "/vendors/account/new/vehicle-documents/:id",
+        element: <VehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Cab",
+        path: "/vendors/account/new/cab/add/:id",
+        element: <CabAddNew />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account List",
+        path: "/vendors/account/new",
+        element: <AccountList />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account Onboarding Details",
+        path: "/vendors/account/new/details/account/:id",
+        element: <AccountOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vehicle Onboarding Details",
+        path: "/vendors/account/new/details/vehicle/:id",
+        element: <VehicleOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Completed Onboarding Details",
+        path: "/vendors/account/new/details/completed/:id",
+        element: <CompletedOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto List",
+        path: "/vendors/account/owner-onboarding-auto",
+        element: <OwnerOnboardingAutoList />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Add",
+        path: "/vendors/account/owner-onboarding-auto/add",
+        element: <OwnerOnboardingAutoAdd />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Documents",
+        path: "/vendors/account/owner-onboarding-auto/documents/:id",
+        element: <OwnerOnboardingAutoDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Vehicle Documents",
+        path: "/vendors/account/owner-onboarding-auto/vehicle-documents/:id",
+        element: <OwnerOnboardingAutoVehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Account Details",
+        path: "/vendors/account/owner-onboarding-auto/details/account/:id",
+        element: <OwnerOnboardingAutoAccountDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Vehicle Details",
+        path: "/vendors/account/owner-onboarding-auto/details/vehicle/:id",
+        element: <OwnerOnboardingAutoVehicleDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Completed Details",
+        path: "/vendors/account/owner-onboarding-auto/details/completed/:id",
+        element: <OwnerOnboardingAutoCompletedDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Vehicle Creation",
+        path: "/vendors/account/owner-onboarding-auto/vehicle-creation/:id",
+        element: <OwnerOnboardingAutoCreation />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike List",
+        path: "/vendors/account/owner-onboarding-bike",
+        element: <OwnerOnboardingBikeList />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Add",
+        path: "/vendors/account/owner-onboarding-bike/add",
+        element: <OwnerOnboardingBikeAdd />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Documents",
+        path: "/vendors/account/owner-onboarding-bike/documents/:id",
+        element: <OwnerOnboardingBikeDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Documents",
+        path: "/vendors/account/owner-onboarding-bike/vehicle-documents/:id",
+        element: <OwnerOnboardingBikeVehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Account Details",
+        path: "/vendors/account/owner-onboarding-bike/details/account/:id",
+        element: <OwnerOnboardingBikeAccountDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Details",
+        path: "/vendors/account/owner-onboarding-bike/details/vehicle/:id",
+        element: <OwnerOnboardingBikeVehicleDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Completed Details",
+        path: "/vendors/account/owner-onboarding-bike/details/completed/:id",
+        element: <OwnerOnboardingBikeCompletedDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Creation",
+        path: "/vendors/account/owner-onboarding-bike/vehicle-creation/:id",
+        element: <OwnerOnboardingBikeCreation />,
+        display: false,
         permission: "Vendors",
       },
       {
@@ -1125,8 +1341,16 @@ export const routes = [
         {
           icon: <UserIcon {...icon} />,
           name: "bike",
-          path: "/vendors/account/parcel/allVehicles/add",
+          path: "/vendors/account/parcel/allVehicles/add/old",
           element: <ParcelCabAdd />,
+          display: true,
+          permission: "Vendors"
+        },
+         {
+          icon: <UserIcon {...icon} />,
+          name: "bike",
+          path: "/vendors/account/parcel/allVehicles/add",
+          element: <OwnerOnboardingBikeCreation />,
           display: true,
           permission: "Vendors"
         },

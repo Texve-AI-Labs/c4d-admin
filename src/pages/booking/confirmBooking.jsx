@@ -20,6 +20,21 @@ import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
 import { PencilIcon } from "@heroicons/react/24/solid";
 
+const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+};
+
+const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+        const [firstPart] = suggestion.split(',');
+        return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+};
+
 const ConfirmBooking = (props) => {
     const [bookingDetails, setBookingDetails] = useState("");
     const [dateVal, setDateVal] = useState();
@@ -1167,11 +1182,14 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <span className="text-gray-500 font-semibold">Rating:</span>
                                 <span className="text-gray-900 font-medium flex items-center gap-1">
                                     <span className="text-yellow-500">★</span>
-                                    {customerFeedback?.rating}
+                                    {customerFeedback?.rating || 0}
                                 </span>
+                                {customerFeedback?.rating <= 2 && (
+                                    <> 
                                  <span className="italic">
                                         {customerFeedback?.comment || 'N/A'}
                                     </span>
+                                </>)}
                             </div>
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Total Enquiries:</span>
@@ -1359,11 +1377,13 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <span className="text-gray-500 font-semibold">Rating:</span>
                                     <span className="text-gray-900 font-medium flex items-center gap-1">
                                         <span className="text-yellow-500">★</span>
-                                        {driverFeedback?.rating}
+                                        {driverFeedback?.rating || 0}
                                     </span>
+                                    {driverFeedback?.rating <= 2  && (<>
                                      <span className="italic">
                                         {driverFeedback?.comment || 'N/A'}
                                     </span>
+                                    </>)}
                                 </div>
                             </div>
                         </CardBody>
@@ -1990,10 +2010,15 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             key={index}
                                             className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0"
                                             onClick={() => {
-                                                handleSelectDriverEndLocation(suggestion);
+                                                handleSelectDriverEndLocation(getSuggestionText(suggestion));
                                             }}
                                             >
-                                            {suggestion}
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                    <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                )}
+                                            </div>
                                             </li>
                                         ))}
                                         </ul>

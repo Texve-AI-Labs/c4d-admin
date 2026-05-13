@@ -840,6 +840,7 @@ export const API_ROUTES = {
     'GET_ALL_CUSTOMERS': '/admin/customers',
     'GET_ALL_DRIVERS': '/admin/drivers',
     'GET_ALL_ACCOUNTS': '/register/admin/account',
+    'GET_ONBOARDING_DETAILS': '/register/admin/account/onboarding',
     'GET_DRIVERS_PACKAGE': '/get-drivers',
     'GET_ALL_USERS': '/users',
     'UPDATE_USER': '/users',
@@ -1031,6 +1032,8 @@ export const API_ROUTES = {
     "ASSIGN_AUTO":'/confirm-auto-booking',
     "ADD_SUPPORT_PARCEL_BOOKING":'/add-support-parcel-booking',
     'DRIVER_RETURN_TRIP_DETAILS':'/return-trips',
+    'ADMIN_REQUIRED_DOCUMENTS': '/admin/verification/required-documents',
+    'ADMIN_ONBOARDING_BY_ID': '/admin/account/onboarding/',
 };
 
 export const KYC_PROCESS = {

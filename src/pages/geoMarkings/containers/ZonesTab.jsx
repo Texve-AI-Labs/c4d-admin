@@ -274,7 +274,7 @@ const ZonesTab = () => {
           onChange={handleServiceAreaChange}
           selected={() => selectedServiceAreaName || ''}
           menuProps={{
-            className: 'max-h-40 overflow-y-scroll',
+            className: 'max-h-20 overflow-y-scroll',
           }}
         >
           {serviceAreas.map((area) => (

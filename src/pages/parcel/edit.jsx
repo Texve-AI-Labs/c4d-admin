@@ -10,6 +10,21 @@ import moment from 'moment';
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
 
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
+
     return (
         <div className="relative">
             <Input
@@ -34,13 +49,23 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
-                                onSelect(suggestion);
+                                const selectedText = getSuggestionText(suggestion);
+                                form.setFieldValue(field.name, selectedText);
+                                if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                             }}
                             className="hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -139,7 +164,7 @@ const ParcelEdit = () => {
     useEffect(() => {
         const fetchGeoData = async () => {
             try {
-                const response = await ApiRequestUtils.getWithQueryParam('/geo-markings', {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
                     type: 'Service Area',
                 });
                 setServiceAreas(response?.data || []);

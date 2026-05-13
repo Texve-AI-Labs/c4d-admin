@@ -6,6 +6,7 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
 import * as Yup from 'yup';
+import Swal from 'sweetalert2';
 
 const validationSchema = Yup.object({
   title: Yup.string().required('Title is required'),
@@ -36,6 +37,15 @@ const validationSchema = Yup.object({
 });
 
 const NotificationListEdit = () => {
+  const showBadRequestAlert = (message) =>
+    Swal.fire({
+      icon: 'error',
+      title: 'Alert',
+      text: message || 'Bad request',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#2563eb',
+    });
+
   const toUtcIso = (dateLikeValue) => {
     const dt = dateLikeValue ? new Date(dateLikeValue) : new Date();
     return Number.isNaN(dt.getTime()) ? '' : dt.toISOString();
@@ -135,12 +145,19 @@ const NotificationListEdit = () => {
 
       console.log('Payload for update:', payload);
 
-      const data = await ApiRequestUtils.update(API_ROUTES.UPDATE_NOTIFICATION, payload);
+      const data = await ApiRequestUtils.update(API_ROUTES.UPDATE_NOTIFICATION, payload, 0, { suppressAlert: true });
+      if (data?.code === 400) {
+        await showBadRequestAlert(data?.message);
+        return;
+      }
       if (data?.success) {
         navigate('/dashboard/vendors/notificationList');
       }
     } catch (error) {
       console.error('Notification update error:', error);
+      if (error?.response?.status === 400) {
+        await showBadRequestAlert(error?.response?.data?.message);
+      }
     } finally {
       setSubmitting(false);
     }

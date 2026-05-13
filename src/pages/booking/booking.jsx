@@ -66,6 +66,21 @@ const toStorageScope = (pathname = '') => {
 };
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 
+const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+};
+
+const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+        const [firstPart] = suggestion.split(',');
+        return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+};
+
 const Booking = (props) => {
     const [loading, setLoading] = useState(false);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
@@ -2452,9 +2467,14 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                     <li
                                                                         key={index}
                                                                         className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                        onClick={() => handleSelectLocation(suggestion, true, null, setFieldValue,values)}
+                                                                        onClick={() => handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue,values)}
                                                                     >
-                                                                        {suggestion}
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                            {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                                <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                            )}
+                                                                        </div>
                                                                     </li>
                                                                 ))}
                                                             </ul>
@@ -2501,10 +2521,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                                 key={index}
                                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                                 onClick={() => {
-                                                                                    handleSelectLocation(suggestion, false, null, setFieldValue,values);
+                                                                                    handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue,values);
                                                                                 }}
                                                                             >
-                                                                                {suggestion}
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                                    )}
+                                                                                </div>
                                                                             </li>
                                                                         ))}
                                                                     </ul>
@@ -2612,9 +2637,14 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                         <li
                                                                             key={index}
                                                                             className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                            onClick={() => handleSelectLocation(suggestion, false, 'driver', setFieldValue,values)}
+                                                                            onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driver', setFieldValue,values)}
                                                                         >
-                                                                            {suggestion}
+                                                                            <div className="flex flex-col">
+                                                                                <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                                    <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                                )}
+                                                                            </div>
                                                                         </li>
                                                                     ))}
                                                                 </ul>
@@ -2693,14 +2723,20 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                         key={index}
                                                                         className="p-2 cursor-pointer hover:bg-gray-100"
                                                                         onClick={() => {
-                                                                            handleSelectLocation(suggestion, false, 'driverEnd', setFieldValue, values);
+                                                                            const selectedAddress = getSuggestionText(suggestion);
+                                                                            handleSelectLocation(selectedAddress, false, 'driverEnd', setFieldValue, values);
                                                                             // Uncheck the "same as start" when user selects different location
-                                                                            if (suggestion !== values.driverPickUpAddress) {
+                                                                            if (selectedAddress !== values.driverPickUpAddress) {
                                                                                 document.getElementById('sameAsStart').checked = false;
                                                                             }
                                                                         }}
                                                                     >
-                                                                        {suggestion}
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                            {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                                <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                            )}
+                                                                        </div>
                                                                     </li>
                                                                 ))}
                                                             </ul>
@@ -2986,9 +3022,30 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                              <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Final Estimate Fare:</Typography>
                                                                                 <Typography>
-                                                                                    {quoteDetails.amount?.fare_after_gst || ''}
+                                                                                    ₹ {quoteDetails.amount?.fare_after_gst || ''}
                                                                                 </Typography>
                                                                             </div>
+                                                                            {quoteDetails?.walletApplicable === true  && (
+                                                                                    <>
+                                                                                    <div className="flex justify-between">
+                                                                                            <Typography color="gray" variant="h6">Wallet Amount Applied:</Typography>
+                                                                                            <Typography>
+                                                                                                ₹ {Math.round(
+                                                                                                    quoteDetails?.walletAmount ||
+                                                                                                    quoteDetails?.amount?.walletAmount ||
+                                                                                                    quoteDetails?.value?.walletAmount ||
+                                                                                                    0
+                                                                                                )}
+                                                                                            </Typography>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between">                                                                                       
+                                                                                            <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction:</Typography>
+                                                                                            <Typography>
+                                                                                                ₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}
+                                                                                            </Typography>                        
+                                                                                            </div>                                                                
+                                                                                    </>
+                                                                                )}
                                                                         {quoteDetails.discount?.percentage > 0 && <>
                                                                         <div className='flex justify-between'>
                                                                           <Typography color="gray" variant="h6">Discount Applied</Typography>
@@ -3076,6 +3133,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                                     {quoteDetails.amount?.fare_after_gst|| ''}
                                                                                 </Typography>
                                                                             </div>
+                                                                            {quoteDetails?.walletApplicable === true  && (
+                                                                                    <>
+                                                                                    <div className="flex justify-between">
+                                                                                            <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                                            <Typography>
+                                                                                                ₹ {Math.round(
+                                                                                                    quoteDetails?.walletAmount ||                                                                                                    
+                                                                                                    0
+                                                                                                )}
+                                                                                            </Typography>
+                                                                                            </div>
+                                                                                        <div className="flex justify-between">
+                                                                                            <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction : </Typography>
+                                                                                            <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                                    </div>
+                                                                                    </>
+                                                                                )}
                                                                             {quoteDetails.discount?.percentage > 0 && (
                                                                                 <>
                                                                                     <div className="flex justify-between">
@@ -3255,7 +3329,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                             </Typography>
                                                                             <Typography color="gray" variant="h6">KM</Typography>
                                                                             <Typography>
-                                                                                ₹ {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}
+                                                                                 {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}Kms
                                                                             </Typography>                                                                            
                                                                             {quoteDetails.amount?.fareBreakdown?.dropCharge > 0 && <>
                                                                                 <Typography color="gray" variant="h6">Drop Charge</Typography>
@@ -3311,6 +3385,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                         <Typography>
                                                                             ₹ {Math.round(quoteDetails.amount?.estimatedPrice)}
                                                                         </Typography>
+                                                                        {quoteDetails?.walletApplicable === true 
+                                                                            && (
+                                                                            <>                                                                                                                                                                    
+                                                                                <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {Math.round(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )}
+                                                                                </Typography>                                                                                                                                                                                                                                    
+                                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction :</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                            
+                                                                            </>)                                                                                
+                                                                            }
                                                                         {quoteDetails.discount?.percentage > 0 && <>
                                                                         
                                                                           <Typography color="gray" variant="h6">Discount Applied</Typography>
