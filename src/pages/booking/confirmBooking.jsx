@@ -853,6 +853,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                     {(!isTerminalStatus && (
                         (bookingDetails.status === "QUOTED" && bookingDetails.followup !== "FOLLOWUP") ||
                         (bookingDetails.ownership === "ASSIGNED_TO_SUPPORT" &&
+                            bookingDetails.status === "QUOTED" &&
                             (bookingDetails.serviceType === "AUTO" || bookingDetails.serviceType === "PARCEL"))
                     )) && (
                     <Button
