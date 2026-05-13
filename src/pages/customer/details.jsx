@@ -107,7 +107,8 @@ const CustomerDetails = () => {
     };
 
     const getBookingStatusMeta = (trip = {}) => {
-        const status = typeof trip?.status === 'string' ? trip.status : '-';
+        const statusValue = trip?.tripStatus ?? trip?.status;
+        const status = typeof statusValue === 'string' ? statusValue : '-';
         const followup = trip?.followup;
 
         const label =
