@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import CabDriverWalletLog from '@/components/CabDriverWallet';
 
 const VehicleInfoSection = ({
   vehicleSections = [],
@@ -18,6 +19,7 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [activeLogTabBySection, setActiveLogTabBySection] = useState({});
 
   const editableLabels = useMemo(
     () => new Set(["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"]),
@@ -286,14 +288,41 @@ const VehicleInfoSection = ({
             </Card>
               );
             })()}
-
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>
-                <Typography variant="h5" className="text-blue-gray-900 font-semibold  rounded-md px-3 py-2 inline-block">
-                  Credit Log
-                </Typography>
-                <div className="border-t border-blue-gray-50 mt-3 mb-3" />
-                {section.creditLogRows.length === 0 ? (
+                <div className="px-3 pt-1">
+                  <div className="flex items-end gap-1 border-b border-gray-300">
+                  <Button
+                    size="sm"
+                    className={`rounded-b-none rounded-t-md px-5 py-2 text-xs normal-case shadow-none border ${
+                      activeLogTabBySection[section.id] === "credit"
+                        ? "bg-white text-blue-gray-800 border-gray-300 border-b-white -mb-px"
+                        : "bg-gray-100 text-blue-gray-500 border-gray-300"
+                    }`}
+                    onClick={() =>
+                      setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "credit" }))
+                    }
+                  >
+                    Credit Log
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={`rounded-b-none rounded-t-md px-5 py-2 text-xs normal-case shadow-none border ${
+                      (activeLogTabBySection[section.id] || "wallet") === "wallet"
+                        ? "bg-white text-blue-gray-800 border-gray-300 border-b-white -mb-px"
+                        : "bg-gray-100 text-blue-gray-500 border-gray-300"
+                    }`}
+                    onClick={() =>
+                      setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "wallet" }))
+                    }
+                  >
+                    Wallet Log
+                  </Button>
+                </div>
+                </div>
+                <div className="border-t border-blue-gray-50 mt-2 mb-3" />
+                {(activeLogTabBySection[section.id] || "wallet") === "credit" ? (
+                  section.creditLogRows.length === 0 ? (
                   <Typography className="text-black mt-2">-</Typography>
                 ) : (
                   <div className="overflow-x-auto">
@@ -384,6 +413,9 @@ const VehicleInfoSection = ({
                       </tbody>
                     </table>
                   </div>
+                  )
+                ) : (
+                  <CabDriverWalletLog cabId={section.cabId} />
                 )}
               </CardBody>
             </Card>
