@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import CabDriverWalletLog from '@/components/CabDriverWallet';
@@ -20,6 +20,7 @@ const VehicleInfoSection = ({
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
   const [activeLogTabBySection, setActiveLogTabBySection] = useState({});
+  const [activeVehicleSectionId, setActiveVehicleSectionId] = useState(null);
 
   const editableLabels = useMemo(
     () => new Set(["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"]),
@@ -103,6 +104,22 @@ const VehicleInfoSection = ({
     []
   );
 
+  useEffect(() => {
+    if (sections.length === 0) {
+      setActiveVehicleSectionId(null);
+      return;
+    }
+    const hasActive = sections.some((section) => section.id === activeVehicleSectionId);
+    if (!hasActive) {
+      setActiveVehicleSectionId(sections[0].id);
+    }
+  }, [sections, activeVehicleSectionId]);
+
+  const visibleSections =
+    sections.length > 1 && activeVehicleSectionId
+      ? sections.filter((section) => section.id === activeVehicleSectionId)
+      : sections;
+
   return (
     <>
       {sections.length === 0 ? (
@@ -116,7 +133,36 @@ const VehicleInfoSection = ({
           </CardBody>
         </Card>
       ) : (
-        sections.map((section) => (
+        <>
+          {sections.length > 1 && (
+            <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
+              <CardBody className="py-3">
+                <div className="rounded-xl border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    {sections.map((section, idx) => (
+                      <button
+                        key={`vehicle-tab-${section.id || idx}`}
+                        type="button"
+                        onClick={() => {
+                          setActiveVehicleSectionId(section.id);
+                          setEditingSectionId(null);
+                          setDraftValues({});
+                        }}
+                        className={`h-9 w-full rounded-lg px-4 text-sm font-medium transition ${
+                          activeVehicleSectionId === section.id
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-white text-blue-gray-700 border border-blue-gray-100 hover:border-blue-gray-200"
+                        }`}
+                      >
+                        {`Cab Id: ${section.cabId || "-"}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+          {visibleSections.map((section) => (
           <React.Fragment key={section.sectionKey || section.id}>
             {(() => {
               const sectionStatus = getVehicleStatusBySection?.(section.id) || "IN_ACTIVE";
@@ -291,13 +337,17 @@ const VehicleInfoSection = ({
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>
                 <div className="px-3 pt-1">
-                  <div className="flex items-end gap-1 border-b border-gray-300">
+                  {/* <Typography className="text-sm font-medium text-blue-gray-700 mb-2">
+                    Logs for Cab ID: {section.cabId || "-"}
+                  </Typography> */}
+                  <div className="rounded-xl border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <Button
                     size="sm"
-                    className={`rounded-b-none rounded-t-md px-5 py-2 text-xs normal-case shadow-none border ${
+                    className={`h-9 w-full rounded-lg px-4 text-sm normal-case shadow-none transition ${
                       activeLogTabBySection[section.id] === "credit"
-                        ? "bg-white text-blue-gray-800 border-gray-300 border-b-white -mb-px"
-                        : "bg-gray-100 text-blue-gray-500 border-gray-300"
+                        ? "bg-primary text-white"
+                        : "bg-white text-blue-gray-700 border border-blue-gray-100 hover:border-blue-gray-200"
                     }`}
                     onClick={() =>
                       setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "credit" }))
@@ -307,10 +357,10 @@ const VehicleInfoSection = ({
                   </Button>
                   <Button
                     size="sm"
-                    className={`rounded-b-none rounded-t-md px-5 py-2 text-xs normal-case shadow-none border ${
+                    className={`h-9 w-full rounded-lg px-4 text-sm normal-case shadow-none transition ${
                       (activeLogTabBySection[section.id] || "wallet") === "wallet"
-                        ? "bg-white text-blue-gray-800 border-gray-300 border-b-white -mb-px"
-                        : "bg-gray-100 text-blue-gray-500 border-gray-300"
+                        ? "bg-primary text-white"
+                        : "bg-white text-blue-gray-700 border border-blue-gray-100 hover:border-blue-gray-200"
                     }`}
                     onClick={() =>
                       setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "wallet" }))
@@ -318,6 +368,7 @@ const VehicleInfoSection = ({
                   >
                     Wallet Log
                   </Button>
+                    </div>
                 </div>
                 </div>
                 <div className="border-t border-blue-gray-50 mt-2 mb-3" />
@@ -420,7 +471,8 @@ const VehicleInfoSection = ({
               </CardBody>
             </Card>
           </React.Fragment>
-        ))
+          ))}
+        </>
       )}
     </>
   );
