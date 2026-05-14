@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "2.0.18",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "@material-tailwind/react": "^2.1.4",
     "@react-google-maps/api": "^2.19.3",
     "@reduxjs/toolkit": "^2.5.1",

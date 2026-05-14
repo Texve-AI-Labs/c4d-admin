@@ -18,6 +18,9 @@ import { API_ROUTES, BOOKING_STATUS, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import moment from "moment";
+import { useBookingQuerySummary } from "./hooks/useBookingQuerySummary";
+import { useBookingSummaryRealtime } from "./hooks/useBookingSummaryRealtime";
+import { useRealtimeEvents } from "@/context/realtimeEvents";
 // import DateRangeFilter from './DateRangeFilter';
 
 const isBrowser = () => typeof window !== 'undefined';
@@ -170,6 +173,22 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [followupLoading, setFollowupLoading] = useState({});
     const [allUsers, setAllUsers] = useState([]); 
     const latestRequestRef = useRef(0);
+    const summaryRequestRef = useRef(0);
+    const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
+
+    const getInquiryTypeFromPath = (pathname = "") => {
+        const path = String(pathname || "").toLowerCase();
+        if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
+        if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
+        if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB_BOOKING";
+        if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
+        if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
+        if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
+        if (path.startsWith("/dashboard/booking/list/returntrips")) return "RETURN_TRIPS";
+        if (path.startsWith("/dashboard/auto")) return "AUTO";
+        if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
+        return "";
+    };
 
 // useEffect(() => {
 //     try {
@@ -319,6 +338,8 @@ useEffect(() => {
   setSelectedTime(driverData ? moment(driverData.date_time).format(' hh:mm A') : moment().format(' hh:mm A'));
   setShowDriverHours(false); // Hide the popup after selection
 };
+
+const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({pagination,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId,activeTab,dateFilter,customDateFrom,customDateTo,customerId,type,summaryRequestRef,setCounts,});
 const fetchServiceAreas = async () => {
         try {
             const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {});
@@ -628,6 +649,24 @@ if (!statusFilter.includes('All')) {
 
         // return () => clearInterval(intervalId);
     }, [customerId, effectiveSearchId, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
+
+    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,buildSummaryQueryParams,fetchBookingSummary,pagination,customerId,effectiveSearchId,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter});
+
+    useEffect(() => {
+        const totalPendings = Number(counts?.totalPendings || 0);
+        const normalizedPath = String(location.pathname || "").toLowerCase();
+        const inferredInquiryType = getInquiryTypeFromPath(normalizedPath);
+        const normalizedType = String(type || inferredInquiryType || "ALL_CABS").toUpperCase();
+
+        if (normalizedPath === "/dashboard/booking") {
+            updateHomeTotalPendings(totalPendings);
+            return;
+        }
+
+        if (normalizedPath.startsWith("/dashboard/booking/list") || normalizedPath.startsWith("/dashboard/auto")) {
+            updateInquiryTotalPendings(normalizedType, totalPendings);
+        }
+    }, [counts?.totalPendings, location.pathname, type, updateHomeTotalPendings, updateInquiryTotalPendings]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= pagination.totalPages) {

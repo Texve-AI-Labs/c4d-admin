@@ -1003,7 +1003,16 @@ export const API_ROUTES = {
     'DRIVER_RETURN_TRIP_DETAILS':'/return-trips',
     'ADMIN_REQUIRED_DOCUMENTS': '/admin/verification/required-documents',
     'ADMIN_ONBOARDING_BY_ID': '/admin/account/onboarding/',
+    'GET_ADMIN_BOOKINGS_SUMMARY': '/admin/bookings/summary',
+    'GET_ADMIN_BOOKINGS_EVENTS': '/admin/bookings/events',
 };
+
+export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
+    API_ROUTES.GET_ADMIN_BOOKINGS_EVENTS,
+    '/admin/bookings/event',
+    '/admin/booking/events',
+    '/admin/booking/event',
+];
 
 export const KYC_PROCESS = {
     AADHAAR: 'AADHAAR',
