@@ -4,6 +4,7 @@ import { Button } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { Typography } from '@material-tailwind/react';
 import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import PremiumPriceDetails from '@/components/PremiumPriceDetails';
@@ -92,6 +93,10 @@ const RentalsPriceMasterDetails = () => {
                     acExtraKilometerRoundPriceSuv: data?.data?.acExtraKilometerRoundPriceSuv || 0,
                     acExtraKilometerRoundPriceSedan: data?.data?.acExtraKilometerRoundPriceSedan || 0,
                     freeExtraMinutes: data?.data?.freeExtraMinutes || 0,
+
+                    driverCancelMins:Utils.convertTimeFormatToMinutes(data?.data?.driverCancelMins || 0),
+                    driverFreeCancellationsPerDay:data?.data?.driverFreeCancellationsPerDay || 0,
+                    driverCancellationCharge:data?.data?.driverCancellationCharge || 0,
                 });
                 setPremiumConfig(data.data.premiumConfig);
             }
@@ -617,6 +622,46 @@ const RentalsPriceMasterDetails = () => {
               </td>
             </>
           )}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+    <div className='overflow-x-auto m-2'>
+      <Typography className='font-semibold'>Driver Cancellation</Typography>
+      <table className="w-full border border-collapse text-sm text-center">
+        <thead>
+          <tr className="bg-primary  text-white">
+            <th>Driver Cancel Mins</th>
+            <th>Driver Free Cancellations Per Day</th>
+            <th>Driver Cancellation Charge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="border p-2">
+              <Field
+                type="number"
+                name="driverCancelMins"
+                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                disabled
+              />
+            </td>
+            <td className="border p-2">
+              <Field
+                type="number"
+                name="driverFreeCancellationsPerDay"
+                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                disabled
+              />
+            </td>
+            <td className="border p-2">
+              <Field
+                type="number"
+                name="driverCancellationCharge"
+                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                disabled
+              />
+            </td>
         </tr>
       </tbody>
     </table>
