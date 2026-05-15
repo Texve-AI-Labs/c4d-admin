@@ -35,7 +35,8 @@ export const useBookingSummarySSE = ({
       method: "GET",
       headers: {
         Accept: "text/event-stream",
-        "ngrok-skip-browser-warning": "true",
+        // "ngrok-skip-browser-warning": "true",
+        // 'ngrok-skip-browser-warning': '69420',
         token: localStorage.getItem("token") || "",
       },
       signal: abortController.signal,

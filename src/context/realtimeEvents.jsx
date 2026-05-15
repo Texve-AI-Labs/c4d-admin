@@ -167,7 +167,8 @@ export const RealtimeEventsProvider = ({ children }) => {
       method: "GET",
       headers: {
         Accept: "text/event-stream",
-        "ngrok-skip-browser-warning": "true",
+        // "ngrok-skip-browser-warning": "true",
+        // 'ngrok-skip-browser-warning': '69420',
         token: authToken,
       },
       signal: abortController.signal,
