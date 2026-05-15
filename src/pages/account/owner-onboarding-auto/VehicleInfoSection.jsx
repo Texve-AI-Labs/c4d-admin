@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import CabDriverWalletLog from '@/components/CabDriverWallet';
 
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;
@@ -39,6 +40,7 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [activeLogTabBySection, setActiveLogTabBySection] = useState({});
 
   const editableLabels = useMemo(
     () => new Set(["Vehicle Name", "Auto Number", "Address", "Insurance Expiry Date", "Vehicle Type", "Model Year", "Seater"]),
@@ -271,11 +273,39 @@ const VehicleInfoSection = ({
 
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>
-                <Typography variant="h5" className="text-blue-gray-900 font-semibold  rounded-md px-3 py-2 inline-block">
+                <div className="px-3 pt-1">
+                  <div className="flex items-center gap-5 border-b border-blue-gray-100">
+                    <button
+                      type="button"
+                      className={`h-10 px-1 text-sm font-medium transition border-b-2 ${
+                        (activeLogTabBySection[section.id] || "credit") === "credit"
+                          ? "text-primary border-primary"
+                          : "text-blue-gray-500 border-transparent hover:text-blue-gray-700"
+                      }`}
+                      onClick={() =>
+                        setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "credit" }))
+                      }
+                    >
                   Credit Log
-                </Typography>
-                <div className="border-t border-blue-gray-50 mt-3 mb-3" />
-                {section.creditLogRows.length === 0 ? (
+                    </button>
+                    <button
+                      type="button"
+                      className={`h-10 px-1 text-sm font-medium transition border-b-2 ${
+                        (activeLogTabBySection[section.id] || "credit") === "wallet"
+                          ? "text-primary border-primary"
+                          : "text-blue-gray-500 border-transparent hover:text-blue-gray-700"
+                      }`}
+                      onClick={() =>
+                        setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "wallet" }))
+                      }
+                    >
+                      Wallet Log
+                    </button>
+                  </div>
+                </div>
+                <div className="border-t border-blue-gray-50 mt-2 mb-3" />
+                {(activeLogTabBySection[section.id] || "credit") === "credit" ? (
+                  section.creditLogRows.length === 0 ? (
                   <Typography className="text-black mt-2">-</Typography>
                 ) : (
                   <div className="overflow-x-auto">
@@ -366,6 +396,9 @@ const VehicleInfoSection = ({
                       </tbody>
                     </table>
                   </div>
+                  )
+                ) : (
+                  <CabDriverWalletLog cabId={section.cabId} />
                 )}
               </CardBody>
             </Card>
