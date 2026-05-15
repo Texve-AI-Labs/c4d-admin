@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button, Typography } from "@material-tailwind/react";
-import { NAV_UI } from "@/utils/constants";
+import { FUTURE_FLAG, NAV_UI } from "@/utils/constants";
 
 function VendorsSubmenu({ miniSidenav }) {
   const getItemClasses = (isActive) =>
@@ -63,10 +63,14 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
     { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
     { label: "Return Trip Driver Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" },
-    { label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" },
-    { label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" },
+    ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
+      ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
+      : []),
+    ...(FUTURE_FLAG.PENDING_DOCUMENTS_LIST
+      ? [{ label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" }]
+      : []),
   ];
-  const rowSize = 6;
+  const rowSize = 5;
   const rows = [];
   for (let i = 0; i < items.length; i += rowSize) {
     rows.push(items.slice(i, i + rowSize));
