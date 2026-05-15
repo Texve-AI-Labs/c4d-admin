@@ -5,6 +5,7 @@ import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import AccountCreationTabs from "./AccountCreationTabs";
+import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 
 const normalizeSubType = () => "Parcel";
 
@@ -232,6 +233,7 @@ const AccountDocuments = () => {
             </tbody>
           </table>
         </CardBody>
+        <DriverAccountBookingNotes accountId={id} />
       </Card>
 
       <div className="flex flex-row mt-4">
