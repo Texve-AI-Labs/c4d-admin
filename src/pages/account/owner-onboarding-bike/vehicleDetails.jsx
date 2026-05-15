@@ -297,7 +297,7 @@ const VehicleOnboardingDetails = () => {
           </table>
         </CardBody>
       </Card>
-      <DriverAccountBookingNotes accountId={id} title="Vehicle Notes" />
+      <DriverAccountBookingNotes accountId={id} />
 
       <div className="flex flex-row mt-4">
         <Button

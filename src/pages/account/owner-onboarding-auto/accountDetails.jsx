@@ -347,7 +347,7 @@ const AccountOnboardingDetails = () => {
             </tbody>
           </table>
         </CardBody>
-                  <DriverAccountBookingNotes accountId={id} title="Account Notes" />
+                  <DriverAccountBookingNotes accountId={id} />
       </Card>
 
       <div className="flex flex-row mt-4">
