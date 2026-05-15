@@ -9,6 +9,23 @@ const DEFAULT_INQUIRY_TYPE = "ALL_CABS";
 const SUMMARY_DEBOUNCE_MS = 1200;
 const SUMMARY_MIN_INTERVAL_MS = 2500;
 
+const FALLBACK_REALTIME_CONTEXT = {
+  isLive: false,
+  isReconnecting: false,
+  eventSeq: 0,
+  lastEvent: null,
+  summaryCounts: {},
+  totalPendings: 0,
+  homeTotalPendings: 0,
+  inquiriesPendingsByType: {},
+  lastSummaryAt: null,
+  isSummaryRefreshing: false,
+  refreshGlobalSummary: async () => {},
+  requestSummaryRefresh: () => {},
+  updateHomeTotalPendings: () => {},
+  updateInquiryTotalPendings: () => {},
+};
+
 const EVENT_TYPES = new Set(["connected", "booking_created", "booking_status_changed", "message"]);
 
 const normalizeEvent = (message) => {
@@ -248,7 +265,7 @@ export const RealtimeEventsProvider = ({ children }) => {
 export const useRealtimeEvents = () => {
   const context = useContext(RealtimeEventsContext);
   if (!context) {
-    throw new Error("useRealtimeEvents must be used within RealtimeEventsProvider");
+    return FALLBACK_REALTIME_CONTEXT;
   }
   return context;
 };
