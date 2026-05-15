@@ -62,8 +62,8 @@ const DriverAccountBookingNotes = ({ accountId }) => {
   // }
 
   return (
-    <div className="p-2 border rounded-sm bg-gray-50  mt-2 shadow-sm">
-      <h2 className="text-2xl font-bold mb-2 text-gray-800">Driver Account Notes</h2>
+    <div className="p-2 border rounded-sm bg-white  mt-2 shadow-sm">
+      <h2 className="text-2xl font-bold mb-2 text-gray-800">Document Notes</h2>
 
       <Formik
         initialValues={initialValues}

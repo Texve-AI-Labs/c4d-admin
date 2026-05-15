@@ -5,6 +5,7 @@ import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import AccountCreationTabs from './AccountCreationTabs';
+import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 
 const toTitle = (value) => {
   if (!value) return "-";
@@ -346,6 +347,7 @@ const AccountOnboardingDetails = () => {
             </tbody>
           </table>
         </CardBody>
+        <DriverAccountBookingNotes accountId={id} title="Account Notes" />
       </Card>
 
       <div className="flex flex-row mt-4">
