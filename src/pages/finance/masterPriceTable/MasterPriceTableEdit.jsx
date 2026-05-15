@@ -9,6 +9,7 @@ import { Utils } from '@/utils/utils';
 import Select from 'react-select';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
 import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
+import { Typography } from '@material-tailwind/react';
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -86,6 +87,9 @@ const PriceEdit = () => {
                     status: data.data.status == 1 ? "ACTIVE": 'IN_ACTIVE',
                     zone: data.data.zone || '',
                     freeExtraMinutes: data.data.freeExtraMinutes || '',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(data.data.driverCancelMins) || '',
+                    driverFreeCancellationsPerDay: data.data.driverFreeCancellationsPerDay || '',
+                    driverCancellationCharge: data.data.driverCancellationCharge || ''
                 });
                 setPeakHours(data.data.peakHours || []);
                 initialPeakHoursRef.current = data.data.peakHours;
@@ -137,6 +141,9 @@ const PriceEdit = () => {
                 peakHours: peakHours,
                 premiumConfig:premiumConfig,
                 zone: values.zone,
+                driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay),
+                driverCancellationCharge: Number(values.driverCancellationCharge)
             };
             const response = await ApiRequestUtils.update(API_ROUTES.RIDES_PRICE_EDIT, reqBody);
             if (response?.success) {
@@ -380,6 +387,44 @@ const PriceEdit = () => {
                                 </table>
                             </div>
                         </div>
+
+                    <div className='overflow-x-auto m-2'>
+                        <Typography className='font-semibold'>Driver Cancellation</Typography>
+                        <table className="w-full border border-collapse text-sm text-center">
+                            <thead>
+                                <tr className="bg-primary  text-white">
+                                    <th>Driver Cancel Mins</th>
+                                    <th>Driver Free Cancellations Per Day</th>
+                                    <th>Driver Cancellation Charge</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverCancelMins"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverFreeCancellationsPerDay"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverCancellationCharge"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                         <RidesPeakHourTableEdit initialPriceData={peakHours} onUpdate={(data)=> setPeakHours(data)}/>
                         <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
                         <div className="flex flex-row">
