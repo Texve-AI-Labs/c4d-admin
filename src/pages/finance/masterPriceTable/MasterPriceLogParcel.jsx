@@ -3,6 +3,7 @@ import { Card, CardBody, Typography } from "@material-tailwind/react";
 import moment from "moment";
 import { API_ROUTES } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
+import { Utils } from "@/utils/utils";
 
 const MasterPriceLogParcel = ({ id }) => {
   const [documentslogs, setDocumentLogs] = useState([]);
@@ -44,6 +45,12 @@ const MasterPriceLogParcel = ({ id }) => {
     commission: "Commission",
     baseFarePercent: "Base Fare Percent",
     distanceFarePercent: "Distance Fare Percent",
+    driverCancelMins: "Driver Cancel Mins",
+    driverFreeCancellationsPerDay: "Driver Free Cancellations / Day",
+    driverCancellationCharge: "Driver Cancellation Charge",
+    driver_cancel_mins: "Driver Cancel Mins",
+    driver_free_cancellations_per_day: "Driver Free Cancellations / Day",
+    driver_cancellation_charge: "Driver Cancellation Charge",
   };
 
 
@@ -150,6 +157,9 @@ const MasterPriceLogParcel = ({ id }) => {
     if (lower.includes("weathersurcharge")) return formatWeatherSurcharge(value);
     if (lower.includes("handlingsurcharge")) return formatHandlingSurcharge(value);
     if (lower.includes("parcelpricing")) return formatParcelPricing(value);
+    if (lower === "drivercancelmins" || lower === "driver_cancel_mins") {
+      return Utils.convertTimeFormatToMinutes(value);
+    }
 
     if (Array.isArray(value)) return formatArray(value);
     if (typeof value === "object") return JSON.stringify(value);

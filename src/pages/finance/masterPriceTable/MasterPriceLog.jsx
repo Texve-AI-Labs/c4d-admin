@@ -3,6 +3,7 @@ import { Card, CardBody, Typography } from "@material-tailwind/react";
 import moment from "moment";
 import { API_ROUTES } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
+import { Utils } from "@/utils/utils";
 
 const MasterPriceLog = ({ id }) => {
     const [documentslogs, setDocumentLogs] = useState([]);
@@ -47,6 +48,12 @@ const MasterPriceLog = ({ id }) => {
         "extra_km_price": "Additional KM Rate",
         "toll_charge": "Toll Charge",
         "driver_charge": "Driver Charge",
+        "driver_cancel_mins": "Driver Cancel Mins",
+        "driver_free_cancellations_per_day": "Driver Free Cancellations / Day",
+        "driver_cancellation_charge": "Driver Cancellation Charge",
+        "driverCancelMins": "Driver Cancel Mins",
+        "driverFreeCancellationsPerDay": "Driver Free Cancellations / Day",
+        "driverCancellationCharge": "Driver Cancellation Charge",
     };
 
     const formatPeakHours = (peakHours) => {
@@ -75,6 +82,14 @@ const MasterPriceLog = ({ id }) => {
 
         if (normalizedField === "peak_hours") {
             return formatPeakHours(value);
+        }
+
+        if (
+            normalizedField === "cancel_mins" ||
+            normalizedField === "driver_cancel_mins" ||
+            normalizedField === "drivercancelmins"
+        ) {
+            return Utils.convertTimeFormatToMinutes(value);
         }
 
 
