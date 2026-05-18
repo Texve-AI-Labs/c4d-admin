@@ -6,8 +6,11 @@ import { API_ROUTES } from '@/utils/constants';
 import { Button } from '@material-tailwind/react';
 import moment from 'moment';
 import { UserIcon } from '@heroicons/react/24/solid';
+import { useParams } from 'react-router-dom';
 
 const DriverAccountBookingNotes = ({ accountId }) => {
+  const params = useParams();
+  const resolvedAccountId = accountId || params?.accountId || params?.id;
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,13 +23,24 @@ const DriverAccountBookingNotes = ({ accountId }) => {
   const initialValues = { notes: '' };
 
   const fetchNotes = async () => {
-    if (!accountId) return;
+    if (!resolvedAccountId) {
+      setNotes([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const response = await ApiRequestUtils.get(
-        `${API_ROUTES.GET_ACCOUNT_BY_ID}/${accountId}`
+        `${API_ROUTES.GET_ACCOUNT_BY_ID}/${resolvedAccountId}`
       );
-      setNotes(response?.data?.notes || response?.data?.data?.notes || []);
+      const rawNotes =
+        response?.data?.notes ||
+        response?.data?.data?.notes ||
+        response?.data?.result?.notes ||
+        response?.data?.data?.result?.notes ||
+        [];
+      const normalizedNotes = Array.isArray(rawNotes) ? rawNotes : [];
+      setNotes(normalizedNotes);
     } catch (err) {
       console.error('Error fetching driver notes:', err);
       setNotes([]);
@@ -36,13 +50,18 @@ const DriverAccountBookingNotes = ({ accountId }) => {
   };
 
   useEffect(() => {
-    if (accountId) fetchNotes();
-  }, [accountId]);
+    if (resolvedAccountId) {
+      fetchNotes();
+    } else {
+      setNotes([]);
+      setLoading(false);
+    }
+  }, [resolvedAccountId]);
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
       await ApiRequestUtils.post(API_ROUTES.ADD_NOTES_BOOKING, {
-        accountId,
+        accountId: resolvedAccountId,
         noteType: 'DOCUMENT', // Hardcoded
         notes: values.notes,
       });

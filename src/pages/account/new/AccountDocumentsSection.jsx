@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Button, Card, CardBody, Chip, Dialog, DialogBody, DialogHeader, Typography } from "@material-tailwind/react";
+import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 
-const AccountDocumentsSection = ({ rows, getStatusTextClass, getStatusBgClass }) => {
+const AccountDocumentsSection = ({ rows, getStatusTextClass, getStatusBgClass, accountId }) => {
   const [modalData, setModalData] = useState(null);
   return (
     <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
@@ -81,6 +82,7 @@ const AccountDocumentsSection = ({ rows, getStatusTextClass, getStatusBgClass })
                 ))}
               </tbody>
             </table>
+            <DriverAccountBookingNotes accountId={accountId} />
           </div>
         )}
         {modalData && (

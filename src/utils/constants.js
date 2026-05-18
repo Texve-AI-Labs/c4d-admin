@@ -20,6 +20,13 @@ export const getBaseUrl = () => {
 }
 export const DISABLE_GLOBAL_AUTOCOMPLETE = true; // true -> off false -> on
 
+
+export const FUTURE_FLAG = {
+    DOCUMENT_DETAILS_LIST: false,
+    PENDING_DOCUMENTS_LIST: false
+};
+
+
 export const GENDER = {
     MALE: 'Male',
     FEMALE: 'Female',
