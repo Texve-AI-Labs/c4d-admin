@@ -8,12 +8,14 @@ import { Typography } from '@material-tailwind/react';
 import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import PremiumPriceDetails from '@/components/PremiumPriceDetails';
+import DemandPriceTable from './DemandPrice';
 
 const RentalsPriceMasterDetails = () => {
     const [initialValues, setInitialValues] = useState(null);
     const { id } = useParams();
     const navigate = useNavigate();
     const [premiumConfig ,setPremiumConfig] = useState({});
+    const [demandRules, setDemandRules] = useState([]);
 
     useEffect(() => {
         fetchPriceDetails();
@@ -99,6 +101,7 @@ const RentalsPriceMasterDetails = () => {
                     driverCancellationCharge:data?.data?.driverCancellationCharge || 0,
                 });
                 setPremiumConfig(data.data.premiumConfig);
+                setDemandRules(data.data.demandRules|| []);
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -670,6 +673,7 @@ const RentalsPriceMasterDetails = () => {
               {initialValues?.type === 'Outstation' &&
                 <PremiumPriceDetails premiumData={premiumConfig} />
               }
+              <DemandPriceTable demandRules={demandRules}/>
 
 
                         <div className="flex flex-row">

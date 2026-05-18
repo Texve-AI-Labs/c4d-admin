@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Button,Typography } from '@material-tailwind/react';
@@ -9,6 +9,7 @@ import Select from 'react-select';
 import { Utils } from '@/utils/utils';
 import MasterPriceLog from "../masterPriceTable/MasterPriceLog";
 import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
+import DemandPriceEdit from './DemandPriceEdit';
 
 
 
@@ -40,7 +41,9 @@ const AutoMasterPriceEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [premiumConfig,setPremiumConfig] = useState({});
-  const initialPremiumRef = useState({});
+  const initialPremiumRef = useRef({});
+  const [demandRules, setDemandRules] = useState([]);
+  const initialDemandPriceRef = useRef([]);
 
   useEffect(() => {
     if (id) fetchPriceDetails(id);
@@ -65,7 +68,7 @@ const AutoMasterPriceEdit = () => {
           nightCharge: priceData.nightCharge || 0,
           cancellationMins: Utils.convertTimeFormatToMinutes(priceData.cancelMins) || 0,
           cancellationCharge: priceData.cancelCharge || 0,
-          status: priceData.status === "1"? 'ACTIVE' : 'INACTIVE',
+          status: Number(priceData.status) === 1 ? 'ACTIVE' : 'INACTIVE',
           freeExtraMinutes: priceData.freeExtraMinutes || 0,
         driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) || 0,
         driverFreeCancellationsPerDay:priceData.driverFreeCancellationsPerDay || 0,
@@ -76,6 +79,8 @@ const AutoMasterPriceEdit = () => {
         const premium = priceData.premiumConfig || [];
         initialPremiumRef.current = JSON.parse(JSON.stringify(premium)); // deep copy
         setPremiumConfig(premium);
+        setDemandRules(priceData.demandRules || []);
+        initialDemandPriceRef.current = priceData.demandRules || [];
       }
     } catch (error) {
       console.error("Error fetching price details:", error);
@@ -84,6 +89,9 @@ const AutoMasterPriceEdit = () => {
 
       const hasPremiumConfig = () => {
       return JSON.stringify(premiumConfig) !== JSON.stringify(initialPremiumRef.current);
+    }
+    const hasDemandPriceChanged = () => {
+      return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
     }
 
   const convertToTimeFormat = (timeString) => {
@@ -113,6 +121,7 @@ const AutoMasterPriceEdit = () => {
         driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
         driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay) || 0,
         driverCancellationCharge: Number(values.driverCancellationCharge) || 0,
+        demandRules: demandRules,
       };
 
       const response = await ApiRequestUtils.post(API_ROUTES.AUTO_PRICE_EDIT, reqBody);
@@ -258,11 +267,12 @@ const AutoMasterPriceEdit = () => {
                         </table>
                     </div>
             <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
+            <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
             <div className="flex flex-row">
               <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                 Cancel
               </Button>
-              <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig()) || !isValid} className="my-6 mx-2">
+              <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig() || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
                 Save Changes
               </Button>
             </div>

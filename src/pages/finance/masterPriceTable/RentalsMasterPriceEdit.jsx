@@ -9,6 +9,7 @@ import Select from 'react-select';
 import {Typography } from "@material-tailwind/react";
 import { Utils } from '@/utils/utils';
 import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
+import DemandPriceEdit from './DemandPriceEdit';
 
 
 
@@ -40,6 +41,8 @@ const RentalsMasterPriceEdit = () => {
     const navigate = useNavigate();
     const [premiumConfig ,setPremiumConfig] = useState({});
     const initialPremiumRef = useRef({});
+    const [demandRules, setDemandRules] = useState([]);   
+    const initialDemandPriceRef = useRef([]);  
 
     useEffect(() => {
         if (id) fetchPriceDetails(id);
@@ -125,6 +128,8 @@ const RentalsMasterPriceEdit = () => {
                 });
                 initialPremiumRef.current = data.data.premiumConfig;
                 setPremiumConfig(data.data.premiumConfig || []);
+                setDemandRules(data.data.demandRules || []);
+                initialDemandPriceRef.current = data.data.demandRules || [];
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -138,6 +143,10 @@ const RentalsMasterPriceEdit = () => {
   const hasPremiumConfig = () => {
     return JSON.stringify(premiumConfig) !== JSON.stringify(initialPremiumRef.current);
   }
+
+      const hasDemandPriceChanged = () => {
+        return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
+    }
 
     const onSubmit = async (values) => {
         try {
@@ -215,6 +224,7 @@ const RentalsMasterPriceEdit = () => {
                 driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
                 driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay),
                 driverCancellationCharge: Number(values.driverCancellationCharge),
+                                demandRules: demandRules,
                 premiumConfig:premiumConfig,
             };
 
@@ -980,11 +990,12 @@ const RentalsMasterPriceEdit = () => {
               {(values?.type === 'Outstation') &&
                 <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data) => setPremiumConfig(data)} />
               }
+                                  <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                                 Cancel
                             </Button>
-                            <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig()) || !isValid} className="my-6 mx-2">
+                            <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig()  || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
                                 Save Changes
                             </Button>
                         </div>

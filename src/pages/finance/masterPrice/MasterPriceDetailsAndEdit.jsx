@@ -7,11 +7,13 @@ import { Button } from '@material-tailwind/react';
 import Select from 'react-select';
 import { Utils } from "@/utils/utils";
 import MasterPriceLog from "../masterPriceTable/MasterPriceLog";
+import DemandPriceTable from "../masterPriceTable/DemandPrice";
 
 export function MasterPriceDetailsAndEdit() {
     const navigate = useNavigate();
     const [masterPriceDetails, setMasterPriceDetails] = useState();
     const [initialValues, setInitialValues] = useState({});
+    const [demandRules, setDemandRules] = useState([]);
     const { id } = useParams();
     
     useEffect(() => {
@@ -50,8 +52,9 @@ export function MasterPriceDetailsAndEdit() {
                 extraKmPrice:data?.data?.extraKmPrice || '',
                 dropPriceAbove:data?.data?.dropPriceAbove || 0,
 
-                status: data.data.status == 1 ? "ACTIVE": 'IN_ACTIVE',
+                status: Number(data.data.status) === 1 ? "ACTIVE" : "INACTIVE",
             })
+            setDemandRules(data?.data?.demandRules || []);
         }
         setMasterPriceDetails(data?.data);
     };
@@ -265,6 +268,9 @@ export function MasterPriceDetailsAndEdit() {
 
 
                             </div>
+                        )}
+                        {(values?.serviceType === 'AUTO' || values?.serviceType === 'DRIVER') && (
+                            <DemandPriceTable demandRules={demandRules} />
                         )}
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className={`my-6 mx-2 ${ColorStyles.backButton}`}>

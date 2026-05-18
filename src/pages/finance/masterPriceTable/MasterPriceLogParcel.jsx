@@ -51,6 +51,8 @@ const MasterPriceLogParcel = ({ id }) => {
     driver_cancel_mins: "Driver Cancel Mins",
     driver_free_cancellations_per_day: "Driver Free Cancellations / Day",
     driver_cancellation_charge: "Driver Cancellation Charge",
+    demandRules: "Demand Rules",
+    demand_rules: "Demand Rules",
   };
 
 
@@ -141,6 +143,20 @@ const MasterPriceLogParcel = ({ id }) => {
   const formatPeakSurcharge = (arr) => formatArray(arr);
   const formatWeatherSurcharge = (arr) => Array.isArray(arr) ? formatArray(arr) : formatSurchargeObject(arr);
   const formatHandlingSurcharge = (arr) => Array.isArray(arr) ? formatArray(arr) : formatSurchargeObject(arr);
+  const formatDemandRules = (rulesRaw) => {
+    const rules = Array.isArray(rulesRaw) ? rulesRaw : [];
+    if (!rules.length) return "-";
+    return rules
+      .map((rule) => {
+        const name = rule?.name || "Rule";
+        const mode = rule?.pricingMode || "-";
+        const value = rule?.value ?? "-";
+        const priority = rule?.priority ?? "-";
+        const active = rule?.isActive ? "Active" : "Inactive";
+        return `${name} (${mode}: ${value}, priority: ${priority}, ${active})`;
+      })
+      .join(" | ");
+  };
 
   const formatValue = (field, value) => {
     if (value === null || value === undefined || value === "") return "-";
@@ -157,6 +173,7 @@ const MasterPriceLogParcel = ({ id }) => {
     if (lower.includes("weathersurcharge")) return formatWeatherSurcharge(value);
     if (lower.includes("handlingsurcharge")) return formatHandlingSurcharge(value);
     if (lower.includes("parcelpricing")) return formatParcelPricing(value);
+    if (lower === "demandrules" || lower === "demand_rules") return formatDemandRules(value);
     if (lower === "drivercancelmins" || lower === "driver_cancel_mins") {
       return Utils.convertTimeFormatToMinutes(value);
     }

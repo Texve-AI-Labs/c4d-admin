@@ -8,6 +8,7 @@ import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import RidesPeakHourTableDetails from './RidesPeakHourTableDetails';
 import PremiumPriceDetails from '@/components/PremiumPriceDetails';
+import DemandPriceTable from './DemandPrice';
 import { Typography } from "@material-tailwind/react";
 
 const PriceDetails = () => {
@@ -16,6 +17,7 @@ const PriceDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [peakHours, setPeakHours] = useState([])
+    const [demandRules, setDemandRules] = useState([]);
     const [premiumConfig ,setPremiumConfig] = useState({});
 
     useEffect(() => {
@@ -65,6 +67,7 @@ const PriceDetails = () => {
                 });
                 setPeakHours(data.data.peakHours);
                 setPremiumConfig(data.data.premiumConfig);
+                setDemandRules(data.data.demandRules|| []);
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -252,6 +255,7 @@ const PriceDetails = () => {
                             </table>
                         </div>
                         <RidesPeakHourTableDetails priceData={peakHours}/>
+                        <DemandPriceTable demandRules={demandRules}/>
                         <PremiumPriceDetails premiumData={premiumConfig}/>
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className={`my-6 mx-2 ${ColorStyles.backButton}`}>

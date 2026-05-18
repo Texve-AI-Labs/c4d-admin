@@ -54,6 +54,8 @@ const MasterPriceLog = ({ id }) => {
         "driverCancelMins": "Driver Cancel Mins",
         "driverFreeCancellationsPerDay": "Driver Free Cancellations / Day",
         "driverCancellationCharge": "Driver Cancellation Charge",
+        "demandRules": "Demand Rules",
+        "demand_rules": "Demand Rules",
     };
 
     const formatPeakHours = (peakHours) => {
@@ -72,6 +74,21 @@ const MasterPriceLog = ({ id }) => {
             .join(", ");
     };
 
+    const formatDemandRules = (rulesRaw) => {
+        const rules = Array.isArray(rulesRaw) ? rulesRaw : [];
+        if (!rules.length) return "-";
+        return rules
+            .map((rule) => {
+                const name = rule?.name || "Rule";
+                const mode = rule?.pricingMode || "-";
+                const value = rule?.value ?? "-";
+                const priority = rule?.priority ?? "-";
+                const active = rule?.isActive ? "Active" : "Inactive";
+                return `${name} (${mode}: ${value}, priority: ${priority}, ${active})`;
+            })
+            .join(" | ");
+    };
+
 
     const formatValue = (field, value) => {
         if (value === null || value === undefined || value === "") {
@@ -82,6 +99,10 @@ const MasterPriceLog = ({ id }) => {
 
         if (normalizedField === "peak_hours") {
             return formatPeakHours(value);
+        }
+
+        if (normalizedField === "demandrules" || normalizedField === "demand_rules") {
+            return formatDemandRules(value);
         }
 
         if (
@@ -137,7 +158,11 @@ const MasterPriceLog = ({ id }) => {
                                     const updatedFields = Array.from(new Set([
                                         ...Object.keys(oldData || {}),
                                         ...Object.keys(newData || {}),
-                                    ]));
+                                    ])).filter((field) => {
+                                        const oldVal = oldData?.[field];
+                                        const newVal = newData?.[field];
+                                        return JSON.stringify(oldVal ?? null) !== JSON.stringify(newVal ?? null);
+                                    });
                                     const fieldsToRender = updatedFields.length ? updatedFields : ["-"];
 
                                     return fieldsToRender.map((field, fieldIndex) => {
