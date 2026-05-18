@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { Button } from '@material-tailwind/react';
+import { Button,Typography } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
@@ -67,6 +67,9 @@ const AutoMasterPriceEdit = () => {
           cancellationCharge: priceData.cancelCharge || 0,
           status: priceData.status === "1"? 'ACTIVE' : 'INACTIVE',
           freeExtraMinutes: priceData.freeExtraMinutes || 0,
+        driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) || 0,
+        driverFreeCancellationsPerDay:priceData.driverFreeCancellationsPerDay || 0,
+        driverCancellationCharge:priceData.driverCancellationCharge || 0,
         
         });
 
@@ -107,6 +110,9 @@ const AutoMasterPriceEdit = () => {
         premiumConfig: premiumConfig || [],
         extraKmPrice: 0,
         freeExtraMinutes: Number(values.freeExtraMinutes) || 0,
+        driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+        driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay) || 0,
+        driverCancellationCharge: Number(values.driverCancellationCharge) || 0,
       };
 
       const response = await ApiRequestUtils.post(API_ROUTES.AUTO_PRICE_EDIT, reqBody);
@@ -214,6 +220,43 @@ const AutoMasterPriceEdit = () => {
                                               </table>
                                           </div>
                                       </div>
+                      <div className='overflow-x-auto m-2'>
+                        <Typography className='font-semibold'>Driver Cancellation</Typography>
+                        <table className="w-full border border-collapse text-sm text-center">
+                            <thead>
+                                <tr className="bg-primary  text-white">
+                                    <th>Driver Cancel Mins</th>
+                                    <th>Driver Free Cancellations Per Day</th>
+                                    <th>Driver Cancellation Charge</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverCancelMins"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverFreeCancellationsPerDay"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverCancellationCharge"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
             <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
             <div className="flex flex-row">
               <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
