@@ -1185,7 +1185,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <span className="text-yellow-500">★</span>
                                     {customerFeedback?.rating || 0}
                                 </span>
-                                {customerFeedback?.rating <= 2 && (
+                                {customerFeedback?.rating <= 4 && (
                                     <> 
                                  <span className="italic">
                                         {customerFeedback?.comment || 'N/A'}
@@ -1380,7 +1380,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         <span className="text-yellow-500">★</span>
                                         {driverFeedback?.rating || 0}
                                     </span>
-                                    {driverFeedback?.rating <= 2  && (<>
+                                    {driverFeedback?.rating <= 4  && (<>
                                      <span className="italic">
                                         {driverFeedback?.comment || 'N/A'}
                                     </span>
