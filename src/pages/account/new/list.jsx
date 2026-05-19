@@ -161,6 +161,7 @@ export function AccountList() {
   const [accounts, setAccounts] = useState([]);
   const [alert, setAlert] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const location = useLocation();
 
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
@@ -350,8 +351,11 @@ export function AccountList() {
     }
   }, [location, navigate]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
+    lastRequestKeyRef.current = '';
+    inFlightRequestKeyRef.current = '';
+    setRefreshing(true);
     setPagination({
       currentPage: 1,
       totalPages: 1,
@@ -639,14 +643,14 @@ export function AccountList() {
             <button
               className="bg-primary-400 text-white px-4 py-2 rounded-2xl flex items-center gap-2 hover:bg-primary-500"
               onClick={handleRefresh}
-              disabled={loading}
+              disabled={loading || refreshing}
             >
-              {loading ? (
+              {(loading || refreshing) ? (
                 <Spinner className="w-4 h-4" />
               ) : (
                 <img src="/img/refresh.png" alt="Refresh" className="w-4 h-4" />
               )}
-              <span>{loading ? "Refreshing..." : "Refresh"}</span>
+              <span>{(loading || refreshing) ? "Refreshing..." : "Refresh"}</span>
             </button>
           </div>
         </CardHeader>
