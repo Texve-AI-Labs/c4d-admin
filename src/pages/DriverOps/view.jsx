@@ -12,6 +12,7 @@ import AreaWiseHourlyDemandOutstation from "./areaWiseHourlyDemandOutstation";
 import AreaWiseTripTypeShareBar from "./areaWiseTripTypeShareBar";
 import DriverTransactionsChart from "./driverTransactionsChart";
 import DriverTransactionsTable from"./driverTransactionsTable";
+import UniqueBookingsCounts from "./uniqueBookingsCounts";
 import { Typography } from "@material-tailwind/react";
 import Select from "react-select";
 
@@ -62,6 +63,10 @@ const DriverOpsView = () => {
   const [d4BarDate, setD4BarDate] = useState(today);
   const [d4BarMonth, setD4BarMonth] = useState(currentMonth);
   const [d4BarYear, setD4BarYear] = useState(String(currentYear));
+  const [d6FilterType, setD6FilterType] = useState("daily");
+  const [d6Date, setD6Date] = useState(today);
+  const [d6Month, setD6Month] = useState(currentMonth);
+  const [d6Year, setD6Year] = useState(String(currentYear));
   const [error, setError] = useState(null);
 
   const fetchGeoData = async () => {
@@ -588,6 +593,93 @@ const DriverOpsView = () => {
         </div>
         <DriverTransactionsChart />
         <DriverTransactionsTable />
+      </div>
+      <div className="p-2 space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+            <Typography className="text-gray-700 text-lg font-medium">
+              Dashboard 6: Unique Bookings 
+            </Typography>
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 items-stretch sm:items-center">
+              <div className="inline-flex rounded-full bg-gray-100 p-1 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setD6FilterType("daily")}
+                  className={`px-3 py-1 text-xs font-medium rounded-full ${d6FilterType === "daily"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-transparent text-gray-700"
+                    }`}
+                >
+                  Daily
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setD6FilterType("weekly")}
+                  className={`px-3 py-1 text-xs font-medium rounded-full ${d6FilterType === "weekly"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-transparent text-gray-700"
+                    }`}
+                >
+                  Weekly
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setD6FilterType("monthly")}
+                  className={`px-3 py-1 text-xs font-medium rounded-full ${d6FilterType === "monthly"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-transparent text-gray-700"
+                    }`}
+                >
+                  Monthly
+                </button>
+              </div>
+              {d6FilterType === "monthly" ? (
+                <>
+                  <div className="w-full sm:w-auto min-w-[140px]">
+                    <Select
+                      options={MONTH_OPTIONS}
+                      value={MONTH_OPTIONS.find((opt) => opt.value === d6Month)}
+                      onChange={(opt) =>
+                        setD6Month(
+                          opt?.value ||
+                          String(new Date().getMonth() + 1).padStart(2, "0")
+                        )
+                      }
+                      classNamePrefix="month-select"
+                      menuPortalTarget={document.body}
+                      styles={{
+                        menuPortal: (base) => ({ ...base, zIndex: 40 }),
+                        control: (base) => ({
+                          ...base,
+                          minHeight: 32,
+                          borderRadius: 12,
+                          fontSize: 14,
+                        }),
+                      }}
+                      isSearchable={false}
+                    />
+                  </div>
+                  <input
+                    type="number"
+                    value={d6Year}
+                    onChange={(e) => setD6Year(e.target.value)}
+                    min="1990"
+                    max="2100"
+                    className="w-full sm:w-24 rounded-xl border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs focus:outline-none focus:border-primary"
+                  />
+                </>
+              ) : (
+                <input
+                  type="date"
+                  value={d6Date}
+                  onChange={(e) => setD6Date(e.target.value)}
+                  className="w-full sm:w-auto rounded-xl border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs focus:outline-none focus:border-primary hidden"
+                />
+              )}
+            </div>
+          </div>
+          <UniqueBookingsCounts
+            filterParams={buildFilterParams(d6FilterType, d6Date, d6Month, d6Year)}
+          />
       </div>
     </div>
   );

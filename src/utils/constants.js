@@ -1005,6 +1005,7 @@ export const API_ROUTES = {
     'GET_CASH_BACK':'/cashback-rules',
     "GET_TRANSACTIONS_LIST":'/transactions',
     "GET_TRANSACTIONS_CHART":'/transactions/chart',
+    "GET_BOOKING_FUNNEL": '/admin/booking-funnel',
     "ASSIGN_AUTO":'/confirm-auto-booking',
     "ADD_SUPPORT_PARCEL_BOOKING":'/add-support-parcel-booking',
     'DRIVER_RETURN_TRIP_DETAILS':'/return-trips',
