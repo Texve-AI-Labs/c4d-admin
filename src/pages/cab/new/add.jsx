@@ -461,6 +461,7 @@ const CabAddNew = () => {
                 name: values.name,
                 carNumber: values.carNumber,
                 curAddress: values.address,
+                district: resolvedAccount?.district || "",
                 insurance: values.insurance,
                 carType: values.carType,
                 vehicleType: values.vehicleType,
@@ -477,6 +478,7 @@ const CabAddNew = () => {
                 accountId: values.accountId,
                 driverId: values.driverId,
             }
+            // console.log('CAB DETAILS :', cabDetails);
             const prices = values.prices;
             let res = { cabDetails: JSON.stringify(cabDetails), prices: JSON.stringify(prices) };
             const resp = await ApiRequestUtils.post(API_ROUTES.REGISTER_CAB, res);
