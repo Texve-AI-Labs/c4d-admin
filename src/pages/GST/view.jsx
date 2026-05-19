@@ -12,11 +12,13 @@ const GstView = () => {
   const location = useLocation();
   const [gstList, setGstList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState("GST");
 
   useEffect(() => {
     const fetchGstData = async () => {
       try {
-        const res = await ApiRequestUtils.get(API_ROUTES.GET_GST);
+        setLoading(true);
+        const res = await ApiRequestUtils.getWithQueryParam(`${API_ROUTES.GET_GST}?type=${selectedType}`);
         let list = res?.data || [];
 
       
@@ -35,7 +37,7 @@ const GstView = () => {
     };
 
     fetchGstData();
-  }, [location.state]);
+  }, [location.state, selectedType]);
 
   return (
     <div className="mb-8 flex flex-col gap-12">
@@ -54,6 +56,22 @@ const GstView = () => {
         </CardHeader>
 
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
+          <div className="px-6 pb-4 flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => setSelectedType("GST")}
+              className={selectedType === "GST" ? "bg-primary" : "bg-gray-300 text-black"}
+            >
+              Gst
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setSelectedType("DRIVER_FEEDBACK")}
+              className={selectedType === "DRIVER_FEEDBACK" ? "bg-primary" : "bg-gray-300 text-black"}
+            >
+              Driver Feedback
+            </Button>
+          </div>
           {loading ? (
              <div className="flex flex-col items-center justify-center py-10">
     <Spinner className="h-10 w-10 mb-2" />
@@ -65,10 +83,18 @@ const GstView = () => {
                 <tr>
                   <th className="py-3 px-5 text-left">Service Type</th>
                   <th className="py-3 px-5 text-left">Name</th>
+                  {selectedType !== "DRIVER_FEEDBACK" && (
                   <th className='py-3 px-5 text-left'>Customer</th>
+                  )}
+                  {selectedType !== "DRIVER_FEEDBACK" && (
                   <th className='py-3 px-5 text-left'>Driver</th>
+                  )}
+                  {selectedType !== "DRIVER_FEEDBACK" && (
                   <th className="py-3 px-5 text-left">Description</th>
+                  )}
+                  {selectedType !== "DRIVER_FEEDBACK" && (
                   <th className="py-3 px-5 text-left">Total TAX (%)</th>
+                  )}
                   <th className="py-3 px-5 text-left">Status</th>
                   <th className="py-3 px-5 text-left">Actions</th>
 
@@ -84,10 +110,16 @@ const GstView = () => {
                     <tr key={index} className="border-b">
                       <td className="py-3 px-5">{item.serviceType}</td>
                       <td className="py-3 px-5">{item.name}</td>
+                      {selectedType !== "DRIVER_FEEDBACK" && (
                       <td className='py-3 px-5'>{item.customer||'-'}</td>
+                      )}
+                      {selectedType !== "DRIVER_FEEDBACK" && (
                       <td className='py-3 px-5'>{item.driver||'-'}</td>
+                      )}
                       <td className="py-3 px-5">{item.description||'-'}</td>
+                      {selectedType !== "DRIVER_FEEDBACK" && (
                       <td className="py-3 px-5">{item.config?.totalGst}%</td>
+                      )}
                       <td className="py-3 px-5">
                         {item.isActive
                           ? <span className="text-green-600 font-semibold">Active</span>
