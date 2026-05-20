@@ -40,6 +40,15 @@ const BannerView = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
+  const formatDateAndTime = (dateValue, timeValue) => {
+    if (!dateValue) return '-';
+    const formattedDate = moment(dateValue).format('DD-MM-YYYY');
+    const formattedTime = timeValue
+      ? moment(timeValue, ['HH:mm:ss', 'HH:mm']).format('hh:mm A')
+      : moment(dateValue).format('hh:mm A');
+    return `${formattedDate} , ${formattedTime}`;
+  };
+
   useEffect(() => {
     const fetchBanners = async () => {
       try {
@@ -305,10 +314,10 @@ const BannerView = () => {
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>
                       <td className="py-3 px-5 break-all">{item.redirectUrl || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
-                        {item.fromDate ? moment(item.fromDate).format('DD-MM-YYYY') : '-'}
+                        {formatDateAndTime(item.fromDate, item.startTime)}
                       </td> 
                       <td className="py-3 px-5 whitespace-nowrap">
-                        {item.toDate ? moment(item.toDate).format('DD-MM-YYYY') : '-'}
+                        {formatDateAndTime(item.toDate, item.endTime)}
                       </td>
                       <td className="py-3 px-5">
                         {formatTypeText(item.driverType)}

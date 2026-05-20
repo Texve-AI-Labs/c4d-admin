@@ -51,6 +51,8 @@ const AddBanner = () => {
     dropLocation: null,     
     navigateTo: '',         
     driverType: '',
+    startTime: '',
+    endTime: '',
   };
 
   const fetchGeoData = async () => {
@@ -86,10 +88,19 @@ const AddBanner = () => {
       .test('fileType', 'Only JPEG or PNG files are allowed', (value) =>
         value ? ['image/jpeg', 'image/png','image/gif','image/avif'].includes(value.type) : false
       ),
-    //   fromDate: Yup.string().required('Start Date is required'),
-    //   toDate: Yup.string().required('End Date is required'),
-    //   zone: Yup.string().required('Zone is required')
+      fromDate: Yup.string().required('Start Date is required'),
+      toDate: Yup.string().required('End Date is required'),
+      zone: Yup.string().required('Zone is required'),
+      startTime: Yup.string().required('Start Time is required'),
+      endTime: Yup.string().required('End Time is required'),
   });
+
+  const noValidationTypes = new Set([
+    'NEW_CUSTOMER',
+    'INTRO_SLIDES',
+    'INTRO_SLIDES_DRIVER',
+    'TRAINING_VIDEO_DRIVER',
+  ]);
 
   const handleImageUpload = (file, setFieldValue) => {
     const validTypes = ['image/jpeg', 'image/png','image/gif','image/avif'];
@@ -149,7 +160,11 @@ const AddBanner = () => {
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
       if (!isNewCustomer && !isIntroType) {
+        // const fromDateIso = values.fromDate ? new Date(values.fromDate).toISOString() : '';
+        // const toDateIso = values.toDate ? new Date(values.toDate).toISOString() : '';
         formData.append('fromDate', values.fromDate);
+        formData.append('startTime', values.startTime || '');
+        formData.append('endTime', values.endTime || '');
         formData.append('toDate', values.toDate);
         formData.append('redirectUrl', values.redirectUrl.trim());
         formData.append('dropAddress', values.dropAddress || '');
@@ -192,7 +207,9 @@ const AddBanner = () => {
 
       <Formik
         initialValues={initialValues}
-        validationSchema={validationSchema}
+        validationSchema={(values) =>
+          noValidationTypes.has(values?.type) ? Yup.object().shape({}) : validationSchema
+        }
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, values,setFieldValue }) => {
@@ -220,16 +237,16 @@ const AddBanner = () => {
                   }}
                 >
                   <option value="">select the Type</option>
-                  <option value="TOP">Top</option>
-                  <option value="BOTTOM">Bottom</option>
-                  <option value="YOUTUBE">YouTube</option>
-                  <option value="BACKGROUND">Background</option>
+                  {/* <option value="TOP">Top</option> */}
+                  {/* <option value="BOTTOM">Bottom</option> */}
+                  {/* <option value="YOUTUBE">YouTube</option> */}
+                  {/* <option value="BACKGROUND">Background</option> */}
                   <option value="BANNER">Banner</option>
-                  <option value="STATS">Stats</option>
+                  {/* <option value="STATS">Stats</option> */}
                   <option value="TOP_NEW">Top New</option>
                   {/* <option value="MIDCAROUSEL">MidCarousel</option> */}
-                  <option value="PROMOTION">Promotion</option>
-                  <option value="BOTTOM_NEW">Bottom New</option>
+                  {/* <option value="PROMOTION">Promotion</option> */}
+                  {/* <option value="BOTTOM_NEW">Bottom New</option> */}
                   <option value="NEW_CUSTOMER">New Customer</option>
                   <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
                   <option value="INTRO_SLIDES_DRIVER">Intro Slides (Driver)</option>         
@@ -275,11 +292,20 @@ const AddBanner = () => {
                 <Field name="fromDate" type="date" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="fromDate" component="div" className="text-red-500 text-sm" />
               </div>
-             
+                 <div>
+                <label className="text-sm font-medium text-gray-700">Start Time</label>
+                <Field name="startTime" type="time" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                <ErrorMessage name="startTime" component="div" className="text-red-500 text-sm" />
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">To Date</label>
                 <Field name="toDate" type="date" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="toDate" component="div" className="text-red-500 text-sm" />
+              </div>
+                 <div>
+                <label className="text-sm font-medium text-gray-700">End Time</label>
+                <Field name="endTime" type="time" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                <ErrorMessage name="endTime" component="div" className="text-red-500 text-sm" />
               </div>
 
               <div>
