@@ -351,7 +351,13 @@ export function AccountList() {
     }
   }, [location, navigate]);
 
-  const handleRefresh = async () => {
+  useEffect(() => {
+    if (refreshing && !loading) {
+      setRefreshing(false);
+    }
+  }, [refreshing, loading]);
+
+  const handleRefresh = () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
     lastRequestKeyRef.current = '';
     inFlightRequestKeyRef.current = '';
