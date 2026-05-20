@@ -20,7 +20,7 @@ function VendorsSubmenu({ miniSidenav }) {
     switch (label) {
       case "All Cab Owners":
         // Only highlight Owners on the main owners page
-        return pathname === "/dashboard/vendors/account/new";
+        return pathname === "/dashboard/vendors/account/owner-onboarding-cab";
       case "All Acting Driver":
         return pathname.startsWith("/dashboard/vendors/account/drivers");
       case "All Cab List":
@@ -54,7 +54,7 @@ function VendorsSubmenu({ miniSidenav }) {
   };
 
   const items = [
-    { label: "All Cab Owners", path: "/dashboard/vendors/account/new", icon: "/img/owners.png" },
+    { label: "All Cab Owners", path: "/dashboard/vendors/account/owner-onboarding-cab", icon: "/img/owners.png" },
     { label: "All Acting Driver", path: "/dashboard/vendors/account/drivers", icon: "/img/acting_driver.png" },
     { label: "All Auto Owner", path: "/dashboard/vendors/account/owner-onboarding-auto", icon: "/img/parcel_list.png" },
     { label: "All Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },

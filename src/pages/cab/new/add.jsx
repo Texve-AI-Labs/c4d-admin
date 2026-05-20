@@ -7,8 +7,8 @@ import { Button, Card, CardBody, Typography } from '@material-tailwind/react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import { CAB_ADD_SCHEMA } from '@/utils/validations';
-import LocationInput from '@/pages/account/new/LocationInput';
-import AccountCreationTabs from '@/pages/account/new/AccountCreationTabs';
+import LocationInput from '@/pages/account/owner-onboarding-cab/LocationInput';
+import AccountCreationTabs from '@/pages/account/owner-onboarding-cab/AccountCreationTabs';
 
 const updatePricesForCarType = (carType, values, setFieldValue, packageDetails) => {
     if (values.packages.length === 0) return;
@@ -490,7 +490,7 @@ const CabAddNew = () => {
                 resetForm();
             }
             else if (resp?.success && resp?.code === 200) {
-                navigate(`/dashboard/vendors/account/new`);
+                navigate(`/dashboard/vendors/account/owner-onboarding-cab`);
             }
 
         } catch (error) {
@@ -932,7 +932,7 @@ const CabAddNew = () => {
                         <div className='flex flex-row'>
                             <Button
                                 fullWidth
-                                onClick={() => { navigate('/dashboard/vendors/account/new'); }}
+                                onClick={() => { navigate('/dashboard/vendors/account/owner-onboarding-cab'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
                             >
                                 Cancel

@@ -137,11 +137,11 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
     normalizedAccountStatus === "VERIFIED" &&
     normalizedVehicleStatus === "VERIFIED"
   ) {
-    return `/dashboard/vendors/account/new/details/completed/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-cab/details/completed/${id}`;
   }
 
   if (normalizedStage === "VEHICLE" && normalizedVehicleStatus === "VERIFIED" && !hasVehicleNormalized) {
-    return `/dashboard/vendors/account/new/cab/add/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-cab/cab/add/${id}`;
   }
 
   const shouldOpenVehicleDetails =
@@ -151,10 +151,10 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
       ["PENDING UPLOAD", "PENDING VERIFICATION", "DECLINED", "INVALID"].includes(normalizedVehicleStatus));
 
   if (shouldOpenVehicleDetails) {
-    return `/dashboard/vendors/account/new/details/vehicle/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-cab/details/vehicle/${id}`;
   }
 
-  return `/dashboard/vendors/account/new/details/account/${id}`;
+  return `/dashboard/vendors/account/owner-onboarding-cab/details/account/${id}`;
 };
 export function AccountList() {
   const navigate = useNavigate();

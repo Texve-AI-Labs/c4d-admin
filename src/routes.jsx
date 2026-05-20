@@ -147,13 +147,13 @@ import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
 import DriverMonitoringList from "./pages/DriverEngagementModule/DriverMonitoring/list";
 import IncentivePayoutList from "./pages/DriverEngagementModule/IncentivePayout/list";
 import DriverEngagementAuditLogs from "./pages/DriverEngagementModule/AuditLogs/list";
-import AccountList from "./pages/account/new/list";
-import AddAccountNew from "./pages/account/new/add";
-import AccountDocuments from "./pages/account/new/documents";
-import VehicleDocuments from "./pages/account/new/vehicleDocuments";
-import AccountOnboardingDetails from "./pages/account/new/accountDetails";
-import VehicleOnboardingDetails from "./pages/account/new/vehicleDetails";
-import CompletedOnboardingDetails from "./pages/account/new/completedDetails";
+import AccountList from "./pages/account/owner-onboarding-cab/list";
+import AddAccountNew from "./pages/account/owner-onboarding-cab/add";
+import AccountDocuments from "./pages/account/owner-onboarding-cab/documents";
+import VehicleDocuments from "./pages/account/owner-onboarding-cab/vehicleDocuments";
+import AccountOnboardingDetails from "./pages/account/owner-onboarding-cab/accountDetails";
+import VehicleOnboardingDetails from "./pages/account/owner-onboarding-cab/vehicleDetails";
+import CompletedOnboardingDetails from "./pages/account/owner-onboarding-cab/completedDetails";
 import OwnerOnboardingAutoList from "./pages/account/owner-onboarding-auto/list";
 import OwnerOnboardingAutoAdd from "./pages/account/owner-onboarding-auto/add";
 import OwnerOnboardingAutoDocuments from "./pages/account/owner-onboarding-auto/documents";
@@ -645,7 +645,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Add Account New",
-        path: "/vendors/account/new/add",
+        path: "/vendors/account/owner-onboarding-cab/add",
         element: <AddAccountNew />,
         display: true,
         permission: "Vendors",
@@ -653,7 +653,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Account Documents",
-        path: "/vendors/account/new/documents/:id",
+        path: "/vendors/account/owner-onboarding-cab/documents/:id",
         element: <AccountDocuments />,
         display: false,
         permission: "Vendors",
@@ -661,7 +661,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Vehicle Documents",
-        path: "/vendors/account/new/vehicle-documents/:id",
+        path: "/vendors/account/owner-onboarding-cab/vehicle-documents/:id",
         element: <VehicleDocuments />,
         display: false,
         permission: "Vendors",
@@ -669,7 +669,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Add New Cab",
-        path: "/vendors/account/new/cab/add/:id",
+        path: "/vendors/account/owner-onboarding-cab/cab/add/:id",
         element: <CabAddNew />,
         display: false,
         permission: "Vendors",
@@ -677,7 +677,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Account List",
-        path: "/vendors/account/new",
+        path: "/vendors/account/owner-onboarding-cab",
         element: <AccountList />,
         display: true,
         permission: "Vendors",
@@ -685,7 +685,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Account Onboarding Details",
-        path: "/vendors/account/new/details/account/:id",
+        path: "/vendors/account/owner-onboarding-cab/details/account/:id",
         element: <AccountOnboardingDetails />,
         display: false,
         permission: "Vendors",
@@ -693,7 +693,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Vehicle Onboarding Details",
-        path: "/vendors/account/new/details/vehicle/:id",
+        path: "/vendors/account/owner-onboarding-cab/details/vehicle/:id",
         element: <VehicleOnboardingDetails />,
         display: false,
         permission: "Vendors",
@@ -701,7 +701,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Completed Onboarding Details",
-        path: "/vendors/account/new/details/completed/:id",
+        path: "/vendors/account/owner-onboarding-cab/details/completed/:id",
         element: <CompletedOnboardingDetails />,
         display: false,
         permission: "Vendors",

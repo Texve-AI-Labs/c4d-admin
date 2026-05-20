@@ -7,14 +7,13 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 
-const VehicleDocuments = () => {
+const AccountDocuments = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [requiredDocs, setRequiredDocs] = useState([]);
   const [account, setAccount] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
-  const [uploadErrorsByType, setUploadErrorsByType] = useState({});
 
   useEffect(() => {
     if (id) fetchData();
@@ -26,16 +25,18 @@ const VehicleDocuments = () => {
       const accountData = accountRes?.data?.data;
       setAccount(accountData || null);
 
-      const vehicleDocsRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_REQUIRED_DOCUMENTS, {
+      const accountDocsRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_REQUIRED_DOCUMENTS, {
         subjectType: "ACCOUNT",
         serviceType: accountData?.type || "Individual",
       });
 
-      const vehicleDocs = vehicleDocsRes?.data?.vehicleRequiredDocuments || [];
-      const combinedDocs = vehicleDocs.map((docType) => ({ type: docType, subjectType: "VEHICLE" }));
+      const accountDocs = accountDocsRes?.data?.accountRequiredDocuments || [];
+
+      const combinedDocs = accountDocs.map((docType) => ({ type: docType, subjectType: "ACCOUNT" }));
+
       setRequiredDocs(combinedDocs);
     } catch (err) {
-      console.error("Failed to load vehicle documents data", err);
+      console.error("Failed to load account documents data", err);
     }
   };
 
@@ -62,45 +63,35 @@ const VehicleDocuments = () => {
     });
   }, [requiredDocs, proofsByType]);
 
+  const subjectType = "ACCOUNT";
+  const serviceType = account?.type || "Individual";
+
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
 
   const handleUploadDocument = async (event, row) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
-    setUploadErrorsByType((prev) => ({ ...prev, [row.docType]: "" }));
 
     const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
     const maxSize = 10 * 1024 * 1024;
     const singleFile = isSingleFileDocType(row.docType);
 
     if (singleFile && files.length > 1) {
-      setUploadErrorsByType((prev) => ({
-        ...prev,
-        [row.docType]: "Only one document is allowed for this type.",
-      }));
+      window.alert("Only one document is allowed for this type.");
       return;
     }
     if (!singleFile && files.length > 2) {
-      setUploadErrorsByType((prev) => ({
-        ...prev,
-        [row.docType]: "You can upload a maximum of two documents.",
-      }));
+      window.alert("You can upload a maximum of two documents.");
       return;
     }
 
     for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
-        setUploadErrorsByType((prev) => ({
-          ...prev,
-          [row.docType]: "Invalid file type. Please upload JPG, PNG, or PDF.",
-        }));
+        window.alert("Invalid file type. Please upload JPG, PNG, or PDF.");
         return;
       }
       if (file.size > maxSize) {
-        setUploadErrorsByType((prev) => ({
-          ...prev,
-          [row.docType]: "File size exceeds 10MB limit.",
-        }));
+        window.alert("File size exceeds 10MB limit.");
         return;
       }
     }
@@ -129,13 +120,8 @@ const VehicleDocuments = () => {
       } else {
         await ApiRequestUtils.postDocs(API_ROUTES.UPLOAD_PHOTO, formData);
       }
-      setUploadErrorsByType((prev) => ({ ...prev, [row.docType]: "" }));
       await fetchData();
     } catch (error) {
-      setUploadErrorsByType((prev) => ({
-        ...prev,
-        [row.docType]: "Upload failed. Please try again.",
-      }));
       console.error("Failed to upload document:", error);
     } finally {
       setUploadingByType((prev) => ({ ...prev, [row.docType]: false }));
@@ -145,9 +131,9 @@ const VehicleDocuments = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
-      <AccountCreationTabs activeStage={3} />
+      <AccountCreationTabs activeStage={2} />
       <div className="mb-4">
-        {/* <h2 className="text-2xl font-bold">Vehicle Documents</h2> */}
+        {/* <h2 className="text-2xl font-bold">Account Documents</h2> */}
         <span className="text-xs text-blue-gray-600 mt-1">Account ID: {id}</span>
         <p className="text-sm text-gray-600 mt-1">
           Document upload is required to verify your account and ensure compliance with our policies.
@@ -156,13 +142,13 @@ const VehicleDocuments = () => {
           Please upload the following documents:
         </p>
         <ul className="text-sm text-gray-600 list-disc list-inside">
-          <li><strong>Rc Copy:</strong> 2 documents</li>
-          <li><strong>Insurance:</strong> 1 document</li>
-          <li><strong>Permit:</strong> 1 documents</li>
-
-          <li><strong>Vehicle Photo:</strong> 2 documents</li>
-
+          <li><strong>Aadhaar:</strong> 2 documents</li>
+          <li><strong>Photo:</strong> 1 document</li>
+          {subjectType === "ACCOUNT" && serviceType !== "Company" && (
+            <li><strong>License:</strong> 2 documents</li>
+          )}
         </ul>
+
       </div>
 
       <Card>
@@ -206,7 +192,12 @@ const VehicleDocuments = () => {
                       {row.proof?.image1 ? (
                         <Typography
                           className="text-xs font-semibold text-blue-700 underline cursor-pointer"
-                          onClick={() => setModalData({ image1: row.proof?.image1, image2: row.proof?.image2 })}
+                          onClick={() =>
+                            setModalData({
+                              image1: row.proof?.image1,
+                              image2: row.proof?.image2,
+                            })
+                          }
                         >
                           View Details
                         </Typography>
@@ -218,28 +209,21 @@ const VehicleDocuments = () => {
                       <Typography className="text-xs font-semibold text-blue-gray-900">{row.createdAt}</Typography>
                     </td>
                     <td className="py-3 px-5 border-b border-blue-gray-50">
-                      <div className="flex flex-col gap-1">
-                        <label
-                          htmlFor={`upload-${row.key}`}
-                          className="inline-block w-fit text-center text-white border border-gray-400 bg-primary rounded-lg px-4 py-1 cursor-pointer text-xs"
-                        >
-                          {uploadingByType[row.docType] ? "Uploading..." : row.proof?.id ? "Update" : "Upload"}
-                        </label>
-                        <input
-                          type="file"
-                          id={`upload-${row.key}`}
-                          className="hidden"
-                          accept="image/*,application/pdf"
-                          multiple={!isSingleFileDocType(row.docType)}
-                          onChange={(e) => handleUploadDocument(e, row)}
-                          disabled={Boolean(uploadingByType[row.docType])}
-                        />
-                        {uploadErrorsByType[row.docType] && (
-                          <Typography className="text-[11px] text-red-600 font-medium">
-                            {uploadErrorsByType[row.docType]}
-                          </Typography>
-                        )}
-                      </div>
+                      <label
+                        htmlFor={`upload-${row.key}`}
+                        className="inline-block text-center text-white border border-gray-400 bg-primary rounded-lg px-4 py-1 cursor-pointer text-xs"
+                      >
+                        {uploadingByType[row.docType] ? "Uploading..." : row.proof?.id ? "Update" : "Upload"}
+                      </label>
+                      <input
+                        type="file"
+                        id={`upload-${row.key}`}
+                        className="hidden"
+                        accept="image/*,application/pdf"
+                        multiple={!isSingleFileDocType(row.docType)}
+                        onChange={(e) => handleUploadDocument(e, row)}
+                        disabled={Boolean(uploadingByType[row.docType])}
+                      />
                     </td>
                   </tr>
                 ))
@@ -253,32 +237,14 @@ const VehicleDocuments = () => {
       <div className="flex flex-row mt-4">
         <Button
           fullWidth
-          onClick={() => navigate(`/dashboard/vendors/account/new/documents/${id}`)}
+          onClick={() => navigate("/dashboard/vendors/account/owner-onboarding-cab")}
           className={`my-2 mx-2 ${ColorStyles.backButton}`}
         >
           Back
         </Button>
         <Button
           fullWidth
-          onClick={() =>
-            navigate(`/dashboard/vendors/account/new/cab/add/${id}`, {
-              state: {
-                ownerName: account?.name || "",
-                type: account?.type || "",
-                accountId: account?.id || id,
-                vehicleDocuments: {
-                  rc: {
-                    image1: proofsByType.get("RC_COPY")?.image1 || null,
-                    image2: proofsByType.get("RC_COPY")?.image2 || null,
-                  },
-                  insurance: {
-                    image1: proofsByType.get("INSURANCE")?.image1 || null,
-                    image2: proofsByType.get("INSURANCE")?.image2 || null,
-                  },
-                },
-              },
-            })
-          }
+          onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-cab/vehicle-documents/${id}`)}
           className={`my-2 mx-2 ${ColorStyles.continueButtonColor}`}
         >
           Continue
@@ -335,4 +301,4 @@ const VehicleDocuments = () => {
   );
 };
 
-export default VehicleDocuments;
+export default AccountDocuments;

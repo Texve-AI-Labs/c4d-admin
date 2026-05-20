@@ -71,7 +71,7 @@ const AddAccountNew = () => {
             }
             const accountId = data?.data?.id;
             if (data?.success && accountId) {
-                navigate(`/dashboard/vendors/account/new/documents/${accountId}`);
+                navigate(`/dashboard/vendors/account/owner-onboarding-cab/documents/${accountId}`);
                 return;
             }
         } catch (error) {
@@ -347,7 +347,7 @@ const AddAccountNew = () => {
                         <div className='flex flex-row'>
                             <Button
                                 fullWidth
-                                onClick={() => { navigate('/dashboard/vendors/account/new'); }}
+                                onClick={() => { navigate('/dashboard/vendors/account/owner-onboarding-cab'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
                             >
                                 Cancel
