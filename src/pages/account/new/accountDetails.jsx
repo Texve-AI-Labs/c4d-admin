@@ -107,7 +107,7 @@ const AccountOnboardingDetails = () => {
       };
     });
   }, [requiredAccountDocs, accountUploads, accountPendingTypes, accountApprovedTypes]);
-  // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID"].includes(row.status));
+  // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status));
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
 
@@ -352,13 +352,13 @@ const AccountOnboardingDetails = () => {
                     <Typography className="text-xs font-semibold text-blue-gray-900">{row.createdAt}</Typography>
                   </td>
                   <td className="py-3 px-5 border-b border-blue-gray-50">
-                    {["PENDING UPLOAD", "INVALID"].includes(row.status) ? (
+                    {["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status) ? (
                       <>
                         <label
                           htmlFor={`upload-${row.type}`}
                           className="inline-block text-center text-white border border-gray-400 bg-primary rounded-lg px-4 py-1 cursor-pointer text-xs"
                         >
-                          {uploadingByType[row.type] ? "Uploading..." : row.status === "INVALID" ? "Upload Again" : "Upload"}
+                          {uploadingByType[row.type] ? "Uploading..." : ["INVALID", "DECLINED"].includes(row.status) ? "Upload Again" : "Upload"}
                         </label>
                         <input
                           type="file"
@@ -441,10 +441,10 @@ const AccountOnboardingDetails = () => {
                 </a>
               )}
             </div>
-            {["PENDING VERIFICATION", "NOT_INTERESTED", "NO_RESPONSE", "INVALID"].includes(accountStageStatus) &&
+            {["PENDING VERIFICATION", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].includes(accountStageStatus) &&
               ["PENDING", "PENDING VERIFICATION", "PENDING_VERIFICATION"].includes(modalData?.status) && (
               <div className="flex justify-center gap-3 mt-4 flex-wrap">
-                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID"].map((nextStatus) => (
+                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].map((nextStatus) => (
                   <button
                     key={nextStatus}
                     type="button"
@@ -457,7 +457,9 @@ const AccountOnboardingDetails = () => {
                           ? "bg-yellow-600 hover:bg-yellow-700"
                           : nextStatus === "NO_RESPONSE"
                             ? "bg-gray-600 hover:bg-gray-700"
-                            : "bg-orange-600 hover:bg-orange-700"
+                            : nextStatus === "INVALID"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-red-600 hover:bg-red-700"
                     }`}
                   >
                     {updatingStatus ? "Updating..." : toTitle(nextStatus)}
