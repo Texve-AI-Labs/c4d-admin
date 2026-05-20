@@ -93,6 +93,8 @@ import DiscountAdd from "./pages/discountModule/add";
 import GstView from "./pages/GST/view";
 import GstAdd from "./pages/GST/add";
 import GstEdit from "./pages/GST/edit";
+import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
+import DriverFeedbackEdit from "./pages/GST/driverFeedbackEdit";
 import BannerView from "./pages/bannerImage/view ";
 import AddBanner from "./pages/bannerImage/add";
 import TestimoinalView from "./pages/testimoinal/view";
@@ -512,6 +514,22 @@ export const routes = [
         name: "GST edit",
         path: "/finance/GST/edit/:id",
         element: <GstEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver feedback add",
+        path: "/finance/driver-feedback/add",
+        element: <DriverFeedbackAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver feedback edit",
+        path: "/finance/driver-feedback/edit/:id",
+        element: <DriverFeedbackEdit />,
         display: true,
         permission: "Users",
       },

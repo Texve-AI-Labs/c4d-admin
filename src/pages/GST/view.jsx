@@ -43,7 +43,13 @@ const GstView = () => {
     <div className="mb-8 flex flex-col gap-12">
       <div className="flex items-center justify-end">
         <button
-          onClick={() => navigate('/dashboard/finance/GST/add')}
+          onClick={() =>
+            navigate(
+              selectedType === "DRIVER_FEEDBACK"
+                ? "/dashboard/finance/driver-feedback/add"
+                : "/dashboard/finance/GST/add"
+            )
+          }
           className="ml-4 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-700"
         >
           Add new
@@ -128,9 +134,14 @@ const GstView = () => {
                       <td className="py-3 px-5">
                         <Button
                           onClick={() =>
-                            navigate(`/dashboard/finance/GST/edit/${item.id}`, {
+                            navigate(
+                              selectedType === "DRIVER_FEEDBACK"
+                                ? `/dashboard/finance/driver-feedback/edit/${item.id}`
+                                : `/dashboard/finance/GST/edit/${item.id}`,
+                              {
                               state: { gst: item },
-                            })
+                              }
+                            )
                           }
                           size="sm"
                           className="bg-primary-500 text-white px-3 py-1 rounded hover:bg-primary-600"

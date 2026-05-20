@@ -938,64 +938,24 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
         .required('City is required'),
   });
 
-   export const GST_EDIT_SCHEMA = Yup.object().shape({
+export const GST_EDIT_SCHEMA = Yup.object().shape({
     serviceType: Yup.string().required('Service type is required'),
     name: Yup.string().required('Name is required'),
-    totalGst: Yup.mixed().when("serviceType", {
-      is: (serviceType) => serviceType !== "DRIVER",
-      then: () => Yup.mixed().required('GST % is required'),
-      otherwise: () => Yup.mixed().nullable(),
-    }),
-    hsnCode: Yup.string().when("serviceType", {
-      is: (serviceType) => serviceType !== "DRIVER",
-      then: () => Yup.string().required('HSN Code is required'),
-      otherwise: () => Yup.string().nullable(),
-    }),
-    serviceCategory: Yup.string().when("serviceType", {
-      is: (serviceType) => serviceType !== "DRIVER",
-      then: () => Yup.string().required('Category is required'),
-      otherwise: () => Yup.string().nullable(),
-    }),
-    serviceDescription: Yup.string().when("serviceType", {
-      is: (serviceType) => serviceType !== "DRIVER",
-      then: () => Yup.string().required('Description is required'),
-      otherwise: () => Yup.string().nullable(),
-    }),
-    gstNo: Yup.string().when("serviceType", {
-      is: (serviceType) => serviceType !== "DRIVER",
-      then: () => Yup.string().required('GST No is required'),
-      otherwise: () => Yup.string().nullable(),
-    }),
+    totalGst: Yup.mixed().required('GST % is required'),
+    hsnCode: Yup.string().required('HSN Code is required'),
+    serviceCategory: Yup.string().required('Category is required'),
+    serviceDescription: Yup.string().required('Description is required'),
+    gstNo: Yup.string().required('GST No is required'),
     isActive: Yup.boolean().required(),
   });
   export const GST_ADD_SCHEMA = Yup.object({
       serviceType: Yup.string().required('Service Type is required'),
       name: Yup.string().required('Name is required'),
-      totalGst: Yup.mixed().when("serviceType", {
-        is: (serviceType) => serviceType !== "DRIVER",
-        then: () => Yup.mixed().required('GST % is required'),
-        otherwise: () => Yup.mixed().nullable(),
-      }),
-      hsnCode: Yup.string().when("serviceType", {
-        is: (serviceType) => serviceType !== "DRIVER",
-        then: () => Yup.string().required('HSN Code is required'),
-        otherwise: () => Yup.string().nullable(),
-      }),
-      serviceCategory: Yup.string().when("serviceType", {
-        is: (serviceType) => serviceType !== "DRIVER",
-        then: () => Yup.string().required('Service Category is required'),
-        otherwise: () => Yup.string().nullable(),
-      }),
-      serviceDescription: Yup.string().when("serviceType", {
-        is: (serviceType) => serviceType !== "DRIVER",
-        then: () => Yup.string().required('Service Description is required'),
-        otherwise: () => Yup.string().nullable(),
-      }),
-      gstNo: Yup.string().when("serviceType", {
-        is: (serviceType) => serviceType !== "DRIVER",
-        then: () => Yup.string().required('GST No is required'),
-        otherwise: () => Yup.string().nullable(),
-      }),
+      totalGst: Yup.mixed().required('GST % is required'),
+      hsnCode: Yup.string().required('HSN Code is required'),
+      serviceCategory: Yup.string().required('Service Category is required'),
+      serviceDescription: Yup.string().required('Service Description is required'),
+      gstNo: Yup.string().required('GST No is required'),
       isActive: Yup.boolean().required('Status is required'),
     });
 export const DriverOfferSchema = Yup.object({
