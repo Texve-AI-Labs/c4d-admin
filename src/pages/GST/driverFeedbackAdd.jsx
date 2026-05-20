@@ -25,6 +25,7 @@ const DriverFeedbackAdd = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
+      const isActive = values.isActive === true || values.isActive === "true";
       const payload = {
         serviceType: "DRIVER",
         type: "DRIVER_FEEDBACK",
@@ -33,7 +34,7 @@ const DriverFeedbackAdd = () => {
         config: {
           enabled: Boolean(values.configEnabled),
         },
-        isActive: Boolean(values.isActive),
+        isActive,
       };
       await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);
       navigate("/dashboard/finance/GSTList");
@@ -59,8 +60,8 @@ const DriverFeedbackAdd = () => {
               <div>
                 <label className="text-sm font-medium text-gray-700">Status</label>
                 <Field as="select" name="isActive" className="p-2 w-full rounded-md border border-gray-300 shadow-sm">
-                  <option value={true}>Active</option>
-                  <option value={false}>Inactive</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
                 </Field>
                 <ErrorMessage name="isActive" component="div" className="text-red-500 text-sm" />
               </div>
