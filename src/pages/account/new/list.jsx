@@ -431,12 +431,20 @@ export function AccountList() {
     });
   }, []);
   function formatPhoneNumber(phoneNumber) {
-    if (phoneNumber) {
-      if (phoneNumber.startsWith("+91")) {
-        return phoneNumber;
-      }
-      return `+91${phoneNumber}`;
-    }
+    if (!phoneNumber) return "-";
+
+    const parts = String(phoneNumber)
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const cleaned = parts
+      .map((p) => p.replace(/[^\d]/g, ""))
+      .map((digits) => digits.slice(-10))
+      .filter((digits) => digits.length === 10)
+      .map((digits) => `+91${digits}`);
+
+    return cleaned.length ? cleaned.join(", ") : "-";
   }
 
   const handleSort = (key) => {
