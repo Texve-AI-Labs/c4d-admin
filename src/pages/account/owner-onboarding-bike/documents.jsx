@@ -3,11 +3,92 @@ import { Card, CardBody, Typography, Button, Chip, Dialog, DialogHeader, DialogB
 import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, ColorStyles } from "@/utils/constants";
+import { API_ROUTES, ColorStyles, STATE_LIST, THALUK_LIST } from "@/utils/constants";
+import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
+import LocationInput from "./LocationInput";
 
-const normalizeSubType = () => "Parcel";
+const isPdfFile = (src = "") =>
+  String(src).toLowerCase().includes(".pdf") || String(src).toLowerCase().startsWith("data:application/pdf");
+
+const DocumentPreview = ({ src, zoom = 1, onZoomIn, onZoomOut }) => {
+  if (!src) return null;
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const handleMouseDown = (e) => {
+    if (zoom <= 1) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || zoom <= 1) return;
+    setOffset({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  if (isPdfFile(src)) {
+    return (
+      <div className="w-full">
+        <div className="w-full flex justify-end gap-2 mb-2">
+          <Button size="sm" className="bg-blue-gray-700 px-3 py-1 text-xs" onClick={onZoomOut}>-</Button>
+          <Button size="sm" className="bg-blue-gray-700 px-3 py-1 text-xs" onClick={onZoomIn}>+</Button>
+        </div>
+        <div
+          className={`w-full h-[38vh] md:h-[44vh] border border-gray-200 bg-white overflow-hidden ${zoom > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default"}`}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          <div
+            className="w-full h-full"
+            style={{
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+              transformOrigin: "center center",
+            }}
+          >
+            <iframe src={src} className="w-full h-full pointer-events-none" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="w-full flex justify-end gap-2 mb-2">
+        <Button size="sm" className="bg-blue-gray-700 px-3 py-1 text-xs" onClick={onZoomOut}>-</Button>
+        <Button size="sm" className="bg-blue-gray-700 px-3 py-1 text-xs" onClick={onZoomIn}>+</Button>
+      </div>
+      <div
+        className={`w-full h-[38vh] md:h-[44vh] border border-gray-200 bg-white p-2 overflow-hidden ${zoom > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default"}`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        <img
+          src={src}
+          alt="Document preview"
+          className="w-full h-full object-contain select-none"
+          draggable={false}
+          style={{
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+            transformOrigin: "center center",
+          }}
+        />
+      </div>
+    </div>
+  );
+};
 
 const AccountDocuments = () => {
   const navigate = useNavigate();
@@ -16,6 +97,20 @@ const AccountDocuments = () => {
   const [account, setAccount] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [isSameAddress, setIsSameAddress] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    address: "",
+    street: "",
+    thaluk: "",
+    district: "",
+    state: "",
+    pincode: "",
+  });
+  const [addressErrors, setAddressErrors] = useState({});
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [selectedAccountDocType, setSelectedAccountDocType] = useState("");
+  const [previewZoom, setPreviewZoom] = useState({});
 
   useEffect(() => {
     if (id) fetchData();
@@ -29,7 +124,7 @@ const AccountDocuments = () => {
 
       const accountDocsRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_REQUIRED_DOCUMENTS, {
         subjectType: "ACCOUNT",
-        serviceType: normalizeSubType(accountData?.type),
+        serviceType: accountData?.type || "Individual",
       });
 
       const accountDocs = accountDocsRes?.data?.accountRequiredDocuments || [];
@@ -64,11 +159,144 @@ const AccountDocuments = () => {
       };
     });
   }, [requiredDocs, proofsByType]);
+  const accountDocsUploaded = useMemo(
+    () => rows.length > 0 && rows.every((row) => row.status === "UPLOADED"),
+    [rows]
+  );
+  const accountDocumentStageStatus = account?.accountDocumentStatus?.status || "";
+  const canShowVerificationView =
+    accountDocsUploaded &&
+    ([
+      "PENDING",
+      "PENDING VERIFICATION",
+      "PENDING_VERIFICATION",
+      "VERIFIED",
+    ].includes(accountDocumentStageStatus) || !accountDocumentStageStatus);
+  const shouldShowAddressForm = canShowVerificationView;
+  const accountDocTypes = useMemo(() => rows.map((row) => row.docType), [rows]);
 
   const subjectType = "ACCOUNT";
   const serviceType = account?.type || "Individual";
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
+  const getZoomKey = (docType, imageIndex) => `${docType || "UNKNOWN"}_${imageIndex}`;
+  const getZoomValue = (docType, imageIndex) => previewZoom[getZoomKey(docType, imageIndex)] || 1;
+  const updateZoom = (docType, imageIndex, direction) => {
+    const key = getZoomKey(docType, imageIndex);
+    setPreviewZoom((prev) => {
+      const current = prev[key] || 1;
+      const next = direction === "in"
+        ? Math.min(2.5, Number((current + 0.1).toFixed(2)))
+        : Math.max(0.6, Number((current - 0.1).toFixed(2)));
+      return { ...prev, [key]: next };
+    });
+  };
+
+  useEffect(() => {
+    if (!selectedAccountDocType && accountDocTypes.length > 0) {
+      setSelectedAccountDocType(accountDocTypes[0]);
+    }
+  }, [accountDocTypes, selectedAccountDocType]);
+
+  const handleAddressInputChange = (key, value) => {
+    setAddressForm((prev) => ({ ...prev, [key]: value }));
+    setAddressErrors((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  useEffect(() => {
+    if (!account) return;
+    setAddressForm({
+      address: account?.address || "",
+      street: account?.street || "",
+      thaluk: account?.thaluk || "",
+      district: account?.district || "",
+      state: account?.state || "",
+      pincode: account?.pincode || "",
+    });
+    setIsSameAddress(Boolean(account?.address && account?.street && account?.district));
+  }, [account]);
+
+  const searchLocations = async (query) => {
+    if (query.length <= 2) {
+      setAddressSuggestions([]);
+      return;
+    }
+    try {
+      const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, { address: query });
+      if (data?.success && data?.data) {
+        setAddressSuggestions(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch address suggestions", err);
+    }
+  };
+
+  const parseAddress = (address, addressComponents = []) => parseAddressParts({
+    addressText: address,
+    addressComponents,
+  });
+
+  const handleAddressSelect = (place) => {
+    if (!place?.formatted_address) return;
+    handleAddressInputChange("address", place.formatted_address);
+    if (!isSameAddress) return;
+    const parsed = parseAddress(place.formatted_address, place.address_components);
+    setAddressForm((prev) => ({
+      ...prev,
+      street: parsed.street || "",
+      thaluk: parsed.taluk || "",
+      district: parsed.district || "",
+      state: parsed.state || "",
+      pincode: parsed.pincode || "",
+    }));
+  };
+
+  const validateAddressForm = () => {
+    const nextErrors = {};
+    if (!String(addressForm.address || "").trim()) nextErrors.address = "Current Address is required";
+    if (!String(addressForm.street || "").trim()) nextErrors.street = "Street Name is required";
+    if (!String(addressForm.thaluk || "").trim()) nextErrors.thaluk = "Thaluk is required";
+    if (!String(addressForm.district || "").trim()) nextErrors.district = "District is required";
+    if (!String(addressForm.state || "").trim()) nextErrors.state = "State is required";
+    if (!/^\d{6}$/.test(String(addressForm.pincode || "").trim())) nextErrors.pincode = "Pincode must be exactly 6 digits";
+    setAddressErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const saveAddressDetails = async () => {
+    if (!account?.id) return false;
+    if (!validateAddressForm()) return false;
+    try {
+      setSavingAddress(true);
+      const payload = {
+        type: account?.type || "",
+        name: account?.name || "",
+        phoneNumber: account?.phoneNumber || "",
+        email: account?.email || "",
+        source: account?.source || "",
+        accountId: account?.id,
+        address: String(addressForm.address || "").trim(),
+        street: String(addressForm.street || "").trim(),
+        thaluk: String(addressForm.thaluk || "").trim(),
+        district: String(addressForm.district || "").trim(),
+        state: String(addressForm.state || "").trim(),
+        pincode: String(addressForm.pincode || "").trim(),
+      };
+      const response = await ApiRequestUtils.update(API_ROUTES.UPDATE_ACCOUNT, payload);
+      if (!response?.success) {
+        window.alert(response?.message || "Failed to save address details.");
+        return false;
+      }
+      await fetchData();
+      return true;
+    } catch (error) {
+      console.error("Failed to save address details", error);
+      window.alert("Failed to save address details.");
+      return false;
+    } finally {
+      setSavingAddress(false);
+    }
+  };
 
   const handleUploadDocument = async (event, row) => {
     const files = Array.from(event.target.files || []);
@@ -233,6 +461,175 @@ const AccountDocuments = () => {
             </tbody>
           </table>
         </CardBody>
+        {shouldShowAddressForm && (
+        <Card className="mt-4">
+          <CardBody>
+            <Typography className="text-sm font-medium text-gray-700 mb-2">Account Documents Preview</Typography>
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
+              <div className="lg:w-[26%] border border-blue-gray-100 rounded-lg overflow-hidden">
+                <div className="px-3 py-2 border-b border-blue-gray-100 bg-blue-gray-50">
+                  <Typography className="text-xs font-bold uppercase text-blue-gray-500">Type</Typography>
+                </div>
+                {accountDocTypes.length === 0 ? (
+                  <div className="px-3 py-3">
+                    <Typography className="text-sm text-blue-gray-500">No document types</Typography>
+                  </div>
+                ) : (
+                  accountDocTypes.map((docType, idx) => (
+                    <button
+                      key={docType}
+                      type="button"
+                      onClick={() => setSelectedAccountDocType(docType)}
+                      className={`w-full text-left px-3 py-3 ${idx !== accountDocTypes.length - 1 ? "border-b border-blue-gray-100" : ""} ${selectedAccountDocType === docType ? "bg-blue-50" : "bg-white hover:bg-blue-gray-50"}`}
+                    >
+                      <Typography className="text-sm font-semibold text-blue-gray-900">{docType}</Typography>
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="lg:w-[74%]">
+                <div className="w-full max-w-4xl min-h-[52vh] border border-blue-gray-100 rounded-lg bg-white p-3">
+                  <div className="space-y-4">
+                    <Typography className="text-xs font-semibold text-blue-gray-700">{selectedAccountDocType}</Typography>
+                    {proofsByType.get(selectedAccountDocType)?.image1 ? (
+                      <div className="max-h-[56vh] overflow-y-auto overflow-x-hidden pr-1">
+                        <div className={`grid w-full gap-3 ${proofsByType.get(selectedAccountDocType)?.image2 ? "grid-cols-2" : "grid-cols-1"}`}>
+                          <DocumentPreview
+                            src={proofsByType.get(selectedAccountDocType)?.image1}
+                            zoom={getZoomValue(selectedAccountDocType, 1)}
+                            onZoomOut={() => updateZoom(selectedAccountDocType, 1, "out")}
+                            onZoomIn={() => updateZoom(selectedAccountDocType, 1, "in")}
+                          />
+                          {proofsByType.get(selectedAccountDocType)?.image2 && (
+                            <DocumentPreview
+                              src={proofsByType.get(selectedAccountDocType)?.image2}
+                              zoom={getZoomValue(selectedAccountDocType, 2)}
+                              onZoomOut={() => updateZoom(selectedAccountDocType, 2, "out")}
+                              onZoomIn={() => updateZoom(selectedAccountDocType, 2, "in")}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-[38vh] md:h-[44vh] border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-sm text-gray-500">
+                        No document available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Typography className="text-sm font-semibold text-blue-gray-800 mb-3">Address Details</Typography>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="address" className="text-sm font-medium text-gray-700">Current Address</label>
+                <LocationInput
+                  field={{ name: "address", value: addressForm.address, onBlur: () => {} }}
+                  form={{
+                    setFieldValue: (_, value) => handleAddressInputChange("address", value),
+                    setFieldTouched: () => {},
+                    validateField: () => {},
+                  }}
+                  suggestions={addressSuggestions}
+                  onSearch={searchLocations}
+                  onSelect={handleAddressSelect}
+                />
+                {addressErrors.address ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.address}</Typography> : null}
+              </div>
+              <div className="flex items-center mt-6">
+                <input
+                  type="checkbox"
+                  id="sameAddress"
+                  checked={isSameAddress}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsSameAddress(checked);
+                    if (!checked) return;
+                    const parsed = parseAddress(addressForm.address);
+                    setAddressForm((prev) => ({
+                      ...prev,
+                      street: parsed.street || prev.street || "",
+                      thaluk: parsed.taluk || prev.thaluk || "",
+                      district: parsed.district || prev.district || "",
+                      state: parsed.state || prev.state || "",
+                      pincode: parsed.pincode || prev.pincode || "",
+                    }));
+                  }}
+                  className="mr-2"
+                />
+                <label htmlFor="sameAddress" className="text-sm text-gray-700">Same as Current Address</label>
+              </div>
+              <div>
+                <label htmlFor="street" className="text-sm font-medium text-gray-700">Street Name</label>
+                <input
+                  id="street"
+                  value={addressForm.street}
+                  onChange={(e) => handleAddressInputChange("street", e.target.value)}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                />
+                {addressErrors.street ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.street}</Typography> : null}
+              </div>
+              <div>
+                <label htmlFor="thaluk" className="text-sm font-medium text-gray-700">Thaluk</label>
+                <select
+                  id="thaluk"
+                  value={addressForm.thaluk}
+                  onChange={(e) => handleAddressInputChange("thaluk", e.target.value)}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                >
+                  <option value="">Select Thaluk</option>
+                  {THALUK_LIST.map((thaluk) => (
+                    <option key={thaluk.value} value={thaluk.value}>{thaluk.label}</option>
+                  ))}
+                </select>
+                {addressErrors.thaluk ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.thaluk}</Typography> : null}
+              </div>
+              <div>
+                <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
+                <input
+                  id="district"
+                  value={addressForm.district}
+                  onChange={(e) => handleAddressInputChange("district", e.target.value)}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                />
+                {addressErrors.district ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.district}</Typography> : null}
+              </div>
+              <div>
+                <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>
+                <select
+                  id="state"
+                  value={addressForm.state}
+                  onChange={(e) => handleAddressInputChange("state", e.target.value)}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                >
+                  <option value="">Select State</option>
+                  {STATE_LIST.map((state) => (
+                    <option key={state.value} value={state.value}>{state.label}</option>
+                  ))}
+                </select>
+                {addressErrors.state ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.state}</Typography> : null}
+              </div>
+              <div>
+                <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
+                <input
+                  id="pincode"
+                  maxLength={6}
+                  value={addressForm.pincode}
+                  onChange={(e) => handleAddressInputChange("pincode", e.target.value)}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                />
+                {addressErrors.pincode ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.pincode}</Typography> : null}
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button onClick={saveAddressDetails} className={ColorStyles.continueButtonColor} disabled={savingAddress}>
+                {savingAddress ? "Saving..." : "Save Address"}
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
         <DriverAccountBookingNotes accountId={id} />
       </Card>
 
@@ -246,7 +643,13 @@ const AccountDocuments = () => {
         </Button>
         <Button
           fullWidth
-          onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-bike/vehicle-documents/${id}`)}
+          onClick={async () => {
+            if (shouldShowAddressForm) {
+              const ok = await saveAddressDetails();
+              if (!ok) return;
+            }
+            navigate(`/dashboard/vendors/account/owner-onboarding-bike/vehicle-documents/${id}`);
+          }}
           className={`my-2 mx-2 ${ColorStyles.continueButtonColor}`}
         >
           Continue

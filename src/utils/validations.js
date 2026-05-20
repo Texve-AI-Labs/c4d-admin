@@ -159,14 +159,17 @@ export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
         .required('Phone Number is required'),
     source: Yup.string().required('Source is required'),
     // email: Yup.string().email('Invalid email format').required('Email is required'),
-    address: Yup.string().required('Current Address is required'),
-    street: Yup.string().required('Street Name is required'),
-    thaluk: Yup.string().required('Thaluk is required'),
-    district: Yup.string().required('District is required'),
-    state: Yup.string().required('State is required'),
+    address: Yup.string().nullable(),
+    street: Yup.string().nullable(),
+    thaluk: Yup.string().nullable(),
+    district: Yup.string().nullable(),
+    state: Yup.string().nullable(),
     pincode: Yup.string()
-        .matches(/^\d{6}$/, 'Pincode must be exactly 6 digits')
-        .required('Pincode is required'),
+        .nullable()
+        .test('pincode-format', 'Pincode must be exactly 6 digits', (value) => {
+            if (!value) return true;
+            return /^\d{6}$/.test(value);
+        }),
 });
 
 export const ACCOUNT_EDIT_SCHEMA = Yup.object().shape({
