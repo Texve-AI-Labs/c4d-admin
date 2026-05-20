@@ -24,7 +24,7 @@ const GstEdit = () => {
         totalGst: raw.config?.totalGst || '',
         hsnCode: raw.config?.hsnCode || '',
         serviceCategory: raw.config?.serviceCategory || '',
-        serviceDescription: raw.config?.serviceDescription || raw.description || '',
+        serviceDescription: raw.config?.serviceDescription || '',
         gstNo: raw.config?.gstNo || '',
         isActive: raw.isActive,
       };
@@ -46,7 +46,7 @@ const GstEdit = () => {
           totalGst: raw.config?.totalGst || '',
           hsnCode: raw.config?.hsnCode || '',
           serviceCategory: raw.config?.serviceCategory || '',
-          serviceDescription: raw.config?.serviceDescription || raw.description || '',
+          serviceDescription: raw.config?.serviceDescription || '',
           gstNo: raw.config?.gstNo || '',
           isActive: raw.isActive,
         };
@@ -72,20 +72,7 @@ const GstEdit = () => {
 
   const onSubmit = async (values, { setSubmitting }) => {
     try {
-      const isDriverService = values.serviceType === "DRIVER";
-      const payload = isDriverService
-        ? {
-            settingId: parseInt(id),
-            serviceType: "DRIVER",
-            type: "DRIVER_FEEDBACK",
-            name: values.name,
-            description: values.serviceDescription || "",
-            config: {
-              enabled: true,
-            },
-            isActive: Boolean(values.isActive),
-          }
-        : {
+      const payload = {
         settingId: parseInt(id),
         serviceType: values.serviceType,
         name: values.name,
@@ -134,7 +121,7 @@ const GstEdit = () => {
         validationSchema={GST_EDIT_SCHEMA}
         onSubmit={onSubmit}
       >
-        {({ isSubmitting, isValid, values }) => (
+        {({ isSubmitting, isValid }) => (
           <Form className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -155,29 +142,23 @@ const GstEdit = () => {
                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
               </div>
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Total GST (%)</label>
                 <Field name="totalGst" type="number" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="totalGst" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">HSN Code</label>
                 <Field name="hsnCode" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="hsnCode" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Category</label>
                 <Field name="serviceCategory" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="serviceCategory" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Description</label>
@@ -185,13 +166,11 @@ const GstEdit = () => {
                 <ErrorMessage name="serviceDescription" component="div" className="text-red-500 text-sm" />
               </div>
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">GST Number</label>
                 <Field name="gstNo" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="gstNo" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Status</label>

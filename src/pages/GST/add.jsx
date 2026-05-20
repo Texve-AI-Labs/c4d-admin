@@ -25,19 +25,7 @@ const GstAdd = () => {
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const isDriverService = values.serviceType === "DRIVER";
-      const payload = isDriverService
-        ? {
-            serviceType: "DRIVER",
-            type: "DRIVER_FEEDBACK",
-            name: values.name,
-            description: values.serviceDescription || "",
-            config: {
-              enabled: true,
-            },
-            isActive: Boolean(values.isActive),
-          }
-        : {
+      const payload = {
         serviceType: values.serviceType,
         name: values.name,
         totalGst: parseFloat(values.totalGst),
@@ -65,7 +53,7 @@ const GstAdd = () => {
       <h2 className="text-2xl font-bold mb-4">Add GST</h2>
 
       <Formik initialValues={initialValues} validationSchema={GST_ADD_SCHEMA} onSubmit={handleSubmit}>
-        {({ isSubmitting, values }) => (
+        {({ isSubmitting }) => (
           <Form className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -86,41 +74,35 @@ const GstAdd = () => {
                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
               </div>
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Total GST (%)</label>
                 <Field name="totalGst" type="number" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="totalGst" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">HSN Code</label>
                 <Field name="hsnCode" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="hsnCode" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
-              {values.serviceType !== "DRIVER" && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Category</label>
                 <Field name="serviceCategory" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="serviceCategory" component="div" className="text-red-500 text-sm" />
               </div>
-              )}            
+
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Description</label>
                 <Field name="serviceDescription" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="serviceDescription" component="div" className="text-red-500 text-sm" />
               </div>
-              {values.serviceType !== "DRIVER" && (
+
               <div>
                 <label className="text-sm font-medium text-gray-700">GST No</label>
                 <Field name="gstNo" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="gstNo" component="div" className="text-red-500 text-sm" />
               </div>
-              )}
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Status</label>
