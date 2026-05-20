@@ -62,21 +62,35 @@ const GstView = () => {
         </CardHeader>
 
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
-          <div className="px-6 pb-4 flex gap-2">
-            <Button
-              size="sm"
+          <div className="px-6 pb-4">
+            <div className="inline-flex rounded-xl bg-gray-100 p-1">
+            <button
+                type="button"
+                role="tab"
+                aria-selected={selectedType === "GST"}
               onClick={() => setSelectedType("GST")}
-              className={selectedType === "GST" ? "bg-primary" : "bg-gray-300 text-black"}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  selectedType === "GST"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-200"
+                }`}
             >
               Gst
-            </Button>
-            <Button
-              size="sm"
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selectedType === "DRIVER_FEEDBACK"}
               onClick={() => setSelectedType("DRIVER_FEEDBACK")}
-              className={selectedType === "DRIVER_FEEDBACK" ? "bg-primary" : "bg-gray-300 text-black"}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  selectedType === "DRIVER_FEEDBACK"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-200"
+                }`}
             >
               Driver Feedback
-            </Button>
+            </button>
+            </div>
           </div>
           {loading ? (
              <div className="flex flex-col items-center justify-center py-10">
