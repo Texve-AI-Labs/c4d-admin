@@ -9,11 +9,13 @@ import { API_ROUTES } from "@/utils/constants";
 const MasterSubscriptionEdit = () => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const [geoData, setGeoData] = useState({ serviceAreas: [] });
     const [initialValues, setInitialValues] = useState({
     // plan group fields (same as Add)
         groupName: "",
         description: "",
         serviceType: "",
+        zone: "",
         status: "",
         effectiveFrom: "",
         effectiveTo: "",
@@ -34,6 +36,24 @@ const MasterSubscriptionEdit = () => {
     // additional plans
         plans: [],
     });
+
+  useEffect(() => {
+    const fetchGeoData = async () => {
+      try {
+        const serviceAreaResponse = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+          type: "Service Area",
+        });
+
+        setGeoData({
+          serviceAreas: Array.isArray(serviceAreaResponse?.data) ? serviceAreaResponse.data : [],
+        });
+      } catch (error) {
+        console.error("Error fetching geo data:", error);
+      }
+    };
+
+    fetchGeoData();
+  }, []);
 
   useEffect(() => {
     const fetchData = async (groupId) => {
@@ -61,6 +81,7 @@ const MasterSubscriptionEdit = () => {
                   groupName: group.name || "",
                   description: group.description || "",
                   serviceType: group.serviceType || "",
+                  zone: group.zone || group.metadata?.zone || "",
                   status: group.status || "",
                   effectiveFrom: toInputDateTime(group.effectiveFrom),
                   effectiveTo: toInputDateTime(group.effectiveTo),
@@ -108,6 +129,7 @@ const MasterSubscriptionEdit = () => {
               price: Number(values.price) || 0,
               packagePrice: Number(values.packagePrice) || 0,
               serviceType: values.serviceType || "",
+              zone: values.zone || "",
               name: values.name || "",
               bonusPrice: Number(values.bonusPrice) || 0,
               totalPrice: Number(values.totalPrice) || 0,
@@ -138,6 +160,7 @@ const MasterSubscriptionEdit = () => {
                     price: Number(plan.price || 0),
                     packagePrice: Number(plan.packagePrice || 0),
                     serviceType: plan.serviceType || "",
+                    zone: values.zone || "",
                     name: plan.name || "",
                     bonusPrice: Number(plan.bonusPrice || 0),
                     totalPrice: Number(plan.totalPrice || 0),
@@ -155,6 +178,7 @@ const MasterSubscriptionEdit = () => {
                   name: values.groupName || "",
                   description: values.description || "",
                   serviceType: values.serviceType || "",
+                  zone: values.zone || "",
                   status: values.status || "ACTIVE",
                   // isDefault: values.isDefault || false,
                   metadata: { isDefault: values.isDefault || false},
@@ -226,6 +250,18 @@ const MasterSubscriptionEdit = () => {
                                         <option value="AUTO">Autos</option>
                                     </Field>
                                     <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm my-1" />
+                    </div>
+                    <div>
+                      <label htmlFor="zone" className="text-sm font-medium text-gray-700">Zone</label>
+                      <Field as="select" name="zone"  disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100">
+                        <option value="">Select Zone</option>
+                        {geoData.serviceAreas.map((area) => (
+                          <option key={area?.id || area?.name} value={area?.name || ""}>
+                            {area?.name || ""}
+                          </option>
+                        ))}
+                      </Field>
+                      <ErrorMessage name="zone" component="div" className="text-red-500 text-sm my-1" />
                     </div>
                     <div>
                       <label htmlFor="status" className="text-sm font-medium text-gray-700">Status</label>

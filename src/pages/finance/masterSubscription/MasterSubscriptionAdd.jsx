@@ -10,6 +10,7 @@ import { Button } from '@material-tailwind/react'
 
 const MasterSubscriptionAdd = () => {
   const [alert, setAlert] = useState(false);
+  const [geoData, setGeoData] = useState({ serviceAreas: [] });
   const navigate = useNavigate();
 
   const currentDate = () => {
@@ -21,6 +22,7 @@ const MasterSubscriptionAdd = () => {
     groupName: '',
     description: '',
     serviceType: '',
+    zone: '',
     status: '',
     effectiveFrom: '',
     effectiveTo: '',
@@ -47,6 +49,7 @@ const MasterSubscriptionAdd = () => {
         name: values.groupName || '',
         description: values.description || '',
         serviceType: values.serviceType || '',
+        zone: values.zone || '',
         status: values.status || 'ACTIVE',
         isDefault: values.isDefault || false,
         effectiveFrom: values.effectiveFrom || '',
@@ -58,6 +61,7 @@ const MasterSubscriptionAdd = () => {
           price: Number(values.price) || 0,
           packagePrice: Number(values.packagePrice) || 0,
           serviceType: values.serviceType || '',
+          zone: values.zone || '',
           name: values.name || '',
           bonusPrice: Number(values.bonusPrice) || 0,
           totalPrice: Number(values.totalPrice) || 0,
@@ -91,6 +95,7 @@ const MasterSubscriptionAdd = () => {
               price: Number(plan.price || 0),
               packagePrice: Number(plan.packagePrice || 0),
               serviceType: plan.serviceType || '',
+              zone: values.zone || '',
               name: plan.name || '',
               bonusPrice: Number(plan.bonusPrice || 0),
               totalPrice: Number(plan.totalPrice || 0),
@@ -125,8 +130,26 @@ const MasterSubscriptionAdd = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchGeoData = async () => {
+      try {
+        const serviceAreaResponse = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+          type: "Service Area",
+        });
+
+        setGeoData({
+          serviceAreas: Array.isArray(serviceAreaResponse?.data) ? serviceAreaResponse.data : [],
+        });
+      } catch (error) {
+        console.error("Error fetching geo data:", error);
+      }
+    };
+
+    fetchGeoData();
+  }, []);
+
   return (
-    <div className="p-4">
+    <div className="p-4 bg-white rounded-lg shadow-md">
       {alert && (
         <div className="mb-2">
           <Alert color={alert.color} className="py-3 px-6 rounded-xl">
@@ -172,7 +195,7 @@ const MasterSubscriptionAdd = () => {
 
           return (
             <Form>
-              <div className="p-4 bg-blue-gray-100 grid grid-cols-1 gap-4">
+              <div className="p-4 grid grid-cols-1 gap-4">
                 {/* Plan Group */}
                 <div className="p-4 bg-blue-gray-50 rounded-lg">
                   {/* <h3 className="text-lg font-semibold mb-4">Plan Group</h3> */}
@@ -193,6 +216,18 @@ const MasterSubscriptionAdd = () => {
                     <option value="AUTO">Autos</option>
                   </Field>
                   <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm my-1" />
+                    </div>
+                    <div>
+                      <label htmlFor="zone" className="text-sm font-medium text-gray-700">zone</label>
+                      <Field as="select" name="zone" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                        <option value="">Select zone</option>
+                        {geoData.serviceAreas.map((area) => (
+                          <option key={area?.id || area?.name} value={area?.name || ""}>
+                            {area?.name || ""}
+                          </option>
+                        ))}
+                      </Field>
+                      <ErrorMessage name="zone" component="div" className="text-red-500 text-sm my-1" />
                     </div>
                     {/* Status */}
                     <div>

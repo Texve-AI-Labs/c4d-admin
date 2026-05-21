@@ -17,6 +17,7 @@ const MasterSubscriptionDetails = () => {
         effectiveFrom: "",
         effectiveTo: "",
         isDefault: false,
+        zone:"",
         // plans list
         plans: [],
     });
@@ -48,6 +49,7 @@ const MasterSubscriptionDetails = () => {
 
                     setInitialValues({
                         name: group.name || "",
+                        zone: group.zone || "",
                         description: group.description || "",
                         serviceType: group.serviceType || "",
                         status: group.status || "",
@@ -102,6 +104,10 @@ const MasterSubscriptionDetails = () => {
                                         <option value="SCHEDULED">Scheduled</option>
                                     </Field>
                                    
+                                </div>
+                                 <div>
+                                    <label className="text-sm font-medium text-gray-700">zone</label>
+                                    <Field type="text" name="zone" disabled className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-100" />
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Effective From</label>
