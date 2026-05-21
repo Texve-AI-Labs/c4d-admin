@@ -250,8 +250,8 @@ export const RealtimeEventsProvider = ({ children }) => {
         setLastEvent(normalized);
         setEventSeq((prev) => prev + 1);
         setIsLive(true);
+        setIsReconnecting(false);
         if (normalized.eventType === "connected") {
-          setIsReconnecting(false);
           if (shouldRefreshOnConnected()) {
             requestSummaryRefresh(true);
           }
