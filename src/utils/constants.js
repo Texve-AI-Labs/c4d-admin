@@ -1013,6 +1013,7 @@ export const API_ROUTES = {
     'ADMIN_ONBOARDING_BY_ID': '/admin/account/onboarding/',
     'GET_ADMIN_BOOKINGS_SUMMARY': '/admin/bookings/summary',
     'GET_ADMIN_BOOKINGS_EVENTS': '/admin/bookings/events',
+    'GET_DRIVER_CANCELLATION_LOGS': '/admin/driver-cancellation-logs'
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [

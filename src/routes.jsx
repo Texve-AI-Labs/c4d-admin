@@ -170,6 +170,7 @@ import OwnerOnboardingBikeAccountDetails from "./pages/account/owner-onboarding-
 import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-bike/vehicleDetails";
 import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
 import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
+import DriverCancellationHistoryList from "./pages/user/CancelltionHistory/list";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -563,6 +564,14 @@ export const routes = [
         path: "/users",
         element: <UserView />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Cancellation History",
+        path: "/admin/driver-cancellation-history",
+        element: <DriverCancellationHistoryList />,
+        display: false,
         permission: "Users",
       },
       {

@@ -256,6 +256,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
           currentPath.startsWith("/dashboard/users") ||
           currentPath.startsWith("/dashboard/admin/geo-markings") ||
           currentPath.startsWith("/dashboard/user/versioncontrol") ||
+          currentPath.startsWith("/dashboard/admin/driver-cancellation-history") ||
           currentPath.startsWith("/dashboard/reports/tripmasterreport") ||
           currentPath.startsWith("/dashboard/tripdetails")
         );
