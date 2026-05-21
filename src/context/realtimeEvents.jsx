@@ -8,6 +8,12 @@ const RealtimeEventsContext = createContext(null);
 const DEFAULT_INQUIRY_TYPE = "ALL_CABS";
 const SUMMARY_DEBOUNCE_MS = 1200;
 const SUMMARY_MIN_INTERVAL_MS = 2500;
+const CONNECTED_REFRESH_COOLDOWN_MS = 2000;
+const MAX_SEEN_EVENT_IDS = 2000;
+const MAX_RETRY_DELAY_MS = 15000;
+const FALLBACK_SUMMARY_REFRESH_MS = 120000;
+const AUTH_FATAL_LOGOUT_THRESHOLD = 2;
+const DEDUPE_TTL_MS = 20000;
 
 const FALLBACK_REALTIME_CONTEXT = {
   isLive: false,
@@ -50,7 +56,7 @@ const normalizeEvent = (message) => {
 };
 
 export const RealtimeEventsProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const authToken = user?.token || localStorage.getItem("token") || "";
   const [isLive, setIsLive] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -102,6 +108,55 @@ export const RealtimeEventsProvider = ({ children }) => {
     lastFetchAt: 0,
     pendingAfterFlight: false,
   });
+  const lastConnectedRefreshAtRef = React.useRef(0);
+  const seenEventIdsRef = React.useRef(new Set());
+  const retryAttemptRef = React.useRef(0);
+  const authFatalCountRef = React.useRef(0);
+  const dedupeCacheRef = React.useRef(new Map());
+
+  const shouldRefreshOnConnected = useCallback(() => {
+    const now = Date.now();
+    if (now - lastConnectedRefreshAtRef.current < CONNECTED_REFRESH_COOLDOWN_MS) return false;
+    lastConnectedRefreshAtRef.current = now;
+    return true;
+  }, []);
+
+  const getDataFingerprint = useCallback((value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    try {
+      return JSON.stringify(value);
+    } catch (error) {
+      return String(value);
+    }
+  }, []);
+
+  const shouldProcessEvent = useCallback(
+    (normalized, message) => {
+      const now = Date.now();
+      for (const [key, expiry] of dedupeCacheRef.current.entries()) {
+        if (expiry <= now) dedupeCacheRef.current.delete(key);
+      }
+
+      const eventId = message?.id || normalized?.payload?.eventId || normalized?.payload?.id;
+      const key = eventId
+        ? `${normalized.eventType}:${String(eventId)}`
+        : `${normalized.eventType}:${Math.floor(now / 5000)}:${getDataFingerprint(normalized?.payload || normalized?.raw?.data)}`;
+
+      if (dedupeCacheRef.current.has(key)) return false;
+      dedupeCacheRef.current.set(key, now + DEDUPE_TTL_MS);
+
+      if (eventId) {
+        seenEventIdsRef.current.add(key);
+        if (seenEventIdsRef.current.size > MAX_SEEN_EVENT_IDS) {
+          const firstKey = seenEventIdsRef.current.values().next().value;
+          seenEventIdsRef.current.delete(firstKey);
+        }
+      }
+      return true;
+    },
+    [getDataFingerprint]
+  );
 
   const runSummaryRefresh = useCallback(async () => {
     if (!authToken) return;
@@ -175,24 +230,39 @@ export const RealtimeEventsProvider = ({ children }) => {
       openWhenHidden: true,
       onopen(response) {
         const contentType = response.headers.get("Content-Type") || "";
+        if (response.status === 401 || response.status === 403) {
+          throw new Error("SSE_AUTH_FATAL");
+        }
         if (!response.ok) throw new Error(`SSE failed with status ${response.status}`);
         if (!contentType.includes("text/event-stream")) {
           throw new Error(`Invalid SSE content-type: ${contentType}`);
         }
+        authFatalCountRef.current = 0;
+        retryAttemptRef.current = 0;
         setIsLive(true);
         setIsReconnecting(false);
       },
       onmessage(message) {
         const normalized = normalizeEvent(message);
         if (!normalized) return;
+        if (!shouldProcessEvent(normalized, message)) return;
+
         setLastEvent(normalized);
         setEventSeq((prev) => prev + 1);
         setIsLive(true);
         if (normalized.eventType === "connected") {
-          requestSummaryRefresh(true);
-        }
-        if (normalized.eventType === "connected") {
           setIsReconnecting(false);
+          if (shouldRefreshOnConnected()) {
+            requestSummaryRefresh(true);
+          }
+          return;
+        }
+        if (
+          normalized.eventType === "booking_created" ||
+          normalized.eventType === "booking_status_changed" ||
+          normalized.eventType === "message"
+        ) {
+          requestSummaryRefresh(false);
         }
       },
       onclose() {
@@ -202,10 +272,21 @@ export const RealtimeEventsProvider = ({ children }) => {
       onerror(error) {
         setIsLive(false);
         setIsReconnecting(true);
-        throw error;
+        if (String(error?.message || "").includes("SSE_AUTH_FATAL")) {
+          authFatalCountRef.current += 1;
+          throw error;
+        }
+        retryAttemptRef.current += 1;
+        return Math.min(MAX_RETRY_DELAY_MS, 1000 * (2 ** (retryAttemptRef.current - 1)));
       },
     }).catch((error) => {
       if (abortController.signal.aborted) return;
+      if (String(error?.message || "").includes("SSE_AUTH_FATAL")) {
+        if (authFatalCountRef.current >= AUTH_FATAL_LOGOUT_THRESHOLD) {
+          logout?.();
+        }
+        return;
+      }
       console.error("Global bookings stream error:", error);
     });
 
@@ -216,15 +297,28 @@ export const RealtimeEventsProvider = ({ children }) => {
         state.timer = null;
       }
       abortController.abort();
+      seenEventIdsRef.current.clear();
+      dedupeCacheRef.current.clear();
+      retryAttemptRef.current = 0;
+      authFatalCountRef.current = 0;
       setIsLive(false);
       setIsReconnecting(false);
     };
-  }, [authToken, requestSummaryRefresh]);
+  }, [authToken, logout, requestSummaryRefresh, shouldProcessEvent]);
 
   useEffect(() => {
     if (!authToken) return;
     requestSummaryRefresh(true);
   }, [authToken, requestSummaryRefresh]);
+
+  useEffect(() => {
+    if (!authToken) return;
+    const intervalId = setInterval(() => {
+      if (isLive && !isReconnecting) return;
+      requestSummaryRefresh(false);
+    }, FALLBACK_SUMMARY_REFRESH_MS);
+    return () => clearInterval(intervalId);
+  }, [authToken, isLive, isReconnecting, requestSummaryRefresh]);
 
   const value = useMemo(
     () => ({
