@@ -103,6 +103,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
   );
 
   const homeBadgeCount = Number(homeTotalPendings ?? inquiriesPendingsByType?.ALL_CABS ?? 0);
+  const connectionStatus = isLive ? "live" : isReconnecting ? "reconnecting" : "offline";
 
   // useEffect(() => {
   //   const getInquiryTypeFromPath = (pathname = "") => {
@@ -291,14 +292,18 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                   </div>
                     <span
                       className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
-                        isReconnecting
-                          ? "bg-amber-100 text-amber-800"
-                          : isLive
+                        connectionStatus === "live"
                           ? "bg-green-100 text-green-800"
+                          : connectionStatus === "reconnecting"
+                          ? "bg-amber-100 text-amber-800"
                           : "bg-gray-100 text-gray-700"
                       }`}
                     >
-                      {isReconnecting ? "Reconnecting..." : isLive ? "Live" : "Offline"}
+                      {connectionStatus === "live"
+                        ? "Live"
+                        : connectionStatus === "reconnecting"
+                        ? "Reconnecting..."
+                        : "Offline"}
                   </span>
                 </div>
               </>
