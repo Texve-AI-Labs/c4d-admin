@@ -19,7 +19,7 @@ const getPricingLabel = (mode, value) => {
     const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
 
     if (mode === "DELTA_AMOUNT") {
-        return `${safeValue >= 0 ? "+" : ""}${safeValue} fixed amount`;
+        return `${safeValue >= 0 ? "+" : ""}${safeValue}`;
     }
 
     return "-";

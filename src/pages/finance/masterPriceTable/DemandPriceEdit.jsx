@@ -40,7 +40,7 @@ const formatDays = (days = []) => {
 };
 
 const formatPricing = (pricingMode, value) => {
-    if (pricingMode === "DELTA_AMOUNT") return `${value >= 0 ? "+" : ""}${value} fixed amount`;
+    if (pricingMode === "DELTA_AMOUNT") return `${value >= 0 ? "+" : ""}${value}`;
     return String(value ?? "-");
 };
 
