@@ -872,6 +872,7 @@ export const API_ROUTES = {
     'ADMIN_DISCOUNT_APPROVE': '/booking/admin-discount/approve',
     'ADMIN_DISCOUNT_REJECT': '/booking/admin-discount/reject',
     'ADMIN_DISCOUNT_HISTORY': '/booking/admin-discount/history',
+    'ADMIN_DISCOUNT_STATUS': '/booking/admin-discount/status',
     'ACTING_DRIVER_ADD_LOCAL_PACKAGE': '/add-package',
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
