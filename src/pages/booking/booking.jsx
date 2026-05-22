@@ -85,6 +85,9 @@ const getSuggestionTitle = (suggestion) => {
     return suggestion.title || suggestion.fullText || '';
 };
 
+const getAdminDiscountUpdatedTs = (item = {}) =>
+    new Date(item?.updatedAt || item?.updated_at || item?.approvedAt || item?.approved_at || item?.createdAt || item?.created_at || 0).getTime();
+
 const Booking = (props) => {
     const [loading, setLoading] = useState(false);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
@@ -116,6 +119,9 @@ const Booking = (props) => {
     const [quoteDetails, setQuoteDetails] = useState(null);
     const [quoteMeta, setQuoteMeta] = useState(null);
     const approvedHistoryRefreshKeyRef = useRef('');
+    const approvedStatusSyncTimerRef = useRef(null);
+    const adminStatusSyncInFlightRef = useRef(false);
+    const lastAdminStatusSyncAtRef = useRef(0);
     const { handleAdminDiscountDecision } = useAdminDiscountNotifier({
         quoteMeta,
         setQuoteMeta,
@@ -146,7 +152,12 @@ const Booking = (props) => {
             const approvedKey = `${normalizedQuoteRef}:${normalizedStatus}`;
             if (approvedHistoryRefreshKeyRef.current === approvedKey) return;
             approvedHistoryRefreshKeyRef.current = approvedKey;
-            syncAdminDiscountStatus(normalizedQuoteRef);
+            if (approvedStatusSyncTimerRef.current) {
+                clearTimeout(approvedStatusSyncTimerRef.current);
+            }
+            approvedStatusSyncTimerRef.current = setTimeout(() => {
+                syncAdminDiscountStatus(normalizedQuoteRef);
+            }, 1500);
         },
         enabled: BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW,
     });
@@ -172,6 +183,7 @@ const Booking = (props) => {
     const [quotationLogs, setQuotationLogs] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const adminStatusSyncKeyRef = useRef('');
+    const adminStatusAppliedTsRef = useRef(0);
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser') || "{}");
     const loggedInUserId = loggedInUser.id || 0;
     const loggedInUserRole = String(loggedInUser?.role || loggedInUser?.userType || '').toUpperCase();
@@ -243,6 +255,11 @@ const Booking = (props) => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
         const quoteRef = normalizeQuoteRef(quoteRefValue || quoteMeta?.quoteRef || '');
         if (!quoteRef) return;
+        const now = Date.now();
+        if (adminStatusSyncInFlightRef.current) return;
+        if (now - lastAdminStatusSyncAtRef.current < 1200) return;
+        adminStatusSyncInFlightRef.current = true;
+        lastAdminStatusSyncAtRef.current = now;
 
         try {
             const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_DISCOUNT_STATUS, { quoteRef });
@@ -250,10 +267,15 @@ const Booking = (props) => {
             if (!latest) return;
             const latestStatus = String(latest?.status || '').toUpperCase();
             if (!latestStatus) return;
+            const latestTs = getAdminDiscountUpdatedTs(latest);
+            if (latestTs && latestTs <= adminStatusAppliedTsRef.current) return;
 
             const latestKey = `${quoteRef}:${latestStatus}:${latest?.id || latest?.discountId || ''}`;
             if (adminStatusSyncKeyRef.current === latestKey) return;
             adminStatusSyncKeyRef.current = latestKey;
+            if (latestTs) {
+                adminStatusAppliedTsRef.current = latestTs;
+            }
 
             setQuoteMeta((prev) => ({
                 ...(prev || {}),
@@ -276,6 +298,8 @@ const Booking = (props) => {
             }));
         } catch (error) {
             console.error('Failed to sync admin discount status by quoteRef:', error);
+        } finally {
+            adminStatusSyncInFlightRef.current = false;
         }
     }, [quoteMeta?.quoteRef]);
 
@@ -283,20 +307,30 @@ const Booking = (props) => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
         const quoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || '');
         if (!quoteRef) return;
+        const currentStatus = String(quoteMeta?.adminDiscount?.status || quoteDetails?.adminDiscount?.status || '').toUpperCase();
+        if (currentStatus && currentStatus !== 'PENDING') return;
         syncAdminDiscountStatus(quoteRef);
-    }, [quoteMeta?.quoteRef, syncAdminDiscountStatus]);
+    }, [quoteMeta?.quoteRef, quoteMeta?.adminDiscount?.status, quoteDetails?.adminDiscount?.status, syncAdminDiscountStatus]);
 
     useEffect(() => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
         const onFocusSync = () => {
             const quoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || '');
+            const currentStatus = String(quoteMeta?.adminDiscount?.status || quoteDetails?.adminDiscount?.status || '').toUpperCase();
+            if (currentStatus && currentStatus !== 'PENDING') return;
             if (quoteRef) {
                 syncAdminDiscountStatus(quoteRef);
             }
         };
         window.addEventListener('focus', onFocusSync);
         return () => window.removeEventListener('focus', onFocusSync);
-    }, [quoteMeta?.quoteRef, syncAdminDiscountStatus]);
+    }, [quoteMeta?.quoteRef, quoteMeta?.adminDiscount?.status, quoteDetails?.adminDiscount?.status, syncAdminDiscountStatus]);
+
+    useEffect(() => () => {
+        if (approvedStatusSyncTimerRef.current) {
+            clearTimeout(approvedStatusSyncTimerRef.current);
+        }
+    }, []);
 
     useEffect(() => {
         if (params?.editBooking) {
