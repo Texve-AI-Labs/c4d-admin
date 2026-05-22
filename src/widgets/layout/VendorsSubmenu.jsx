@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button, Typography } from "@material-tailwind/react";
-import { NAV_UI } from "@/utils/constants";
+import { FUTURE_FLAG, NAV_UI } from "@/utils/constants";
 
 function VendorsSubmenu({ miniSidenav }) {
   const getItemClasses = (isActive) =>
@@ -20,7 +20,7 @@ function VendorsSubmenu({ miniSidenav }) {
     switch (label) {
       case "All Cab Owners":
         // Only highlight Owners on the main owners page
-        return pathname === "/dashboard/vendors/account/new";
+        return pathname === "/dashboard/vendors/account/owner-onboarding-cab";
       case "All Acting Driver":
         return pathname.startsWith("/dashboard/vendors/account/drivers");
       case "All Cab List":
@@ -54,7 +54,7 @@ function VendorsSubmenu({ miniSidenav }) {
   };
 
   const items = [
-    { label: "All Cab Owners", path: "/dashboard/vendors/account/new", icon: "/img/owners.png" },
+    { label: "All Cab Owners", path: "/dashboard/vendors/account/owner-onboarding-cab", icon: "/img/owners.png" },
     { label: "All Acting Driver", path: "/dashboard/vendors/account/drivers", icon: "/img/acting_driver.png" },
     { label: "All Auto Owner", path: "/dashboard/vendors/account/owner-onboarding-auto", icon: "/img/parcel_list.png" },
     { label: "All Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },
@@ -63,10 +63,14 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
     { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
     { label: "Return Trip Driver Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" },
-    { label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" },
-    { label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" },
+    ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
+      ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
+      : []),
+    ...(FUTURE_FLAG.PENDING_DOCUMENTS_LIST
+      ? [{ label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" }]
+      : []),
   ];
-  const rowSize = 6;
+  const rowSize = 5;
   const rows = [];
   for (let i = 0; i < items.length; i += rowSize) {
     rows.push(items.slice(i, i + rowSize));

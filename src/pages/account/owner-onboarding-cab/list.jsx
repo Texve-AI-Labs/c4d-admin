@@ -137,11 +137,11 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
     normalizedAccountStatus === "VERIFIED" &&
     normalizedVehicleStatus === "VERIFIED"
   ) {
-    return `/dashboard/vendors/account/new/details/completed/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-cab/details/completed/${id}`;
   }
 
   if (normalizedStage === "VEHICLE" && normalizedVehicleStatus === "VERIFIED" && !hasVehicleNormalized) {
-    return `/dashboard/vendors/account/new/cab/add/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-cab/cab/add/${id}`;
   }
 
   const shouldOpenVehicleDetails =
@@ -151,16 +151,17 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
       ["PENDING UPLOAD", "PENDING VERIFICATION", "DECLINED", "INVALID"].includes(normalizedVehicleStatus));
 
   if (shouldOpenVehicleDetails) {
-    return `/dashboard/vendors/account/new/details/vehicle/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-cab/details/vehicle/${id}`;
   }
 
-  return `/dashboard/vendors/account/new/details/account/${id}`;
+  return `/dashboard/vendors/account/owner-onboarding-cab/details/account/${id}`;
 };
 export function AccountList() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [alert, setAlert] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const location = useLocation();
 
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
@@ -350,8 +351,17 @@ export function AccountList() {
     }
   }, [location, navigate]);
 
+  useEffect(() => {
+    if (refreshing && !loading) {
+      setRefreshing(false);
+    }
+  }, [refreshing, loading]);
+
   const handleRefresh = () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
+    lastRequestKeyRef.current = '';
+    inFlightRequestKeyRef.current = '';
+    setRefreshing(true);
     setPagination({
       currentPage: 1,
       totalPages: 1,
@@ -421,12 +431,20 @@ export function AccountList() {
     });
   }, []);
   function formatPhoneNumber(phoneNumber) {
-    if (phoneNumber) {
-      if (phoneNumber.startsWith("+91")) {
-        return phoneNumber;
-      }
-      return `+91${phoneNumber}`;
-    }
+    if (!phoneNumber) return "-";
+
+    const parts = String(phoneNumber)
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+
+    const cleaned = parts
+      .map((p) => p.replace(/[^\d]/g, ""))
+      .map((digits) => digits.slice(-10))
+      .filter((digits) => digits.length === 10)
+      .map((digits) => `+91${digits}`);
+
+    return cleaned.length ? cleaned.join(", ") : "-";
   }
 
   const handleSort = (key) => {
@@ -639,14 +657,14 @@ export function AccountList() {
             <button
               className="bg-primary-400 text-white px-4 py-2 rounded-2xl flex items-center gap-2 hover:bg-primary-500"
               onClick={handleRefresh}
-              disabled={loading}
+              disabled={loading || refreshing}
             >
-              {loading ? (
+              {(loading || refreshing) ? (
                 <Spinner className="w-4 h-4" />
               ) : (
                 <img src="/img/refresh.png" alt="Refresh" className="w-4 h-4" />
               )}
-              <span>{loading ? "Refreshing..." : "Refresh"}</span>
+              <span>{(loading || refreshing) ? "Refreshing..." : "Refresh"}</span>
             </button>
           </div>
         </CardHeader>

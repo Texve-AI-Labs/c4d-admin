@@ -94,6 +94,7 @@ const AutoCreation = () => {
               name: values.name,
               company: values.ownerName,
               autoNumber: values.autoNumber,
+              district: accountInfo?.district || '',
               curAddress: values.address,
               insurance: values.insurance,
               vehicleType: values.autoType,

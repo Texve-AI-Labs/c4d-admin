@@ -6,8 +6,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import Select from 'react-select';
+import {Typography } from "@material-tailwind/react";
 import { Utils } from '@/utils/utils';
 import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
+import DemandPriceEdit from './DemandPriceEdit';
 
 
 
@@ -39,6 +41,8 @@ const RentalsMasterPriceEdit = () => {
     const navigate = useNavigate();
     const [premiumConfig ,setPremiumConfig] = useState({});
     const initialPremiumRef = useRef({});
+    const [demandRules, setDemandRules] = useState([]);   
+    const initialDemandPriceRef = useRef([]);  
 
     useEffect(() => {
         if (id) fetchPriceDetails(id);
@@ -118,9 +122,14 @@ const RentalsMasterPriceEdit = () => {
                     acExtraKilometerRoundPriceMVP: data?.data?.acExtraKilometerRoundPriceMVP || 0,
                     acExtraKilometerRoundPriceSuv: data?.data?.acExtraKilometerRoundPriceSuv || 0,
                     acExtraKilometerRoundPriceSedan: data?.data?.acExtraKilometerRoundPriceSedan || 0,
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(data?.data?.driverCancelMins || 0),
+                    driverFreeCancellationsPerDay: data?.data?.driverFreeCancellationsPerDay || 0,
+                    driverCancellationCharge: data?.data?.driverCancellationCharge || 0,
                 });
                 initialPremiumRef.current = data.data.premiumConfig;
                 setPremiumConfig(data.data.premiumConfig || []);
+                setDemandRules(data.data.demandRules || []);
+                initialDemandPriceRef.current = data.data.demandRules || [];
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -134,6 +143,10 @@ const RentalsMasterPriceEdit = () => {
   const hasPremiumConfig = () => {
     return JSON.stringify(premiumConfig) !== JSON.stringify(initialPremiumRef.current);
   }
+
+      const hasDemandPriceChanged = () => {
+        return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
+    }
 
     const onSubmit = async (values) => {
         try {
@@ -207,6 +220,11 @@ const RentalsMasterPriceEdit = () => {
                 acExtraKilometerRoundPriceMVP: Number(values.acExtraKilometerRoundPriceMVP),
                 acExtraKilometerRoundPriceSuv: Number(values.acExtraKilometerRoundPriceSuv),
                 acExtraKilometerRoundPriceSedan: Number(values.acExtraKilometerRoundPriceSedan),
+
+                driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay),
+                driverCancellationCharge: Number(values.driverCancellationCharge),
+                                demandRules: demandRules,
                 premiumConfig:premiumConfig,
             };
 
@@ -931,14 +949,53 @@ const RentalsMasterPriceEdit = () => {
     </tbody>
   </table>
 </div>
+
+<div className='overflow-x-auto m-2'>
+    <Typography className='font-semibold'>Driver Cancellation</Typography>
+    <table className="w-full border border-collapse text-sm text-center">
+      <thead>
+        <tr className="bg-primary  text-white">
+          <th>Driver Cancel Mins</th>
+          <th>Driver Free Cancellations Per Day</th>
+          <th>Driver Cancellation Charge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td className="border p-2">
+            <Field
+              type="number"
+              name="driverCancelMins"
+              className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+            />
+          </td>
+          <td className="border p-2">
+            <Field
+              type="number"
+              name="driverFreeCancellationsPerDay"
+              className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+            />
+          </td>
+          <td className="border p-2">
+            <Field
+              type="number"
+              name="driverCancellationCharge"
+              className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+            />
+          </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
               {(values?.type === 'Outstation') &&
                 <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data) => setPremiumConfig(data)} />
               }
+                                  <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                                 Cancel
                             </Button>
-                            <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig()) || !isValid} className="my-6 mx-2">
+                            <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig()  || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
                                 Save Changes
                             </Button>
                         </div>

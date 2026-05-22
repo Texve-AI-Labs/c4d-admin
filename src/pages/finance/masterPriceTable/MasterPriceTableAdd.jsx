@@ -7,6 +7,7 @@ import Select from 'react-select';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
+import { Typography } from "@material-tailwind/react";
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -83,7 +84,10 @@ const PriceAdd = () => {
         cancellationCharge: '',
         status: 'ACTIVE',
         zone: '',
-        freeExtraMinutes:''
+        freeExtraMinutes:'',
+        driverCancelMins:'',
+        driverFreeCancellationsPerDay:'',
+        driverCancellationCharge:''
     };
 
     const onSubmit = async (values, { setSubmitting }) => {
@@ -114,6 +118,10 @@ const PriceAdd = () => {
                 'period': 'Rides',
                 'status': values.status == "ACTIVE" ? 1 : 0,
                 'zone': values.zone,
+
+                'driverCancelMins': Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                'driverFreeCancellationsPerDay': values.driverFreeCancellationsPerDay,
+                'driverCancellationCharge': values.driverCancellationCharge
             }
             const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
             if (data?.success) {
@@ -305,6 +313,44 @@ const PriceAdd = () => {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <div className='overflow-x-auto m-2'>
+                            <Typography className='font-semibold'>Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary  text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancelMins"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverFreeCancellationsPerDay"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancellationCharge"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                            />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">

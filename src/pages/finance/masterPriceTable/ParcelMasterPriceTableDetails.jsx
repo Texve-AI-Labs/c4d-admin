@@ -6,6 +6,7 @@ import MasterPriceLogParcel from "./MasterPriceLogParcel";
 import ParcelMasterPriceForm from "./parcelMasterPrice/ParcelMasterPriceForm";
 import { createInitialParcelForm } from "./parcelMasterPrice/defaults";
 import { mapApiToParcelForm } from "./parcelMasterPrice/mapper";
+import DemandPriceTable from "./DemandPrice";
 
 export default function ParcelMasterPriceTableDetails() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function ParcelMasterPriceTableDetails() {
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
   const [initialForm, setInitialForm] = useState(createInitialParcelForm());
+  const [demandRules, setDemandRules] = useState([]);
 
   useEffect(() => {
     const fetchGeoData = async () => {
@@ -46,6 +48,7 @@ export default function ParcelMasterPriceTableDetails() {
         const response = await ApiRequestUtils.get(`${API_ROUTES.PARCEL_PACKAGE_BY_ID}/${id}`);
         if (response?.success && response?.data) {
           setInitialForm(mapApiToParcelForm(response.data));
+          setDemandRules(response.data.demandRules || []);
         } else {
           setError(response?.message || "Failed to fetch parcel package details");
         }
@@ -72,6 +75,9 @@ export default function ParcelMasterPriceTableDetails() {
         onPrimaryButtonClick={() => navigate(`/dashboard/finance/master-price/parcel-edit/${id}`)}
         onBack={() => navigate("/dashboard/finance/master-price")}
       />
+      <div className="px-4 pb-4">
+        <DemandPriceTable demandRules={demandRules} />
+      </div>
 
       <div className="px-4">
         <MasterPriceLogParcel id={id} />

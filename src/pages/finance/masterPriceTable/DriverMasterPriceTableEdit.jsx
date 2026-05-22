@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Button } from '@material-tailwind/react';
@@ -7,6 +7,7 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
 import Select from 'react-select';
+import DemandPriceEdit from './DemandPriceEdit';
 
 const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Active' },
@@ -33,6 +34,8 @@ const DriverMasterPriceTableEdit = () => {
     const [loading, setLoading] = useState(true);
     const { id } = useParams();
     const navigate = useNavigate();
+    const [demandRules, setDemandRules] = useState([]);
+    const initialDemandPriceRef = useRef([]);
 
     useEffect(() => {
         fetchDriverDetails(id);
@@ -75,8 +78,10 @@ const DriverMasterPriceTableEdit = () => {
 
                     zone : data.data.zone,
 
-                    status: data.data.status == 1 ? "ACTIVE" : 'IN_ACTIVE',
+                    status: Number(data.data.status) === 1 ? "ACTIVE" : "INACTIVE",
                 });
+                setDemandRules(data.data.demandRules || []);
+                initialDemandPriceRef.current = data.data.demandRules || [];
             }
             
         } catch (error) {
@@ -88,6 +93,9 @@ const DriverMasterPriceTableEdit = () => {
 
     const convertToTimeFormat = (timeString) => {
         return timeString ? timeString.slice(0, 5) : "";
+    };
+    const hasDemandPriceChanged = () => {
+        return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
     };
     const onSubmit = async (values) => {
         try {
@@ -118,6 +126,7 @@ const DriverMasterPriceTableEdit = () => {
                 kilometer : Number(values.kilometer),
 
                 status: values.status === 'ACTIVE' ? 1 : 0,
+                demandRules: demandRules,
             };
 
             // Include Outstation-specific fields
@@ -298,11 +307,12 @@ const DriverMasterPriceTableEdit = () => {
                        
 
                         {/* Buttons */}
+                            <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
                             <div className="flex flex-row">
                                 <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className={`my-6 mx-2 ${ColorStyles.backButton}`}>
                                     Back
                                 </Button>
-                                <Button fullWidth color="blue" onClick={handleSubmit} disabled={!dirty || !isValid} className="my-6 mx-2">
+                                <Button fullWidth color="blue" onClick={handleSubmit} disabled={!(dirty || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
                                     Save Changes
                                 </Button>
                             </div>

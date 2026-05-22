@@ -147,8 +147,8 @@ const ServiceAreaForm = ({
     typeof value === 'string' && /^#([0-9A-Fa-f]{6})$/.test(value);
 
   const validateServices = (arr) => {
-    if (arr.length < 4) {
-      setServicesError('Please select at least 4 Service Types');
+    if (arr.length < 3) {
+      setServicesError('Please select at least 3 Service Types');
       return false;
     }
     setServicesError(null);
@@ -156,8 +156,8 @@ const ServiceAreaForm = ({
   };
 
   const validateQuickServices = (arr) => {
-    if (arr.length !== 4) {
-      setQuickServiceError('Please select exactly 4 Quick Services');
+    if (arr.length !== 3) {
+      setQuickServiceError('Please select exactly 3 Quick Services');
       return false;
     }
     setQuickServiceError(null);
@@ -165,8 +165,8 @@ const ServiceAreaForm = ({
   };
 
   const validateHighlightedServices = (arr) => {
-    if (arr.length !== 2) {
-      setHighlightedServiceError('Please select exactly 2 Highlighted Services');
+    if (arr.length !== 1) {
+      setHighlightedServiceError('Please select exactly 1 Highlighted Services');
       return false;
     }
     setHighlightedServiceError(null);
@@ -468,7 +468,7 @@ const ServiceAreaForm = ({
             Service Types <span className="text-red-500">*</span>
           </label>
           <Typography variant="small" color="gray" className="mb-1">
-            Select at least 4 service types.
+            Select at least 3 service types.
           </Typography>
           <Select
             isMulti
@@ -683,7 +683,7 @@ const ServiceAreaForm = ({
             Quick Service <span className="text-red-500">*</span>
           </label>
           <Typography variant="small" color="gray" className="mb-1">
-            Select exactly 4 quick services.
+            Select exactly 3 quick services.
           </Typography>
           <Select
             isMulti
@@ -697,7 +697,7 @@ const ServiceAreaForm = ({
             placeholder={
               availableQuickOptions.length === 0
                 ? 'First select Service Types'
-                : 'Select exactly 4 quick services'
+                : 'Select exactly 3 quick services'
             }
             isDisabled={availableQuickOptions.length === 0}
             menuPortalTarget={typeof document !== 'undefined' ? document.body : null}

@@ -8,6 +8,7 @@ import {
   normalizeParcelVehicleType,
   toNum,
 } from "./defaults";
+import { Utils } from "@/utils/utils";
 
 export const mapApiToParcelForm = (data) => {
   const form = createInitialParcelForm();
@@ -30,6 +31,9 @@ export const mapApiToParcelForm = (data) => {
     baseFare: data?.baseFare ?? "",
     baseKm: data?.baseKm ?? "",
     kilometerPrice: data?.kilometerPrice ?? "",
+    driverCancelMins: Utils.convertTimeFormatToMinutes(data?.driverCancelMins) ?? "",
+    driverFreeCancellationsPerDay: data?.driverFreeCancellationsPerDay ?? "",
+    driverCancellationCharge: data?.driverCancellationCharge ?? "",
     peakHourEnabled: peakHour.length > 0,
     peakHour: peakHour.length
       ? peakHour.map((row) => ({
@@ -104,6 +108,9 @@ export const buildParcelPayload = (form) => {
   baseFare: toNum(form.baseFare),
   baseKm: toNum(form.baseKm),
   kilometerPrice: toNum(form.kilometerPrice),
+  driverCancelMins: Utils.convertMinutesToTimeFormat(toNum(form.driverCancelMins)),
+  driverFreeCancellationsPerDay: toNum(form.driverFreeCancellationsPerDay),
+  driverCancellationCharge: toNum(form.driverCancellationCharge),
   peakHours: form.peakHourEnabled
     ? form.peakHour.map((row) => ({
         start: row.start,

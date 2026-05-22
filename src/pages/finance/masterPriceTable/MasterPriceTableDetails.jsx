@@ -8,6 +8,8 @@ import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import RidesPeakHourTableDetails from './RidesPeakHourTableDetails';
 import PremiumPriceDetails from '@/components/PremiumPriceDetails';
+import DemandPriceTable from './DemandPrice';
+import { Typography } from "@material-tailwind/react";
 
 const PriceDetails = () => {
     const [initialValues, setInitialValues] = useState(null);
@@ -15,6 +17,7 @@ const PriceDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [peakHours, setPeakHours] = useState([])
+    const [demandRules, setDemandRules] = useState([]);
     const [premiumConfig ,setPremiumConfig] = useState({});
 
     useEffect(() => {
@@ -58,9 +61,13 @@ const PriceDetails = () => {
                     status: data.data.status == 1 ? "ACTIVE": 'IN_ACTIVE',
                     zone: data?.data?.zone || '',
                     freeExtraMinutes: data?.data?.freeExtraMinutes || '',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(data?.data?.driverCancelMins) || '',
+                    driverFreeCancellationsPerDay: data?.data?.driverFreeCancellationsPerDay || '',
+                    driverCancellationCharge: data?.data?.driverCancellationCharge || ''
                 });
                 setPeakHours(data.data.peakHours);
                 setPremiumConfig(data.data.premiumConfig);
+                setDemandRules(data.data.demandRules|| []);
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -207,7 +214,48 @@ const PriceDetails = () => {
                                 </table>
                             </div>
                         </div>
+                        <div className='overflow-x-auto m-2'>
+                            <Typography className='font-semibold'>Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary  text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancelMins"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                                disabled
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverFreeCancellationsPerDay"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                                disabled
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancellationCharge"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                                disabled
+                                            />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <RidesPeakHourTableDetails priceData={peakHours}/>
+                        <DemandPriceTable demandRules={demandRules}/>
                         <PremiumPriceDetails premiumData={premiumConfig}/>
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className={`my-6 mx-2 ${ColorStyles.backButton}`}>

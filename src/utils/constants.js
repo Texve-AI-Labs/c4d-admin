@@ -20,6 +20,17 @@ export const getBaseUrl = () => {
 }
 export const DISABLE_GLOBAL_AUTOCOMPLETE = true; // true -> off false -> on
 
+
+export const FUTURE_FLAG = {
+    DOCUMENT_DETAILS_LIST: false,
+    PENDING_DOCUMENTS_LIST: false
+};
+
+export const BOOKING_FEATURES = {
+    ADMIN_DISCOUNT_FLOW: true,
+};
+
+
 export const GENDER = {
     MALE: 'Male',
     FEMALE: 'Female',
@@ -858,6 +869,10 @@ export const API_ROUTES = {
     'GET_MASTER_SUBSCRIPTION_LIST': '/admin/plan-groups',
     'GET_MASTER_SUBSCRIPTION_DETAIL': '/admin/plan-groups',
     'GET_QUOTE_OUTSTATION': '/get-quote',
+    'ADMIN_DISCOUNT_APPROVE': '/booking/admin-discount/approve',
+    'ADMIN_DISCOUNT_REJECT': '/booking/admin-discount/reject',
+    'ADMIN_DISCOUNT_HISTORY': '/booking/admin-discount/history',
+    'ADMIN_DISCOUNT_STATUS': '/booking/admin-discount/status',
     'ACTING_DRIVER_ADD_LOCAL_PACKAGE': '/add-package',
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
@@ -997,12 +1012,23 @@ export const API_ROUTES = {
     'GET_CASH_BACK':'/cashback-rules',
     "GET_TRANSACTIONS_LIST":'/transactions',
     "GET_TRANSACTIONS_CHART":'/transactions/chart',
+    "GET_BOOKING_FUNNEL": '/admin/booking-funnel',
     "ASSIGN_AUTO":'/confirm-auto-booking',
     "ADD_SUPPORT_PARCEL_BOOKING":'/add-support-parcel-booking',
     'DRIVER_RETURN_TRIP_DETAILS':'/return-trips',
     'ADMIN_REQUIRED_DOCUMENTS': '/admin/verification/required-documents',
     'ADMIN_ONBOARDING_BY_ID': '/admin/account/onboarding/',
+    'GET_ADMIN_BOOKINGS_SUMMARY': '/admin/bookings/summary',
+    'GET_ADMIN_BOOKINGS_EVENTS': '/admin/bookings/events',
+    'GET_DRIVER_CANCELLATION_LOGS': '/admin/driver-cancellation-logs'
 };
+
+export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
+    API_ROUTES.GET_ADMIN_BOOKINGS_EVENTS,
+    '/admin/bookings/event',
+    '/admin/booking/events',
+    '/admin/booking/event',
+];
 
 export const KYC_PROCESS = {
     AADHAAR: 'AADHAAR',

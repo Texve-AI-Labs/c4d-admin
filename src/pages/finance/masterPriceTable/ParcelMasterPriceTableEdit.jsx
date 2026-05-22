@@ -6,6 +6,7 @@ import MasterPriceLogParcel from "./MasterPriceLogParcel";
 import ParcelMasterPriceForm from "./parcelMasterPrice/ParcelMasterPriceForm";
 import { createInitialParcelForm } from "./parcelMasterPrice/defaults";
 import { mapApiToParcelForm } from "./parcelMasterPrice/mapper";
+import DemandPriceEdit from "./DemandPriceEdit";
 
 export default function ParcelMasterPriceTableEdit() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export default function ParcelMasterPriceTableEdit() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [initialForm, setInitialForm] = useState(createInitialParcelForm());
+  const [demandRules, setDemandRules] = useState([]);
 
   useEffect(() => {
     const fetchGeoData = async () => {
@@ -46,6 +48,7 @@ export default function ParcelMasterPriceTableEdit() {
         const response = await ApiRequestUtils.get(`${API_ROUTES.PARCEL_PACKAGE_BY_ID}/${id}`);
         if (response?.success && response?.data) {
           setInitialForm(mapApiToParcelForm(response.data));
+          setDemandRules(response.data.demandRules || []);
         }
       } catch (fetchErr) {
         console.error("Fetch error:", fetchErr);
@@ -59,7 +62,7 @@ export default function ParcelMasterPriceTableEdit() {
     setError("");
     try {
       setSaving(true);
-      const reqBody = { packageId: Number(id), ...payload };
+      const reqBody = { packageId: Number(id), ...payload, demandRules };
 
       let response = await ApiRequestUtils.post(API_ROUTES.PARCEL_PRICE_EDIT, reqBody);
       if (!response?.success) {
@@ -93,6 +96,9 @@ export default function ParcelMasterPriceTableEdit() {
         onSubmit={handleSubmit}
         onBack={() => navigate("/dashboard/finance/master-price")}
       />
+      <div className="px-4 pb-4">
+        <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
+      </div>
 
       <div className="px-4">
         <MasterPriceLogParcel id={id} />

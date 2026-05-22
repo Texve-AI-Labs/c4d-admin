@@ -102,6 +102,7 @@ const CustomerDetails = () => {
         firstName: driverVal?.firstName || '',
         phoneNumber: driverVal?.phoneNumber ? driverVal?.phoneNumber.replace(/^(\+91)/, '') : "",
         source: driverVal?.source || '',
+        zone: driverVal?.zone || '',
         // sourceType: driverVal?.sourceType || '',
 
     };
@@ -217,6 +218,10 @@ const CustomerDetails = () => {
                                             <option value="Call">Call</option>
                                         </Field>
                                         <ErrorMessage name="source" component="div" className="text-red-500 text-sm" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="zone" className="text-sm font-medium text-gray-700">Zone</label>
+                                        <Field type="text" disabled name="zone" className="p-2 w-full rounded-md border bg-gray-200 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50" />
                                     </div>
                                 </div>
                             )}

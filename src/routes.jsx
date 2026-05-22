@@ -43,7 +43,7 @@ import { SubscriptionView } from './pages/subscription/view';
 import SubscriptionAdd from "./pages/subscription/add";
 import AllBookingsLists from "./pages/booking/allBookingLists";
 import { PendingDocList } from "./pages/docVerification/pendingDocList";
-import { BOOKING_SERVICE_TYPE } from "./utils/constants";
+import { BOOKING_FEATURES, BOOKING_SERVICE_TYPE } from "./utils/constants";
 import { AllVehicles } from "./pages/vendor";
 import { CabSubscriptionView } from "./pages/finance/subscription/cab-subscription-view";
 import CabSubscriptionAdd from "./pages/finance/subscription/cab-subscription-add";
@@ -93,6 +93,8 @@ import DiscountAdd from "./pages/discountModule/add";
 import GstView from "./pages/GST/view";
 import GstAdd from "./pages/GST/add";
 import GstEdit from "./pages/GST/edit";
+import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
+import DriverFeedbackEdit from "./pages/GST/driverFeedbackEdit";
 import BannerView from "./pages/bannerImage/view ";
 import AddBanner from "./pages/bannerImage/add";
 import TestimoinalView from "./pages/testimoinal/view";
@@ -145,13 +147,13 @@ import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
 import DriverMonitoringList from "./pages/DriverEngagementModule/DriverMonitoring/list";
 import IncentivePayoutList from "./pages/DriverEngagementModule/IncentivePayout/list";
 import DriverEngagementAuditLogs from "./pages/DriverEngagementModule/AuditLogs/list";
-import AccountList from "./pages/account/new/list";
-import AddAccountNew from "./pages/account/new/add";
-import AccountDocuments from "./pages/account/new/documents";
-import VehicleDocuments from "./pages/account/new/vehicleDocuments";
-import AccountOnboardingDetails from "./pages/account/new/accountDetails";
-import VehicleOnboardingDetails from "./pages/account/new/vehicleDetails";
-import CompletedOnboardingDetails from "./pages/account/new/completedDetails";
+import AccountList from "./pages/account/owner-onboarding-cab/list";
+import AddAccountNew from "./pages/account/owner-onboarding-cab/add";
+import AccountDocuments from "./pages/account/owner-onboarding-cab/documents";
+import VehicleDocuments from "./pages/account/owner-onboarding-cab/vehicleDocuments";
+import AccountOnboardingDetails from "./pages/account/owner-onboarding-cab/accountDetails";
+import VehicleOnboardingDetails from "./pages/account/owner-onboarding-cab/vehicleDetails";
+import CompletedOnboardingDetails from "./pages/account/owner-onboarding-cab/completedDetails";
 import OwnerOnboardingAutoList from "./pages/account/owner-onboarding-auto/list";
 import OwnerOnboardingAutoAdd from "./pages/account/owner-onboarding-auto/add";
 import OwnerOnboardingAutoDocuments from "./pages/account/owner-onboarding-auto/documents";
@@ -168,6 +170,8 @@ import OwnerOnboardingBikeAccountDetails from "./pages/account/owner-onboarding-
 import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-bike/vehicleDetails";
 import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
 import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
+import DriverCancellationHistoryList from "./pages/user/CancelltionHistory/list";
+import AdminDiscountHistory from "./pages/support/adminDiscountHistory";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -517,6 +521,22 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver feedback add",
+        path: "/finance/driver-feedback/add",
+        element: <DriverFeedbackAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver feedback edit",
+        path: "/finance/driver-feedback/edit/:id",
+        element: <DriverFeedbackEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Banner image view",
         path: "/user/bannerimgView",
         element: <BannerView />,
@@ -545,6 +565,14 @@ export const routes = [
         path: "/users",
         element: <UserView />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Cancellation History",
+        path: "/admin/driver-cancellation-history",
+        element: <DriverCancellationHistoryList />,
+        display: false,
         permission: "Users",
       },
       {
@@ -627,7 +655,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Add Account New",
-        path: "/vendors/account/new/add",
+        path: "/vendors/account/owner-onboarding-cab/add",
         element: <AddAccountNew />,
         display: true,
         permission: "Vendors",
@@ -635,7 +663,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Account Documents",
-        path: "/vendors/account/new/documents/:id",
+        path: "/vendors/account/owner-onboarding-cab/documents/:id",
         element: <AccountDocuments />,
         display: false,
         permission: "Vendors",
@@ -643,7 +671,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Vehicle Documents",
-        path: "/vendors/account/new/vehicle-documents/:id",
+        path: "/vendors/account/owner-onboarding-cab/vehicle-documents/:id",
         element: <VehicleDocuments />,
         display: false,
         permission: "Vendors",
@@ -651,7 +679,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Add New Cab",
-        path: "/vendors/account/new/cab/add/:id",
+        path: "/vendors/account/owner-onboarding-cab/cab/add/:id",
         element: <CabAddNew />,
         display: false,
         permission: "Vendors",
@@ -659,7 +687,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Account List",
-        path: "/vendors/account/new",
+        path: "/vendors/account/owner-onboarding-cab",
         element: <AccountList />,
         display: true,
         permission: "Vendors",
@@ -667,7 +695,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Account Onboarding Details",
-        path: "/vendors/account/new/details/account/:id",
+        path: "/vendors/account/owner-onboarding-cab/details/account/:id",
         element: <AccountOnboardingDetails />,
         display: false,
         permission: "Vendors",
@@ -675,7 +703,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Vehicle Onboarding Details",
-        path: "/vendors/account/new/details/vehicle/:id",
+        path: "/vendors/account/owner-onboarding-cab/details/vehicle/:id",
         element: <VehicleOnboardingDetails />,
         display: false,
         permission: "Vendors",
@@ -683,7 +711,7 @@ export const routes = [
       {
         icon: <UserIcon {...icon} />,
         name: "Completed Onboarding Details",
-        path: "/vendors/account/new/details/completed/:id",
+        path: "/vendors/account/owner-onboarding-cab/details/completed/:id",
         element: <CompletedOnboardingDetails />,
         display: false,
         permission: "Vendors",
@@ -1452,6 +1480,16 @@ export const routes = [
         display: true,
         permission: "Support"
       },
+      ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+        ? [{
+            icon: <UserIcon {...icon} />,
+            name: "Admin Discount History",
+            path: "/support/admin-discount-history",
+            element: <AdminDiscountHistory />,
+            display: true,
+            permission: "Support"
+          }]
+        : []),
       {
         icon: <UserIcon {...icon} />,
         name: "exotel calls",

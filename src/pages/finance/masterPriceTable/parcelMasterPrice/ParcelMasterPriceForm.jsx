@@ -480,6 +480,54 @@ export default function ParcelMasterPriceForm({
             </CardBody>
           </Card>
 
+          <Card className="rounded-none">
+            <CardBody className="space-y-4 bg-white">
+              <Typography variant="h6" className="font-semibold text-gray-900">Driver Cancellation</Typography>
+              <div className="overflow-x-auto rounded-lg shadow border border-gray-300">
+                <table className="min-w-full">
+                  <thead className="bg-blue-600">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white">Driver Cancel Mins</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white">Free Cancellations / Day</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white">Driver Cancellation Charge</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y">
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-2">
+                        <UiInput
+                          className={inputClass}
+                          type="number"
+                          readOnly={readOnly}
+                          value={form.driverCancelMins}
+                          onChange={(e) => updateField("driverCancelMins", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-6 py-2">
+                        <UiInput
+                          className={inputClass}
+                          type="number"
+                          readOnly={readOnly}
+                          value={form.driverFreeCancellationsPerDay}
+                          onChange={(e) => updateField("driverFreeCancellationsPerDay", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-6 py-2">
+                        <UiInput
+                          className={inputClass}
+                          type="number"
+                          readOnly={readOnly}
+                          value={form.driverCancellationCharge}
+                          onChange={(e) => updateField("driverCancellationCharge", e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardBody>
+          </Card>
+
           <Card  className="rounded-none">
             <CardBody className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">

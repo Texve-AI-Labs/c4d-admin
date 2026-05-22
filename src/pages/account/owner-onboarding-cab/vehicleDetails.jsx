@@ -5,6 +5,7 @@ import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import AccountCreationTabs from './AccountCreationTabs';
+import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 
 const toTitle = (value) => {
   if (!value) return "-";
@@ -34,7 +35,7 @@ const getStatusLabel = (status) => {
   return toTitle(status);
 };
 
-const AccountOnboardingDetails = () => {
+const VehicleOnboardingDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
@@ -42,9 +43,6 @@ const AccountOnboardingDetails = () => {
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [ownerStatus, setOwnerStatus] = useState("InActive");
-  const [blockedReason, setBlockedReason] = useState("");
-  const [updatingOwnerStatus, setUpdatingOwnerStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchOnboardingDetails();
@@ -57,7 +55,7 @@ const AccountOnboardingDetails = () => {
       const payload = res?.data || res?.result || null;
       setOnboardingData(payload);
     } catch (err) {
-      console.error("Failed to load account onboarding details", err);
+      console.error("Failed to load vehicle onboarding details", err);
       setOnboardingData(null);
     } finally {
       setLoading(false);
@@ -70,29 +68,24 @@ const AccountOnboardingDetails = () => {
     if (onboardingData?.id) return onboardingData;
     return {};
   }, [onboardingData]);
-
-  useEffect(() => {
-    setOwnerStatus(account?.ownerStatus || "InActive");
-    setBlockedReason(account?.blockedReason || "");
-  }, [account?.ownerStatus, account?.blockedReason]);
-  const requiredAccountDocs = account?.requiredDocuments?.account || [];
-  const accountUploads = account?.uploads?.account || [];
-  const accountStageStatus = account?.accountDocumentStatus?.status || "PENDING UPLOAD";
-  const accountPendingTypes = account?.accountDocumentStatus?.pendingTypes || [];
-  const accountApprovedTypes = account?.accountDocumentStatus?.approvedTypes || [];
+  const requiredVehicleDocs = account?.requiredDocuments?.vehicle || [];
+  const vehicleUploads = account?.uploads?.vehicle || [];
+  const vehicleStageStatus = account?.vehicleDocumentStatus?.status || "PENDING UPLOAD";
+  const vehiclePendingTypes = account?.vehicleDocumentStatus?.pendingTypes || [];
+  const vehicleApprovedTypes = account?.vehicleDocumentStatus?.approvedTypes || [];
 
   const rows = useMemo(() => {
-    return requiredAccountDocs.map((type) => {
-      const proof = accountUploads.find((item) => item?.type === type);
+    return requiredVehicleDocs.map((type) => {
+      const proof = vehicleUploads.find((item) => item?.type === type);
       let resolvedStatus = "PENDING UPLOAD";
 
       if (!proof?.image1) {
         resolvedStatus = "PENDING UPLOAD";
       } else if (proof?.status) {
         resolvedStatus = proof.status;
-      } else if (accountApprovedTypes.includes(type)) {
+      } else if (vehicleApprovedTypes.includes(type)) {
         resolvedStatus = "VERIFIED";
-      } else if (accountPendingTypes.includes(type)) {
+      } else if (vehiclePendingTypes.includes(type)) {
         resolvedStatus = "PENDING";
       } else {
         resolvedStatus = "UPLOADED";
@@ -105,8 +98,8 @@ const AccountOnboardingDetails = () => {
         createdAt: proof?.created_at ? moment(proof.created_at).format("DD-MM-YYYY") : "-",
       };
     });
-  }, [requiredAccountDocs, accountUploads, accountPendingTypes, accountApprovedTypes]);
-  // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID"].includes(row.status));
+  }, [requiredVehicleDocs, vehicleUploads, vehiclePendingTypes, vehicleApprovedTypes]);
+  // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status));
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
 
@@ -194,87 +187,12 @@ const AccountOnboardingDetails = () => {
     }
   };
 
-  const handleOwnerStatusUpdate = async () => {
-    if (!account?.id) return;
-    if (ownerStatus === "Blocked" && !blockedReason.trim()) {
-      window.alert("Please enter blocked reason.");
-      return;
-    }
-
-    try {
-      setUpdatingOwnerStatus(true);
-      const formData = {
-        type: account?.type || "",
-        name: account?.name || "",
-        phoneNumber: account?.phoneNumber || "",
-        email: account?.email || "",
-        address: account?.address || "",
-        street: account?.street || "",
-        thaluk: account?.thaluk || "",
-        district: account?.district || "",
-        state: account?.state || "",
-        pincode: account?.pincode || "",
-        source: account?.source || "",
-        accountId: account?.id,
-        ownerStatus,
-        blockedReason: ownerStatus === "Blocked" ? blockedReason : "",
-      };
-      const response = await ApiRequestUtils.update(API_ROUTES.UPDATE_ACCOUNT, formData);
-      if (response?.success) {
-        await fetchOnboardingDetails();
-      } else {
-        window.alert(response?.message || "Failed to update account status.");
-      }
-    } catch (error) {
-      console.error("Failed to update account status", error);
-      window.alert("Failed to update account status.");
-    } finally {
-      setUpdatingOwnerStatus(false);
-    }
-  };
-
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
-      <AccountCreationTabs activeStage={2} />
+      <AccountCreationTabs activeStage={3} />
       <div className="mb-4">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-          <div>
-            <Typography variant="h6" color="blue-gray">Account Document Details</Typography>
-            <Typography className="text-sm text-blue-gray-700 mt-1">Account ID: {id}</Typography>
-          </div>
-          {/* <div className="w-full md:w-auto md:min-w-[320px] space-y-2">
-            <select
-              value={ownerStatus}
-              onChange={(e) => {
-                setOwnerStatus(e.target.value);
-                if (e.target.value !== "Blocked") setBlockedReason("");
-              }}
-              disabled={updatingOwnerStatus}
-              className="p-2 w-full rounded-md border border-gray-300 text-sm"
-            >
-              <option value="Active">Active</option>
-              <option value="InActive">In_Active</option>
-              <option value="Blocked">Blocked</option>
-            </select>
-            {ownerStatus === "Blocked" && (
-              <input
-                type="text"
-                value={blockedReason}
-                onChange={(e) => setBlockedReason(e.target.value)}
-                disabled={updatingOwnerStatus}
-                placeholder="Enter block reason"
-                className="p-2 w-full rounded-md border border-gray-300 text-sm"
-              />
-            )}
-            <Button
-              onClick={handleOwnerStatusUpdate}
-              disabled={updatingOwnerStatus}
-              className="w-full md:w-auto bg-primary"
-            >
-              {updatingOwnerStatus ? "Updating..." : "Update Status"}
-            </Button>
-          </div> */}
-        </div>
+        <Typography variant="h6" color="blue-gray">Vehicle Document Details</Typography>
+        <Typography className="text-sm text-blue-gray-700 mt-1">Account ID: {id}</Typography>
         {/* <Typography className="text-sm text-blue-gray-700 mt-1">Account Name: {account?.name || "-"}</Typography> */}
         <p className="text-sm text-gray-600 mt-1">
           Document upload is required to verify your account and ensure compliance with our policies.
@@ -283,7 +201,7 @@ const AccountOnboardingDetails = () => {
           Please upload the following documents:
         </p>
         <ul className="text-sm text-gray-600 list-disc list-inside">
-          {requiredAccountDocs.map((docType) => (
+          {requiredVehicleDocs.map((docType) => (
             <li key={docType}>
               <strong>{toTitle(docType)}:</strong> {["PHOTO", "INSURANCE", "PERMIT"].includes(docType) ? "1 document" : "2 documents"}
             </li>
@@ -292,8 +210,8 @@ const AccountOnboardingDetails = () => {
         <div className="mt-2">
           <Chip
             variant="ghost"
-            color={getStatusColor(accountStageStatus)}
-            value={`Account Status: ${getStatusLabel(accountStageStatus)}`}
+            color={getStatusColor(vehicleStageStatus)}
+            value={`Vehicle Status: ${getStatusLabel(vehicleStageStatus)}`}
             className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
           />
         </div>
@@ -351,13 +269,13 @@ const AccountOnboardingDetails = () => {
                     <Typography className="text-xs font-semibold text-blue-gray-900">{row.createdAt}</Typography>
                   </td>
                   <td className="py-3 px-5 border-b border-blue-gray-50">
-                    {["PENDING UPLOAD", "INVALID"].includes(row.status) ? (
+                    {["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status) ? (
                       <>
                         <label
                           htmlFor={`upload-${row.type}`}
                           className="inline-block text-center text-white border border-gray-400 bg-primary rounded-lg px-4 py-1 cursor-pointer text-xs"
                         >
-                          {uploadingByType[row.type] ? "Uploading..." : row.status === "INVALID" ? "Upload Again" : "Upload"}
+                          {uploadingByType[row.type] ? "Uploading..." : ["INVALID", "DECLINED"].includes(row.status) ? "Upload Again" : "Upload"}
                         </label>
                         <input
                           type="file"
@@ -379,11 +297,12 @@ const AccountOnboardingDetails = () => {
           </table>
         </CardBody>
       </Card>
+      <DriverAccountBookingNotes accountId={id} />
 
       <div className="flex flex-row mt-4">
         <Button
           fullWidth
-          onClick={() => navigate("/dashboard/vendors/account/new")}
+          onClick={() => navigate("/dashboard/vendors/account/owner-onboarding-cab")}
           // disabled={!canContinue}
           className={`my-2 mx-2 ${ColorStyles.backButton}`}
         >
@@ -439,10 +358,10 @@ const AccountOnboardingDetails = () => {
                 </a>
               )}
             </div>
-            {["PENDING VERIFICATION", "NOT_INTERESTED", "NO_RESPONSE", "INVALID"].includes(accountStageStatus) &&
+            {["PENDING VERIFICATION", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].includes(vehicleStageStatus) &&
               ["PENDING", "PENDING VERIFICATION", "PENDING_VERIFICATION"].includes(modalData?.status) && (
               <div className="flex justify-center gap-3 mt-4 flex-wrap">
-                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID"].map((nextStatus) => (
+                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].map((nextStatus) => (
                   <button
                     key={nextStatus}
                     type="button"
@@ -455,7 +374,9 @@ const AccountOnboardingDetails = () => {
                           ? "bg-yellow-600 hover:bg-yellow-700"
                           : nextStatus === "NO_RESPONSE"
                             ? "bg-gray-600 hover:bg-gray-700"
-                            : "bg-orange-600 hover:bg-orange-700"
+                            : nextStatus === "INVALID"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-red-600 hover:bg-red-700"
                     }`}
                   >
                     {updatingStatus ? "Updating..." : toTitle(nextStatus)}
@@ -482,4 +403,4 @@ const AccountOnboardingDetails = () => {
   );
 };
 
-export default AccountOnboardingDetails;
+export default VehicleOnboardingDetails;

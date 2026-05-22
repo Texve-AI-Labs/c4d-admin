@@ -12,13 +12,24 @@ import {
 import { Formik, Form, Field, ErrorMessage, validateYupSchema } from 'formik';
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiRequestUtils } from "../../utils/apiRequestUtils";
-import { API_ROUTES, BOOKING_STATUS, BOOKING_TERMS_AND_CONDITIONS } from "../../utils/constants";
+import { API_ROUTES, BOOKING_FEATURES, BOOKING_STATUS, BOOKING_TERMS_AND_CONDITIONS } from "../../utils/constants";
 import { Utils } from '../../utils/utils';
 import 'react-datepicker/dist/react-datepicker.css';
 import moment from "moment";
 import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import {fetchAdminDiscountStatusSafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
+
+const ADMIN_PENDING_STATUS = "PENDING";
+const ADMIN_EFFECTIVE_STATUSES = ["APPROVED", "AUTO_APPROVED"];
+
+const normalizeBoolean = (value) => {
+    if (value === true) return true;
+    if (typeof value === "string") return value.trim().toLowerCase() === "true";
+    if (typeof value === "number") return value === 1;
+    return false;
+};
 
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -88,17 +99,21 @@ const ConfirmBooking = (props) => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const stateParams = location.state || {};
-    const queryBookingId = searchParams.get("bookingId");
+    const queryBookingId = normalizeBookingIdSafe(searchParams.get("bookingId"));
     const queryCustomerId = searchParams.get("customerId");
     const queryFromPath = searchParams.get("fromPath");
+    const queryQuoteRef = searchParams.get("quoteRef");
     const paramsPassed = {
         ...stateParams,
-        bookingId: queryBookingId ?? stateParams?.bookingId,
+        bookingId: queryBookingId || normalizeBookingIdSafe(stateParams?.bookingId),
         customerId: queryCustomerId ?? stateParams?.customerId,
         fromPath: queryFromPath ?? stateParams?.fromPath,
+        quoteRef: normalizeQuoteRefSafe(queryQuoteRef) || normalizeQuoteRefSafe(stateParams?.quoteRef),
     };
 
     const [loading, setLoading] = useState(true);
+    const [adminStatusRefreshing, setAdminStatusRefreshing] = useState(false);
+    const [adminDiscountMeta, setAdminDiscountMeta] = useState(null);
     const audioUrl = bookingDetails?.deliveryDetails?.deliveryInstructionsAudioUrl;
 
     // Handler to update state
@@ -416,7 +431,10 @@ const ConfirmBooking = (props) => {
             } else {
                 setAmount();
             }
-                setBookingDetails(bookingPayload);
+                setBookingDetails({
+                    ...bookingPayload,
+                    quoteRef: normalizeQuoteRefSafe(bookingPayload?.quoteRef) || paramsPassed?.quoteRef || "",
+                });
             }
         } catch (err) {
             console.error("Error fetching booking data:", err);
@@ -646,7 +664,14 @@ const handleSaveDriverEndLocation = async () => {
 
         const reqBody = {
             status: actionType,
-            bookingId: bookingDetails?.id,
+            bookingId: normalizeBookingIdSafe(bookingDetails?.id)
+                ? Number(normalizeBookingIdSafe(bookingDetails?.id))
+                : undefined,
+            quoteRef:
+                bookingDetails?.quoteRef ||
+                visibleAdminDiscount?.quoteRef ||
+                paramsPassed?.quoteRef ||
+                undefined,
             ...(actionType === BOOKING_STATUS.CANCELLED && {
                 cancelReason: cancelData.cancelReason,
                 ...(cancelData.cancelReason === "Other Reason" &&
@@ -672,6 +697,138 @@ const handleSaveDriverEndLocation = async () => {
         }
     };
     const baseTripFare = Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0);
+    const discountBreakdown = bookingDetails?.paymentDetails?.discountBreakdown || {};
+    const paymentAdminDiscount = bookingDetails?.paymentDetails?.adminDiscount || {};
+    const visibleAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+        ? (
+            bookingDetails?.paymentDetails?.adminDiscount ||
+            bookingDetails?.adminDiscount ||
+            adminDiscountMeta ||
+            {}
+        )
+        : {};
+    const visibleQuoteRef = bookingDetails?.quoteRef || paramsPassed?.quoteRef || "";
+    const visibleAdminDiscountStatus = String(visibleAdminDiscount?.status || "").toUpperCase();
+    const adminDiscountStatus = visibleAdminDiscountStatus;
+    const adminDiscountEffective = ADMIN_EFFECTIVE_STATUSES.includes(adminDiscountStatus);
+    const isAdminDiscountPending = visibleAdminDiscountStatus === ADMIN_PENDING_STATUS;
+    const requiresSuperUserApproval = normalizeBoolean(visibleAdminDiscount?.requiresApproval) === true;
+    const quoteEstimatedPrice = (() => {
+        if (bookingDetails?.packageType === "Local") {
+            const carType = String(bookingDetails?.carType || "").toUpperCase();
+            if (bookingDetails?.serviceType === "RENTAL") {
+                return Number(
+                    carType === "MINI"
+                        ? bookingDetails?.Package?.price
+                        : carType === "SUV"
+                            ? bookingDetails?.Package?.priceSuv
+                            : carType === "MUV"
+                                ? bookingDetails?.Package?.priceMVP
+                                : carType === "SEDAN"
+                                    ? bookingDetails?.Package?.priceSedan
+                                    : bookingDetails?.Package?.price || 0
+                );
+            }
+            if (bookingDetails?.serviceType === "DRIVER") {
+                return Number(
+                    carType === "MUV"
+                        ? bookingDetails?.Package?.priceMVP
+                        : bookingDetails?.Package?.price || 0
+                );
+            }
+        }
+        return Number(bookingDetails?.value?.estimatedPrice || 0);
+    })();
+    const systemDiscountAmount = Number(bookingDetails?.discount?.amount || 0) > 0
+        ? Number(bookingDetails?.discount?.amount || 0)
+        : quoteEstimatedPrice * (Number(bookingDetails?.discount?.percentage || 0) / 100);
+    const totalEstimatedFareAfterSystemDiscount = quoteEstimatedPrice - systemDiscountAmount;
+    const visibleAdminDiscountType = String(visibleAdminDiscount?.discountType || "").toUpperCase();
+    const visibleAdminDiscountValue = Number(visibleAdminDiscount?.discountValue || 0);
+    const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountType === "PERCENTAGE"
+        ? totalEstimatedFareAfterSystemDiscount * (visibleAdminDiscountValue / 100)
+        : Number(visibleAdminDiscount?.discountAmount || 0);
+    const finalEstimatedFareAfterAdminDiscount =
+        totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal;
+    const lastAdminStatusToastKeyRef = React.useRef("");
+
+    const fetchAdminDiscountStatus = async ({ silent = false } = {}) => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const quoteRef = getQuoteRefSafe(bookingDetails, paramsPassed);
+        const bookingId = normalizeBookingIdSafe(bookingDetails?.id || paramsPassed?.bookingId);
+        if (!quoteRef && !bookingId) {
+            if (!silent) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Quote reference is missing for status refresh.",
+                });
+            }
+            return;
+        }
+
+        try {
+            setAdminStatusRefreshing(true);
+            const latest = await fetchAdminDiscountStatusSafe({ quoteRef, bookingId });
+            const latestStatus = String(latest?.status || "").toUpperCase();
+            if (latest && latestStatus) {
+                setAdminDiscountMeta(latest);
+                setBookingDetails((prev) => ({
+                    ...prev,
+                    paymentDetails: {
+                        ...(prev?.paymentDetails || {}),
+                        adminDiscount: {
+                            ...(prev?.paymentDetails?.adminDiscount || {}),
+                            ...latest,
+                            id: latest?.id || latest?.discountId || prev?.paymentDetails?.adminDiscount?.id,
+                            status: latestStatus,
+                        },
+                    },
+                }));
+            }
+
+            if (latestStatus && latestStatus !== visibleAdminDiscountStatus) {
+                const statusKey = `${quoteRef || bookingId}:${latestStatus}`;
+                if (lastAdminStatusToastKeyRef.current !== statusKey) {
+                    lastAdminStatusToastKeyRef.current = statusKey;
+                    Swal.fire({
+                        toast: true,
+                        position: "top-end",
+                        icon: ADMIN_EFFECTIVE_STATUSES.includes(latestStatus) ? "success" : latestStatus === "REJECTED" ? "error" : "info",
+                        title: `Admin discount status: ${latestStatus}`,
+                        showConfirmButton: false,
+                        timer: 1800,
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Failed to refresh admin discount status:", err);
+            if (!silent) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed to refresh admin discount status.",
+                });
+            }
+        } finally {
+            setAdminStatusRefreshing(false);
+        }
+    };
+    const handleRefreshAdminDiscountStatus = async () => {
+        await fetchAdminDiscountStatus();
+    };
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const quoteRef = bookingDetails?.quoteRef || paramsPassed?.quoteRef;
+        const bookingId = bookingDetails?.id || paramsPassed?.bookingId;
+        const hasVisibleStatus =
+            String(bookingDetails?.paymentDetails?.adminDiscount?.status || "").trim() ||
+            String(bookingDetails?.adminDiscount?.status || "").trim() ||
+            String(adminDiscountMeta?.status || "").trim();
+        if ((quoteRef || bookingId) && !hasVisibleStatus) {
+            fetchAdminDiscountStatus({ silent: true });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bookingDetails?.quoteRef, bookingDetails?.id]);
     const cancelTripFare = Number(bookingDetails?.paymentDetails?.details?.cancelCharge || 0);
     const gstAmount = Number(
         bookingDetails?.paymentDetails?.details?.gstAmount ??
@@ -850,6 +1007,47 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                     </div>           
                     {showDetails && (
                 <div className="w-full pb-3 lg:w-auto flex flex-wrap justify-start lg:justify-end gap-3">
+                    {visibleQuoteRef && (
+                        <div className="w-full">
+                            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+                                <span className="text-sm text-blue-700">Quote Ref:</span>
+                                <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-blue-900">
+                                    {visibleQuoteRef}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                    {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountStatus && (
+                        <div className="w-full">
+                            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                                <span className="text-sm text-gray-600">Admin Discount:</span>
+                                <span
+                                    className={`rounded-full px-2 py-1 text-xs font-semibold ${isAdminDiscountPending
+                                        ? "bg-amber-100 text-amber-800"
+                                        : ADMIN_EFFECTIVE_STATUSES.includes(visibleAdminDiscountStatus)
+                                            ? "bg-green-100 text-green-800"
+                                            : "bg-red-100 text-red-800"
+                                        }`}
+                                >
+                                    {visibleAdminDiscountStatus}
+                                </span>
+                                {requiresSuperUserApproval && isAdminDiscountPending && (
+                                    <>
+                                        <span className="text-xs text-amber-700">Awaiting SUPER_USER approval</span>
+                                        <Button
+                                            size="sm"
+                                            variant="outlined"
+                                            className="px-2 py-1"
+                                            disabled={adminStatusRefreshing}
+                                            onClick={handleRefreshAdminDiscountStatus}
+                                        >
+                                            {adminStatusRefreshing ? "Refreshing..." : "Refresh Status"}
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
                     {(!isTerminalStatus && (
                         (bookingDetails.status === "QUOTED" && bookingDetails.followup !== "FOLLOWUP") ||
                         (bookingDetails.ownership === "ASSIGNED_TO_SUPPORT" &&
@@ -1185,7 +1383,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <span className="text-yellow-500">★</span>
                                     {customerFeedback?.rating || 0}
                                 </span>
-                                {customerFeedback?.rating <= 2 && (
+                                {customerFeedback?.rating <= 4 && (
                                     <> 
                                  <span className="italic">
                                         {customerFeedback?.comment || 'N/A'}
@@ -1380,7 +1578,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         <span className="text-yellow-500">★</span>
                                         {driverFeedback?.rating || 0}
                                     </span>
-                                    {driverFeedback?.rating <= 2  && (<>
+                                    {driverFeedback?.rating <= 4  && (<>
                                      <span className="italic">
                                         {driverFeedback?.comment || 'N/A'}
                                     </span>
@@ -1904,6 +2102,30 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <span className="text-gray-900 font-semibold">₹ {Number(finalPaymentPirces.amountAfterGST || 0).toFixed(2)}</span>
                                 </div>
                         </>)}
+
+                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
+                                            visibleAdminDiscountValue > 0 && (
+                                            <>
+                                                <div className="flex flex-col-2 gap-2">
+                                                    <span className="text-gray-500 font-semibold">Admin Discount Applied:</span>
+                                                    <span className="text-gray-900 font-medium">
+                                                        {visibleAdminDiscountType === "PERCENTAGE"
+                                                            ? `${visibleAdminDiscountValue.toFixed(2)} %`
+                                                            : `₹ ${visibleAdminDiscountValue.toFixed(2)}`}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col-2 gap-2">
+                                                    <span className="text-gray-500 font-semibold">Admin Discount Amount:</span>
+                                                    <span className="text-gray-900 font-medium">₹ {Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex flex-col-2 gap-2">
+                                                    <span className="text-gray-500 font-semibold">Final Estimated Fare:</span>
+                                                    <span className="text-gray-900 font-medium">
+                                                        ₹ {Math.max(0, Number(finalEstimatedFareAfterAdminDiscount || 0)).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
                     </div>                            
 
                         

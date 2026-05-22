@@ -1,53 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, STATE_LIST, THALUK_LIST, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
-import { parseAddressParts } from '@/utils/addressUtils';
 import { Button } from '@material-tailwind/react';
 import { useNavigate } from "react-router-dom";
-import LocationInput from './LocationInput';
 import AccountCreationTabs from './AccountCreationTabs';
 
 const AddAccountNew = () => {
-    const [districtSearchText, setDistrictSearchText] = useState("");
-    const [thalukSearchText, setThalukSearchText] = useState("");
-    const [stateSearchText, setStateSearchText] = useState("");
     const navigate = useNavigate();
-    const [addressSuggestions, setAddressSuggestions] = useState([]);
-    const [isSameAddress, setIsSameAddress] = useState(false);
-    const [serviceAreas, setServiceAreas] = useState([]);
 
-    const initialValues = {
-        type: "",
-        name: "",
-        phoneNumber: "",
-        email: "",
-        source: "",
-        address: "",
-        street: "",
-        thaluk: "",
-        district: "",
-        state: "",
-        pincode: "",
-    };
-
-    useEffect(() => {
-        const fetchGeoData = async () => {
-            try {
-                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
-                    type: 'Service Area',
-                });
-                setServiceAreas(response?.data || []);
-            } catch (error) {
-                console.error('Error fetching service areas:', error);
-            }
-        };
-
-        fetchGeoData();
-    }, []);
-
-    const onSubmit = async (values, { setSubmitting, setFieldError }) => {
+    const onSubmit = async (values, { setSubmitting }) => {
         // console.log('Form submission started with values:', values);
         try {
             const reqBody = {
@@ -55,12 +18,12 @@ const AddAccountNew = () => {
                 name: values?.name,
                 phoneNumber: values?.phoneNumber,
                 email: values?.email,
-                address: values?.address,
-                street: values?.street,
-                thaluk: values?.thaluk,
-                district: values?.district,
-                state: values?.state,
-                pincode: values?.pincode,
+                address: "",
+                street: "",
+                thaluk: "",
+                district: "",
+                state: "",
+                pincode: "",
                 source: values?.source,
             }
             let data;
@@ -80,100 +43,13 @@ const AddAccountNew = () => {
         setSubmitting(false);
     };
 
-    const districtOptions = [...new Set(
-        serviceAreas
-            .map((area) => area?.district || area?.name)
-            .filter(Boolean)
-    )].map((district) => ({
-        id: district,
-        name: district
-    }));
-
-    const thalukOptions = THALUK_LIST.map(thaluk => ({
-        id: thaluk.value,
-        name: thaluk.label
-    }));
-
-    const filteredDistricts = districtOptions.filter(district =>
-        district.name.toLowerCase().includes(districtSearchText.toLowerCase())
-    );
-
-    const filteredThaluk = thalukOptions.filter(thaluk =>
-        thaluk.name.toLowerCase().includes(thalukSearchText.toLowerCase())
-    );
-
-    const stateOptions = STATE_LIST.map(state => ({
-        id: state.value,
-        name: state.label
-    }));
-
-    const filteredState = stateOptions.filter(state =>
-        state.name.toLowerCase().includes(stateSearchText.toLowerCase())
-    );
-
-    const searchLocations = async (query) => {
-        if (query.length > 2) {
-            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, {
-                address: query
-            });
-            // console.log("data", data);
-            if (data?.success && data?.data) {
-                setAddressSuggestions(data?.data)
-            }
-        } else {
-            setAddressSuggestions([]);
-        }
+    const initialValues = {
+        type: "",
+        name: "",
+        phoneNumber: "",
+        email: "",
+        source: "",
     };
-
-    const extractPincode = (addressComponents = []) => {
-        if (!Array.isArray(addressComponents)) return "";
-        const postalCodeComponent = addressComponents.find((component) =>
-            Array.isArray(component?.types) && component.types.includes("postal_code")
-        );
-        return postalCodeComponent?.long_name || "";
-    };
-
-    const getSuggestionAddressText = (place) => {
-        if (typeof place === "string") return place;
-        if (place && typeof place === "object") {
-            return (
-                place.fullText ||
-                place.formatted_address ||
-                place.address ||
-                place.name ||
-                place.label ||
-                place.title ||
-                ""
-            );
-        }
-        return "";
-    };
-
-    const handleGoogleAddressSelect = (place, setFieldValue) => {
-        const selectedAddress = getSuggestionAddressText(place);
-        if (!selectedAddress) {
-            console.error("Google Address selection is invalid", place);
-            return;
-        }
-
-        const parsedAddress = parseAddress(selectedAddress, place.address_components);
-
-        setFieldValue("address", selectedAddress);
-
-        if (isSameAddress) {
-            setFieldValue("street", parsedAddress.street);
-            setFieldValue("thaluk", parsedAddress.taluk);
-            setFieldValue("district", parsedAddress.district);
-            setFieldValue("state", parsedAddress.state);
-            setFieldValue("pincode", parsedAddress.pincode);
-        }
-    };
-
-    const parseAddress = (address, addressComponents = []) => parseAddressParts({
-        addressText: address,
-        addressComponents,
-    });
-
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
@@ -188,7 +64,7 @@ const AddAccountNew = () => {
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
-                {({ handleSubmit, dirty, isValid, setFieldValue, values, errors }) => (
+                {({ handleSubmit, dirty, isValid, values }) => (
                     <Form className="space-y-4">
                         <div className="grid grid-cols-1 gap-4">
                             <div className='grid grid-cols-2 gap-4'>
@@ -197,11 +73,12 @@ const AddAccountNew = () => {
                                     <Field as="select" name="type" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                         <option value="">Select Type</option>
                                         <option value="Parcel">Bike</option>
+                                        {/* <option value="Company">Travels</option> */}
                                     </Field>
                                     <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                                 </div>
                                 <div>
-                                    <label htmlFor="name" className="text-sm font-medium text-gray-700">{values.type == 'driverWithVehicles' ? "Full Name" : 'Company Name'}</label>
+                                    <label htmlFor="name" className="text-sm font-medium text-gray-700">{"Company Name"}</label>
                                     <Field type="text" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                     <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
@@ -225,138 +102,6 @@ const AddAccountNew = () => {
                                     <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
                                     <Field type="email" name="email" className="p-2 w-full rounded-md border-2  shadow-sm border-gray-300" />
                                     <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
-                                </div>
-                                <div>
-                                    <label htmlFor="address" className="text-sm font-medium text-gray-700">Current Address</label>
-                                    <Field name="address">
-                                        {({ field, form }) => (
-                                            <LocationInput
-                                                field={field}
-                                                form={form}
-                                                suggestions={addressSuggestions}
-                                                onSearch={searchLocations}
-                                                onSelect={(place) => handleGoogleAddressSelect(place, setFieldValue)}
-                                            />
-                                        )}
-                                    </Field>
-                                    <ErrorMessage name="address" component="div" className="text-red-500 text-sm" />
-                                </div>
-                            </div>
-                            <div className='space-y-2'>
-                                <div className="flex items-center mt-2">
-                                    <input
-                                        type="checkbox"
-                                        id="sameAddress"
-                                        checked={isSameAddress}
-                                        onChange={(e) => {
-                                            setIsSameAddress(e.target.checked);
-                                            if (e.target.checked) {
-                                                const currentAddress = parseAddress(values.address);
-                                                setFieldValue("street", currentAddress.street);
-                                                setFieldValue("thaluk", currentAddress.taluk);
-                                                setFieldValue("district", currentAddress.district);
-                                                setFieldValue("state", currentAddress.state);
-                                                setFieldValue("pincode", currentAddress.pincode);
-                                            } else {
-                                                setFieldValue("street", "");
-                                                setFieldValue("thaluk", "");
-                                                setFieldValue("district", "");
-                                                setFieldValue("state", "");
-                                                setFieldValue("pincode", "");
-                                            }
-                                        }}
-                                        className="mr-2"
-                                    />
-                                    <label htmlFor="sameAddress" className="text-sm text-gray-700">
-                                        Same as Current Address
-                                    </label>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-800 mb-5">Permanent Address</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="street" className="text-sm font-medium text-gray-700">Street Name</label>
-                                    <Field type="text" name="street" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                    <ErrorMessage name="street" component="div" className="text-red-500 text-sm my-1" />
-                                </div>
-                                <div>
-                                    <label htmlFor="thaluk" className="text-sm font-medium text-gray-700">
-                                        Thaluk
-                                    </label>
-                                    <select
-                                        id="thaluk"
-                                        name="thaluk"
-                                        value={values.thaluk}
-                                        onChange={(e) => setFieldValue("thaluk", e.target.value)}
-                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
-                                    >
-                                        <option value="" disabled>Select Thaluk</option>
-                                        {filteredThaluk.map((thaluk) => (
-                                            <option key={thaluk.id} value={thaluk.id}>
-                                                {thaluk.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ErrorMessage
-                                        name="thaluk"
-                                        component="div"
-                                        className="text-red-500 text-sm mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="district" className="text-sm font-medium text-gray-700">
-                                        District
-                                    </label>
-                                    <select
-                                        id="district"
-                                        name="district"
-                                        value={values.district}
-                                        onChange={(e) => setFieldValue("district", e.target.value)}
-                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
-                                    >
-                                        <option value="" disabled>Select District</option>
-                                        {filteredDistricts.map((district) => (
-                                            <option key={district.id} value={district.id}>
-                                                {district.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ErrorMessage
-                                        name="district"
-                                        component="div"
-                                        className="text-red-500 text-sm mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="state" className="text-sm font-medium text-gray-700">
-                                        State
-                                    </label>
-                                    <select
-                                        id="state"
-                                        name="state"
-                                        value={values.state}
-                                        onChange={(e) => setFieldValue("state", e.target.value)}
-                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
-                                    >
-                                        <option value="" disabled>Select State</option>
-                                        {filteredState.map((state) => (
-                                            <option key={state.id} value={state.id}>
-                                                {state.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <ErrorMessage
-                                        name="state"
-                                        component="div"
-                                        className="text-red-500 text-sm mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                    <Field type="text" name="pincode" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                    <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
                             </div>
                         </div>

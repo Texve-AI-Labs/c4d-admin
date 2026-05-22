@@ -143,6 +143,7 @@ export function MasterSubscriptionView() {
                                             "Service Type",
                                             "Plan Group",
                                             // "Group Code",
+                                            "Zone",
                                             "Group Status",
                                             "Is Default",
                                             "Plans",
@@ -177,9 +178,9 @@ export function MasterSubscriptionView() {
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
                                                     {group.name || '-'}
                                                 </td>
-                                                {/* <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
-                                                    {group.code || '-'}
-                                                </td> */}
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                    {group.zone || '-'}
+                                                </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
                                                     {group.status || '-'}
                                                 </td>

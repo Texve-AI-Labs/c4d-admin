@@ -106,7 +106,7 @@ const GstEdit = () => {
   }
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-3xl">
       {alert && (
         <Alert color={alert.color} className="mb-4">
           {alert.message}

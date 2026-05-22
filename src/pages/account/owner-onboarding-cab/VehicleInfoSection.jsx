@@ -1,11 +1,37 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import CabDriverWalletLog from '@/components/CabDriverWallet';
+
+const getSuggestionText = (suggestion) => {
+  if (typeof suggestion === "string") return suggestion;
+  if (suggestion && typeof suggestion === "object") {
+    return (
+      suggestion.fullText ||
+      suggestion.title ||
+      suggestion.name ||
+      suggestion.address ||
+      suggestion.label ||
+      suggestion.subtitle ||
+      suggestion.formatted_address ||
+      suggestion.description ||
+      suggestion.display_name ||
+      ""
+    );
+  }
+  return "";
+};
+
+const getDriverSuggestionKey = (sectionId) => `driver-${sectionId}`;
 
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
   carTypeOptions = [],
+  isTravels = false,
+  accountRelatedDrivers = [],
+  getVehicleAddressSuggestionsBySection,
+  onVehicleAddressSearch,
   getVehicleStatusBySection,
   onVehicleStatusChange,
   getVehicleBlockedReasonBySection,
@@ -18,11 +44,16 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [activeLogTabBySection, setActiveLogTabBySection] = useState({});
+  const [activeVehicleSectionId, setActiveVehicleSectionId] = useState(null);
 
-  const editableLabels = useMemo(
-    () => new Set(["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"]),
-    []
-  );
+  const editableLabels = useMemo(() => {
+    const labels = ["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"];
+    if (isTravels) {
+      labels.push("Owner Name", "Address", "Insurance Expiry Date", "Assigned To", "With Driver");
+    }
+    return new Set(labels);
+  }, [isTravels]);
 
   const getInitialDraft = (section) => {
     const map = {};
@@ -32,6 +63,23 @@ const VehicleInfoSection = ({
     const rawCarType = String(section?.rawValues?.carType || "").toUpperCase();
     if (["MINI", "SUV", "MUV", "SEDAN"].includes(rawCarType)) {
       map["Car Type"] = rawCarType === "SEDAN" ? "Sedan" : rawCarType;
+    }
+    if (isTravels) {
+      map["Insurance Expiry Date"] = section?.rawValues?.insurance
+        ? String(section.rawValues.insurance).slice(0, 10)
+        : (map["Insurance Expiry Date"] || "");
+      const rawAssigned = String(section?.rawValues?.assigned || "").trim();
+      map["Assigned To"] =
+        rawAssigned.toLowerCase() === "individual"
+          ? "Owner"
+          : rawAssigned || map["Assigned To"] || "";
+      map["With Driver"] = section?.rawValues?.withDriver || map["With Driver"] || "";
+      map["Assign or Add Driver"] = "Assign";
+      map["Driver ID"] = section?.rawValues?.Drivers?.[0]?.id || "";
+      map["Driver Name"] = section?.rawValues?.driverName || "";
+      map["Driver Phone Number"] = section?.rawValues?.phoneNumber || "";
+      map["Driver Address"] = section?.rawValues?.driverAddress || "";
+      map["Driver License Number"] = section?.rawValues?.driverLicense || "";
     }
     return map;
   };
@@ -81,10 +129,13 @@ const VehicleInfoSection = ({
     return filtered;
   };
 
-  const leftDisplayOrder = useMemo(
-    () => ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"],
-    []
-  );
+  const leftDisplayOrder = useMemo(() => {
+    const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"];
+    if (isTravels) {
+      return [...base, "Owner Name", "Address", "Insurance Expiry Date", "Assigned To", "With Driver"];
+    }
+    return base;
+  }, [isTravels]);
 
   const rightDisplayOrder = useMemo(
     () => [
@@ -101,6 +152,22 @@ const VehicleInfoSection = ({
     []
   );
 
+  useEffect(() => {
+    if (sections.length === 0) {
+      setActiveVehicleSectionId(null);
+      return;
+    }
+    const hasActive = sections.some((section) => section.id === activeVehicleSectionId);
+    if (!hasActive) {
+      setActiveVehicleSectionId(sections[0].id);
+    }
+  }, [sections, activeVehicleSectionId]);
+
+  const visibleSections =
+    sections.length > 1 && activeVehicleSectionId
+      ? sections.filter((section) => section.id === activeVehicleSectionId)
+      : sections;
+
   return (
     <>
       {sections.length === 0 ? (
@@ -114,7 +181,36 @@ const VehicleInfoSection = ({
           </CardBody>
         </Card>
       ) : (
-        sections.map((section) => (
+        <>
+          {sections.length > 1 && (
+            <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
+              <CardBody className="py-3">
+                <div className="rounded-xl border border-blue-gray-100 bg-blue-gray-50/40 p-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    {sections.map((section, idx) => (
+                      <button
+                        key={`vehicle-tab-${section.id || idx}`}
+                        type="button"
+                        onClick={() => {
+                          setActiveVehicleSectionId(section.id);
+                          setEditingSectionId(null);
+                          setDraftValues({});
+                        }}
+                        className={`h-9 w-full rounded-lg px-4 text-sm font-medium transition ${
+                          activeVehicleSectionId === section.id
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-white text-blue-gray-700 border border-blue-gray-100 hover:border-blue-gray-200"
+                        }`}
+                      >
+                        {`Cab Id: ${section.cabId || "-"}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+          {visibleSections.map((section) => (
           <React.Fragment key={section.sectionKey || section.id}>
             {(() => {
               const sectionStatus = getVehicleStatusBySection?.(section.id) || "IN_ACTIVE";
@@ -226,6 +322,72 @@ const VehicleInfoSection = ({
                                 </select>
                               );
                             })()
+                          ) : row.label === "Assigned To" ? (
+                            <select
+                              value={draftValues[row.label] || ""}
+                              onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                              className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                            >
+                              <option value="">Select</option>
+                              <option value="Driver">Driver</option>
+                              <option value="Owner">Owner</option>
+                            </select>
+                          ) : row.label === "With Driver" ? (
+                            <select
+                              value={draftValues[row.label] || ""}
+                              onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                              className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                            >
+                              <option value="">Select</option>
+                              <option value="Yes">Yes</option>
+                              <option value="No">No</option>
+                            </select>
+                          ) : row.label === "Insurance Expiry Date" ? (
+                            <input
+                              type="date"
+                              value={draftValues[row.label] || ""}
+                              onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                              className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                            />
+                          ) : row.label === "Address" ? (
+                            <div className="relative w-full max-w-[220px]">
+                              <input
+                                value={draftValues[row.label] || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setDraftValues((prev) => ({ ...prev, [row.label]: value }));
+                                  onVehicleAddressSearch?.(section.id, value);
+                                }}
+                                className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                              />
+                              {(getVehicleAddressSuggestionsBySection?.(section.id) || []).length > 0 ? (
+                                <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                                  {(getVehicleAddressSuggestionsBySection?.(section.id) || []).map((suggestion, idx) => (
+                                    <button
+                                      key={`${section.id}-addr-${idx}`}
+                                      type="button"
+                                      className="w-full text-left px-2.5 py-2 text-sm hover:bg-blue-gray-50"
+                                      onClick={() => {
+                                        setDraftValues((prev) => ({
+                                          ...prev,
+                                          [row.label]: getSuggestionText(suggestion),
+                                        }));
+                                        onVehicleAddressSearch?.(section.id, "");
+                                      }}
+                                    >
+                                      <span className="block text-blue-gray-900">
+                                        {typeof suggestion === "object" && suggestion?.title
+                                          ? suggestion.title
+                                          : getSuggestionText(suggestion)}
+                                      </span>
+                                      {typeof suggestion === "object" && suggestion?.fullText ? (
+                                        <span className="block text-xs text-blue-gray-600">{suggestion.fullText}</span>
+                                      ) : null}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
                           ) : (
                             <input
                               value={draftValues[row.label] || ""}
@@ -249,7 +411,124 @@ const VehicleInfoSection = ({
                       );
                     })()}
                     {editingSectionId === section.id && (
-                      <div className="md:col-span-2 flex justify-end gap-2">
+                      <div className="md:col-span-2 space-y-3">
+                        {isTravels && (draftValues?.["With Driver"] || "") === "Yes" ? (
+                          <div className="rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-3">
+                            <Typography className="text-sm font-semibold text-blue-gray-700 mb-2">Driver Assignment</Typography>
+                            <div className="flex items-center gap-4 mb-3">
+                              <label className="inline-flex items-center gap-2 text-sm text-blue-gray-700">
+                                <input
+                                  type="radio"
+                                  name={`assign-or-add-${section.id}`}
+                                  checked={(draftValues?.["Assign or Add Driver"] || "Assign") === "Assign"}
+                                  onChange={() =>
+                                    setDraftValues((prev) => ({ ...prev, "Assign or Add Driver": "Assign" }))
+                                  }
+                                />
+                                Assign
+                              </label>
+                              <label className="inline-flex items-center gap-2 text-sm text-blue-gray-700">
+                                <input
+                                  type="radio"
+                                  name={`assign-or-add-${section.id}`}
+                                  checked={(draftValues?.["Assign or Add Driver"] || "Assign") === "Add"}
+                                  onChange={() =>
+                                    setDraftValues((prev) => ({ ...prev, "Assign or Add Driver": "Add" }))
+                                  }
+                                />
+                                Add
+                              </label>
+                            </div>
+                            {(draftValues?.["Assign or Add Driver"] || "Assign") === "Assign" ? (
+                              <div className="max-w-[300px]">
+                                <Typography className="text-xs text-blue-gray-500 mb-1">Driver</Typography>
+                                <select
+                                  value={draftValues?.["Driver ID"] || ""}
+                                  onChange={(e) =>
+                                    setDraftValues((prev) => ({ ...prev, "Driver ID": e.target.value }))
+                                  }
+                                  className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                                >
+                                  <option value="">Select Driver</option>
+                                  {accountRelatedDrivers.map((option) => (
+                                    <option key={option.id} value={option.id}>
+                                      {option.firstName} ({option.phoneNumber})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input
+                                  placeholder="Driver Name"
+                                  value={draftValues?.["Driver Name"] || ""}
+                                  onChange={(e) =>
+                                    setDraftValues((prev) => ({ ...prev, "Driver Name": e.target.value }))
+                                  }
+                                  className="h-9 px-2.5 rounded-md border border-gray-300 bg-white text-sm"
+                                />
+                                <input
+                                  placeholder="Phone Number"
+                                  value={draftValues?.["Driver Phone Number"] || ""}
+                                  onChange={(e) =>
+                                    setDraftValues((prev) => ({ ...prev, "Driver Phone Number": e.target.value }))
+                                  }
+                                  className="h-9 px-2.5 rounded-md border border-gray-300 bg-white text-sm"
+                                />
+                                <div className="relative md:col-span-2">
+                                  <input
+                                    placeholder="Driver Address"
+                                    value={draftValues?.["Driver Address"] || ""}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      setDraftValues((prev) => ({ ...prev, "Driver Address": value }));
+                                      onVehicleAddressSearch?.(getDriverSuggestionKey(section.id), value);
+                                    }}
+                                    className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                                  />
+                                  {(getVehicleAddressSuggestionsBySection?.(getDriverSuggestionKey(section.id)) || []).length > 0 ? (
+                                    <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                                      {(getVehicleAddressSuggestionsBySection?.(getDriverSuggestionKey(section.id)) || []).map(
+                                        (suggestion, idx) => (
+                                          <button
+                                            key={`${section.id}-driver-addr-${idx}`}
+                                            type="button"
+                                            className="w-full text-left px-2.5 py-2 text-sm hover:bg-blue-gray-50"
+                                            onClick={() => {
+                                              setDraftValues((prev) => ({
+                                                ...prev,
+                                                "Driver Address": getSuggestionText(suggestion),
+                                              }));
+                                              onVehicleAddressSearch?.(getDriverSuggestionKey(section.id), "");
+                                            }}
+                                          >
+                                            <span className="block text-blue-gray-900">
+                                              {typeof suggestion === "object" && suggestion?.title
+                                                ? suggestion.title
+                                                : getSuggestionText(suggestion)}
+                                            </span>
+                                            {typeof suggestion === "object" && suggestion?.fullText ? (
+                                              <span className="block text-xs text-blue-gray-600">{suggestion.fullText}</span>
+                                            ) : null}
+                                          </button>
+                                        )
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                                <input
+                                  placeholder="License Number"
+                                  value={draftValues?.["Driver License Number"] || ""}
+                                  onChange={(e) =>
+                                    setDraftValues((prev) => ({ ...prev, "Driver License Number": e.target.value }))
+                                  }
+                                  className="h-9 px-2.5 rounded-md border border-gray-300 bg-white text-sm"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                        <div className="flex justify-end gap-2">
                         <Button
                           size="sm"
                           className="h-8 px-3 text-xs normal-case bg-white text-black border border-gray-300 shadow-none"
@@ -278,6 +557,7 @@ const VehicleInfoSection = ({
                         >
                           {vehicleDetailsSavingId === section.id ? "Saving..." : "Save"}
                         </Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -286,14 +566,41 @@ const VehicleInfoSection = ({
             </Card>
               );
             })()}
-
             <Card className="bg-white border border-blue-gray-100 shadow-sm md:col-span-2">
               <CardBody>
-                <Typography variant="h5" className="text-blue-gray-900 font-semibold  rounded-md px-3 py-2 inline-block">
-                  Credit Log
-                </Typography>
-                <div className="border-t border-blue-gray-50 mt-3 mb-3" />
-                {section.creditLogRows.length === 0 ? (
+                <div className="px-3 pt-1">
+                  <div className="flex items-center gap-5 border-b border-blue-gray-100">
+                    <button
+                      type="button"
+                      className={`h-10 px-1 text-sm font-medium transition border-b-2 ${
+                        (activeLogTabBySection[section.id] || "wallet") === "credit"
+                          ? "text-primary border-primary"
+                          : "text-blue-gray-500 border-transparent hover:text-blue-gray-700"
+                      }`}
+                      onClick={() =>
+                        setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "credit" }))
+                      }
+                    >
+                      Credit Log
+                    </button>
+                    <button
+                      type="button"
+                      className={`h-10 px-1 text-sm font-medium transition border-b-2 ${
+                        (activeLogTabBySection[section.id] || "wallet") === "wallet"
+                          ? "text-primary border-primary"
+                          : "text-blue-gray-500 border-transparent hover:text-blue-gray-700"
+                      }`}
+                      onClick={() =>
+                        setActiveLogTabBySection((prev) => ({ ...prev, [section.id]: "wallet" }))
+                      }
+                    >
+                      Wallet Log
+                    </button>
+                  </div>
+                </div>
+                <div className="border-t border-blue-gray-50 mt-2 mb-3" />
+                {(activeLogTabBySection[section.id] || "wallet") === "credit" ? (
+                  section.creditLogRows.length === 0 ? (
                   <Typography className="text-black mt-2">-</Typography>
                 ) : (
                   <div className="overflow-x-auto">
@@ -384,11 +691,15 @@ const VehicleInfoSection = ({
                       </tbody>
                     </table>
                   </div>
+                  )
+                ) : (
+                  <CabDriverWalletLog cabId={section.cabId} />
                 )}
               </CardBody>
             </Card>
           </React.Fragment>
-        ))
+          ))}
+        </>
       )}
     </>
   );

@@ -9,6 +9,8 @@ import { Utils } from '@/utils/utils';
 import Select from 'react-select';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
 import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
+import { Typography } from '@material-tailwind/react';
+import DemandPriceEdit from './DemandPriceEdit';
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -52,9 +54,11 @@ const PriceEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [peakHours, setPeakHours] = useState([]);
+    const [demandRules, setDemandRules] = useState([]);
     const [premiumConfig ,setPremiumConfig] = useState({});
     const initialPeakHoursRef = useRef([]);
     const initialPremiumRef = useRef({});
+    const initialDemandPriceRef = useRef([]); 
 
     useEffect(() => {
         fetchPriceDetails();
@@ -86,9 +90,14 @@ const PriceEdit = () => {
                     status: data.data.status == 1 ? "ACTIVE": 'IN_ACTIVE',
                     zone: data.data.zone || '',
                     freeExtraMinutes: data.data.freeExtraMinutes || '',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(data.data.driverCancelMins) || '',
+                    driverFreeCancellationsPerDay: data.data.driverFreeCancellationsPerDay || '',
+                    driverCancellationCharge: data.data.driverCancellationCharge || ''
                 });
                 setPeakHours(data.data.peakHours || []);
                 initialPeakHoursRef.current = data.data.peakHours;
+                setDemandRules(data.data.demandRules || []);
+                initialDemandPriceRef.current = data.data.demandRules || [];
                 initialPremiumRef.current = data.data.premiumConfig;
                 setPremiumConfig(data.data.premiumConfig || []);
 
@@ -107,6 +116,9 @@ const PriceEdit = () => {
     };
     const hasPremiumConfig = () => {
         return JSON.stringify(premiumConfig) !== JSON.stringify(initialPremiumRef.current);
+    }
+    const hasDemandPriceChanged = () => {
+        return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
     }
 
     const onSubmit = async (values) => {
@@ -135,9 +147,14 @@ const PriceEdit = () => {
                 status: values.status == 'ACTIVE' ? 1 : 0,
                 serviceType:'RIDES',
                 peakHours: peakHours,
+                demandRules: demandRules,
                 premiumConfig:premiumConfig,
                 zone: values.zone,
+                driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay),
+                driverCancellationCharge: Number(values.driverCancellationCharge)
             };
+            // console.log("Request Body for Update:", reqBody);
             const response = await ApiRequestUtils.update(API_ROUTES.RIDES_PRICE_EDIT, reqBody);
             if (response?.success) {
                 navigate('/dashboard/finance/master-price', { state: { priceUpdated: true } });
@@ -380,13 +397,52 @@ const PriceEdit = () => {
                                 </table>
                             </div>
                         </div>
+
+                    <div className='overflow-x-auto m-2'>
+                        <Typography className='font-semibold'>Driver Cancellation</Typography>
+                        <table className="w-full border border-collapse text-sm text-center">
+                            <thead>
+                                <tr className="bg-primary  text-white">
+                                    <th>Driver Cancel Mins</th>
+                                    <th>Driver Free Cancellations Per Day</th>
+                                    <th>Driver Cancellation Charge</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverCancelMins"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverFreeCancellationsPerDay"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                    <td className="border p-2">
+                                        <Field
+                                            type="number"
+                                            name="driverCancellationCharge"
+                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                        />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
                         <RidesPeakHourTableEdit initialPriceData={peakHours} onUpdate={(data)=> setPeakHours(data)}/>
                         <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                                 Cancel
                             </Button>
-                            <Button fullWidth color="blue" onClick={handleSubmit} disabled={!(dirty || hasPeakHoursChanged() || hasPremiumConfig()) || !isValid} className="my-6 mx-2">
+                            <Button fullWidth color="blue" onClick={handleSubmit} disabled={!(dirty || hasPeakHoursChanged() || hasPremiumConfig() || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
                                 Save Changes
                             </Button>
                         </div>

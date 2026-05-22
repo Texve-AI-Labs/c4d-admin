@@ -8,8 +8,9 @@ import {
   Tooltip,
 } from "@material-tailwind/react";
 import { useMaterialTailwindController, setOpenSidenav, setMiniSidenav } from "@/context";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useAuth } from "@/context/auth";
+import { useRealtimeEvents } from "@/context/realtimeEvents";
 import {
   HomeIcon,
   UserCircleIcon,
@@ -23,7 +24,7 @@ import {
   UsersIcon,
   UserIcon
 } from '@heroicons/react/24/solid';
-import { API_ROUTES, NAV_UI } from "@/utils/constants";
+import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 
 const menuItems = [
@@ -40,7 +41,7 @@ const menuItems = [
   },
   { type: "item", name: "Calls", path: "/dashboard/exotel-calls/list", permission: "Calls" },
   { type: "item", name: "All Inquiries", path: "/dashboard/booking/list", permission: "All bookings" },
-  { type: "item", name: "Vendors", path: "/dashboard/vendors/account/new", permission: "Vendors" },
+  { type: "item", name: "Vendors", path: "/dashboard/vendors/account/owner-onboarding-cab", permission: "Vendors" },
   { type: "item", name: "Customers", path: "/dashboard/customers", permission: "Customers" },
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
@@ -81,8 +82,28 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       return "";
     }
   });
-  const [homeTotalBookingCount, setHomeTotalBookingCount] = useState("0");
-  const [allInquiriesCount, setAllInquiriesCount] = useState("0");
+  const { homeTotalPendings, inquiriesPendingsByType, isLive, isReconnecting } = useRealtimeEvents();
+  const getInquiryTypeFromPath = (pathname = "") => {
+    const path = String(pathname || "").toLowerCase();
+    if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
+    if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
+    if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB_BOOKING";
+    if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
+    if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
+    if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
+    if (path.startsWith("/dashboard/booking/list/returntrips")) return "RETURN_TRIPS";
+    if (path.startsWith("/dashboard/auto")) return "AUTO";
+    if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
+    return "ALL_CABS";
+  };
+
+  const activeInquiryType = useMemo(() => getInquiryTypeFromPath(currentPath), [currentPath]);
+  const inquiriesBadgeCount = Number(
+    inquiriesPendingsByType?.[activeInquiryType] ?? inquiriesPendingsByType?.ALL_CABS ?? 0
+  );
+
+  const homeBadgeCount = Number(homeTotalPendings ?? inquiriesPendingsByType?.ALL_CABS ?? 0);
+  const connectionStatus = isLive ? "live" : isReconnecting ? "reconnecting" : "offline";
 
   // useEffect(() => {
   //   const getInquiryTypeFromPath = (pathname = "") => {
@@ -198,14 +219,16 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       case "Support":
         return (
           currentPath.startsWith("/dashboard/rental-rate-card") ||
-          currentPath.startsWith("/dashboard/leads")
+          currentPath.startsWith("/dashboard/leads") ||
+          (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
+            currentPath.startsWith("/dashboard/support/admin-discount-history"))
           // currentPath.startsWith("/dashboard/doc-verification") ||         
         );
       case "All Inquiries":
         return currentPath.startsWith("/dashboard/booking/list");
       case "Vendors":
         return (
-          currentPath.startsWith("/dashboard/vendors/account/new") ||
+          currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-cab") ||
           currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
           currentPath.startsWith("/dashboard/vendors/onlinevehicleslist") ||
           currentPath.startsWith("/dashboard/doc-verification") || 
@@ -235,6 +258,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
           currentPath.startsWith("/dashboard/users") ||
           currentPath.startsWith("/dashboard/admin/geo-markings") ||
           currentPath.startsWith("/dashboard/user/versioncontrol") ||
+          currentPath.startsWith("/dashboard/admin/driver-cancellation-history") ||
           currentPath.startsWith("/dashboard/reports/tripmasterreport") ||
           currentPath.startsWith("/dashboard/tripdetails")
         );
@@ -269,6 +293,21 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                     <span className="text-base font-semibold tracking-wide">ROOT CABS</span>
                     <span className="text-xs text-blue-gray-500">{userName}</span>
                   </div>
+                    <span
+                      className={`rounded-lg px-2 py-1 text-[11px] font-semibold ${
+                        connectionStatus === "live"
+                          ? "bg-green-100 text-green-800"
+                          : connectionStatus === "reconnecting"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {connectionStatus === "live"
+                        ? "Live"
+                        : connectionStatus === "reconnecting"
+                        ? "Reconnecting..."
+                        : "Offline"}
+                  </span>
                 </div>
               </>
             )}
@@ -392,21 +431,21 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                         ) : null}
 
                         {!miniSidenav && (
+                          <>
                           <Typography color="inherit" className={NAV_UI.typography.sidebarLabel}>
                             {name}
                           </Typography>
-                          // <>
-                          //   {name === "Home" && homeTotalBookingCount > 0 && (
-                          //     <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
-                          //       {homeTotalBookingCount}
-                          //     </span>
-                          //   )}
-                          //   {name === "All Inquiries" && allInquiriesCount > 0 && (
-                          //     <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
-                          //       {allInquiriesCount}
-                          //     </span>
-                          //   )}
-                          // </>
+                          {name === "Home" && homeBadgeCount > 0 && (
+                        <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          {homeBadgeCount}
+                        </span>
+                      )}
+                      {name === "All Inquiries" && inquiriesBadgeCount > 0 && (
+                        <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          {inquiriesBadgeCount}
+                        </span>
+                      )}
+                        </>
                         )}
                       </Button>
                       );
