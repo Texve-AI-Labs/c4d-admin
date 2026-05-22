@@ -115,9 +115,39 @@ const Booking = (props) => {
     const mapRef = useRef(null);
     const [quoteDetails, setQuoteDetails] = useState(null);
     const [quoteMeta, setQuoteMeta] = useState(null);
+    const approvedHistoryRefreshKeyRef = useRef('');
     const { handleAdminDiscountDecision } = useAdminDiscountNotifier({
         quoteMeta,
         setQuoteMeta,
+        setQuoteDetails,
+        onApprovedStatus: ({ quoteRef, status }) => {
+            const normalizedQuoteRef = normalizeQuoteRef(quoteRef || '');
+            if (!normalizedQuoteRef) return;
+            const normalizedStatus = String(status || '').toUpperCase();
+
+            // Optimistic UI update for immediate feedback on notification receipt.
+            setQuoteMeta((prev) => ({
+                ...(prev || {}),
+                quoteRef: normalizedQuoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    status: normalizedStatus,
+                },
+            }));
+            setQuoteDetails((prev) => ({
+                ...(prev || {}),
+                quoteRef: normalizedQuoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    status: normalizedStatus,
+                },
+            }));
+
+            const approvedKey = `${normalizedQuoteRef}:${normalizedStatus}`;
+            if (approvedHistoryRefreshKeyRef.current === approvedKey) return;
+            approvedHistoryRefreshKeyRef.current = approvedKey;
+            syncAdminDiscountStatus(normalizedQuoteRef);
+        },
         enabled: BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW,
     });
     const [bookingType, setBookingType] = useState(props.typeProp || '');
@@ -141,6 +171,7 @@ const Booking = (props) => {
     const [dropTaxiModalContent, setDropTaxiModalContent] = useState("Booking not available for the selected route. Try outstation service.");
     const [quotationLogs, setQuotationLogs] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const adminStatusSyncKeyRef = useRef('');
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser') || "{}");
     const loggedInUserId = loggedInUser.id || 0;
     const loggedInUserRole = String(loggedInUser?.role || loggedInUser?.userType || '').toUpperCase();
@@ -207,6 +238,65 @@ const Booking = (props) => {
     };
 
     const params = location.state;
+
+    const syncAdminDiscountStatus = useCallback(async (quoteRefValue) => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const quoteRef = normalizeQuoteRef(quoteRefValue || quoteMeta?.quoteRef || '');
+        if (!quoteRef) return;
+
+        try {
+            const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_DISCOUNT_STATUS, { quoteRef });
+            const latest = response?.data && typeof response.data === 'object' ? response.data : null;
+            if (!latest) return;
+            const latestStatus = String(latest?.status || '').toUpperCase();
+            if (!latestStatus) return;
+
+            const latestKey = `${quoteRef}:${latestStatus}:${latest?.id || latest?.discountId || ''}`;
+            if (adminStatusSyncKeyRef.current === latestKey) return;
+            adminStatusSyncKeyRef.current = latestKey;
+
+            setQuoteMeta((prev) => ({
+                ...(prev || {}),
+                quoteRef: quoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    ...latest,
+                    status: latestStatus,
+                },
+            }));
+
+            setQuoteDetails((prev) => ({
+                ...(prev || {}),
+                quoteRef: quoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    ...latest,
+                    status: latestStatus,
+                },
+            }));
+        } catch (error) {
+            console.error('Failed to sync admin discount status by quoteRef:', error);
+        }
+    }, [quoteMeta?.quoteRef]);
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const quoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || '');
+        if (!quoteRef) return;
+        syncAdminDiscountStatus(quoteRef);
+    }, [quoteMeta?.quoteRef, syncAdminDiscountStatus]);
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const onFocusSync = () => {
+            const quoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || '');
+            if (quoteRef) {
+                syncAdminDiscountStatus(quoteRef);
+            }
+        };
+        window.addEventListener('focus', onFocusSync);
+        return () => window.removeEventListener('focus', onFocusSync);
+    }, [quoteMeta?.quoteRef, syncAdminDiscountStatus]);
 
     useEffect(() => {
         if (params?.editBooking) {
@@ -3960,8 +4050,8 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
                                                             </Typography>
                                                         )}
                                                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
-                                                            quoteMeta?.adminDiscount?.requiresApproval === true &&
-                                                            String(quoteMeta?.adminDiscount?.status || "").toUpperCase() === "PENDING" && (
+                                                            (quoteDetails?.adminDiscount?.requiresApproval === true || quoteMeta?.adminDiscount?.requiresApproval === true) &&
+                                                            String(quoteMeta?.adminDiscount?.status || quoteDetails?.adminDiscount?.status || "").toUpperCase() === "PENDING" && (
                                                             <Typography className="text-sm text-yellow-800 mt-1">
                                                                 Awaiting SUPER_USER approval.
                                                             </Typography>

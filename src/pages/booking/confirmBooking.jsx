@@ -19,7 +19,7 @@ import moment from "moment";
 import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
 import { PencilIcon } from "@heroicons/react/24/solid";
-import {fetchAdminDiscountHistorySafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
+import {fetchAdminDiscountStatusSafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
 
 const ADMIN_PENDING_STATUS = "PENDING";
 const ADMIN_EFFECTIVE_STATUSES = ["APPROVED", "AUTO_APPROVED"];
@@ -30,9 +30,6 @@ const normalizeBoolean = (value) => {
     if (typeof value === "number") return value === 1;
     return false;
 };
-
-const getHistoryCreatedAt = (row = {}) => row?.createdAt || row?.created_at || null;
-const getHistoryUpdatedAt = (row = {}) => row?.updatedAt || row?.updated_at || getHistoryCreatedAt(row);
 
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -771,13 +768,7 @@ const handleSaveDriverEndLocation = async () => {
 
         try {
             setAdminStatusRefreshing(true);
-            const rows = await fetchAdminDiscountHistorySafe({ quoteRef, bookingId });
-            const sortedRows = [...rows].sort((a, b) => {
-                const aTime = new Date(getHistoryUpdatedAt(a) || 0).getTime();
-                const bTime = new Date(getHistoryUpdatedAt(b) || 0).getTime();
-                return bTime - aTime;
-            });
-            const latest = sortedRows?.[0];
+            const latest = await fetchAdminDiscountStatusSafe({ quoteRef, bookingId });
             const latestStatus = String(latest?.status || "").toUpperCase();
             if (latest && latestStatus) {
                 setAdminDiscountMeta(latest);
@@ -1040,7 +1031,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 >
                                     {visibleAdminDiscountStatus}
                                 </span>
-                                {requiresSuperUserApproval && (
+                                {requiresSuperUserApproval && isAdminDiscountPending && (
                                     <>
                                         <span className="text-xs text-amber-700">Awaiting SUPER_USER approval</span>
                                         <Button

@@ -3,19 +3,20 @@ import Swal from 'sweetalert2';
 import { ApiRequestUtils } from '../../../utils/apiRequestUtils';
 import { API_ROUTES } from '../../../utils/constants';
 
-const showAdminDiscountToast = (icon, title) => {
+const showAdminDiscountToast = (icon, title, text = '') => {
   Swal.fire({
     toast: true,
     position: 'top-end',
     icon,
     title,
+    text,
     showConfirmButton: false,
-    timer: 2500,
+    timer: 5000,
     timerProgressBar: true,
   });
 };
 
-export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, enabled = true }) => {
+export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, setQuoteDetails, onApprovedStatus, enabled = true }) => {
   const lastNotifiedStatusRef = useRef('');
   const lastNotifiedQuoteRefRef = useRef('');
 
@@ -35,11 +36,26 @@ export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, enabled = tr
     }
 
     if (status === 'PENDING') {
-      showAdminDiscountToast('info', 'Admin discount is pending SUPER_USER approval.');
+      showAdminDiscountToast(
+        'info',
+        'Admin Discount: Awaiting Approval',
+        `Quote: ${quoteRef}. Waiting for SUPER_USER approval.`
+      );
     } else if (status === 'APPROVED' || status === 'AUTO_APPROVED') {
-      showAdminDiscountToast('success', 'Admin discount approved and applied.');
+      showAdminDiscountToast(
+        'success',
+        'Admin Discount: Approved',
+        `Quote: ${quoteRef}. Discount is now included in fare.`
+      );
+      if (typeof onApprovedStatus === 'function') {
+        onApprovedStatus({ quoteRef, status });
+      }
     } else if (status === 'REJECTED') {
-      showAdminDiscountToast('warning', 'Admin discount rejected. Final amount excludes admin discount.');
+      showAdminDiscountToast(
+        'warning',
+        'Admin Discount: Rejected',
+        `Quote: ${quoteRef}. Final fare excludes admin discount.`
+      );
     }
 
     lastNotifiedStatusRef.current = status;
@@ -52,7 +68,11 @@ export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, enabled = tr
 
     const remarks = action === 'approve' ? 'Approved by super user' : 'Rejected by super user';
     const route = action === 'approve' ? API_ROUTES.ADMIN_DISCOUNT_APPROVE : API_ROUTES.ADMIN_DISCOUNT_REJECT;
-    showAdminDiscountToast('info', action === 'approve' ? 'Submitting approval...' : 'Submitting rejection...');
+    showAdminDiscountToast(
+      'info',
+      action === 'approve' ? 'Submitting Approval...' : 'Submitting Rejection...',
+      `Discount ID: ${discountId}`
+    );
 
     const response = await ApiRequestUtils.update(route, { discountId, remarks });
     if (response?.success) {
@@ -64,8 +84,17 @@ export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, enabled = tr
           status: updatedStatus,
         },
       }));
+      if (typeof setQuoteDetails === 'function') {
+        setQuoteDetails((prev) => ({
+          ...(prev || {}),
+          adminDiscount: {
+            ...(prev?.adminDiscount || {}),
+            status: updatedStatus,
+          },
+        }));
+      }
     } else {
-      showAdminDiscountToast('error', response?.message || 'Unable to update admin discount status.');
+      showAdminDiscountToast('error', 'Unable to update admin discount status.', response?.message || '');
     }
   };
 

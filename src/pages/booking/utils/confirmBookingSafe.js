@@ -39,6 +39,28 @@ export const buildConfirmAdminDiscountPayloadSafe = (source = {}) => {
   return payload;
 };
 
+export const normalizeAdminDiscountStatusSafe = (payload) => {
+  if (!payload || typeof payload !== 'object') return null;
+  return payload;
+};
+
+export const fetchAdminDiscountStatusSafe = async ({ quoteRef, bookingId }) => {
+  const primaryQuery = quoteRef ? { quoteRef } : { bookingId };
+  const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_DISCOUNT_STATUS, primaryQuery);
+  let statusData = normalizeAdminDiscountStatusSafe(response?.data);
+
+  if (!statusData && quoteRef && bookingId) {
+    const fallbackQuery = primaryQuery.quoteRef ? { bookingId } : { quoteRef };
+    const fallbackResponse = await ApiRequestUtils.getWithQueryParam(
+      API_ROUTES.ADMIN_DISCOUNT_STATUS,
+      fallbackQuery
+    );
+    statusData = normalizeAdminDiscountStatusSafe(fallbackResponse?.data);
+  }
+
+  return statusData;
+};
+
 export const fetchAdminDiscountHistorySafe = async ({ quoteRef, bookingId }) => {
   const primaryQuery = quoteRef ? { quoteRef } : { bookingId };
   const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_DISCOUNT_HISTORY, primaryQuery);
