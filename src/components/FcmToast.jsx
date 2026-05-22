@@ -3,6 +3,19 @@ import { onMessage } from "firebase/messaging";
 import { FirebaseMessaging, requestToken } from "@/configs/firebaseConfig";
 import { CheckCircleIcon } from "@heroicons/react/24/solid"; // Import Heroicons
 
+const buildNotificationMessage = (payload = {}) => {
+    const notification = payload?.notification || {};
+    const data = payload?.data || {};
+    const title = notification?.title || data?.title || "New Notification";
+    let body = notification?.body || data?.body || "";
+
+    if (!body) {
+        body = "You have a new message";
+    }
+
+    return { title, body };
+};
+
 const FcmToast = () => {
     const [showNotification, setShowNotification] = useState(false);
     const [notification, setNotification] = useState({ body: "", title: "" });
@@ -21,10 +34,7 @@ const FcmToast = () => {
 
         const unsubscribe = onMessage(FirebaseMessaging, (payload) => {
             console.log("🔔 Foreground Notification:", payload);
-            setNotification({
-                title: payload.notification?.title || "New Notification",
-                body: payload.notification?.body || "You have a new message",
-            });
+            setNotification(buildNotificationMessage(payload));
             setShowNotification(true);
         });
 

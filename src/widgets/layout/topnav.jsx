@@ -8,7 +8,7 @@ import AllRecordsSubmenu from "./AllRecordsSubmenu";
 import SupportSubmenu from "./SupportSubmenu";
 import FinanceSubmenu from "./FinanceSubmenu";
 import DriverEngagementSubmenu from "./DriverEngagementSubmenu";
-import { NAV_UI } from "@/utils/constants";
+import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 export function Topnav({ permissions = [] }) {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
@@ -28,7 +28,8 @@ export function Topnav({ permissions = [] }) {
 
   const isSupportSection =
     path.startsWith("/dashboard/rental-rate-card") ||
-    path.startsWith("/dashboard/leads");
+    path.startsWith("/dashboard/leads") ||
+    (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && path.startsWith("/dashboard/support/admin-discount-history"));
 
   const isVendorsSection =
     path.startsWith("/dashboard/vendors/account/owner-onboarding-cab") ||

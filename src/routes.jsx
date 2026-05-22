@@ -43,7 +43,7 @@ import { SubscriptionView } from './pages/subscription/view';
 import SubscriptionAdd from "./pages/subscription/add";
 import AllBookingsLists from "./pages/booking/allBookingLists";
 import { PendingDocList } from "./pages/docVerification/pendingDocList";
-import { BOOKING_SERVICE_TYPE } from "./utils/constants";
+import { BOOKING_FEATURES, BOOKING_SERVICE_TYPE } from "./utils/constants";
 import { AllVehicles } from "./pages/vendor";
 import { CabSubscriptionView } from "./pages/finance/subscription/cab-subscription-view";
 import CabSubscriptionAdd from "./pages/finance/subscription/cab-subscription-add";
@@ -171,6 +171,7 @@ import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-
 import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
 import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
 import DriverCancellationHistoryList from "./pages/user/CancelltionHistory/list";
+import AdminDiscountHistory from "./pages/support/adminDiscountHistory";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -1479,6 +1480,16 @@ export const routes = [
         display: true,
         permission: "Support"
       },
+      ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+        ? [{
+            icon: <UserIcon {...icon} />,
+            name: "Admin Discount History",
+            path: "/support/admin-discount-history",
+            element: <AdminDiscountHistory />,
+            display: true,
+            permission: "Support"
+          }]
+        : []),
       {
         icon: <UserIcon {...icon} />,
         name: "exotel calls",

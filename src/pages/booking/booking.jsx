@@ -18,6 +18,10 @@ import SearchableDropdown from '@/components/SearchableDropdown';
 import CustomerAdd from '../customer/add';
 import SelectLocation from './selectLocation';
 import BookingItem from "./confirmBooking"
+import { BOOKING_FEATURES } from '../../utils/constants';
+import {buildAdminDiscountPayload,isAdminDiscountEffective,buildAdminDiscountFromQuoteMeta} from './utils/adminDiscount';
+import { normalizeQuoteRef } from './utils/quoteRef';
+import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import EditBooking from './editBooking';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
@@ -110,6 +114,12 @@ const Booking = (props) => {
     const [mapZoom, setMapZoom] = useState(10);
     const mapRef = useRef(null);
     const [quoteDetails, setQuoteDetails] = useState(null);
+    const [quoteMeta, setQuoteMeta] = useState(null);
+    const { handleAdminDiscountDecision } = useAdminDiscountNotifier({
+        quoteMeta,
+        setQuoteMeta,
+        enabled: BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW,
+    });
     const [bookingType, setBookingType] = useState(props.typeProp || '');
     const [discountDetails, setDiscountDetails] = useState(null);
     const [driverEndLocation, setDriverEndLocation] = useState(null);
@@ -133,6 +143,8 @@ const Booking = (props) => {
     const [isOpen, setIsOpen] = useState(false);
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser') || "{}");
     const loggedInUserId = loggedInUser.id || 0;
+    const loggedInUserRole = String(loggedInUser?.role || loggedInUser?.userType || '').toUpperCase();
+    const isSuperUser = String(loggedInUser?.role || loggedInUser?.userType || '').toUpperCase() === 'SUPER_USER';
      const [refreshFn, setRefreshFn] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
@@ -385,6 +397,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         const quoteData = {
             serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
             customerId: values?.customerId?.id,
+            userId: loggedInUserId || undefined,
+            role: loggedInUserRole || undefined,
             packageType: 'Outstation',
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
@@ -429,11 +443,19 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         else if(values?.serviceType === 'DRIVER') {
             quoteData.serviceFor = 'DRIVER';
         }
+        const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW ? buildAdminDiscountPayload(values) : null;
+        if (adminDiscountPayload) {
+            quoteData.adminDiscount = adminDiscountPayload;
+        }
         const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
         // console.log("QOYTEE DATA", data);
         if (data.success) {
             setQuoteDetails(data?.data);
             setDiscountDetails(data?.data);
+            setQuoteMeta({
+                quoteRef: data?.data?.quoteRef || '',
+                adminDiscount: data?.data?.adminDiscount || null,
+            });
             // Add to quotationLogs
             addQuotationLog(values, data?.data);
         }
@@ -519,6 +541,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         const quoteDate = {
             serviceType: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL' : val.serviceType || mappedServiceType,
             customerId: val?.customerId?.id,
+            userId: loggedInUserId || undefined,
+            role: loggedInUserRole || undefined,
             // bookingType: val?.tripType ? val.tripType.toUpperCase() : '',
             serviceFor: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : val.serviceType,
             packageType:'Local',
@@ -539,11 +563,19 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         if (val?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && val?.serviceType !== 'AUTO') {
             quoteDate.bookingType = val?.tripType ? val.tripType.toUpperCase() : '';
         }
+        const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW ? buildAdminDiscountPayload(val) : null;
+        if (adminDiscountPayload) {
+            quoteDate.adminDiscount = adminDiscountPayload;
+        }
         const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteDate);
         // console.log("QUOTE DATA", data);
         if (data?.success) {
             setQuoteDetails(data?.data)
             setDiscountDetails(data?.data);
+            setQuoteMeta({
+                quoteRef: data?.data?.quoteRef || '',
+                adminDiscount: data?.data?.adminDiscount || null,
+            });
             addQuotationLog(val, data?.data);
         }
     }
@@ -571,6 +603,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             serviceType: 'PARCEL',
             serviceFor: 'PARCEL',
             customerId: val?.customerId?.id,
+            userId: loggedInUserId || undefined,
+            role: loggedInUserRole || undefined,
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
@@ -583,11 +617,19 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             orderTypeOther: val?.orderType === 'Others' ? (val?.orderTypeOther || '') : null,
             deliveryType: 'DOOR_DELIVERY',
         };
+        const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW ? buildAdminDiscountPayload(val) : null;
+        if (adminDiscountPayload) {
+            quoteData.adminDiscount = adminDiscountPayload;
+        }
 
         const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
         if (data?.success) {
             setQuoteDetails(data?.data);
             setDiscountDetails(data?.data);
+            setQuoteMeta({
+                quoteRef: data?.data?.quoteRef || '',
+                adminDiscount: data?.data?.adminDiscount || null,
+            });
             addQuotationLog(val, data?.data);
         }
     };
@@ -641,6 +683,9 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         orderType: '',
         orderTypeOther: '',
         deliveryInstructions: '',
+        adminDiscountType: '',
+        adminDiscountValue: '',
+        adminDiscountRemarks: '',
     };
 
     const handleDateChange = (dates, setFieldValue, handleChange, rideDate) => {
@@ -831,7 +876,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 deliveryInstructions: values.deliveryInstructions || '',
                 fromDate: moment(`${values.rideDate} ${values.rideTime || '00:00'}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             };
-            console.log("Booking Data for Parcel:", bookingData);
+            if (quoteMeta?.quoteRef) {
+                bookingData.quoteRef = quoteMeta.quoteRef;
+            }
+            const adminDiscountFromQuote = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+                ? buildAdminDiscountFromQuoteMeta(quoteMeta?.adminDiscount)
+                : null;
+            if (adminDiscountFromQuote) {
+                bookingData.adminDiscount = adminDiscountFromQuote;
+            }
             const data = await ApiRequestUtils.post(API_ROUTES.ADD_SUPPORT_PARCEL_BOOKING, bookingData, values?.customerId?.id);
             if (data?.success) {
                 const createdBooking = data?.data?.result || data?.data;
@@ -840,7 +893,28 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 if (createdBooking?.id) {
                     await sendQuotationLogs(createdBooking.id, loggedInUserId, createdBooking?.subZoneId || null);
                 }
-                navigate('/dashboard/booking');
+                const targetBookingId = createdBooking?.id;
+                const targetCustomerId = createdBooking?.customerId || values?.customerId?.id || 0;
+                const targetQuoteRef = normalizeQuoteRef(
+                    createdBooking?.quoteRef ||
+                    data?.data?.quoteRef ||
+                    bookingData?.quoteRef ||
+                    quoteMeta?.quoteRef ||
+                    ''
+                );
+                const confirmBookingSearchParams = new URLSearchParams({
+                    bookingId: String(targetBookingId || 0),
+                    customerId: String(targetCustomerId),
+                    fromPath: location.pathname,
+                });
+                if (targetQuoteRef) {
+                    confirmBookingSearchParams.set("quoteRef", targetQuoteRef);
+                }
+                navigate(`/dashboard/confirm-booking?${confirmBookingSearchParams.toString()}`, {
+                    state: {
+                        quoteRef: targetQuoteRef,
+                    },
+                });
                 formikBag.resetForm();
                 setSelectedCustomer(0);
                 setSearchBookingId('');
@@ -917,6 +991,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             isPremiumService : values?.isPremiumService ? true : false
         }
+        if (quoteMeta?.quoteRef) {
+            bookingData.quoteRef = quoteMeta.quoteRef;
+        }
+        const adminDiscountFromQuote = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+            ? buildAdminDiscountFromQuoteMeta(quoteMeta?.adminDiscount)
+            : null;
+        if (adminDiscountFromQuote) {
+            bookingData.adminDiscount = adminDiscountFromQuote;
+        }
         let data = await ApiRequestUtils.post(API_ROUTES.ADD_NEW_RIDES_BOOKING, bookingData, values.customerId?.id);
         if (data?.success) {
             setIsOpen(false);
@@ -979,6 +1062,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             isPremiumService : values?.isPremiumService ? true : false,
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
         };
+        if (quoteMeta?.quoteRef) {
+            bookingData.quoteRef = quoteMeta.quoteRef;
+        }
+        const adminDiscountFromQuote = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+            ? buildAdminDiscountFromQuoteMeta(quoteMeta?.adminDiscount)
+            : null;
+        if (adminDiscountFromQuote) {
+            bookingData.adminDiscount = adminDiscountFromQuote;
+        }
 
         try {
             // console.log('AUTO Booking Payload:', bookingData);
@@ -1081,6 +1173,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             zone: actualZone,
             isPremiumService : values?.isPremiumService ? true : false
         };
+        if (quoteMeta?.quoteRef) {
+            bookingData.quoteRef = quoteMeta.quoteRef;
+        }
+        const adminDiscountFromQuote = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+            ? buildAdminDiscountFromQuoteMeta(quoteMeta?.adminDiscount)
+            : null;
+        if (adminDiscountFromQuote) {
+            bookingData.adminDiscount = adminDiscountFromQuote;
+        }
         if(values.serviceType !== "RENTAL_HOURLY_PACKAGE" )
         {
             bookingData.dropLat= values.dropLocation?.lat;
@@ -1122,13 +1223,26 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (params?.bookingDetails) {
                 const targetBookingId = data?.data?.result?.id || params?.bookingDetails?.id;
                 const targetCustomerId = values?.customerId?.id || params?.bookingDetails?.customerId || 0;
-                navigate(
-                    `/dashboard/confirm-booking?bookingId=${encodeURIComponent(
-                        targetBookingId || 0
-                    )}&customerId=${encodeURIComponent(
-                        targetCustomerId
-                    )}&fromPath=${encodeURIComponent(location.pathname)}`
+                const targetQuoteRef = normalizeQuoteRef(
+                    data?.data?.result?.quoteRef ||
+                    data?.data?.quoteRef ||
+                    bookingData?.quoteRef ||
+                    quoteMeta?.quoteRef ||
+                    ''
                 );
+                const confirmBookingSearchParams = new URLSearchParams({
+                    bookingId: String(targetBookingId || 0),
+                    customerId: String(targetCustomerId),
+                    fromPath: location.pathname,
+                });
+                if (targetQuoteRef) {
+                    confirmBookingSearchParams.set("quoteRef", targetQuoteRef);
+                }
+                navigate(`/dashboard/confirm-booking?${confirmBookingSearchParams.toString()}`, {
+                    state: {
+                        quoteRef: targetQuoteRef,
+                    },
+                });
             } else {
                 setBookingStage(1);
                 setRange({ startDate: new Date(values?.fromDate), endDate: new Date(values?.toDate) })
@@ -1170,13 +1284,25 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
     const onSelectBooking = (data) => {
         const targetBookingId = data?.id;
         const targetCustomerId = data?.customerId || data?.Customer?.id || 0;
-        navigate(
-            `/dashboard/confirm-booking?bookingId=${encodeURIComponent(
-                targetBookingId || 0
-            )}&customerId=${encodeURIComponent(targetCustomerId)}&fromPath=${encodeURIComponent(
-                location.pathname
-            )}`
+        const targetQuoteRef = normalizeQuoteRef(
+            data?.quoteRef ||
+            data?.paymentDetails?.adminDiscount?.quoteRef ||
+            data?.adminDiscount?.quoteRef ||
+            ''
         );
+        const confirmBookingSearchParams = new URLSearchParams({
+            bookingId: String(targetBookingId || 0),
+            customerId: String(targetCustomerId),
+            fromPath: location.pathname,
+        });
+        if (targetQuoteRef) {
+            confirmBookingSearchParams.set("quoteRef", targetQuoteRef);
+        }
+        navigate(`/dashboard/confirm-booking?${confirmBookingSearchParams.toString()}`, {
+            state: {
+                quoteRef: targetQuoteRef,
+            },
+        });
                 // console.log('selecting booking', data);
         // setBookingStage(4);
         // setBookingData(data);
@@ -1551,6 +1677,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         AUTO : "Auto",
         PARCEL: "Parcel",
     };
+const totalestimationfare =
+  Number(quoteDetails?.discount?.amount || 0) > 0
+    ? Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.discount?.amount || 0)
+    : Number(quoteDetails?.amount?.estimatedPrice || 0) -
+      (Number(quoteDetails?.amount?.estimatedPrice || 0) * (Number(quoteDetails?.discount?.percentage || 0) / 100));
+
+const adminDiscountAmountOnTotal =
+  String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase() === 'PERCENTAGE'
+    ? totalestimationfare * (Number(quoteDetails?.adminDiscount?.discountValue || 0) / 100)
+    : Number(quoteDetails?.adminDiscount?.discountAmount || 0);
+
+const finalEstimatedFare = totalestimationfare - adminDiscountAmountOnTotal;
+const adminDiscountType = String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase();
+const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
+    ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
+    : `₹ ${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))}`;
+
 
     return (
         <div className='flex flex-row space-x-6 justify-between w-full'>
@@ -1665,6 +1808,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                 setEditBookingView();
                                                 setEditBooking();
                                                 setQuoteDetails();
+                                                setQuoteMeta(null);
                                                 setSearchBookingId('');
                                                 setShowQuickCreateCustomer(false);
                                             }
@@ -1723,6 +1867,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                             setRange({});
                                             setLoading(false);
                                             setQuoteDetails();
+                                            setQuoteMeta(null);
                                             setSelectedCustomer(0);
                                             setSearchBookingId('');
                                         }}
@@ -3056,8 +3201,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                         <div className='flex justify-between'>
                                                                             <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                                    {/* {quoteDetails.discount?.percentage} % - ₹ {quoteDetails.amount?.estimatedPrice} */}
-                                                                                    ₹ { Math.round(quoteDetails.amount?.estimatedPrice) - ( quoteDetails.amount?.estimatedPrice * quoteDetails.discount?.percentage/100) }
+                                                                                    ₹ {Math.max(0, Math.round(totalestimationfare))}
                                                                             </Typography>
                                                                         </div>
 
@@ -3073,11 +3217,28 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                                 <div className='flex justify-between'> 
                                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                                    ₹ { Math.round(quoteDetails.amount?.estimatedPrice) - (quoteDetails.discount?.amount) }
+                                                                                    ₹ {Math.max(0, Math.round(totalestimationfare))}
                                                                             </Typography>
                                                                             </div>
                                                                                 
                                                                             </>)}
+                                                                            {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteDetails.adminDiscount?.discountValue > 0 &&
+                                                                            (
+                                                                                <>
+                                                                                <div className='flex justify-between'>
+                                                                                    <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
+                                                                                    <Typography>
+                                                                                        {adminDiscountValueDisplay}
+                                                                                    </Typography>
+                                                                                </div>
+                                                                                <div className='flex justify-between'>
+                                                                                    <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
+                                                                                    <Typography>
+                                                                                        ₹ {Math.max(0, Math.round(finalEstimatedFare))}
+                                                                                    </Typography>
+                                                                                </div>
+                                                                            </>)
+                                                                            }
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3198,11 +3359,28 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                                     <div className='flex justify-between'>
                                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                                    ₹ { Math.round(quoteDetails.amount?.estimatedPrice) - ( quoteDetails.discount?.amount) }
+                                                                                    ₹ {Math.max(0, Math.round(totalestimationfare))}
                                                                             </Typography>
                                                                             </div>
                                                                                 
                                                                             </>)}
+                                                                            {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteDetails.adminDiscount?.discountValue > 0 &&
+                                                                            (
+                                                                                <>
+                                                                                <div className='flex justify-between'>
+                                                                                    <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
+                                                                                    <Typography>
+                                                                                        {adminDiscountValueDisplay}
+                                                                                    </Typography>
+                                                                                </div>
+                                                                                 <div className='flex justify-between'>
+                                                                                    <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
+                                                                                    <Typography>
+                                                                                        ₹ {Math.max(0, Math.round(finalEstimatedFare))}
+                                                                                    </Typography>
+                                                                                </div>
+                                                                            </>)
+                                                                            }
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
@@ -3410,8 +3588,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                             </Typography>
                                                                             <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                                    {/* {quoteDetails.discount?.percentage} % - ₹ {quoteDetails.amount?.estimatedPrice} */}
-                                                                                    ₹ {quoteDetails?.amount?.estimatedPrice ? Math.round(Number(quoteDetails.amount?.estimatedPrice) -Number(quoteDetails.amount.estimatedPrice) * (Number(quoteDetails.discount?.percentage || 0) / 100)): ""}
+                                                                                    ₹ {Math.max(0, Math.round(totalestimationfare))}
                                                                             </Typography>
 
                                                                         </>}
@@ -3423,10 +3600,28 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                                                     </Typography>
                                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                                    ₹ { Math.round((quoteDetails.amount?.estimatedPrice) - ( quoteDetails.discount?.amount)) }
+                                                                                    ₹ {Math.max(0, Math.round(totalestimationfare))}
                                                                             </Typography>
                                                                                 
-                                                                            </>)}                                                                                                                                                                                                                    
+                                                                            </>)}    
+                                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteDetails.adminDiscount?.discountValue > 0 &&
+                                                                            (
+                                                                                <>
+                                                                                {/* <div className='flex justify-between'> */}
+                                                                                    <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
+                                                                                    <Typography>
+                                                                                         {adminDiscountValueDisplay}
+                                                                                    </Typography>
+                                                                                {/* </div> */}
+                                                                                 {/* <div className='flex justify-between'> */}
+                                                                                    <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
+                                                                                    <Typography>
+                                                                                       ₹ {Math.max(0, Math.round(finalEstimatedFare))}
+
+                                                                                    </Typography>
+                                                                                {/* </div> */}
+                                                                            </>)
+                                                                            }                                                                                                                                                                                                                
                                                                         {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
                                                                         <Typography>
                                                                             ₹ {quoteDetails.amount.extraKmPrice}
@@ -3657,6 +3852,45 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                     </div>
                                                 )}
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
+                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && values.serviceType && (
+                                                    <div className="mt-4 p-3 border border-gray-300 rounded-xl bg-white">
+                                                        <Typography variant="h6" className="mb-2">Admin Discount (Optional)</Typography>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-black-700">Discount Type</label>
+                                                                <Field
+                                                                    as="select"
+                                                                    name="adminDiscountType"
+                                                                    className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                                >
+                                                                    <option value="">Select type</option>
+                                                                    <option value="PERCENTAGE">PERCENTAGE</option>
+                                                                    {/* <option value="AMOUNT">AMOUNT</option> */}
+                                                                </Field>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-black-700">Discount Value</label>
+                                                                <Field
+                                                                    type="number"
+                                                                    name="adminDiscountValue"
+                                                                    min="0"
+                                                                    step="0.01"
+                                                                    className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                                    placeholder="Enter value"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-black-700">Remarks</label>
+                                                                <Field
+                                                                    type="text"
+                                                                    name="adminDiscountRemarks"
+                                                                    className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                                    placeholder="Optional remarks"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') && values.dropLocation && values.pickupLocation && values.driverPickUpLocation && values.driverEndLocation && values.sourceType && values.carType &&
                                                     <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
@@ -3700,6 +3934,63 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
+                                                {quoteMeta?.quoteRef && (
+                                                    <div className="mt-3 p-3 rounded-xl border border-gray-200 bg-white">
+                                                        <Typography className="text-sm text-gray-800">
+                                                            Quote Ref: <span className="font-semibold">{quoteMeta.quoteRef}</span>
+                                                        </Typography>
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.status && (
+                                                            <Typography className="text-sm text-gray-800 mt-1">
+                                                                Admin Discount Status: <span className="font-semibold">{quoteMeta.adminDiscount.status}</span>
+                                                            </Typography>
+                                                        )}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.discountType && (
+                                                            <Typography className="text-sm text-gray-800 mt-1">
+                                                                Admin Discount Type: <span className="font-semibold">{quoteMeta.adminDiscount.discountType}</span>
+                                                            </Typography>
+                                                        )}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.discountValue !== undefined && quoteMeta?.adminDiscount?.discountValue !== null && (
+                                                            <Typography className="text-sm text-gray-800 mt-1">
+                                                                Admin Discount Value: <span className="font-semibold">{quoteMeta.adminDiscount.discountValue}</span>
+                                                            </Typography>
+                                                        )}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.discountAmount !== undefined && quoteMeta?.adminDiscount?.discountAmount !== null && (
+                                                            <Typography className="text-sm text-gray-800 mt-1">
+                                                                Admin Discount Amount: <span className="font-semibold">₹ {Math.round(Number(quoteMeta.adminDiscount.discountAmount || 0))}</span>
+                                                            </Typography>
+                                                        )}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
+                                                            quoteMeta?.adminDiscount?.requiresApproval === true &&
+                                                            String(quoteMeta?.adminDiscount?.status || "").toUpperCase() === "PENDING" && (
+                                                            <Typography className="text-sm text-yellow-800 mt-1">
+                                                                Awaiting SUPER_USER approval.
+                                                            </Typography>
+                                                        )}
+                                                        {/* {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isSuperUser && quoteMeta?.adminDiscount?.status === 'PENDING' && (
+                                                            <div className="mt-2 flex gap-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    color="green"
+                                                                    onClick={() => handleAdminDiscountDecision('approve')}
+                                                                >
+                                                                    Approve
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    color="red"
+                                                                    onClick={() => handleAdminDiscountDecision('reject')}
+                                                                >
+                                                                    Reject
+                                                                </Button>
+                                                            </div>
+                                                        )} */}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isAdminDiscountEffective(quoteMeta?.adminDiscount?.status) && quoteMeta?.adminDiscount && (
+                                                            <Typography className="text-xs text-gray-600 mt-1">
+                                                                Pending/rejected admin discount is not treated as effective in final amount.
+                                                            </Typography>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 {bookingStage === 0 && (values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH') && <Button
                                                     fullWidth

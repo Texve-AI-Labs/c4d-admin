@@ -22,16 +22,30 @@ importScripts(
     appId: "1:494826851721:web:466a0b430ec6b0ba20a558"
   });
   const messaging = firebase.messaging();
+  const buildNotificationMessage = (payload) => {
+    const notification = payload?.notification || {};
+    const data = payload?.data || {};
+    const title = notification.title || data.title || "New Notification";
+    let body = notification.body || data.body || "";
+    if (!body) body = "You have a new message";
+
+    return {
+      title,
+      body,
+      icon: notification.image || notification.icon || data.icon || "/logo192.png",
+      data,
+    };
+  };
   
   messaging.onBackgroundMessage((payload) => {
     console.log("Received background message:", payload);
-    // Customize notification here
-    const notificationTitle = payload.notification.title;
+    const message = buildNotificationMessage(payload);
     const notificationOptions = {
-      body: payload.notification.body,
-      icon: payload.notification.image,
+      body: message.body,
+      icon: message.icon,
+      data: message.data,
     };
   
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    self.registration.showNotification(message.title, notificationOptions);
   });
   

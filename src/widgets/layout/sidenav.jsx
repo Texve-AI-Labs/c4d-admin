@@ -24,7 +24,7 @@ import {
   UsersIcon,
   UserIcon
 } from '@heroicons/react/24/solid';
-import { API_ROUTES, NAV_UI } from "@/utils/constants";
+import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 
 const menuItems = [
@@ -219,7 +219,9 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       case "Support":
         return (
           currentPath.startsWith("/dashboard/rental-rate-card") ||
-          currentPath.startsWith("/dashboard/leads")
+          currentPath.startsWith("/dashboard/leads") ||
+          (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
+            currentPath.startsWith("/dashboard/support/admin-discount-history"))
           // currentPath.startsWith("/dashboard/doc-verification") ||         
         );
       case "All Inquiries":

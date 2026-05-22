@@ -26,6 +26,10 @@ export const FUTURE_FLAG = {
     PENDING_DOCUMENTS_LIST: false
 };
 
+export const BOOKING_FEATURES = {
+    ADMIN_DISCOUNT_FLOW: true,
+};
+
 
 export const GENDER = {
     MALE: 'Male',
@@ -865,6 +869,9 @@ export const API_ROUTES = {
     'GET_MASTER_SUBSCRIPTION_LIST': '/admin/plan-groups',
     'GET_MASTER_SUBSCRIPTION_DETAIL': '/admin/plan-groups',
     'GET_QUOTE_OUTSTATION': '/get-quote',
+    'ADMIN_DISCOUNT_APPROVE': '/booking/admin-discount/approve',
+    'ADMIN_DISCOUNT_REJECT': '/booking/admin-discount/reject',
+    'ADMIN_DISCOUNT_HISTORY': '/booking/admin-discount/history',
     'ACTING_DRIVER_ADD_LOCAL_PACKAGE': '/add-package',
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',

@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { Button, Typography } from "@material-tailwind/react";
-import { NAV_UI } from "@/utils/constants";
+import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 
 function SupportSubmenu({ permissions = [] }) {
   const getItemClasses = (isActive) =>
@@ -14,6 +14,9 @@ function SupportSubmenu({ permissions = [] }) {
   const items = [
     { label: "Rate Card", path: "/dashboard/rental-rate-card", requiredPermission: "Support" },
     { label: "Leads", path: "/dashboard/leads", requiredPermission: "Support" },
+    ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+      ? [{ label: "Admin Discount History", path: "/dashboard/support/admin-discount-history", requiredPermission: "Users" }]
+      : []),
     // { label: "Vendors", path: "/dashboard/vendors/account", requiredPermission: "Vendors" },
   ];
   const filteredItems = items.filter(({ requiredPermission }) => permissions.includes(requiredPermission));
