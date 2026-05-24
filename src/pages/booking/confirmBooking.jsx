@@ -827,7 +827,6 @@ const handleSaveDriverEndLocation = async () => {
         if ((quoteRef || bookingId) && !hasVisibleStatus) {
             fetchAdminDiscountStatus({ silent: true });
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bookingDetails?.quoteRef, bookingDetails?.id]);
     const cancelTripFare = Number(bookingDetails?.paymentDetails?.details?.cancelCharge || 0);
     const gstAmount = Number(
