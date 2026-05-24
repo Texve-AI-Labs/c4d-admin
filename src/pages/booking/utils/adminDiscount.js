@@ -17,11 +17,12 @@ export const isAdminDiscountEffective = (status = '') =>
 
 export const buildAdminDiscountFromQuoteMeta = (adminDiscount = null) => {
   if (!adminDiscount) return null;
+  const status = String(adminDiscount?.status || '').trim().toUpperCase();
   const discountType = String(adminDiscount?.discountType || '').trim().toUpperCase();
   const discountValue = Number(adminDiscount?.discountValue);
   const remarks = String(adminDiscount?.remarks || '').trim();
 
-  if (!discountType || !Number.isFinite(discountValue) || discountValue <= 0) {
+  if (!isAdminDiscountEffective(status) || !discountType || !Number.isFinite(discountValue) || discountValue <= 0) {
     return null;
   }
 

@@ -16,7 +16,15 @@ const showAdminDiscountToast = (icon, title, text = '') => {
   });
 };
 
-export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, setQuoteDetails, onApprovedStatus, enabled = true }) => {
+export const useAdminDiscountNotifier = ({
+  quoteMeta,
+  setQuoteMeta,
+  setQuoteDetails,
+  onApprovedStatus,
+  enabled = true,
+  pendingToastTitle = 'Admin Discount: Awaiting Approval',
+  pendingToastTextBuilder,
+}) => {
   const lastNotifiedStatusRef = useRef('');
   const lastNotifiedQuoteRefRef = useRef('');
 
@@ -36,10 +44,13 @@ export const useAdminDiscountNotifier = ({ quoteMeta, setQuoteMeta, setQuoteDeta
     }
 
     if (status === 'PENDING') {
+      const pendingText = typeof pendingToastTextBuilder === 'function'
+        ? pendingToastTextBuilder({ quoteRef, status })
+        : `Quote: ${quoteRef}. Waiting for SUPER_USER approval.`;
       showAdminDiscountToast(
         'info',
-        'Admin Discount: Awaiting Approval',
-        `Quote: ${quoteRef}. Waiting for SUPER_USER approval.`
+        pendingToastTitle,
+        pendingText
       );
     } else if (status === 'APPROVED' || status === 'AUTO_APPROVED') {
       showAdminDiscountToast(

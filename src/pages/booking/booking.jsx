@@ -1817,6 +1817,7 @@ const adminDiscountType = String(quoteDetails?.adminDiscount?.discountType || ''
 const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
     : `₹ ${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))}`;
+const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetails?.adminDiscount?.status || '').toUpperCase());
 
 
     return (
@@ -3346,7 +3347,7 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
                                                                             </div>
                                                                                 
                                                                             </>)}
-                                                                            {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteDetails.adminDiscount?.discountValue > 0 &&
+                                                                            {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails.adminDiscount?.discountValue > 0 &&
                                                                             (
                                                                                 <>
                                                                                 <div className='flex justify-between'>
@@ -3488,7 +3489,7 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
                                                                             </div>
                                                                                 
                                                                             </>)}
-                                                                            {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteDetails.adminDiscount?.discountValue > 0 &&
+                                                                            {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails.adminDiscount?.discountValue > 0 &&
                                                                             (
                                                                                 <>
                                                                                 <div className='flex justify-between'>
@@ -3728,7 +3729,7 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
                                                                             </Typography>
                                                                                 
                                                                             </>)}    
-                                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteDetails.adminDiscount?.discountValue > 0 &&
+                                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails.adminDiscount?.discountValue > 0 &&
                                                                             (
                                                                                 <>
                                                                                 {/* <div className='flex justify-between'> */}

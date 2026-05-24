@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, CardBody, Input, Spinner, Typography } from "@material-tailwind/react";
+import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, BOOKING_FEATURES } from "@/utils/constants";
+import { API_ROUTES, BOOKING_FEATURES, ColorStyles } from "@/utils/constants";
 import Swal from "sweetalert2";
 
 const PENDING_STATUS = "PENDING";
@@ -9,9 +10,9 @@ const TERMINAL_STATUSES = ["APPROVED", "AUTO_APPROVED", "REJECTED"];
 
 const formatDateTime = (value) => {
   if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleString();
+  const parsed = moment(value);
+  if (!parsed.isValid()) return String(value);
+  return parsed.format("DD-MM-YYYY hh:mm A");
 };
 
 const normalizeRows = (payload) => {
@@ -35,10 +36,20 @@ const getStatusStyles = (status) => {
   return "bg-gray-100 text-gray-700";
 };
 
+const getRoleBadgeStyles = (role) => {
+  const normalized = String(role || "").toUpperCase();
+  if (normalized === "SUPER_USER") return "bg-purple-100 text-purple-800";
+  if (normalized === "SUPPORT") return "bg-blue-100 text-blue-800";
+  if (normalized === "FINANCE") return "bg-emerald-100 text-emerald-800";
+  if (normalized === "SALES") return "bg-amber-100 text-amber-800";
+  return "bg-gray-100 text-gray-700";
+};
+
 function AdminDiscountHistory() {
   const [quoteRef, setQuoteRef] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [rows, setRows] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
@@ -93,8 +104,41 @@ function AdminDiscountHistory() {
   useEffect(() => {
     if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
     fetchHistory({ skipValidation: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const response = await ApiRequestUtils.get(API_ROUTES.GET_ALL_USERS);
+        if (response?.success) {
+          const users = Array.isArray(response?.data)
+            ? response.data
+            : Array.isArray(response?.data?.data)
+              ? response.data.data
+              : [];
+          setAllUsers(users);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    fetchAllUsers();
+  }, []);
+
+  const resolveUserById = (rawId) => {
+    const normalizeId = (value) => String(value ?? "").trim();
+    const targetId = normalizeId(rawId);
+    if (!targetId) return null;
+    return (
+      allUsers.find(
+        (user) =>
+          normalizeId(user?.id) === targetId ||
+          normalizeId(user?._id) === targetId ||
+          normalizeId(user?.userId) === targetId
+      ) || null
+    );
+  };
 
   const handleClear = async () => {
     setQuoteRef("");
@@ -118,6 +162,15 @@ function AdminDiscountHistory() {
         inputPlaceholder: "Enter rejection reason",
         showCancelButton: true,
         confirmButtonText: "Reject",
+        cancelButtonText: "Cancel",
+        buttonsStyling: false,
+        customClass: {
+          popup: "rounded-2xl",
+          input: "text-base px-4 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100",
+          actions: "mt-6 flex items-center justify-center gap-4",
+          confirmButton: "bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg",
+          cancelButton: `${ColorStyles.bgColor} text-white px-6 py-2.5 rounded-lg`,
+        },
       });
       if (!result.isConfirmed) return;
       remarks = String(result.value || "").trim();
@@ -166,35 +219,13 @@ function AdminDiscountHistory() {
             </Typography>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <Input
-              label="Quote Ref"
-              value={quoteRef}
-              onChange={(e) => setQuoteRef(e.target.value)}
-              placeholder="QREF-..."
-              disabled={!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW}
-            />
-            <Input
-              label="Booking ID"
-              value={bookingId}
-              onChange={(e) => setBookingId(e.target.value)}
-              placeholder="12345"
-              disabled={!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW}
-            />
-            <Button onClick={fetchHistory} disabled={loading || !BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW}>
-              {loading ? "Loading..." : "Fetch History"}
-            </Button>
+          <div className="flex items-end">
             <Button
               variant="outlined"
               onClick={() => fetchHistory({ skipValidation: true })}
               disabled={loading || !BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW}
             >
               Refresh
-            </Button>
-          </div>
-          <div className="mt-3">
-            <Button variant="outlined" onClick={handleClear} disabled={loading || !BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW}>
-              Clear
             </Button>
           </div>
 
@@ -210,20 +241,25 @@ function AdminDiscountHistory() {
 
           {!loading && rows.length > 0 ? (
             <div className="mt-5 overflow-x-auto">
-              <table className="w-full min-w-[1050px] border-collapse">
+              <table className="w-full min-w-[1850px] border-collapse">
                 <thead>
-                  <tr className="border-b bg-gray-50 text-left">
-                    <th className="p-2 text-sm font-semibold">Quote Ref</th>
-                    <th className="p-2 text-sm font-semibold">Booking ID</th>
-                    <th className="p-2 text-sm font-semibold">Discount ID</th>
-                    <th className="p-2 text-sm font-semibold">Status</th>
-                    <th className="p-2 text-sm font-semibold">Type</th>
-                    <th className="p-2 text-sm font-semibold">Requested Value</th>
-                    <th className="p-2 text-sm font-semibold">Discount Amount</th>
-                    <th className="p-2 text-sm font-semibold">Remarks</th>
-                    <th className="p-2 text-sm font-semibold">Updated By</th>
-                    <th className="p-2 text-sm font-semibold">Updated At</th>
-                    <th className="p-2 text-sm font-semibold">Actions</th>
+                  <tr className={`border-b text-left ${ColorStyles.bgColor}`}>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Quote Ref</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Booking ID</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Discount ID</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Status</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Type</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Requested Value</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Discount Amount</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Remarks</th>
+                    {/* <th className="p-2 text-sm font-semibold text-white">Requested By ID</th> */}
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Requested By Role</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Requested By Name</th>
+                    {/* <th className="p-2 text-sm font-semibold text-white">Approved By ID</th> */}
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Approved By Role</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Approved By Name</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Updated At</th>
+                    <th className="whitespace-nowrap p-2 text-sm font-semibold text-white">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,10 +267,14 @@ function AdminDiscountHistory() {
                     const rowId = item?.id || item?.discountId;
                     const status = String(item?.status || "").toUpperCase();
                     const isPending = status === PENDING_STATUS;
+                    const requestedById = item?.requestedBy || item?.requestedById || "-";
+                    const approvedById = item?.approvedBy || item?.approvedById || "-";
+                    const requestedByUser = resolveUserById(requestedById);
+                    const approvedByUser = resolveUserById(approvedById);
 
                     return (
                       <tr key={`${rowId || "row"}-${index}`} className="border-b">
-                        <td className="p-2 text-sm">{item?.quoteRef || "-"}</td>
+                        <td className="whitespace-normal break-words p-2 text-sm">{item?.quoteRef || "-"}</td>
                         <td className="p-2 text-sm">{item?.bookingId || item?.booking?.id || "-"}</td>
                         <td className="p-2 text-sm">{rowId || "-"}</td>
                         <td className="p-2 text-sm">
@@ -243,13 +283,34 @@ function AdminDiscountHistory() {
                           </span>
                         </td>
                         <td className="p-2 text-sm">{item?.discountType || "-"}</td>
-                        <td className="p-2 text-sm">{item?.discountValue ?? "-"}</td>
-                        <td className="p-2 text-sm">{item?.discountAmount ?? "-"}</td>
-                        <td className="p-2 text-sm">{item?.remarks || "-"}</td>
+                        <td className="p-2 text-sm">{item?.discountValue ?? "-"} % </td>
+                        <td className="p-2 text-sm">₹ {item?.discountAmount ?? "-"}</td>
+                        <td className="whitespace-normal break-words p-2 text-sm">{item?.remarks || "-"}</td>
+                        {/* <td className="p-2 text-sm">{requestedById}</td> */}
                         <td className="p-2 text-sm">
-                          {item?.updatedBy?.name || item?.updatedBy || item?.approvedBy || "-"}
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeStyles(
+                              requestedByUser?.role
+                            )}`}
+                          >
+                            {requestedByUser?.role || "-"}
+                          </span>
                         </td>
-                        <td className="p-2 text-sm">{formatDateTime(item?.updatedAt || item?.createdAt)}</td>
+                        <td className="p-2 text-sm">{requestedByUser?.name || "-"}</td>
+                        {/* <td className="p-2 text-sm">{approvedById}</td> */}
+                        <td className="p-2 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeStyles(
+                              approvedByUser?.role
+                            )}`}
+                          >
+                            {approvedByUser?.role || "-"}
+                          </span>
+                        </td>
+                        <td className="p-2 text-sm">{approvedByUser?.name || "-"}</td>
+                        <td className="p-2 text-sm">
+                          {formatDateTime(item?.updated_at || item?.updatedAt || item?.created_at || item?.createdAt)}
+                        </td>
                         <td className="p-2 text-sm">
                           {isSuperUser && isPending ? (
                             <div className="flex gap-2">
