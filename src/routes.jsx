@@ -79,6 +79,7 @@ import NotificationListEdit from "./pages/vendor/notificationEdit";
 import DriverIncentiveList from "./pages/marketing/DriverIncentive/list";
 import DriverIncentiveEdit from "./pages/marketing/DriverIncentive/edit";
 import DriverIncentiveAdd from "./pages/marketing/DriverIncentive/add";
+import SkipLogs from "./pages/marketing/skipLogs";
 import InstantReward from "./pages/vendor/instantReward";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
@@ -329,6 +330,14 @@ export const routes = [
         name: "customer notification",
         path: "/vendors/customerNotificationList",
         element: <CombineView />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "skip logs",
+        path: "/vendors/skip-logs",
+        element: <SkipLogs />,
         display: true,
         permission: "Marketing",
       },

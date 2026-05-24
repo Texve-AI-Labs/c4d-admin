@@ -42,6 +42,7 @@ function MarketingSubmenu({ miniSidenav }) {
         { label: "Daily push notification", path: "/dashboard/vendors/notificationList", icon: "/img/push_notification.png" },
         { label: "Batch notification for Customer App", path: "/dashboard/vendors/customerNotificationList", icon: "/img/customerNotification.png" },
         { label: "In-app notification for Driver App", path: "/dashboard/vendors/driverNotificationList", icon: "/img/driver_app_notification.png" },
+        { label: "Skip Logs", path: "/dashboard/vendors/skip-logs", icon: "/img/driver_app_notification.png" },
   
     { label: "Banner Image", path: "/dashboard/user/bannerimgView", icon: "/img/banner_img.png" },
     // { label: "Testimonial", path: "/dashboard/user/testimonialView", icon: "/img/testimonial.png" },
