@@ -751,6 +751,8 @@ const handleSaveDriverEndLocation = async () => {
     const finalEstimatedFareAfterAdminDiscount =
         totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal;
     const lastAdminStatusToastKeyRef = React.useRef("");
+    const shouldShowAdminDiscountStatusToast =
+        [BOOKING_STATUS.QUOTED, BOOKING_STATUS.CONFIRMED].includes(bookingDetails?.status);
 
     const fetchAdminDiscountStatus = async ({ silent = false } = {}) => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
@@ -786,7 +788,7 @@ const handleSaveDriverEndLocation = async () => {
                 }));
             }
 
-            if (latestStatus && latestStatus !== visibleAdminDiscountStatus) {
+            if (shouldShowAdminDiscountStatusToast && latestStatus && latestStatus !== visibleAdminDiscountStatus) {
                 const statusKey = `${quoteRef || bookingId}:${latestStatus}`;
                 if (lastAdminStatusToastKeyRef.current !== statusKey) {
                     lastAdminStatusToastKeyRef.current = statusKey;
@@ -2103,6 +2105,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         </>)}
 
                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
+                                            adminDiscountEffective &&
                                             visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex flex-col-2 gap-2">
