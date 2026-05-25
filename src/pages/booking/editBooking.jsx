@@ -1352,7 +1352,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
                                             )}
                                         </div>
-                                        {/* {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation')) && ( */}
+                                        {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation')) && (
                                             <div>
                                                 <Typography className="text-sm font-medium text-black-700">AC Type</Typography>
                                                 <div className="grid grid-cols-2 gap-4 mt-2">
@@ -1365,7 +1365,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                     </Button>
 
                                                     <Button
-                                                        color={values.acType === 'N0N AC' ? 'blue' : 'gray'}                                                        
+                                                        color={values.acType === 'N0N AC' ? 'blue' : 'gray'} 
+                                                        disabled                                                       
                                                         onClick={() => setFieldValue('acType', 'NON AC')}
                                                         variant={values?.acType === 'NON AC' ? 'filled' : 'outlined'}
                                                     >
@@ -1373,7 +1374,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     </Button>
                                                 </div>
                                             </div>
-                                        {/* )} */}
+                                        )}
 
                                         <div className="flex gap-4 mb-2">
                                             <div className="flex-1 mb-2">
