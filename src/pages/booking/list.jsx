@@ -1259,11 +1259,6 @@ if (!statusFilter.includes('All')) {
                     <div className="flex justify-center items-center h-screen">
                         <Spinner className="h-12 w-12" />
                     </div>
-                                    ) : bookingsList.length === 0 ? (
-                            <Typography variant="h5" className='text-gray-900'>
-                                No Bookings
-                                {/* {activeTab} Bookings ({statusFilter ? ('status'): statusFilter.join(', ')}): {bookingsList.length} */}
-                            </Typography>
                         ) : (
                             <>
                                 <table className="w-full table-auto">
@@ -1405,6 +1400,13 @@ if (!statusFilter.includes('All')) {
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {bookingsList.length === 0 && (
+                                            <tr>
+                                                <td colSpan={tableHeaders.length} className="p-5 text-center text-gray-700 font-medium">
+                                                    No Bookings
+                                                </td>
+                                            </tr>
+                                        )}
                                         {showReassignModal && (
                                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                             <div className="bg-white/95 p-6 rounded-lg max-w-md w-full h-80">
