@@ -28,22 +28,28 @@ const getStatusStyles = (status) => {
     return "bg-amber-100 text-amber-800";
   }
   if (normalized === "APPROVED" || normalized === "AUTO_APPROVED") {
-    return "bg-green-100 text-green-800";
+    return "bg-green-300 text-white";
   }
   if (normalized === "REJECTED") {
-    return "bg-red-100 text-red-800";
+    return "bg-red-300 text-white";
   }
   return "bg-gray-100 text-gray-700";
 };
 
 const getRoleBadgeStyles = (role) => {
   const normalized = String(role || "").toUpperCase();
-  if (normalized === "SUPER_USER") return "bg-purple-100 text-purple-800";
-  if (normalized === "SUPPORT") return "bg-blue-100 text-blue-800";
+  if (normalized === "SUPER_USER") return "bg-purple-300 text-white";
+  if (normalized === "SUPPORT") return "bg-blue-300 text-white";
   if (normalized === "FINANCE") return "bg-emerald-100 text-emerald-800";
   if (normalized === "SALES") return "bg-amber-100 text-amber-800";
   return "bg-gray-100 text-gray-700";
 };
+
+const formatBadgeText = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 
 function AdminDiscountHistory() {
   const [quoteRef, setQuoteRef] = useState("");
@@ -266,6 +272,7 @@ function AdminDiscountHistory() {
                   {rows.map((item, index) => {
                     const rowId = item?.id || item?.discountId;
                     const status = String(item?.status || "").toUpperCase();
+                    const displayStatus = status ? formatBadgeText(status) : "-";
                     const isPending = status === PENDING_STATUS;
                     const requestedById = item?.requestedBy || item?.requestedById || "-";
                     const approvedById = item?.approvedBy || item?.approvedById || "-";
@@ -279,10 +286,10 @@ function AdminDiscountHistory() {
                         <td className="p-2 text-sm">{rowId || "-"}</td>
                         <td className="p-2 text-sm">
                           <span className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusStyles(status)}`}>
-                            {status || "-"}
+                            {displayStatus}
                           </span>
                         </td>
-                        <td className="p-2 text-sm">{item?.discountType || "-"}</td>
+                        <td className="p-2 text-sm">{formatBadgeText(item?.discountType) || "-"}</td>
                         <td className="p-2 text-sm">{item?.discountValue ?? "-"} % </td>
                         <td className="p-2 text-sm">₹ {item?.discountAmount ?? "-"}</td>
                         <td className="whitespace-normal break-words p-2 text-sm">{item?.remarks || "-"}</td>
@@ -293,7 +300,7 @@ function AdminDiscountHistory() {
                               requestedByUser?.role
                             )}`}
                           >
-                            {requestedByUser?.role || "-"}
+                            {requestedByUser?.role ? formatBadgeText(requestedByUser.role) : "-"}
                           </span>
                         </td>
                         <td className="p-2 text-sm">{requestedByUser?.name || "-"}</td>
@@ -304,7 +311,7 @@ function AdminDiscountHistory() {
                               approvedByUser?.role
                             )}`}
                           >
-                            {approvedByUser?.role || "-"}
+                            {approvedByUser?.role ? formatBadgeText(approvedByUser.role) : "-"}
                           </span>
                         </td>
                         <td className="p-2 text-sm">{approvedByUser?.name || "-"}</td>
