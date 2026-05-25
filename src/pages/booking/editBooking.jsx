@@ -80,25 +80,6 @@ const EditBooking = (props) => {
     const adminStatusSyncKeyRef = useRef('');
     const adminStatusAppliedTsRef = useRef(0);
 
-    const quoteEstimatedPrice = Number(quoteDetails?.value?.estimatedPrice || quoteDetails?.amount?.estimatedPrice || 0);
-    const systemDiscountAmount = Number(quoteDetails?.discount?.amount || 0);
-    const systemDiscountPercentage = Number(quoteDetails?.discount?.percentage || 0);
-    const totalEstimatedFareAfterSystemDiscount =
-        systemDiscountAmount > 0
-            ? quoteEstimatedPrice - systemDiscountAmount
-            : quoteEstimatedPrice - (quoteEstimatedPrice * (systemDiscountPercentage / 100));
-    const adminDiscountType = String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase();
-    const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetails?.adminDiscount?.status || '').toUpperCase());
-    const adminDiscountAmountOnTotal =
-        adminDiscountType === 'PERCENTAGE'
-            ? totalEstimatedFareAfterSystemDiscount * (Number(quoteDetails?.adminDiscount?.discountValue || 0) / 100)
-            : Number(quoteDetails?.adminDiscount?.discountAmount || 0);
-    const finalEstimatedFareAfterAdminDiscount = totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnTotal;
-    const adminDiscountValueDisplay =
-        adminDiscountType === 'PERCENTAGE'
-            ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
-            : `₹ ${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))}`;
-    const isQuoteAdminDiscountPending = String(quoteDetails?.adminDiscount?.status || '').toUpperCase() === 'PENDING';
     const existingAdminDiscount =
         bookingData?.currentAdminDiscount ||
         bookingData?.paymentDetails?.adminDiscount ||
@@ -106,6 +87,28 @@ const EditBooking = (props) => {
         null;
     const existingAdminDiscountStatus = String(existingAdminDiscount?.status || '').toUpperCase();
     const isExistingAdminDiscountLocked = isAdminDiscountEffective(existingAdminDiscountStatus);
+    const shouldSendAdminDiscountRequest = !isExistingAdminDiscountLocked;
+    const effectiveAdminDiscount = quoteDetails?.adminDiscount || existingAdminDiscount || null;
+
+    const quoteEstimatedPrice = Number(quoteDetails?.value?.estimatedPrice || quoteDetails?.amount?.estimatedPrice || 0);
+    const systemDiscountAmount = Number(quoteDetails?.discount?.amount || 0);
+    const systemDiscountPercentage = Number(quoteDetails?.discount?.percentage || 0);
+    const totalEstimatedFareAfterSystemDiscount =
+        systemDiscountAmount > 0
+            ? quoteEstimatedPrice - systemDiscountAmount
+            : quoteEstimatedPrice - (quoteEstimatedPrice * (systemDiscountPercentage / 100));
+    const adminDiscountType = String(effectiveAdminDiscount?.discountType || '').toUpperCase();
+    const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(effectiveAdminDiscount?.status || '').toUpperCase());
+    const adminDiscountAmountOnTotal =
+        adminDiscountType === 'PERCENTAGE'
+            ? totalEstimatedFareAfterSystemDiscount * (Number(effectiveAdminDiscount?.discountValue || 0) / 100)
+            : Number(effectiveAdminDiscount?.discountAmount || 0);
+    const finalEstimatedFareAfterAdminDiscount = totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnTotal;
+    const adminDiscountValueDisplay =
+        adminDiscountType === 'PERCENTAGE'
+            ? `${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))} %`
+            : `₹ ${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))}`;
+    const isQuoteAdminDiscountPending = String(effectiveAdminDiscount?.status || '').toUpperCase() === 'PENDING';
 
     const syncAdminDiscountStatus = useCallback(async (quoteRefValue) => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
@@ -490,15 +493,9 @@ const getQuoteOutstationDetails = async (values) => {
         else if (values?.serviceType === 'DRIVER') {
         quoteData.serviceFor = 'DRIVER';
     }
-    const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+    const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
         ? (
-            isExistingAdminDiscountLocked
-                ? buildAdminDiscountPayload({
-                    adminDiscountType: existingAdminDiscount?.discountType,
-                    adminDiscountValue: existingAdminDiscount?.discountValue,
-                    adminDiscountRemarks: existingAdminDiscount?.remarks,
-                })
-                : buildAdminDiscountPayload(values)
+            buildAdminDiscountPayload(values)
         )
         : null;
     if (adminDiscountPayload) {
@@ -636,15 +633,9 @@ const getQuoteOutstationDetails = async (values) => {
             if (!isHourlyPackageSelection && values?.serviceType !== 'AUTO' && values?.serviceType !== 'RIDES') {
                 quoteDate.bookingType = values?.tripType ? values.tripType.toUpperCase() : '';
             }
-            const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+            const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
                 ? (
-                    isExistingAdminDiscountLocked
-                        ? buildAdminDiscountPayload({
-                            adminDiscountType: existingAdminDiscount?.discountType,
-                            adminDiscountValue: existingAdminDiscount?.discountValue,
-                            adminDiscountRemarks: existingAdminDiscount?.remarks,
-                        })
-                        : buildAdminDiscountPayload(values)
+                    buildAdminDiscountPayload(values)
                 )
                 : null;
             if (adminDiscountPayload) {
@@ -901,15 +892,9 @@ const getQuoteOutstationDetails = async (values) => {
         let data;
         let editBookingData;
         const updateQuoteRef = quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || undefined;
-        const updateAdminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+        const updateAdminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
             ? (
-                isExistingAdminDiscountLocked
-                    ? buildAdminDiscountPayload({
-                        adminDiscountType: existingAdminDiscount?.discountType,
-                        adminDiscountValue: existingAdminDiscount?.discountValue,
-                        adminDiscountRemarks: existingAdminDiscount?.remarks,
-                    })
-                    : buildAdminDiscountPayload(values)
+                buildAdminDiscountPayload(values)
             )
             : null;
             if (values.submitType == "default") {
@@ -1367,7 +1352,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
                                             )}
                                         </div>
-                                        {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation')) && (
+                                        {/* {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation')) && ( */}
                                             <div>
                                                 <Typography className="text-sm font-medium text-black-700">AC Type</Typography>
                                                 <div className="grid grid-cols-2 gap-4 mt-2">
@@ -1380,8 +1365,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     </Button>
 
                                                     <Button
-                                                        color={values.acType === 'N0N AC' ? 'blue' : 'gray'}
-                                                        disabled
+                                                        color={values.acType === 'N0N AC' ? 'blue' : 'gray'}                                                        
                                                         onClick={() => setFieldValue('acType', 'NON AC')}
                                                         variant={values?.acType === 'NON AC' ? 'filled' : 'outlined'}
                                                     >
@@ -1389,7 +1373,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     </Button>
                                                 </div>
                                             </div>
-                                        )}
+                                        {/* )} */}
 
                                         <div className="flex gap-4 mb-2">
                                             <div className="flex-1 mb-2">
@@ -1999,7 +1983,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     </Typography>
 
                                                                 </>}
-                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails?.adminDiscount?.discountValue > 0 && (
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
                                                                         <Typography>{adminDiscountValueDisplay}</Typography>
@@ -2009,7 +1993,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </Typography>
                                                                     </>
                                                                 )}
-                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && quoteDetails?.adminDiscount?.discountValue > 0 && (
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Admin Discount Requested:</Typography>
                                                                         <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
@@ -2438,7 +2422,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         ₹ {Math.round((quoteDetails.amount?.estimatedPrice) - (quoteDetails.discount?.amount))}
                                                                     </Typography>
                                                                 </>}
-                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails?.adminDiscount?.discountValue > 0 && (
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
                                                                         <Typography>{adminDiscountValueDisplay}</Typography>
@@ -2448,7 +2432,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </Typography>
                                                                     </>
                                                                 )}
-                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && quoteDetails?.adminDiscount?.discountValue > 0 && (
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Admin Discount Requested:</Typography>
                                                                         <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
@@ -2786,7 +2770,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             </Typography>
 
                                                         </>}
-                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails?.adminDiscount?.discountValue > 0 && (
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
                                                             <>
                                                                 <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
                                                                 <Typography>{adminDiscountValueDisplay}</Typography>
@@ -2796,7 +2780,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 </Typography>
                                                             </>
                                                         )}
-                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && quoteDetails?.adminDiscount?.discountValue > 0 && (
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
                                                             <>
                                                                 <Typography color="gray" variant="h6">Admin Discount Requested:</Typography>
                                                                 <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
