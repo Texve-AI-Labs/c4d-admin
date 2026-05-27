@@ -148,15 +148,15 @@ const DriverBonusEdit = () => {
         startDate: form.startDate,
         endDate: form.endDate,
         perKmRate: form.perKmRate === "" ? undefined : Number(form.perKmRate),
-        minKm: form.minKm === "" ? undefined : Number(form.minKm),
-        maxKm: form.maxKm === "" ? undefined : Number(form.maxKm),
+        minKm: form.minKm === "" ? null : Number(form.minKm),
+        maxKm: form.maxKm === "" ? null : Number(form.maxKm),
         priority: form.priority === "" ? undefined : Number(form.priority),
         isActive: Boolean(form.isActive),
       };
 
       Object.keys(payload).forEach((key) => {
         if (payload[key] === undefined || payload[key] === null || payload[key] === "") {
-          if (key !== "isActive") delete payload[key];
+          if (key !== "isActive" && key !== "minKm" && key !== "maxKm") delete payload[key];
         }
       });
 

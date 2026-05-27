@@ -111,8 +111,8 @@ const DriverBonusAdd = () => {
         startDate: form.startDate,
         endDate: form.endDate,
         perKmRate: Number(form.perKmRate),
-        ...(form.minKm !== "" ? { minKm: Number(form.minKm) } : {}),
-        ...(form.maxKm !== "" ? { maxKm: Number(form.maxKm) } : {}),
+        minKm: form.minKm === "" ? null : Number(form.minKm),
+        maxKm: form.maxKm === "" ? null : Number(form.maxKm),
         priority: form.priority === "" ? 60 : Number(form.priority),
         isActive: Boolean(form.isActive),
       };
