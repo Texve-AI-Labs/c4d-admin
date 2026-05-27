@@ -58,7 +58,7 @@ const GstView = () => {
 
       <Card>
   <CardHeader className="mb-8 p-6 flex justify-between items-center bg-primary">
-          <Typography variant="h6" color="white">TAX List</Typography>
+          <Typography variant="h6" color="white">Settings  List</Typography>
         </CardHeader>
 
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">

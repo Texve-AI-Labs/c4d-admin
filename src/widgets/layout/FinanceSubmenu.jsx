@@ -24,7 +24,7 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
     { label: "Discount Module", path: "/dashboard/finance/discountModuleList", requiredPermission: "Users" },
     { label: "Custom Discount", path: "/dashboard/finance/custom-discount/list", requiredPermission: "Users" },
-    { label: "TAX", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
+    { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
     { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
     { label: "Driver Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
   ];
@@ -52,7 +52,7 @@ function FinanceSubmenu({ permissions = [] }) {
     if (label === "Custom Discount") {
       return pathname.startsWith("/dashboard/finance/custom-discount");
     }
-    if (label === "TAX") {
+    if (label === "Settings") {
       return pathname.startsWith("/dashboard/finance/gst");
     }
     if(label === "Parcel Commission") {
