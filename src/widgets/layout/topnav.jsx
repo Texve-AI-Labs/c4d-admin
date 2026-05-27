@@ -71,6 +71,7 @@ export function Topnav({ permissions = [] }) {
       !isInstantRewardRoute &&
       !isCustomDiscountRoute) ||
     path.startsWith("/dashboard/admin/geo-markings") ||
+    path.startsWith("/dashboard/admin/driver-cancellation-history") ||
     path.startsWith("/dashboard/user/versioncontrol") ||
     // path.startsWith("/dashboard/driverengagement") ||
     // Also show admin top bar on Trip Master and Calls
