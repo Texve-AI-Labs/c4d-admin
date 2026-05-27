@@ -1051,7 +1051,7 @@ if (!statusFilter.includes('All')) {
                                         </Typography>
                                         <div className="flex items-center justify-center w-full">
                                             <Typography variant="h6" className="font-bold text-2xl">
-                                                {counts[item.key]}
+                                                {counts?.[item.key] ?? "0"}
                                             </Typography>
                                         </div>
                                     </div>
