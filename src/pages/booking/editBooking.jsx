@@ -90,6 +90,8 @@ const EditBooking = (props) => {
     const shouldSendAdminDiscountRequest = !isExistingAdminDiscountLocked;
     const effectiveAdminDiscount = quoteDetails?.adminDiscount || existingAdminDiscount || null;
 
+    const cancelChargeApplicable = quoteDetails?.cancelCharge?.cancelChargeApplicable === true;
+    const cancelChargeAmount = cancelChargeApplicable ? Number(quoteDetails?.cancelCharge?.cancelCharge || 0) : 0;
     const quoteEstimatedPrice = Number(quoteDetails?.value?.estimatedPrice || quoteDetails?.amount?.estimatedPrice || 0);
     const systemDiscountAmount = Number(quoteDetails?.discount?.amount || 0);
     const systemDiscountPercentage = Number(quoteDetails?.discount?.percentage || 0);
@@ -109,6 +111,18 @@ const EditBooking = (props) => {
             ? `${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))} %`
             : `₹ ${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))}`;
     const isQuoteAdminDiscountPending = String(effectiveAdminDiscount?.status || '').toUpperCase() === 'PENDING';
+    const isAdminDiscountPresent = Number(effectiveAdminDiscount?.discountValue || 0) > 0;
+    const hasNormalDiscount = systemDiscountAmount > 0;
+    const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
+    const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+        ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge)" : "Final Total (After Discounts)")
+        : (cancelChargeApplicable ? "Final Total (After Cancel Charge)" : "Final Total");
+    const finalTotalAfterDiscounts =
+        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
+            ? finalEstimatedFareAfterAdminDiscount
+            : totalEstimatedFareAfterSystemDiscount;
+    const finalTotalAfterDiscountsWithCancelCharge =
+        finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
 
     const syncAdminDiscountStatus = useCallback(async (quoteRefValue) => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
@@ -2000,6 +2014,16 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
                                                                     </>
                                                                 )}
+                                                                {cancelChargeApplicable && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                        <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                    </>
+                                                                )}
+                                                                <>
+                                                                    <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                    <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                </>
                                                             </div>
 
                                                         </>
@@ -2439,6 +2463,16 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
                                                                     </>
                                                                 )}
+                                                                {cancelChargeApplicable && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                        <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                    </>
+                                                                )}
+                                                                <>
+                                                                    <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                    <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                </>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -2787,6 +2821,16 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
                                                             </>
                                                         )}
+                                                        {cancelChargeApplicable && (
+                                                            <>
+                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                            </>
+                                                        )}
+                                                        <>
+                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                        </>
                                                     </div>
                                                 </div>
                                             </div>

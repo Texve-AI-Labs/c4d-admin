@@ -1801,6 +1801,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         AUTO : "Auto",
         PARCEL: "Parcel",
     };
+const cancelChargeApplicable = quoteDetails?.cancelCharge?.cancelChargeApplicable === true;
+const cancelChargeAmount = cancelChargeApplicable ? Number(quoteDetails?.cancelCharge?.cancelCharge || 0) : 0;
 const totalestimationfare =
   Number(quoteDetails?.discount?.amount || 0) > 0
     ? Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.discount?.amount || 0)
@@ -1818,6 +1820,18 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
     : `₹ ${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))}`;
 const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetails?.adminDiscount?.status || '').toUpperCase());
+const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
+const hasNormalDiscount = Number(quoteDetails?.discount?.amount || 0) > 0 || Number(quoteDetails?.discount?.percentage || 0) > 0;
+const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
+const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+    ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
+    : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
+const finalTotalAfterDiscounts =
+    BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
+        ? finalEstimatedFare
+        : totalestimationfare;
+const finalTotalAfterDiscountsWithCancelCharge =
+    finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
 
 
     return (
@@ -3364,6 +3378,16 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                                                 </div>
                                                                             </>)
                                                                             }
+                                                                            {cancelChargeApplicable && (
+                                                                                <div className='flex justify-between'>
+                                                                                    <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
+                                                                                    <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                                </div>
+                                                                            )}
+                                                                            <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                            </div>
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3506,6 +3530,16 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                                                 </div>
                                                                             </>)
                                                                             }
+                                                                        {cancelChargeApplicable && (
+                                                                            <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
+                                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className='flex justify-between'>
+                                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                        </div>
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
@@ -3747,6 +3781,16 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                                                 {/* </div> */}
                                                                             </>)
                                                                             }                                                                                                                                                                                                                
+                                                                        {cancelChargeApplicable && (
+                                                                            <>
+                                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                            </>
+                                                                        )}
+                                                                        <>
+                                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                        </>
                                                                         {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
                                                                         <Typography>
                                                                             ₹ {quoteDetails.amount.extraKmPrice}
