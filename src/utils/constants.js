@@ -1011,6 +1011,7 @@ export const API_ROUTES = {
     'ADD_CASH_BACK':'/cashback-rules',
     'UPDATE_CASH_BACK':'/cashback-rules/:settingId',
     'GET_CASH_BACK':'/cashback-rules',
+    'DRIVER_KM_INCENTIVE_RULES':'/admin/driver-km-incentive/rules',
     "GET_TRANSACTIONS_LIST":'/transactions',
     "GET_TRANSACTIONS_CHART":'/transactions/chart',
     "GET_BOOKING_FUNNEL": '/admin/booking-funnel',

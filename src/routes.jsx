@@ -137,6 +137,10 @@ import CustomerDiscountList from "./pages/finance/customerDiscount/list";
 import DriverOfferList from "./pages/finance/driverOffer/DriverOfferList";
 import DriverOfferAdd from "./pages/finance/driverOffer/add";
 import DriverOfferAssign from "./pages/finance/driverOffer/DriverOfferAssign";
+import DriverBonusList from "./pages/finance/driverBonus/list";
+import DriverBonusAdd from "./pages/finance/driverBonus/add";
+import DriverBonusEdit from "./pages/finance/driverBonus/edit";
+import DriverBonusDetails from "./pages/finance/driverBonus/details";
 import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
@@ -1083,6 +1087,38 @@ export const routes = [
         name: "Cash Back Edit",
         path: "/finance/cash-back/edit/:id",
         element: <CashBackEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus List",
+        path: "/finance/driver-bonus/list",
+        element: <DriverBonusList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus Add",
+        path: "/finance/driver-bonus/add",
+        element: <DriverBonusAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus Edit",
+        path: "/finance/driver-bonus/edit/:id",
+        element: <DriverBonusEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus Details",
+        path: "/finance/driver-bonus/details/:id",
+        element: <DriverBonusDetails />,
         display: false,
         permission: "Users",
       },
