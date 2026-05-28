@@ -36,19 +36,23 @@ const debounce = (func, delay) => {
   };
 };
 
-const useLuggageAndSeaterLogic = (carType, setFieldValue) => {
+const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}) => {
     useEffect(() => {
+        const normalizedCarType = String(carType || '').toLowerCase();
+        const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
+        const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
+
         if (carType === 'Mini' || carType === 'Sedan') {
-            setFieldValue('luggage', 1);
+            setFieldValue('luggage', luggageValue);
             setFieldValue('seaterCapacity', '5');
         } else if (carType === 'SUV' || carType === 'MUV') {
-            setFieldValue('luggage', 2);
+            setFieldValue('luggage', luggageValue);
             setFieldValue('seaterCapacity', '7');
         } else {
             setFieldValue('luggage', '');
             setFieldValue('seaterCapacity', '');
         }
-    }, [carType, setFieldValue]);
+    }, [carType, setFieldValue, luggageCapacityMap]);
 };
 // Format date to YYYY-MM-DD for input's min attribute
 const minsToHHMM = (totalMins)=> {
@@ -110,6 +114,7 @@ const Booking = (props) => {
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [driverSuggestions, setDriverSuggestions] = useState([]);
+    const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
     const [driverPickUpLocation, setDriverPickUpLocation] = useState(null);
@@ -354,6 +359,7 @@ const Booking = (props) => {
     // console.log('Fetching packages with:', { serviceType, zone });
 	    if (!serviceType) {
 	      setPackageTypeSelectedData([]);
+          setLuggageCapacityMap({});
 	      return;
 	    }
 
@@ -367,12 +373,14 @@ const Booking = (props) => {
     // AUTO / PARCEL bookings do not use package list; skip silently
     if (mappedServiceType === 'AUTO' || mappedServiceType === 'PARCEL') {
       setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
       return;
     }
 
     if (!['DRIVER', 'RENTAL', 'RIDES'].includes(mappedServiceType)) {
       console.error('Invalid serviceType:', mappedServiceType);
       setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
       return;
     }
 
@@ -385,14 +393,17 @@ const Booking = (props) => {
 
     if (data?.success && Array.isArray(data?.data)) {
       setPackageTypeSelectedData(data.data);
+      setLuggageCapacityMap(data?.luggageCapacity || {});
     //   console.log('Package list fetched:', data.data);
     } else {
       console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
       setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
     }
   } catch (error) {
     console.error('Error fetching package list:', error.message || error);
     setPackageTypeSelectedData([]);
+    setLuggageCapacityMap({});
   }
 }, []);
 
@@ -2019,7 +2030,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                 return premiumServicesMap[values?.serviceType] || [];
                                             };
                                                 
-                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue);
+                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
                                             zoneCheckUpFun(values).then(zoneData => {

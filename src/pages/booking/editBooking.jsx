@@ -42,6 +42,7 @@ const EditBooking = (props) => {
     const [loading, setLoading] = useState(true);
     const [bookingData, setBookingData] = useState(null);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [mapCenter, setMapCenter] = useState({ lat: 12.906374, lng: 80.226452 });
@@ -414,12 +415,14 @@ const EditBooking = (props) => {
             // AUTO bookings don't use package-based pricing; skip without logging an error
             if (mappedServiceType === 'AUTO') {
                 setPackageTypeSelectedData([]);
+                setLuggageCapacityMap({});
                 return;
             }
 
             if (!['DRIVER', 'RENTAL', 'RIDES'].includes(mappedServiceType)) {
                 console.error('Invalid serviceType:', mappedServiceType);
                 setPackageTypeSelectedData([]);
+                setLuggageCapacityMap({});
                 return;
             }
 
@@ -430,13 +433,16 @@ const EditBooking = (props) => {
 
             if (data?.success && Array.isArray(data?.data)) {
                 setPackageTypeSelectedData(data?.data);
+                setLuggageCapacityMap(data?.luggageCapacity || {});
             } else {
                 console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
                 setPackageTypeSelectedData([]);
+                setLuggageCapacityMap({});
             }
         } catch (error) {
             console.error('Error fetching package list:', error.message || error);
             setPackageTypeSelectedData([]);
+            setLuggageCapacityMap({});
         } finally {
             setPackagesLoading(false);
         }
@@ -889,17 +895,21 @@ const getQuoteOutstationDetails = async (values) => {
     // Luggage and seater capacity logic based on car type
     const useLuggageAndSeaterLogic = (carType, setFieldValue) => {
         useEffect(() => {
+            const normalizedCarType = String(carType || '').toLowerCase();
+            const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
+            const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
+
             if (carType === 'Mini' || carType === 'Sedan') {
-                setFieldValue('luggage', 1);
+                setFieldValue('luggage', luggageValue);
                 setFieldValue('seaterCapacity', '5');
             } else if (carType === 'SUV' || carType === 'MUV') {
-                setFieldValue('luggage', 2);
+                setFieldValue('luggage', luggageValue);
                 setFieldValue('seaterCapacity', '7');
             } else {
                 setFieldValue('luggage', '');
                 setFieldValue('seaterCapacity', '');
             }
-        }, [carType, setFieldValue]);
+        }, [carType, setFieldValue, luggageCapacityMap]);
     };
 
     const editSubmit = async (values) => {
@@ -1091,7 +1101,7 @@ const getQuoteOutstationDetails = async (values) => {
                                 }
                                 return premiumServicesMap[values?.serviceType] || [];
                             };
-                            useLuggageAndSeaterLogic(values.carType, setFieldValue);
+                            useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                     return(
                                 <> {customerData && (
                                     <div className="p-2 flex mb-4 pointer-events-none">
