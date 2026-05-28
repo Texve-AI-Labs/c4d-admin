@@ -75,10 +75,12 @@ const GstEdit = () => {
       const payload = {
         settingId: parseInt(id),
         serviceType: values.serviceType,
+        type: "GST",
         name: values.name,
         totalGst: parseFloat(values.totalGst),
         hsnCode: values.hsnCode,
         serviceCategory: values.serviceCategory,
+        description: values.serviceDescription,
         serviceDescription: values.serviceDescription,
         gstNo: values.gstNo,
         isActive: values.isActive,
