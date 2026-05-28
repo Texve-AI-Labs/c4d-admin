@@ -45,11 +45,7 @@ const GstView = () => {
         } else if (activeTab?.key === "DRIVER_FEEDBACK") {
           list = list.filter((item) => item?.type === "DRIVER_FEEDBACK");
         } else if (activeTab?.key === "LUGGAGE_POLICY") {
-          list = list.filter(
-            (item) =>
-              item?.type === "TERMS_AND_CONDITIONS" &&
-              String(item?.name || "").toUpperCase() === "LUGGAGE_POLICY"
-          );
+          list = list.filter((item) => item?.type === "TERMS_AND_CONDITIONS");
         }
 
       

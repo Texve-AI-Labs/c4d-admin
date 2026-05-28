@@ -36,7 +36,7 @@ const LuggagePolicyAdd = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const payload = {
-        serviceType: values.serviceType,
+        serviceType: "ALL",
         type: "TERMS_AND_CONDITIONS",
         name: values.name,
         description: values.description,
@@ -69,10 +69,10 @@ const LuggagePolicyAdd = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>
-                <Field as="select" name="serviceType" className="p-2 w-full rounded-md border border-gray-300 shadow-sm">
-                  <option value="DRIVER">DRIVER</option>
+                <Field as="select" name="serviceType" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" disabled>
+                  {/* <option value="DRIVER">DRIVER</option>
                   <option value="RIDES">RIDES</option>
-                  <option value="RENTAL">RENTAL</option>
+                  <option value="RENTAL">RENTAL</option> */}
                   <option value="ALL">ALL</option>
                 </Field>
                 <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />

@@ -71,7 +71,7 @@ const LuggagePolicyEdit = () => {
   }, [id, location.state]);
 
   const initialValues = {
-    serviceType: data?.serviceType || "ALL",
+    serviceType: "ALL",
     name: data?.name || "LUGGAGE_POLICY",
     description: data?.description || "",
     mini: data?.mini ?? 1,
@@ -85,7 +85,7 @@ const LuggagePolicyEdit = () => {
     try {
       const payload = {
         settingId: parseInt(id),
-        serviceType: values.serviceType,
+        serviceType:"ALL",
         type: "TERMS_AND_CONDITIONS",
         name: values.name,
         description: values.description,
@@ -126,10 +126,10 @@ const LuggagePolicyEdit = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>
-                <Field as="select" name="serviceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
-                  <option value="DRIVER">DRIVER</option>
+                <Field as="select" name="serviceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
+                  {/* <option value="DRIVER">DRIVER</option>
                   <option value="RIDES">RIDES</option>
-                  <option value="RENTAL">RENTAL</option>
+                  <option value="RENTAL">RENTAL</option> */}
                   <option value="ALL">ALL</option>
                 </Field>
                 <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
