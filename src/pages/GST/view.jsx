@@ -74,13 +74,14 @@ const GstView = () => {
   return (
     <div className="mb-8 flex flex-col gap-12">
       <div className="flex items-center justify-end">
+        {!isLuggagePolicy && (
         <button
           onClick={() =>
             navigate(
               isDriverFeedback
                 ? "/dashboard/finance/driver-feedback/add"
-                : isLuggagePolicy
-                  ? "/dashboard/finance/luggage-policy/add"
+                // : isLuggagePolicy
+                //   ? "/dashboard/finance/luggage-policy/add"
                 : "/dashboard/finance/GST/add"
             )
           }
@@ -88,6 +89,7 @@ const GstView = () => {
         >
           Add new
         </button>
+        )}
       </div>
 
       <Card>

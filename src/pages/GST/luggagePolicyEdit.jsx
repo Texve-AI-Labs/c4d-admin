@@ -33,7 +33,7 @@ const LuggagePolicyEdit = () => {
       const raw = location.state.gst;
       setData({
         serviceType: raw.serviceType || "ALL",
-        name: raw.name || "LUGGAGE_POLICY",
+        name: "LUGGAGE_POLICY",
         description: raw.description || "",
         mini: raw?.config?.luggageCapacity?.mini ?? 1,
         sedan: raw?.config?.luggageCapacity?.sedan ?? 1,
@@ -52,7 +52,7 @@ const LuggagePolicyEdit = () => {
           const raw = response.data;
           setData({
             serviceType: raw.serviceType || "ALL",
-            name: raw.name || "LUGGAGE_POLICY",
+            name: "LUGGAGE_POLICY",
             description: raw.description || "",
             mini: raw?.config?.luggageCapacity?.mini ?? 1,
             sedan: raw?.config?.luggageCapacity?.sedan ?? 1,
@@ -72,7 +72,7 @@ const LuggagePolicyEdit = () => {
 
   const initialValues = {
     serviceType: "ALL",
-    name: data?.name || "LUGGAGE_POLICY",
+    name: "LUGGAGE_POLICY",
     description: data?.description || "",
     mini: data?.mini ?? 1,
     sedan: data?.sedan ?? 1,
@@ -87,7 +87,7 @@ const LuggagePolicyEdit = () => {
         settingId: parseInt(id),
         serviceType:"ALL",
         type: "TERMS_AND_CONDITIONS",
-        name: values.name,
+        name: "LUGGAGE_POLICY",
         description: values.description,
         config: {
           luggageCapacity: {
@@ -146,7 +146,9 @@ const LuggagePolicyEdit = () => {
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Name</label>
-                <Field name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                <Field as="select" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
+                  <option value="LUGGAGE_POLICY">LUGGAGE_POLICY</option>
+                </Field>
                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
               </div>
 

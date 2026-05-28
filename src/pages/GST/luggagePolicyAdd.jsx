@@ -24,7 +24,7 @@ const LuggagePolicyAdd = () => {
 
   const initialValues = {
     serviceType: "ALL",
-    name: "",
+    name: "LUGGAGE_POLICY",
     description: "",
     mini: 1,
     sedan: 1,
@@ -38,7 +38,7 @@ const LuggagePolicyAdd = () => {
       const payload = {
         serviceType: "ALL",
         type: "TERMS_AND_CONDITIONS",
-        name: values.name,
+        name: "LUGGAGE_POLICY",
         description: values.description,
         config: {
           luggageCapacity: {
@@ -89,7 +89,9 @@ const LuggagePolicyAdd = () => {
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Name</label>
-                <Field name="name" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                <Field as="select" name="name" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" disabled>
+                  <option value="LUGGAGE_POLICY">LUGGAGE_POLICY</option>
+                </Field>
                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm" />
               </div>
 
