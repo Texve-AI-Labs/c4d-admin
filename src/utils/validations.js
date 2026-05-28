@@ -944,7 +944,10 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
 export const GST_EDIT_SCHEMA = Yup.object().shape({
     serviceType: Yup.string().required('Service type is required'),
     name: Yup.string().required('Name is required'),
-    totalGst: Yup.mixed().required('GST % is required'),
+    totalGst: Yup.number()
+      .typeError('GST % must be a number')
+      .min(0, 'GST % cannot be negative')
+      .required('GST % is required'),
     hsnCode: Yup.string().required('HSN Code is required'),
     serviceCategory: Yup.string().required('Category is required'),
     serviceDescription: Yup.string().required('Description is required'),
@@ -954,10 +957,13 @@ export const GST_EDIT_SCHEMA = Yup.object().shape({
   export const GST_ADD_SCHEMA = Yup.object({
       serviceType: Yup.string().required('Service Type is required'),
       name: Yup.string().required('Name is required'),
-      totalGst: Yup.mixed().required('GST % is required'),
+      totalGst: Yup.number()
+        .typeError('GST % must be a number')
+        .min(0, 'GST % cannot be negative')
+        .required('GST % is required'),
       hsnCode: Yup.string().required('HSN Code is required'),
       serviceCategory: Yup.string().required('Service Category is required'),
-      serviceDescription: Yup.string().required('Service Description is required'),
+      serviceDescription: Yup.string().required('Description is required'),
       gstNo: Yup.string().required('GST No is required'),
       isActive: Yup.boolean().required('Status is required'),
     });

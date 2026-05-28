@@ -257,7 +257,7 @@ const AccountOnboardingDetails = () => {
   }, [previewableTypes, selectedDocType]);
   // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status));
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
+  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType);
 
   const handleAddressInputChange = (key, value) => {
     setAddressForm((prev) => ({ ...prev, [key]: value }));
@@ -519,7 +519,7 @@ const AccountOnboardingDetails = () => {
         <ul className="text-sm text-gray-600 list-disc list-inside">
           {requiredAccountDocs.map((docType) => (
             <li key={docType}>
-              <strong>{toTitle(docType)}:</strong> {["PHOTO", "INSURANCE", "PERMIT"].includes(docType) ? "1 document" : "2 documents"}
+              <strong>{toTitle(docType)}:</strong> {["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType) ? "1 document" : "2 documents"}
             </li>
           ))}
         </ul>

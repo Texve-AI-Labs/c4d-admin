@@ -21,11 +21,11 @@ const GstEdit = () => {
       const flatData = {
         serviceType: raw.serviceType,
         name: raw.name,
-        totalGst: raw.config?.totalGst || '',
-        hsnCode: raw.config?.hsnCode || '',
-        serviceCategory: raw.config?.serviceCategory || '',
-        serviceDescription: raw.config?.serviceDescription || '',
-        gstNo: raw.config?.gstNo || '',
+        totalGst: raw.config?.totalGst ?? '',
+        hsnCode: raw.config?.hsnCode ?? '',
+        serviceCategory: raw.config?.serviceCategory ?? '',
+        serviceDescription: raw.config?.serviceDescription ?? '',
+        gstNo: raw.config?.gstNo ?? '',
         isActive: raw.isActive,
       };
       setGstData(flatData);
@@ -43,11 +43,11 @@ const GstEdit = () => {
         const flatData = {
           serviceType: raw.serviceType,
           name: raw.name,
-          totalGst: raw.config?.totalGst || '',
-          hsnCode: raw.config?.hsnCode || '',
-          serviceCategory: raw.config?.serviceCategory || '',
-          serviceDescription: raw.config?.serviceDescription || '',
-          gstNo: raw.config?.gstNo || '',
+          totalGst: raw.config?.totalGst ?? '',
+          hsnCode: raw.config?.hsnCode ?? '',
+          serviceCategory: raw.config?.serviceCategory ?? '',
+          serviceDescription: raw.config?.serviceDescription ?? '',
+          gstNo: raw.config?.gstNo ?? '',
           isActive: raw.isActive,
         };
         setGstData(flatData);
@@ -60,13 +60,13 @@ const GstEdit = () => {
   };
 
   const initialValues = {
-    serviceType: gstData?.serviceType || '',
-    name: gstData?.name || '',
-    totalGst: gstData?.totalGst || '',
-    hsnCode: gstData?.hsnCode || '',
-    serviceCategory: gstData?.serviceCategory || '',
-    serviceDescription: gstData?.serviceDescription || '',
-    gstNo: gstData?.gstNo || '',
+    serviceType: gstData?.serviceType ?? '',
+    name: gstData?.name ?? '',
+    totalGst: gstData?.totalGst ?? '',
+    hsnCode: gstData?.hsnCode ?? '',
+    serviceCategory: gstData?.serviceCategory ?? '',
+    serviceDescription: gstData?.serviceDescription ?? '',
+    gstNo: gstData?.gstNo ?? '',
     isActive: gstData?.isActive ?? true,
   };
 
@@ -75,10 +75,12 @@ const GstEdit = () => {
       const payload = {
         settingId: parseInt(id),
         serviceType: values.serviceType,
+        type: "GST",
         name: values.name,
         totalGst: parseFloat(values.totalGst),
         hsnCode: values.hsnCode,
         serviceCategory: values.serviceCategory,
+        description: values.serviceDescription,
         serviceDescription: values.serviceDescription,
         gstNo: values.gstNo,
         isActive: values.isActive,

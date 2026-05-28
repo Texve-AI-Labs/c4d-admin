@@ -27,13 +27,22 @@ const GstAdd = () => {
     try {
       const payload = {
         serviceType: values.serviceType,
+        type: "GST",
         name: values.name,
         totalGst: parseFloat(values.totalGst),
         hsnCode: values.hsnCode,
         serviceCategory: values.serviceCategory,
+        description: values.serviceDescription,
         serviceDescription: values.serviceDescription,
         gstNo: values.gstNo,
-        isActive: values.isActive,
+        isActive: values.isActive === true || values.isActive === "true",
+        // config: {
+        //   totalGst: parseFloat(values.totalGst),
+        //   hsnCode: values.hsnCode,
+        //   serviceCategory: values.serviceCategory,
+        //   serviceDescription: values.serviceDescription,
+        //   gstNo: values.gstNo,
+        // },
       };
 
       await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);

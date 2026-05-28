@@ -178,7 +178,7 @@ const AccountDocuments = () => {
   const subjectType = "ACCOUNT";
   const serviceType = account?.type || "Individual";
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
+  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType);
   const getZoomKey = (docType, imageIndex) => `${docType || "UNKNOWN"}_${imageIndex}`;
   const getZoomValue = (docType, imageIndex) => previewZoom[getZoomKey(docType, imageIndex)] || 1;
   const updateZoom = (docType, imageIndex, direction) => {

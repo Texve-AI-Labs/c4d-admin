@@ -750,6 +750,26 @@ const handleSaveDriverEndLocation = async () => {
         : Number(visibleAdminDiscount?.discountAmount || 0);
     const finalEstimatedFareAfterAdminDiscount =
         totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal;
+    const quoteCancelChargeAmount = Number(
+        bookingDetails?.cancelCharge ??
+        bookingDetails?.paymentDetails?.details?.cancelCharge ??
+        0
+    );
+    const quoteCancelChargePaid = bookingDetails?.cancelChargePaid === true;
+    const quoteCancelChargeApplicable = quoteCancelChargeAmount > 0;
+    // Keep existing discount math intact; apply cancel charge only as the final step.
+    const hasNormalDiscount = systemDiscountAmount > 0;
+    const hasEffectiveAdminDiscount =
+        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && adminDiscountEffective && visibleAdminDiscountValue > 0;
+    const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+        ? (quoteCancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
+        : (quoteCancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
+    const finalEstimatedFareAfterDiscounts =
+        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && adminDiscountEffective && visibleAdminDiscountValue > 0
+            ? finalEstimatedFareAfterAdminDiscount
+            : totalEstimatedFareAfterSystemDiscount;
+    const finalEstimatedFareAfterDiscountsWithCancelCharge =
+        finalEstimatedFareAfterDiscounts + quoteCancelChargeAmount;
     const lastAdminStatusToastKeyRef = React.useRef("");
     const shouldShowAdminDiscountStatusToast =
         [BOOKING_STATUS.QUOTED, BOOKING_STATUS.CONFIRMED].includes(bookingDetails?.status);
@@ -2104,7 +2124,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 </div>
                         </>)}
 
-                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
+                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
                                             adminDiscountEffective &&
                                             visibleAdminDiscountValue > 0 && (
                                             <>
@@ -2128,6 +2148,22 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </div>
                                             </>
                                         )}
+                                        {quoteCancelChargeApplicable && shouldShowQuotePricing(bookingDetails) && (
+                                            <div className="flex flex-col-2 gap-2">
+                                                <span className="text-gray-500 font-semibold">Cancel Charge Added:</span>
+                                                <span className="text-gray-900 font-medium">
+                                                    ₹ {Number(quoteCancelChargeAmount || 0).toFixed(2)} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
+                                                </span>
+                                            </div>
+                                        )}
+                                        {/* {shouldShowQuotePricing(bookingDetails) && (
+                                            <div className="flex flex-col-2 gap-2">
+                                                <span className="text-gray-500 font-semibold">{finalTotalLabel}</span>
+                                                <span className="text-gray-900 font-medium">
+                                                    ₹ {Math.max(0, Number(finalEstimatedFareAfterDiscountsWithCancelCharge || 0)).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )} */}
                     </div>                            
 
                         
@@ -2572,6 +2608,40 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         <Typography variant="sm" className="text-sm  text-red-400">- ₹ {Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0).toFixed(2)}</Typography>
                                     </div>
                                 }
+                                {(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW || quoteCancelChargeApplicable) && (
+                                    <>
+                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountValue > 0 && (
+                                            <>
+                                                <div className="flex justify-between my-1">
+                                                    <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Percentage:</Typography>
+                                                    <Typography className="text-sm text-black font-medium">
+                                                        {visibleAdminDiscountType === "PERCENTAGE"
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} %`
+                                                            : "0.00 %"}
+                                                    </Typography>
+                                                </div>
+                                                <div className="flex justify-between my-1">
+                                                    <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Amount:</Typography>
+                                                    <Typography className="text-sm text-black font-medium">₹ {Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}</Typography>
+                                                </div>
+                                            </>
+                                        )}
+                                        {quoteCancelChargeApplicable && (
+                                            <div className="flex justify-between my-1">
+                                                <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Cancel Charge Added:</Typography>
+                                                <Typography className="text-sm text-black font-medium">
+                                                    ₹ {Number(quoteCancelChargeAmount || 0).toFixed(2)} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
+                                                </Typography>
+                                            </div>
+                                        )}
+                                        {/* <div className="flex justify-between my-1">
+                                            <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">{finalTotalLabel}</Typography>
+                                            <Typography className="text-sm text-black font-medium">
+                                                ₹ {Math.max(0, Number(finalEstimatedFareAfterDiscountsWithCancelCharge || 0)).toFixed(2)}
+                                            </Typography>
+                                        </div> */}
+                                    </>
+                                )}
                                 {/* Amount After Gst:  */}
                                 {bookingDetails?.paymentDetails?.details?.gstAmount > 0 && (
                                 <div className="flex justify-between  my-1">
@@ -2671,7 +2741,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         {additionalCharges.toll > 0 && <div className="flex justify-between my-1"><span className="font-semibold text-sm text-gray-500">Toll Charge:</span> <b className="text-black">₹ {additionalCharges.toll}</b></div>}
                                         {additionalCharges.parking > 0 && <div className="flex justify-between my-1"><span className="font-semibold text-sm text-gray-500">Parking Charge:</span> <b className="text-black">₹ {additionalCharges.parking}</b></div>}
                                         {additionalCharges.hill > 0 && <div className="flex justify-between my-1"><span className="font-semibold text-sm text-gray-500">Hill Charge:</span> <b className="text-black">₹ {additionalCharges.hill}</b></div>}
-                                        {cancelTripFare > 0 && <div className="flex justify-between my-1"><span className="font-semibold text-sm text-gray-500">Cancel Charge:</span> <b className="text-black">₹ {cancelTripFare}</b></div>}
+                                        {/* {cancelTripFare > 0 && <div className="flex justify-between my-1"><span className="font-semibold text-sm text-gray-500">Cancel Charge:</span> <b className="text-black">₹ {cancelTripFare}</b></div>} */}
                                     </>
                                 ) : (
                                     /* Edit Mode: Show all 4 fields */

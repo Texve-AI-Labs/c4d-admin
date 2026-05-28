@@ -36,19 +36,23 @@ const debounce = (func, delay) => {
   };
 };
 
-const useLuggageAndSeaterLogic = (carType, setFieldValue) => {
+const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}) => {
     useEffect(() => {
+        const normalizedCarType = String(carType || '').toLowerCase();
+        const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
+        const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
+
         if (carType === 'Mini' || carType === 'Sedan') {
-            setFieldValue('luggage', 1);
+            setFieldValue('luggage', luggageValue);
             setFieldValue('seaterCapacity', '5');
         } else if (carType === 'SUV' || carType === 'MUV') {
-            setFieldValue('luggage', 2);
+            setFieldValue('luggage', luggageValue);
             setFieldValue('seaterCapacity', '7');
         } else {
             setFieldValue('luggage', '');
             setFieldValue('seaterCapacity', '');
         }
-    }, [carType, setFieldValue]);
+    }, [carType, setFieldValue, luggageCapacityMap]);
 };
 // Format date to YYYY-MM-DD for input's min attribute
 const minsToHHMM = (totalMins)=> {
@@ -110,6 +114,7 @@ const Booking = (props) => {
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [driverSuggestions, setDriverSuggestions] = useState([]);
+    const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
     const [driverPickUpLocation, setDriverPickUpLocation] = useState(null);
@@ -354,6 +359,7 @@ const Booking = (props) => {
     // console.log('Fetching packages with:', { serviceType, zone });
 	    if (!serviceType) {
 	      setPackageTypeSelectedData([]);
+          setLuggageCapacityMap({});
 	      return;
 	    }
 
@@ -367,12 +373,14 @@ const Booking = (props) => {
     // AUTO / PARCEL bookings do not use package list; skip silently
     if (mappedServiceType === 'AUTO' || mappedServiceType === 'PARCEL') {
       setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
       return;
     }
 
     if (!['DRIVER', 'RENTAL', 'RIDES'].includes(mappedServiceType)) {
       console.error('Invalid serviceType:', mappedServiceType);
       setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
       return;
     }
 
@@ -385,14 +393,17 @@ const Booking = (props) => {
 
     if (data?.success && Array.isArray(data?.data)) {
       setPackageTypeSelectedData(data.data);
+      setLuggageCapacityMap(data?.luggageCapacity || {});
     //   console.log('Package list fetched:', data.data);
     } else {
       console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
       setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
     }
   } catch (error) {
     console.error('Error fetching package list:', error.message || error);
     setPackageTypeSelectedData([]);
+    setLuggageCapacityMap({});
   }
 }, []);
 
@@ -1801,6 +1812,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         AUTO : "Auto",
         PARCEL: "Parcel",
     };
+const cancelChargeApplicable = quoteDetails?.cancelCharge?.cancelChargeApplicable === true;
+const cancelChargeAmount = cancelChargeApplicable ? Number(quoteDetails?.cancelCharge?.cancelCharge || 0) : 0;
 const totalestimationfare =
   Number(quoteDetails?.discount?.amount || 0) > 0
     ? Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.discount?.amount || 0)
@@ -1818,6 +1831,18 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
     : `₹ ${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))}`;
 const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetails?.adminDiscount?.status || '').toUpperCase());
+const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
+const hasNormalDiscount = Number(quoteDetails?.discount?.amount || 0) > 0 || Number(quoteDetails?.discount?.percentage || 0) > 0;
+const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
+const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+    ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
+    : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
+const finalTotalAfterDiscounts =
+    BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
+        ? finalEstimatedFare
+        : totalestimationfare;
+const finalTotalAfterDiscountsWithCancelCharge =
+    finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
 
 
     return (
@@ -2005,7 +2030,7 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                 return premiumServicesMap[values?.serviceType] || [];
                                             };
                                                 
-                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue);
+                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
                                             zoneCheckUpFun(values).then(zoneData => {
@@ -3364,6 +3389,16 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                                                 </div>
                                                                             </>)
                                                                             }
+                                                                            {cancelChargeApplicable && (
+                                                                                <div className='flex justify-between'>
+                                                                                    <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
+                                                                                    <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                                </div>
+                                                                            )}
+                                                                            <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                            </div>
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3506,6 +3541,16 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                                                 </div>
                                                                             </>)
                                                                             }
+                                                                        {cancelChargeApplicable && (
+                                                                            <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
+                                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className='flex justify-between'>
+                                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                        </div>
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
@@ -3747,6 +3792,16 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                                                 {/* </div> */}
                                                                             </>)
                                                                             }                                                                                                                                                                                                                
+                                                                        {cancelChargeApplicable && (
+                                                                            <>
+                                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                            </>
+                                                                        )}
+                                                                        <>
+                                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                        </>
                                                                         {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
                                                                         <Typography>
                                                                             ₹ {quoteDetails.amount.extraKmPrice}
@@ -3844,6 +3899,11 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
                                                             </Typography>
+                                                            {Number(values.luggage) > 0 && (
+                                                                <Typography className=" text-sm text-gray-700">
+                                                                    • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
+                                                                </Typography>
+                                                            )}
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
                                                             <Typography
@@ -3897,6 +3957,11 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                              <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
                                                             </Typography>
+                                                            {Number(values.luggage) > 0 && (
+                                                                <Typography className=" text-sm text-gray-700">
+                                                                    • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
+                                                                </Typography>
+                                                            )}
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
                                                             <Typography
@@ -3956,6 +4021,11 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
                                                             {quoteDetails.amount?.extraNightCharge > 0 && (
                                                              <Typography className="text-sm text-gray-700">
                                                                 • Night Charge of <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge)}</span> applies if the trip extends past{' '}.
+                                                            </Typography>
+                                                            )}
+                                                            {Number(values.luggage) > 0 && (
+                                                                <Typography className=" text-sm text-gray-700">
+                                                                    • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.rideSurchargeAmount > 0 && (

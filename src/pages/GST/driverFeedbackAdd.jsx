@@ -9,7 +9,9 @@ import * as Yup from "yup";
 const DRIVER_FEEDBACK_SCHEMA = Yup.object().shape({
   name: Yup.string().required("Name is required"),
   serviceDescription: Yup.string(),
-  isActive: Yup.boolean().required("Status is required"),
+  isActive: Yup.mixed()
+    .oneOf([true, false, "true", "false"], "Status is required")
+    .required("Status is required"),
   configEnabled: Yup.boolean(),
 });
 

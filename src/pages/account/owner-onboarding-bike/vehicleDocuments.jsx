@@ -64,7 +64,7 @@ const VehicleDocuments = () => {
     });
   }, [requiredDocs, proofsByType]);
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
+  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType);
 
   const handleUploadDocument = async (event, row) => {
     const files = Array.from(event.target.files || []);
@@ -162,7 +162,7 @@ const VehicleDocuments = () => {
           <li><strong>Insurance:</strong> 1 document</li>
           {/* <li><strong>Permit:</strong> 1 documents</li> */}
 
-          <li><strong>Vehicle Photo:</strong> 2 documents</li>
+          <li><strong>Vehicle Photo:</strong> 1 document</li>
 
         </ul>
       </div>
