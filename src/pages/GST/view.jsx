@@ -97,22 +97,26 @@ const GstView = () => {
 
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
           <div className="px-6 pb-4">
-            <div className="flex w-full rounded-xl bg-gray-100 p-1">
+            <div
+              role="tablist"
+              aria-label="Settings type tabs"
+              className="flex w-full gap-2 overflow-x-auto rounded-2xl border border-blue-gray-100 bg-white p-2 shadow-sm"
+            >
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={selectedType === tab.key}
-              onClick={() => setSelectedType(tab.key)}
-                className={`flex-1 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                  selectedType === tab.key
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-200"
-                }`}
-            >
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedType === tab.key}
+                  onClick={() => setSelectedType(tab.key)}
+                  className={`min-w-max flex-1 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all ${
+                    selectedType === tab.key
+                      ? "border-primary bg-primary text-white shadow"
+                      : "border-transparent bg-blue-gray-50 text-blue-gray-700 hover:border-blue-gray-200 hover:bg-white"
+                  }`}
+                >
                   {tab.label}
-              </button>
+                </button>
               ))}
             </div>
           </div>
