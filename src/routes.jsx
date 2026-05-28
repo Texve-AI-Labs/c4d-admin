@@ -96,6 +96,8 @@ import GstAdd from "./pages/GST/add";
 import GstEdit from "./pages/GST/edit";
 import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
 import DriverFeedbackEdit from "./pages/GST/driverFeedbackEdit";
+import LuggagePolicyAdd from "./pages/GST/luggagePolicyAdd";
+import LuggagePolicyEdit from "./pages/GST/luggagePolicyEdit";
 import BannerView from "./pages/bannerImage/view ";
 import AddBanner from "./pages/bannerImage/add";
 import TestimoinalView from "./pages/testimoinal/view";
@@ -545,6 +547,22 @@ export const routes = [
         name: "Driver feedback edit",
         path: "/finance/driver-feedback/edit/:id",
         element: <DriverFeedbackEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Luggage policy add",
+        path: "/finance/luggage-policy/add",
+        element: <LuggagePolicyAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Luggage policy edit",
+        path: "/finance/luggage-policy/edit/:id",
+        element: <LuggagePolicyEdit />,
         display: true,
         permission: "Users",
       },
