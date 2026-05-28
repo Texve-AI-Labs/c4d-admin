@@ -101,7 +101,7 @@ const VehicleOnboardingDetails = () => {
   }, [requiredVehicleDocs, vehicleUploads, vehiclePendingTypes, vehicleApprovedTypes]);
   // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status));
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT"].includes(docType);
+  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
 
   const handleUploadDocument = async (event, row) => {
     const files = Array.from(event.target.files || []);
@@ -203,7 +203,7 @@ const VehicleOnboardingDetails = () => {
         <ul className="text-sm text-gray-600 list-disc list-inside">
           {requiredVehicleDocs.map((docType) => (
             <li key={docType}>
-              <strong>{toTitle(docType)}:</strong> {["PHOTO", "INSURANCE", "PERMIT"].includes(docType) ? "1 document" : "2 documents"}
+              <strong>{toTitle(docType)}:</strong> {["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType) ? "1 document" : "2 documents"}
             </li>
           ))}
         </ul>
