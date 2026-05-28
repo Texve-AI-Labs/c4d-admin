@@ -3899,6 +3899,11 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
                                                             </Typography>
+                                                            {Number(values.luggage) > 0 && (
+                                                                <Typography className=" text-sm text-gray-700">
+                                                                    • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
+                                                                </Typography>
+                                                            )}
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
                                                             <Typography
@@ -3952,6 +3957,11 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                              <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
                                                             </Typography>
+                                                            {Number(values.luggage) > 0 && (
+                                                                <Typography className=" text-sm text-gray-700">
+                                                                    • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
+                                                                </Typography>
+                                                            )}
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
                                                             <Typography
@@ -4011,6 +4021,11 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                             {quoteDetails.amount?.extraNightCharge > 0 && (
                                                              <Typography className="text-sm text-gray-700">
                                                                 • Night Charge of <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge)}</span> applies if the trip extends past{' '}.
+                                                            </Typography>
+                                                            )}
+                                                            {Number(values.luggage) > 0 && (
+                                                                <Typography className=" text-sm text-gray-700">
+                                                                    • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.rideSurchargeAmount > 0 && (
