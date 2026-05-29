@@ -732,7 +732,8 @@ const CompletedOnboardingDetails = () => {
     try {
       setVehicleDetailsSavingId(sectionId);
       const isTravelsAccount = String(account?.type || "").toLowerCase() === "company";
-      const mappedCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").toUpperCase();
+      const rawCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").trim().toUpperCase();
+      const mappedCarType = rawCarType === "MINI" ? "Mini" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
       const mappedAssignedTo = String(draftValues?.["Assigned To"] || "").trim();
       const mappedWithDriver = String(draftValues?.["With Driver"] || cabResult?.withDriver || "");
       const assignOrAddDriver = String(draftValues?.["Assign or Add Driver"] || "Assign");
