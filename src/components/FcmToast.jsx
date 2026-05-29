@@ -72,9 +72,6 @@ const FcmToast = () => {
 
         const unsubscribe = onMessage(FirebaseMessaging, (payload) => {
             console.log("🔔 Foreground Notification:", payload);
-            setNotification(buildNotificationMessage(payload));
-            setShowNotification(true);
-
             const adminDiscountEvent = parseAdminDiscountEvent(payload);
             if (adminDiscountEvent) {
                 window.dispatchEvent(
@@ -82,7 +79,13 @@ const FcmToast = () => {
                         detail: adminDiscountEvent,
                     })
                 );
+                // Admin discount status updates are reflected directly in page state;
+                // suppress foreground popup to avoid overlap/noise in booking stages.
+                return;
             }
+
+            setNotification(buildNotificationMessage(payload));
+            setShowNotification(true);
         });
 
         return () => unsubscribe();
