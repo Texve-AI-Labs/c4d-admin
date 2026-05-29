@@ -331,6 +331,26 @@ const Booking = (props) => {
         return () => window.removeEventListener('focus', onFocusSync);
     }, [quoteMeta?.quoteRef, quoteMeta?.adminDiscount?.status, quoteDetails?.adminDiscount?.status, syncAdminDiscountStatus]);
 
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const onAdminDiscountStatus = (event) => {
+            const detail = event?.detail || {};
+            const status = String(detail?.status || '').toUpperCase();
+            if (status !== 'APPROVED' && status !== 'AUTO_APPROVED') return;
+
+            const eventQuoteRef = normalizeQuoteRef(detail?.quoteRef || '');
+            const currentQuoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || '');
+            if (eventQuoteRef && currentQuoteRef && eventQuoteRef !== currentQuoteRef) return;
+
+            const targetQuoteRef = eventQuoteRef || currentQuoteRef;
+            if (!targetQuoteRef) return;
+            syncAdminDiscountStatus(targetQuoteRef);
+        };
+
+        window.addEventListener('admin-discount-status', onAdminDiscountStatus);
+        return () => window.removeEventListener('admin-discount-status', onAdminDiscountStatus);
+    }, [quoteMeta?.quoteRef, syncAdminDiscountStatus]);
+
     useEffect(() => () => {
         if (approvedStatusSyncTimerRef.current) {
             clearTimeout(approvedStatusSyncTimerRef.current);
