@@ -95,7 +95,7 @@ const FcmToast = () => {
     if (!showNotification || !portalRoot) return null;
 
     return createPortal(
-        <div className="w-72 bg-violet-100 shadow-lg rounded-lg fixed top-5 right-5 z-[99999] pointer-events-auto">
+        <div className="w-[calc(100vw-1rem)] sm:w-80 max-w-sm bg-violet-100 shadow-lg rounded-lg fixed bottom-4 right-2 sm:right-4 z-[99999] pointer-events-auto">
             <div className="flex items-center p-3">
                 <CheckCircleIcon className="h-6 w-6 text-green-600 mr-2" />
                 <div>
