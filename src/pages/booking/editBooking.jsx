@@ -2104,7 +2104,7 @@ const getQuoteOutstationDetails = async (values) => {
                                     disabled={!dirty || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
                                                 className='my-6 mx-2'
                                             >
-                                    Confirm Booking
+                                    Continue
                                             </Button>
                                         </div>
                                     </>}
@@ -2535,7 +2535,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     disabled={!(values.pickupAddress && values.dropAddress) || isButtonDisabled}
                                                     className='my-6 mx-2'
                                                 >
-                                        Confirm Booking
+                                        Continue
                                                 </Button>
                                             </div>
                                         </>
@@ -2892,7 +2892,7 @@ const getQuoteOutstationDetails = async (values) => {
                                     disabled={!dirty || !isValid || (!values.pickupAddress && !values.dropAddress)}
                                             className='my-6 mx-2'
                                         >
-                                    Confirm Booking
+                                    Continue
                                         </Button>
                                     </div>}
                                 </>
