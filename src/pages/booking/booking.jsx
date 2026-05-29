@@ -331,6 +331,26 @@ const Booking = (props) => {
         return () => window.removeEventListener('focus', onFocusSync);
     }, [quoteMeta?.quoteRef, quoteMeta?.adminDiscount?.status, quoteDetails?.adminDiscount?.status, syncAdminDiscountStatus]);
 
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const onAdminDiscountStatus = (event) => {
+            const detail = event?.detail || {};
+            const status = String(detail?.status || '').toUpperCase();
+            if (status !== 'APPROVED' && status !== 'AUTO_APPROVED') return;
+
+            const eventQuoteRef = normalizeQuoteRef(detail?.quoteRef || '');
+            const currentQuoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || '');
+            if (eventQuoteRef && currentQuoteRef && eventQuoteRef !== currentQuoteRef) return;
+
+            const targetQuoteRef = eventQuoteRef || currentQuoteRef;
+            if (!targetQuoteRef) return;
+            syncAdminDiscountStatus(targetQuoteRef);
+        };
+
+        window.addEventListener('admin-discount-status', onAdminDiscountStatus);
+        return () => window.removeEventListener('admin-discount-status', onAdminDiscountStatus);
+    }, [quoteMeta?.quoteRef, syncAdminDiscountStatus]);
+
     useEffect(() => () => {
         if (approvedStatusSyncTimerRef.current) {
             clearTimeout(approvedStatusSyncTimerRef.current);
@@ -1814,11 +1834,17 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
     };
 const cancelChargeApplicable = quoteDetails?.cancelCharge?.cancelChargeApplicable === true;
 const cancelChargeAmount = cancelChargeApplicable ? Number(quoteDetails?.cancelCharge?.cancelCharge || 0) : 0;
+const systemDiscountAmount = Number(quoteDetails?.discount?.amount || 0);
+const systemDiscountPercentage = Number(quoteDetails?.discount?.percentage || 0);
+const useSystemAmountDiscount = systemDiscountAmount > 0;
+const useSystemPercentDiscount = !useSystemAmountDiscount && systemDiscountPercentage > 0;
 const totalestimationfare =
-  Number(quoteDetails?.discount?.amount || 0) > 0
-    ? Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.discount?.amount || 0)
-    : Number(quoteDetails?.amount?.estimatedPrice || 0) -
-      (Number(quoteDetails?.amount?.estimatedPrice || 0) * (Number(quoteDetails?.discount?.percentage || 0) / 100));
+  useSystemAmountDiscount
+    ? Number(quoteDetails?.amount?.estimatedPrice || 0) - systemDiscountAmount
+    : useSystemPercentDiscount
+      ? Number(quoteDetails?.amount?.estimatedPrice || 0) -
+        (Number(quoteDetails?.amount?.estimatedPrice || 0) * (systemDiscountPercentage / 100))
+      : Number(quoteDetails?.amount?.estimatedPrice || 0);
 
 const adminDiscountAmountOnTotal =
   String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase() === 'PERCENTAGE'
@@ -1832,7 +1858,7 @@ const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     : `₹ ${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))}`;
 const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetails?.adminDiscount?.status || '').toUpperCase());
 const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
-const hasNormalDiscount = Number(quoteDetails?.discount?.amount || 0) > 0 || Number(quoteDetails?.discount?.percentage || 0) > 0;
+const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
 const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
 const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
     ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
@@ -3341,7 +3367,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                                             </div>                                                                
                                                                                     </>
                                                                                 )}
-                                                                        {quoteDetails.discount?.percentage > 0 && <>
+                                                                        {useSystemPercentDiscount && <>
                                                                         <div className='flex justify-between'>
                                                                           <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                                 <Typography>
@@ -3356,7 +3382,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                         </div>
 
                                                                         </>}
-                                                                            {quoteDetails.discount?.amount > 0 && (
+                                                                            {useSystemAmountDiscount && (
                                                                             <>                   
                                                                             <div className='flex justify-between'>                                                             
                                                                                     <Typography color="gray" variant="h6">Discount Applied:</Typography>
@@ -3471,7 +3497,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                                     </div>
                                                                                     </>
                                                                                 )}
-                                                                            {quoteDetails.discount?.percentage > 0 && (
+                                                                            {useSystemPercentDiscount && (
                                                                                 <>
                                                                                     <div className="flex justify-between">
                                                                                         <Typography color="gray" variant="h6">Discount Applied:</Typography>
@@ -3508,7 +3534,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                                     </div>
                                                                                 </>
                                                                             )}
-                                                                        {quoteDetails.discount?.amount > 0 && (
+                                                                        {useSystemAmountDiscount && (
                                                                             <>       
                                                                             <div className='flex justify-between'>                                                                        
                                                                                     <Typography color="gray" variant="h6">Discount Applied:</Typography>
@@ -3750,7 +3776,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                             
                                                                             </>)                                                                                
                                                                             }
-                                                                        {quoteDetails.discount?.percentage > 0 && <>
+                                                                        {useSystemPercentDiscount && <>
                                                                         
                                                                           <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                                 <Typography>
@@ -3762,7 +3788,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                             </Typography>
 
                                                                         </>}
-                                                                        {quoteDetails.discount?.amount > 0 && (
+                                                                        {useSystemAmountDiscount && (
                                                                             <>                                                                                
                                                                                     <Typography color="gray" variant="h6">Discount Applied:</Typography>
                                                                                     <Typography>

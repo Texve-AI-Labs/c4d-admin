@@ -96,10 +96,14 @@ const EditBooking = (props) => {
     const quoteEstimatedPrice = Number(quoteDetails?.value?.estimatedPrice || quoteDetails?.amount?.estimatedPrice || 0);
     const systemDiscountAmount = Number(quoteDetails?.discount?.amount || 0);
     const systemDiscountPercentage = Number(quoteDetails?.discount?.percentage || 0);
+    const useSystemAmountDiscount = systemDiscountAmount > 0;
+    const useSystemPercentDiscount = !useSystemAmountDiscount && systemDiscountPercentage > 0;
     const totalEstimatedFareAfterSystemDiscount =
-        systemDiscountAmount > 0
+        useSystemAmountDiscount
             ? quoteEstimatedPrice - systemDiscountAmount
-            : quoteEstimatedPrice - (quoteEstimatedPrice * (systemDiscountPercentage / 100));
+            : useSystemPercentDiscount
+                ? quoteEstimatedPrice - (quoteEstimatedPrice * (systemDiscountPercentage / 100))
+                : quoteEstimatedPrice;
     const adminDiscountType = String(effectiveAdminDiscount?.discountType || '').toUpperCase();
     const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(effectiveAdminDiscount?.status || '').toUpperCase());
     const adminDiscountAmountOnTotal =
@@ -113,7 +117,7 @@ const EditBooking = (props) => {
             : `₹ ${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))}`;
     const isQuoteAdminDiscountPending = String(effectiveAdminDiscount?.status || '').toUpperCase() === 'PENDING';
     const isAdminDiscountPresent = Number(effectiveAdminDiscount?.discountValue || 0) > 0;
-    const hasNormalDiscount = systemDiscountAmount > 0;
+    const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
     const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
     const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
         ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge)" : "Final Total (After Discounts)")
@@ -255,6 +259,26 @@ const EditBooking = (props) => {
         quoteMeta?.adminDiscount?.status,
         syncAdminDiscountStatus,
     ]);
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const onAdminDiscountStatus = (event) => {
+            const detail = event?.detail || {};
+            const status = String(detail?.status || '').toUpperCase();
+            if (status !== 'APPROVED' && status !== 'AUTO_APPROVED') return;
+
+            const eventQuoteRef = normalizeQuoteRef(detail?.quoteRef || '');
+            const currentQuoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || '');
+            if (eventQuoteRef && currentQuoteRef && eventQuoteRef !== currentQuoteRef) return;
+
+            const targetQuoteRef = eventQuoteRef || currentQuoteRef;
+            if (!targetQuoteRef) return;
+            syncAdminDiscountStatus(targetQuoteRef);
+        };
+
+        window.addEventListener('admin-discount-status', onAdminDiscountStatus);
+        return () => window.removeEventListener('admin-discount-status', onAdminDiscountStatus);
+    }, [bookingData?.quoteRef, quoteDetails?.quoteRef, quoteMeta?.quoteRef, syncAdminDiscountStatus]);
 
     useEffect(() => () => {
         if (approvedStatusSyncTimerRef.current) {
@@ -1983,7 +2007,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </>
                                                                     )}
                                                                  </>)}
-                                                                {quoteDetails.discount?.percentage > 0 && <>
+                                                                {useSystemPercentDiscount && <>
 
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                     <Typography>
@@ -1992,11 +2016,11 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                     <Typography className='font-roboto-medium text-lg text-gray-900'>
                                                                         {/* {quoteDetails.discount?.percentage} % - ₹ {quoteDetails.amount?.estimatedPrice} */}
-                                                                        ₹ {Math.round(quoteDetails.amount?.estimatedPrice) - (quoteDetails.amount?.estimatedPrice * quoteDetails.discount?.percentage / 100)}
+                                                                        ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                     </Typography>
 
                                                                 </>}
-                                                                {quoteDetails.discount?.amount > 0 && <>
+                                                                {useSystemAmountDiscount && <>
 
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                     <Typography>
@@ -2004,7 +2028,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     </Typography>
                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                     <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                        ₹ {Math.round(quoteDetails.amount?.estimatedPrice) - Math.round(quoteDetails.discount?.amount)}
+                                                                        ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                     </Typography>
 
                                                                 </>}
@@ -2435,7 +2459,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </Typography>
                                                                     </>
                                                                 )}
-                                                                {quoteDetails.discount?.percentage > 0 && (
+                                                                {useSystemPercentDiscount && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                         <Typography>
@@ -2443,18 +2467,18 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </Typography>
                                                                         <Typography color="gray" variant="h6">Total Estimated Fare</Typography>
                                                                         <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                            ₹ {Math.round((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) - ((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) * quoteDetails.discount?.percentage / 100))}
+                                                                            ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                         </Typography>
                                                                     </>
                                                                 )}
-                                                                {quoteDetails.discount?.amount > 0 && <>
+                                                                {useSystemAmountDiscount && <>
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                     <Typography>
                                                                         ₹ {Math.round(quoteDetails.discount?.amount)}
                                                                     </Typography>
                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                     <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                        ₹ {Math.round((quoteDetails.amount?.estimatedPrice) - (quoteDetails.discount?.amount))}
+                                                                        ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                     </Typography>
                                                                 </>}
                                                                 {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
@@ -2791,7 +2815,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             ₹ {Math.round(quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice)}
                                                         </Typography>
                                                         </>)}
-                                                        {quoteDetails.discount?.percentage > 0 && (
+                                                        {useSystemPercentDiscount && (
                                                             <>
                                                                 <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                 <Typography>
@@ -2799,11 +2823,11 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 </Typography>
                                                                 <Typography color="gray" variant="h6">Total Estimated Fare</Typography>
                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                    ₹ {Math.round((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) - ((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) * quoteDetails.discount?.percentage / 100))}
+                                                                    ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                 </Typography>
                                                             </>
                                                         )}
-                                                        {quoteDetails.discount?.amount > 0 && <>
+                                                        {useSystemAmountDiscount && <>
 
                                                             <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                             <Typography>
@@ -2811,7 +2835,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             </Typography>
                                                             <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                             <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                ₹ {Math.round((quoteDetails.amount?.estimatedPrice) - (quoteDetails.discount?.amount))}
+                                                                ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                             </Typography>
 
                                                         </>}
