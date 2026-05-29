@@ -770,9 +770,10 @@ const handleSaveDriverEndLocation = async () => {
             : totalEstimatedFareAfterSystemDiscount;
     const finalEstimatedFareAfterDiscountsWithCancelCharge =
         finalEstimatedFareAfterDiscounts + quoteCancelChargeAmount;
-    const lastAdminStatusToastKeyRef = React.useRef("");
-    const shouldShowAdminDiscountStatusToast =
-        [BOOKING_STATUS.QUOTED, BOOKING_STATUS.CONFIRMED].includes(bookingDetails?.status);
+        //hidden swal.fire
+    // const lastAdminStatusToastKeyRef = React.useRef("");
+    // const shouldShowAdminDiscountStatusToast =
+    //     [BOOKING_STATUS.QUOTED, BOOKING_STATUS.CONFIRMED].includes(bookingDetails?.status);
 
     const fetchAdminDiscountStatus = async ({ silent = false } = {}) => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
@@ -808,20 +809,21 @@ const handleSaveDriverEndLocation = async () => {
                 }));
             }
 
-            if (shouldShowAdminDiscountStatusToast && latestStatus && latestStatus !== visibleAdminDiscountStatus) {
-                const statusKey = `${quoteRef || bookingId}:${latestStatus}`;
-                if (lastAdminStatusToastKeyRef.current !== statusKey) {
-                    lastAdminStatusToastKeyRef.current = statusKey;
-                    Swal.fire({
-                        toast: true,
-                        position: "top-end",
-                        icon: ADMIN_EFFECTIVE_STATUSES.includes(latestStatus) ? "success" : latestStatus === "REJECTED" ? "error" : "info",
-                        title: `Admin discount status: ${latestStatus}`,
-                        showConfirmButton: false,
-                        timer: 1800,
-                    });
-                }
-            }
+            // Intentionally suppress admin discount status toast.
+            // if (shouldShowAdminDiscountStatusToast && latestStatus && latestStatus !== visibleAdminDiscountStatus) {
+            //     const statusKey = `${quoteRef || bookingId}:${latestStatus}`;
+            //     if (lastAdminStatusToastKeyRef.current !== statusKey) {
+            //         lastAdminStatusToastKeyRef.current = statusKey;
+            //         Swal.fire({
+            //             toast: true,
+            //             position: "top-end",
+            //             icon: ADMIN_EFFECTIVE_STATUSES.includes(latestStatus) ? "success" : latestStatus === "REJECTED" ? "error" : "info",
+            //             title: `Admin discount status: ${latestStatus}`,
+            //             showConfirmButton: false,
+            //             timer: 1800,
+            //         });
+            //     }
+            // }
         } catch (err) {
             console.error("Failed to refresh admin discount status:", err);
             if (!silent) {
