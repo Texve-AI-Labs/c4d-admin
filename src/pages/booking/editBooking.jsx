@@ -265,7 +265,7 @@ const EditBooking = (props) => {
         const onAdminDiscountStatus = (event) => {
             const detail = event?.detail || {};
             const status = String(detail?.status || '').toUpperCase();
-            if (status !== 'APPROVED' && status !== 'AUTO_APPROVED') return;
+            if (status !== 'APPROVED' && status !== 'AUTO_APPROVED' && status !== 'REJECTED') return;
 
             const eventQuoteRef = normalizeQuoteRef(detail?.quoteRef || '');
             const currentQuoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || '');

@@ -24,7 +24,12 @@ const parseAdminDiscountEvent = (payload = {}) => {
     const quoteRef = String(parsed?.quoteRef || data?.quoteRef || "").trim();
     const discountId = parsed?.discountId || data?.discountId || "";
 
-    if (type !== "ADMIN_DISCOUNT_APPROVED" && status !== "APPROVED" && status !== "AUTO_APPROVED") {
+    const isApprovedEvent =
+        type === "ADMIN_DISCOUNT_APPROVED" || status === "APPROVED" || status === "AUTO_APPROVED";
+    const isRejectedEvent =
+        type === "ADMIN_DISCOUNT_REJECTED" || status === "REJECTED";
+
+    if (!isApprovedEvent && !isRejectedEvent) {
         return null;
     }
 
