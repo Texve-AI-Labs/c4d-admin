@@ -11,7 +11,7 @@ const showAdminDiscountToast = (icon, title, text = '') => {
     title,
     text,
     showConfirmButton: false,
-    timer: 1500,
+    timer: 5000,
     timerProgressBar: true,
   });
 };
