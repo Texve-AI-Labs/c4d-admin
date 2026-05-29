@@ -62,7 +62,12 @@ const VehicleInfoSection = ({
     });
     const rawCarType = String(section?.rawValues?.carType || "").toUpperCase();
     if (["MINI", "SUV", "MUV", "SEDAN"].includes(rawCarType)) {
-      map["Car Type"] = rawCarType === "SEDAN" ? "Sedan" : rawCarType;
+      map["Car Type"] =
+        rawCarType === "MINI"
+          ? "Mini"
+          : rawCarType === "SEDAN"
+            ? "Sedan"
+            : rawCarType;
     }
     if (isTravels) {
       map["Insurance Expiry Date"] = section?.rawValues?.insurance
@@ -292,7 +297,7 @@ const VehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              <option value="MINI">Mini</option>
+                              <option value="Mini">Mini</option>
                               <option value="SUV">SUV</option>
                               <option value="MUV">MUV</option>
                               <option value="Sedan">Sedan</option>
