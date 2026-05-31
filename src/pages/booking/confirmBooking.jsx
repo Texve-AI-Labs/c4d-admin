@@ -859,6 +859,48 @@ const handleSaveDriverEndLocation = async () => {
         0
     );
     const inclTaxLabel = gstAmount > 0 ? " (Incl Tax)" : "";
+    const premiumDetailsSource =
+        bookingDetails?.premiumDetails ||
+        bookingDetails?.value?.premiumDetails ||
+        bookingDetails?.estimatedFareBreakdown?.premiumDetails ||
+        {};
+    const premiumFareCandidate = Number(
+        premiumDetailsSource?.premiumFare ??
+        bookingDetails?.premiumFare ??
+        bookingDetails?.value?.premiumFare ??
+        0
+    );
+    const normalPriceCandidate = Number(
+        bookingDetails?.normalPrice ??
+        bookingDetails?.value?.normalPrice ??
+        bookingDetails?.estimatedFareBreakdown?.normalPrice ??
+        bookingDetails?.value?.estimatedPrice ??
+        bookingDetails?.estimatedFareBreakdown?.total ??
+        0
+    );
+    const explicitPremiumSurcharge = Number(premiumDetailsSource?.surcharge || 0);
+    const isPremiumBooking =
+        normalizeBoolean(bookingDetails?.isPremiumService) ||
+        normalizeBoolean(bookingDetails?.isPremiumFare) ||
+        normalizeBoolean(bookingDetails?.value?.isPremiumService) ||
+        normalizeBoolean(bookingDetails?.value?.isPremiumFare) ||
+        explicitPremiumSurcharge > 0 ||
+        premiumFareCandidate > 0;
+    const isNearlyEqual = (a, b) => Math.abs(Number(a || 0) - Number(b || 0)) < 0.01;
+    const getSafePremiumEstimatedPrice = (baseValue) => {
+        const base = Number(baseValue || 0);
+        if (!isPremiumBooking) return base;
+
+        // Authoritative premium value from backend.
+        if (premiumFareCandidate > 0) return premiumFareCandidate;
+
+        // Only add surcharge if the current base clearly looks like non-premium.
+        if (explicitPremiumSurcharge > 0 && normalPriceCandidate > 0 && isNearlyEqual(base, normalPriceCandidate)) {
+            return base + explicitPremiumSurcharge;
+        }
+
+        return base;
+    };
 
 
 const totalExtraCharges = 
@@ -1021,7 +1063,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {getServiceTypeLabel()}
                             </span>
                         )}
-                        {bookingDetails?.isPremiumService && (
+                        {isPremiumBooking && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-600 text-white">
                                 Premium
                             </span>
@@ -1849,7 +1891,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     
                              <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.estimatedFareBreakdown?.total) || (bookingDetails?.value?.fareBreakdown?.total || 0).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">₹ {getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}</span>
                                 </div>
                                 
                                 )}
@@ -1857,7 +1899,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Estimated Price:</span>
                                 <span className="text-gray-900 font-medium">
-                                    {bookingDetails?.estimatedFareBreakdown?.total ? `₹${bookingDetails?.estimatedFareBreakdown?.total}` : 'N/A'}
+                                    {bookingDetails?.estimatedFareBreakdown?.total ? `₹${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || 0)).toFixed(2)}` : 'N/A'}
                                 </span>
                             </div>
                             }
@@ -1865,7 +1907,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     
                              <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.estimatedFareBreakdown?.total) || (bookingDetails?.value?.fareBreakdown?.total || 0).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">₹ {getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}</span>
                                 </div>
                                 
                                 )}
@@ -1934,9 +1976,9 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                     {/* <div className="grid sm:grid-cols-2 gap-4 text-sm">                                         */}
                             {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'PARCEL' && shouldShowQuotePricing(bookingDetails)  && (                            
                                 <div className="flex flex-col-2 gap-2">
-                                    <span className="text-gray-500 font-semibold">Estimated Price check{inclTaxLabel}:</span>
+                                    <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
-                                        ₹ {Number(
+                                        ₹ {getSafePremiumEstimatedPrice(Number(
                                             (bookingDetails?.serviceType === 'DRIVER' && bookingDetails?.packageType === 'Local'
                                                 ? bookingDetails?.carType === "Sedan"
                                                     ? bookingDetails?.Package?.price
@@ -1956,7 +1998,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                                     : bookingDetails?.Package?.price 
                                                     )
                                                     : bookingDetails?.value?.fareBreakdown?.total) || 0
-                                        ).toFixed(2)}
+                                        )).toFixed(2)}
                                     </span>
                                 </div>
                             )}
@@ -1966,7 +2008,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
-                                        ₹ {Number(bookingDetails?.estimatedFareBreakdown?.total) || (bookingDetails?.value?.fareBreakdown?.total || 0).toFixed(2)}
+                                        ₹ {getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}
                                     </span>
                                 </div>
                             )}
