@@ -1068,6 +1068,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 Premium
                             </span>
                         )}
+
+                        {bookingDetails?.returnTripId > 0  && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
+                                Return Trip
+                            </span>
+                        )}
                     
                     </div>           
                     {showDetails && (
