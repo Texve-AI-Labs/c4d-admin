@@ -1187,6 +1187,18 @@ const getQuoteOutstationDetails = async (values) => {
                                             </Field>
                                             <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
                                         </div>
+                                        {quoteMeta?.quoteRef && (
+                                            <div className="mt-3 p-3 rounded-xl border border-gray-200 bg-white">
+                                                <Typography className="text-sm text-gray-800">
+                                                    Quote Ref: <span className="font-semibold">{quoteMeta.quoteRef}</span>
+                                                </Typography>
+                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.status && (
+                                                    <Typography className="text-sm text-gray-800 mt-1">
+                                                        Admin Discount Status: <span className="font-semibold">{quoteMeta.adminDiscount.status}</span>
+                                                    </Typography>
+                                                )}
+                                            </div>
+                                        )}
                                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && values.serviceType && (
                                             <div className="mt-4 p-3 border border-gray-300 rounded-xl bg-white">
                                                 <Typography variant="h6" className="mb-2">Admin Discount (Optional)</Typography>
@@ -1229,18 +1241,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                 {isExistingAdminDiscountLocked && (
                                                     <Typography className="text-xs text-gray-600 mt-2">
                                                         Admin discount is already approved and locked for editing.
-                                                    </Typography>
-                                                )}
-                                            </div>
-                                        )}
-                                        {quoteMeta?.quoteRef && (
-                                            <div className="mt-3 p-3 rounded-xl border border-gray-200 bg-white">
-                                                <Typography className="text-sm text-gray-800">
-                                                    Quote Ref: <span className="font-semibold">{quoteMeta.quoteRef}</span>
-                                                </Typography>
-                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.status && (
-                                                    <Typography className="text-sm text-gray-800 mt-1">
-                                                        Admin Discount Status: <span className="font-semibold">{quoteMeta.adminDiscount.status}</span>
                                                     </Typography>
                                                 )}
                                             </div>

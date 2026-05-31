@@ -3258,6 +3258,45 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                         />
                                                         <ErrorMessage name="landmark" component="div" className="text-red-500 text-sm" />
                                                     </div>
+                                                    {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && values.serviceType && quoteDetails && (
+                                                        <div className="mt-4 p-3 border border-gray-300 rounded-xl bg-white">
+                                                            <Typography variant="h6" className="mb-2">Admin Discount (Optional)</Typography>
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-black-700">Discount Type</label>
+                                                                    <Field
+                                                                        as="select"
+                                                                        name="adminDiscountType"
+                                                                        className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                                    >
+                                                                        <option value="">Select type</option>
+                                                                        <option value="PERCENTAGE">PERCENTAGE</option>
+                                                                        {/* <option value="AMOUNT">AMOUNT</option> */}
+                                                                    </Field>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-black-700">Discount Value</label>
+                                                                    <Field
+                                                                        type="number"
+                                                                        name="adminDiscountValue"
+                                                                        min="0"
+                                                                        step="0.01"
+                                                                        className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                                        placeholder="Enter value"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-sm font-medium text-black-700">Remarks</label>
+                                                                    <Field
+                                                                        type="text"
+                                                                        name="adminDiscountRemarks"
+                                                                        className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                                        placeholder="Optional remarks"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     </>
                                                 )}
                                                 </div>
@@ -4073,45 +4112,6 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                     </div>
                                                 )}
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
-                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && values.serviceType && (
-                                                    <div className="mt-4 p-3 border border-gray-300 rounded-xl bg-white">
-                                                        <Typography variant="h6" className="mb-2">Admin Discount (Optional)</Typography>
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-black-700">Discount Type</label>
-                                                                <Field
-                                                                    as="select"
-                                                                    name="adminDiscountType"
-                                                                    className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                >
-                                                                    <option value="">Select type</option>
-                                                                    <option value="PERCENTAGE">PERCENTAGE</option>
-                                                                    {/* <option value="AMOUNT">AMOUNT</option> */}
-                                                                </Field>
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-black-700">Discount Value</label>
-                                                                <Field
-                                                                    type="number"
-                                                                    name="adminDiscountValue"
-                                                                    min="0"
-                                                                    step="0.01"
-                                                                    className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                    placeholder="Enter value"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-black-700">Remarks</label>
-                                                                <Field
-                                                                    type="text"
-                                                                    name="adminDiscountRemarks"
-                                                                    className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                    placeholder="Optional remarks"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
 
                                                 {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') && values.dropLocation && values.pickupLocation && values.driverPickUpLocation && values.driverEndLocation && values.sourceType && values.carType &&
                                                     <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>

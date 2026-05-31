@@ -2029,7 +2029,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Total{inclTaxLabel}:</span>
                                                 <span className="text-gray-900 font-medium">
-                                                    ₹ {Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0).toFixed(2)}
+                                                    ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0))}
                                                 </span>
                                             </div>
                                         )}
@@ -2060,7 +2060,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                  {bookingDetails?.paymentDetails?.details?.walletAmountUsed !== 0 && bookingDetails?.paymentDetails?.details?.walletAmountUsed &&
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Wallet Points Used:</span>
-                                        <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0).toFixed(2)}</span>
+                                        <span className="text-gray-900 font-medium">₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0))}</span>
                                     </div>
                                 }
 
@@ -2104,7 +2104,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {finalPaymentPirces.discountAmount > 0 && (
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Customer Discount Applied:</span>
-                                        <span className="text-gray-900 font-medium">₹ {Number(finalPaymentPirces.discountAmount || 0).toFixed(2)}</span>
+                                        <span className="text-gray-900 font-medium">₹ {Math.round(Number(finalPaymentPirces.discountAmount || 0))}</span>
                                     </div>
                                 )}
                             </div>
@@ -2140,12 +2140,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </div>
                                                 <div className="flex flex-col-2 gap-2">
                                                     <span className="text-gray-500 font-semibold">Admin Discount Amount:</span>
-                                                    <span className="text-gray-900 font-medium">₹ {Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}</span>
+                                                    <span className="text-gray-900 font-medium">₹ {Math.round(Number(adminDiscountAmountOnQuoteTotal || 0))}</span>
                                                 </div>
                                                 <div className="flex flex-col-2 gap-2">
                                                     <span className="text-gray-500 font-semibold">Final Estimated Fare:</span>
                                                     <span className="text-gray-900 font-medium">
-                                                        ₹ {Math.max(0, Number(finalEstimatedFareAfterAdminDiscount || 0)).toFixed(2)}
+                                                        ₹ {Math.max(0, Math.round(Number(finalEstimatedFareAfterAdminDiscount || 0)))}
                                                     </span>
                                                 </div>
                                             </>
@@ -2154,7 +2154,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Cancel Charge Added:</span>
                                                 <span className="text-gray-900 font-medium">
-                                                    ₹ {Number(quoteCancelChargeAmount || 0).toFixed(2)} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
+                                                    ₹ {Math.round(Number(quoteCancelChargeAmount || 0))} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
                                                 </span>
                                             </div>
                                         )}
@@ -2440,7 +2440,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     Extra Distance ({Number(bookingDetails.finalFareBreakdown.extraKm.kilometers).toFixed(1)} km × ₹{bookingDetails.finalFareBreakdown.extraKm.rate})
                                     </Typography>
                                     <Typography className="text-sm text-black font-medium">
-                                    ₹ {Number(bookingDetails.finalFareBreakdown.extraKm.charge || 0).toFixed(2)}
+                                    ₹ {Math.round(Number(bookingDetails.finalFareBreakdown.extraKm.charge || 0))}
                                     </Typography>
                                 </div>
                                 )}
@@ -2583,7 +2583,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {finalPaymentPirces.amountBeforeGst > 0 && (
                                     <div className="flex justify-between  my-1">
                                         <span className="text-sm text-gray-500 font-semibold">Amount Before Gst:</span>
-                                        <span className="text-sm text-gray-900 font-medium">₹ {Number(finalPaymentPirces.amountBeforeGst || 0).toFixed(2)}</span>
+                                        <span className="text-sm text-gray-900 font-medium">₹ {Math.round(Number(finalPaymentPirces.amountBeforeGst || 0))}</span>
                                     </div>
                                 )}
                                 {bookingDetails?.finalFareBreakdown?.primeLocation?.charge > 0 && 
@@ -2601,13 +2601,13 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {bookingDetails?.paymentDetails?.details?.discountAmount !== 0 && bookingDetails?.paymentDetails?.details?.discountAmount &&
                                     <div className="flex justify-between  my-1">
                                         <Typography color="red" variant="sm" className="text-sm text-gray-500 font-semibold">Discount Applied:</Typography>
-                                        <Typography color="red" variant="sm" className="text-sm text-black font-medium"> - ₹ {Number(bookingDetails?.paymentDetails?.details?.discountAmount || 0).toFixed(2)}</Typography>
+                                        <Typography color="red" variant="sm" className="text-sm text-black font-medium"> - ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.discountAmount || 0))}</Typography>
                                     </div>
                                 }
                                 {bookingDetails?.paymentDetails?.details?.walletAmountUsed !== 0 && bookingDetails?.paymentDetails?.details?.walletAmountUsed &&
                                     <div className="flex justify-between  my-1">
                                         <Typography variant="sm" className="text-sm  text-red-400 font-semibold">Wallet Points Used:</Typography>
-                                        <Typography variant="sm" className="text-sm  text-red-400">- ₹ {Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0).toFixed(2)}</Typography>
+                                        <Typography variant="sm" className="text-sm  text-red-400">- ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0))}</Typography>
                                     </div>
                                 }
                                 {(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW || quoteCancelChargeApplicable) && (
@@ -2624,7 +2624,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </div>
                                                 <div className="flex justify-between my-1">
                                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Amount:</Typography>
-                                                    <Typography className="text-sm text-black font-medium">₹ {Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}</Typography>
+                                                    <Typography className="text-sm text-black font-medium">₹ {Math.round(Number(adminDiscountAmountOnQuoteTotal || 0))}</Typography>
                                                 </div>
                                             </>
                                         )}
@@ -2632,7 +2632,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             <div className="flex justify-between my-1">
                                                 <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Cancel Charge Added:</Typography>
                                                 <Typography className="text-sm text-black font-medium">
-                                                    ₹ {Number(quoteCancelChargeAmount || 0).toFixed(2)} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
+                                                    ₹ {Math.round(Number(quoteCancelChargeAmount || 0))} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
                                                 </Typography>
                                             </div>
                                         )}
@@ -2648,7 +2648,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {bookingDetails?.paymentDetails?.details?.gstAmount > 0 && (
                                 <div className="flex justify-between  my-1">
                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">TAX:</Typography>
-                                    <Typography className="text-sm text-black font-medium">₹ {Number(bookingDetails?.paymentDetails?.details?.gstAmount || 0).toFixed(2)}</Typography>
+                                    <Typography className="text-sm text-black font-medium">₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.gstAmount || 0))}</Typography>
                                 </div>
                                 )}
 
@@ -2656,7 +2656,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {bookingDetails?.paymentDetails?.details?.amountAfterGst !== 0 && bookingDetails?.paymentDetails?.details?.amountAfterGst &&
                                     <div className="flex justify-between  my-1">
                                         <span className="text-gray-500 font-semibold">Total:</span>
-                                        <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0).toFixed(2)}</span>
+                                        <span className="text-gray-900 font-medium">₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0))}</span>
                                     </div>
                                 }
                                  {/* <hr className="my-2" /> */}
