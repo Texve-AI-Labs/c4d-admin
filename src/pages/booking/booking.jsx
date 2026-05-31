@@ -220,6 +220,15 @@ const Booking = (props) => {
   }, []);
 
   useEffect(() => {
+    if (!isOpen) {
+      setBookingStage(0);
+      setBookingView(false);
+      setEditBookingView(false);
+      setEditBooking(undefined);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const storedSearchId = sessionStorage.getItem(bookingSearchKey) || sessionStorage.getItem(LEGACY_BOOKING_SEARCH_KEY) || '';
     if (storedSearchId) {
       sessionStorage.setItem(bookingSearchKey, storedSearchId);
@@ -946,7 +955,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
 };
 
     const onParcelSubmitHandler = async (values, formikBag) => {
-        if (isButtonDisabled) return;
+        if (isButtonDisabled) return false;
         setIsButtonDisabled(true);
 
         try {
@@ -976,8 +985,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             }
 
             if (!pickupAddress || !dropAddress || !pickupLocation || !dropLocation) {
-                formikBag.setErrors({ submit: 'Please enter valid sender and receiver address.' });
-                return;
+                formikBag.setStatus({ submit: 'Please enter valid sender and receiver address.' });
+                return false;
             }
 
             const parcelValues = {  
@@ -992,7 +1001,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (!zoneCheckUp.success || !zoneCheckUp.serviceArea) {
                 const errorText = "Selected locations are outside the service area. Please choose a nearby pickup or drop location to continue.";
                 setZoneErrorModal({ show: true, text: errorText, title: zoneCheckUp.title || 'Oops!' });
-                return;
+                return false;
             }
 
             const actualZone = zoneCheckUp.serviceArea.name || serviceAreas.find(area => area.id === parseInt(selectedAreaId))?.name || '';
@@ -1073,19 +1082,22 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 formikBag.resetForm();
                 setSelectedCustomer(0);
                 setSearchBookingId('');
+                return true;
             } else {
-                formikBag.setErrors({ submit: data?.message || 'Failed to create parcel booking. Please try again.' });
+                formikBag.setStatus({ submit: data?.message || 'Failed to create parcel booking. Please try again.' });
+                return false;
             }
         } catch (error) {
             console.error('Error in onParcelSubmitHandler:', error);
-            formikBag.setErrors({ submit: 'An error occurred while creating parcel booking. Please try again.' });
+            formikBag.setStatus({ submit: 'An error occurred while creating parcel booking. Please try again.' });
+            return false;
         } finally {
             setIsButtonDisabled(false);
             formikBag.setSubmitting(false);
     }
 };
     const onRideSubmitHandler = async (values, formikBag) => {
-        if (isButtonDisabled) return;
+        if (isButtonDisabled) return false;
         setIsButtonDisabled(true);
 
         try {
@@ -1099,7 +1111,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                     const errorText = "Selected locations are outside the service area. Please choose a nearby pickup or drop location to continue.";
                     setZoneErrorModal({ show: true, text: errorText, title: zoneCheckUp.title || 'Oops!' });
                     setIsButtonDisabled(false);
-                    return;
+                    return false;
                 }
                 actualZone = zoneCheckUp.serviceArea.name;
                 // console.log("third Zone",actualZone)
@@ -1110,11 +1122,11 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (!checkDistance) {
                 setDistanceExceedModal(true);
                 setIsButtonDisabled(false);
-                return;
+                return false;
             } else if (!checkCityLimit) {
                 setCityLimitExceedModal(true);
                 setIsButtonDisabled(false);
-                return;
+                return false;
             }
 
         const bookingData = {
@@ -1164,20 +1176,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             formikBag.resetForm();
             setSelectedCustomer(0);
             setSearchBookingId('');
+            return true;
         } else {
             // console.log("Error in creating new booking");
-            formikBag.setErrors({ submit: 'Failed to create booking. Please try again.' });
+            formikBag.setStatus({ submit: data?.message || 'Failed to create booking. Please try again.' });
+            return false;
         }
     } catch (err) {
         // console.log("ERROR IN RIDES BOOKING", err);
-        formikBag.setErrors({ submit: 'An error occurred. Please try again.' });
+        formikBag.setStatus({ submit: 'An error occurred. Please try again.' });
+        return false;
     } finally {
         setIsButtonDisabled(false);
         formikBag.setSubmitting(false); // Ensure form is not stuck in submitting state
     }
 };
 
- const onAutoSubmitHandler = async (values) => {
+ const onAutoSubmitHandler = async (values, formikBag) => {
        let zoneCheckUp = await zoneCheckUpFun(values)
             let actualZone = '';
             if (values.serviceType === 'AUTO') {
@@ -1185,7 +1200,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                     const errorText = "Selected locations are outside the service area. Please choose a nearby pickup or drop location to continue.";
                     setZoneErrorModal({ show: true, text: errorText, title: zoneCheckUp.title || 'Oops!' });
                     setIsButtonDisabled(false);
-                    return;
+                    return false;
                 }
                 actualZone = zoneCheckUp.serviceArea.name;
                 // console.log("third Zone",actualZone)
@@ -1235,22 +1250,32 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 setIsOpen(false);
                 setBookingData(data?.data);
                 await sendQuotationLogs(data?.data?.id, loggedInUserId);
-            } 
+                return true;
+            } else {
+                formikBag?.setStatus({
+                    submit: data?.message || 'Failed to create AUTO booking. Please check pickup date/time and try again.',
+                });
+                return false;
+            }
         } catch (error) {
             console.error('Error in onAutoSubmitHandler:', {
                 error: error.message,
                 stack: error.stack,
             });
-            alert('An error occurred while creating the AUTO booking. Please try again.');
+            formikBag?.setStatus({
+                submit: 'An error occurred while creating AUTO booking. Please try again.',
+            });
+            return false;
         }
     };
 
-   const onSubmitHandler = async (values) => {
+   const onSubmitHandler = async (values, formikBag) => {
     const serviceTypeMap = {
         'RENTAL_DROP_TAXI': 'RENTAL',
         'RENTAL_HOURLY_PACKAGE': 'RENTAL'
     };
     const mappedServiceType = serviceTypeMap[values.serviceType] || values.serviceType;
+    try {
 
     const isRentalOutstationRoundTrip =
         values.serviceType === 'RENTAL' &&
@@ -1266,7 +1291,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             setDropTaxiDistanceExceedModal(true); // Show the DropTaxi distance exceed modal
             }
             setIsButtonDisabled(false);
-            return;
+            return false;
         }
     }
 
@@ -1403,6 +1428,21 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 setRange({ startDate: new Date(values?.fromDate), endDate: new Date(values?.toDate) })
                 setBookingData(data?.data);
             }
+            return true;
+        } else {
+            const submitMessage = data?.message || 'Failed to create booking. Please check pickup date/time and try again.';
+            formikBag?.setStatus({
+                submit: submitMessage,
+            });
+            return false;
+        }
+    } catch (error) {
+        console.error('Error in onSubmitHandler:', error);
+        const submitMessage = 'An error occurred while creating booking. Please try again.';
+        formikBag?.setStatus({
+            submit: submitMessage,
+        });
+        return false;
         }
     };
 
@@ -2029,15 +2069,19 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                         validate={Utils.validateRideAndReturnDateTime}
                                         onSubmit={async (values, formikBag) => {
                                             setFormikActions(formikBag); // Store Formik actions for modals
+                                            let submitSuccess = false;
                                             if (values.submitType === "rides") {
-                                                await onRideSubmitHandler(values, formikBag);
+                                                submitSuccess = await onRideSubmitHandler(values, formikBag);
                                             } 
                                             else if (values.submitType === "auto") {
-                                                await onAutoSubmitHandler(values, formikBag);
+                                                submitSuccess = await onAutoSubmitHandler(values, formikBag);
                                             } else if (values.submitType === "parcel") {
-                                                await onParcelSubmitHandler(values, formikBag);
+                                                submitSuccess = await onParcelSubmitHandler(values, formikBag);
                                             } else {
-                                                await onSubmitHandler(values);
+                                                submitSuccess = await onSubmitHandler(values, formikBag);
+                                            }
+                                            if (!submitSuccess) {
+                                                return;
                                             }
                                             setLoading(true);
                                             setRange({});
@@ -2051,11 +2095,48 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                         validateOnMount={true}
                                         enableReinitialize={true}
                                     >
-                                       {({ handleSubmit, values, setFieldValue, isValid, dirty, handleChange, errors }) => {
+                                       {({ handleSubmit, values, setFieldValue, isValid, dirty, handleChange, errors, status }) => {
                                             const getCurrentPremiumOptions = () => {
                                                 return premiumServicesMap[values?.serviceType] || [];
                                             };
-                                                
+                                            const {
+                                                driverContinueDisabled,
+                                                ridesContinueDisabled,
+                                                autoContinueDisabled,
+                                                parcelContinueDisabled,
+                                                rentalContinueDisabled,
+                                                hourlyContinueDisabled,
+                                                dropTaxiContinueDisabled,
+                                            } = Utils.getBookingContinueDisabledStates({
+                                                values,
+                                                dirty,
+                                                isValid,
+                                                quoteDetails,
+                                                selectedCustomer,
+                                                isButtonDisabled,
+                                                validationCheckForDriver,
+                                                validationCheckForDriverRental,
+                                            });
+                                            const showContinueHint =
+                                                (values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH') ? driverContinueDisabled :
+                                                values.serviceType === 'RIDES' ? ridesContinueDisabled :
+                                                values.serviceType === 'AUTO' ? autoContinueDisabled :
+                                                values.serviceType === 'PARCEL' ? parcelContinueDisabled :
+                                                values.serviceType === 'RENTAL' ? rentalContinueDisabled :
+                                                values.serviceType === 'RENTAL_HOURLY_PACKAGE' ? hourlyContinueDisabled :
+                                                values.serviceType === 'RENTAL_DROP_TAXI' ? dropTaxiContinueDisabled :
+                                                false;
+                                            const continueHint = Utils.getBookingContinueHint({
+                                                values,
+                                                errors,
+                                                dirty,
+                                                isValid,
+                                                quoteDetails,
+                                                selectedCustomer,
+                                                isButtonDisabled,
+                                                validationCheckForDriver,
+                                                validationCheckForDriverRental,
+                                            });
                                                     useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
@@ -2466,7 +2547,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                 disabled={bookingStage === 1}
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                                 value={values.rideDate && values.rideTime  ? `${values.rideDate}T${values.rideTime}` : ''}
-                                                                min={`${moment().format('YYYY-MM-DD')}T00:00`}
+                                                                min={Utils.getNowDateTimeLocalInput()}
                                                                  onClick={(e) => {
                                                                 if (e.target.showPicker) e.target.showPicker();
                                                                     }}
@@ -4212,6 +4293,21 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                         )}
                                                     </div>
                                                 )}
+                                                {(status?.submit || errors?.submit) && (
+                                                    <div className="mt-3 p-3 rounded-xl border border-red-200 bg-red-50">
+                                                        <Typography className="text-sm text-red-700">
+                                                            {status?.submit || errors?.submit}
+                                                        </Typography>
+                                                    </div>
+                                                )}
+                                                {showContinueHint && continueHint && (
+                                                    <div className="mt-3 p-3 rounded-xl border border-amber-200 bg-amber-50">
+                                                        <Typography className="text-sm text-amber-800">
+                                                            {continueHint}
+                                                        </Typography>
+                                                    </div>
+                                                )}
+                                                
 
                                                 {bookingStage === 0 && (values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH') && <Button
                                                     fullWidth
@@ -4220,19 +4316,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                         setFieldValue("submitType", "default");
                                                         handleSubmit();
                                                     }}
-                                                    disabled={
-                                                        !dirty ||
-                                                        !isValid ||
-                                                        !values.rideDate ||
-                                                        !values.packageTypeSelected ||
-                                                        !values.pickupAddress ||
-                                                        !values.sourceType ||
-                                                        (values.packageTypeSelected === "Local" && !values.packageSelected) ||
-                                                        (values.packageTypeSelected === "Outstation" && !values.dropAddress) ||
-                                                        (values.packageTypeSelected === "Local" && values.tripType === "Round Trip" && !values.dropAddress) ||
-                                                        validationCheckForDriver(values) ||
-                                                        !quoteDetails
-                                                    }
+                                                    disabled={driverContinueDisabled}
                                                     className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                 >
                                                     Continue
@@ -4245,7 +4329,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                             setFieldValue("submitType", "rides");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!(values.pickupAddress && values.dropAddress && selectedCustomer&& quoteDetails )||isButtonDisabled}
+                                                        disabled={ridesContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4259,7 +4343,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                             setFieldValue("submitType", "auto");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!(values.pickupAddress && values.dropAddress && selectedCustomer && values.sourceType && quoteDetails)}
+                                                        disabled={autoContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4273,7 +4357,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                             setFieldValue("submitType", "parcel");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!(values.pickupAddress && values.dropAddress && values.sourceType && values.customerId?.id && values.rideTime && quoteDetails) || isButtonDisabled}
+                                                        disabled={parcelContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4288,20 +4372,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={
-                                                                !dirty ||
-                                                                !isValid ||
-                                                                !values.rideDate ||
-                                                                !values.packageTypeSelected ||
-                                                                !values.sourceType ||
-                                                                !values.pickupAddress ||
-                                                                (values.packageTypeSelected === "Local" && !values.packageSelected) ||
-                                                                (values.packageTypeSelected === "Outstation" && !values.dropAddress) ||
-                                                                (values.packageTypeSelected === "Outstation" && !values.acType) ||
-                                                                (values.packageTypeSelected === "Outstation" && values.tripType === "Round Trip" && !values.toDate) ||
-                                                                validationCheckForDriverRental(values) ||
-                                                                !quoteDetails
-                                                            }
+                                                            disabled={rentalContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
@@ -4315,15 +4386,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={
-                                                                !dirty ||
-                                                                !isValid ||
-                                                                !values.rideDate ||
-                                                                !values.sourceType ||
-                                                                !values.packageSelected ||
-                                                                !values.pickupAddress ||
-                                                        !quoteDetails
-                                                            }
+                                                            disabled={hourlyContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
@@ -4337,16 +4400,7 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={
-                                                                !dirty ||
-                                                                !isValid ||
-                                                                !values.rideDate ||
-                                                                !values.sourceType ||
-                                                                !values.acType ||
-                                                                !values.pickupAddress ||
-                                                                !values.dropAddress ||
-                                                                !quoteDetails
-                                                            }
+                                                            disabled={dropTaxiContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue

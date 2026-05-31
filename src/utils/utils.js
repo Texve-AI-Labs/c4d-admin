@@ -568,7 +568,172 @@ export const Utils = {
         if (hasReturnField && rangeErrors.endDate) {
             errors.returnDateTime = rangeErrors.endDate;
         }
- 
+
         return errors;
+    },
+
+    getFirstValidationError: (errObj) => {
+        if (!errObj) return '';
+        if (typeof errObj === 'string') return errObj;
+        if (Array.isArray(errObj)) {
+            for (const item of errObj) {
+                const found = Utils.getFirstValidationError(item);
+                if (found) return found;
+            }
+            return '';
+        }
+        for (const key of Object.keys(errObj)) {
+            const found = Utils.getFirstValidationError(errObj[key]);
+            if (found) return found;
+        }
+        return '';
+    },
+
+    getBookingContinueDisabledStates: ({
+        values,
+        dirty,
+        isValid,
+        quoteDetails,
+        selectedCustomer,
+        isButtonDisabled,
+        validationCheckForDriver,
+        validationCheckForDriverRental,
+    }) => {
+        const driverContinueDisabled =
+            !dirty ||
+            !isValid ||
+            !values.rideDate ||
+            !values.packageTypeSelected ||
+            !values.pickupAddress ||
+            !values.sourceType ||
+            (values.packageTypeSelected === "Local" && !values.packageSelected) ||
+            (values.packageTypeSelected === "Outstation" && !values.dropAddress) ||
+            (values.packageTypeSelected === "Local" && values.tripType === "Round Trip" && !values.dropAddress) ||
+            validationCheckForDriver(values) ||
+            !quoteDetails;
+        const ridesContinueDisabled =
+            !(values.pickupAddress && values.dropAddress && selectedCustomer && quoteDetails) ||
+            isButtonDisabled;
+        const autoContinueDisabled =
+            !(values.pickupAddress && values.dropAddress && selectedCustomer && values.sourceType && quoteDetails);
+        const parcelContinueDisabled =
+            !(values.pickupAddress && values.dropAddress && values.sourceType && values.customerId?.id && values.rideTime && quoteDetails) ||
+            isButtonDisabled;
+        const rentalContinueDisabled =
+            !dirty ||
+            !isValid ||
+            !values.rideDate ||
+            !values.packageTypeSelected ||
+            !values.sourceType ||
+            !values.pickupAddress ||
+            (values.packageTypeSelected === "Local" && !values.packageSelected) ||
+            (values.packageTypeSelected === "Outstation" && !values.dropAddress) ||
+            (values.packageTypeSelected === "Outstation" && !values.acType) ||
+            (values.packageTypeSelected === "Outstation" && values.tripType === "Round Trip" && !values.toDate) ||
+            validationCheckForDriverRental(values) ||
+            !quoteDetails;
+        const hourlyContinueDisabled =
+            !dirty ||
+            !isValid ||
+            !values.rideDate ||
+            !values.sourceType ||
+            !values.packageSelected ||
+            !values.pickupAddress ||
+            !quoteDetails;
+        const dropTaxiContinueDisabled =
+            !dirty ||
+            !isValid ||
+            !values.rideDate ||
+            !values.sourceType ||
+            !values.acType ||
+            !values.pickupAddress ||
+            !values.dropAddress ||
+            !quoteDetails;
+
+        return {
+            driverContinueDisabled,
+            ridesContinueDisabled,
+            autoContinueDisabled,
+            parcelContinueDisabled,
+            rentalContinueDisabled,
+            hourlyContinueDisabled,
+            dropTaxiContinueDisabled,
+        };
+    },
+
+    getBookingContinueHint: ({
+        values,
+        errors,
+        dirty,
+        isValid,
+        quoteDetails,
+        selectedCustomer,
+        isButtonDisabled,
+        validationCheckForDriver,
+        validationCheckForDriverRental,
+    }) => {
+        const firstValidationError = Utils.getFirstValidationError(errors);
+        if (firstValidationError) return firstValidationError;
+        if (errors?.rideDate) return errors.rideDate;
+        if (errors?.toDate) return errors.toDate;
+        if (values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.packageTypeSelected) return 'Please select package type.';
+            if (values.packageTypeSelected === "Local" && !values.packageSelected) return 'Please choose a package.';
+            if (!values.pickupAddress) return 'Please select pickup location.';
+            if (values.packageTypeSelected === "Outstation" && !values.dropAddress) return 'Please select drop location.';
+            if (validationCheckForDriver(values)) return 'Please complete required driver trip fields.';
+            if (!isValid) return 'Please correct form validation errors.';
+            if (!dirty) return 'Please update at least one field.';
+        } else if (values.serviceType === 'RIDES') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!selectedCustomer) return 'Please select customer.';
+            if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
+            if (isButtonDisabled) return 'Selected locations are outside the service area. Please choose valid pickup/drop locations.';
+        } else if (values.serviceType === 'AUTO') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!selectedCustomer) return 'Please select customer.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
+        } else if (values.serviceType === 'PARCEL') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!values.customerId?.id) return 'Please select customer.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.rideTime) return 'Please select pickup date & time.';
+            if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
+            if (isButtonDisabled) return 'Selected locations are outside the service area. Please choose valid pickup/drop locations.';
+        } else if (values.serviceType === 'RENTAL') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.packageTypeSelected) return 'Please select package type.';
+            if (values.packageTypeSelected === "Local" && !values.packageSelected) return 'Please choose a package.';
+            if (values.packageTypeSelected === "Outstation" && !values.acType) return 'Please select AC type.';
+            if (values.packageTypeSelected === "Outstation" && !values.dropAddress) return 'Please select drop location.';
+            if (values.packageTypeSelected === "Outstation" && values.tripType === "Round Trip" && !values.toDate) return 'Please select return date & time.';
+            if (!values.pickupAddress) return 'Please select pickup location.';
+            if (validationCheckForDriverRental(values)) return 'Please complete required rental trip fields.';
+            if (!isValid) return 'Please correct form validation errors.';
+            if (!dirty) return 'Please update at least one field.';
+        } else if (values.serviceType === 'RENTAL_HOURLY_PACKAGE') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.packageSelected) return 'Please choose a package.';
+            if (!values.pickupAddress) return 'Please select pickup location.';
+            if (!isValid) return 'Please correct form validation errors.';
+            if (!dirty) return 'Please update at least one field.';
+        } else if (values.serviceType === 'RENTAL_DROP_TAXI') {
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.acType) return 'Please select AC type.';
+            if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
+            if (!isValid) return 'Please correct form validation errors.';
+            if (!dirty) return 'Please update at least one field.';
+        }
+        return 'Please complete required fields to continue.';
     },
 };
