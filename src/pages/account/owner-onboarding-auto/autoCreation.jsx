@@ -8,12 +8,36 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import AccountCreationTabs from './AccountCreationTabs';
 import LocationInput from './LocationInput';
 
+const AutoCreation = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id } = useParams();
+  const [ownerAddressSuggestions, setOwnerAddressSuggestions] = useState([]);
+  const [accountInfo, setAccountInfo] = useState(null);
+
+  const accountId = location?.state?.accountId || id || '';
+  const ownerName = location?.state?.ownerName || accountInfo?.name || '';
+  const vehicleDocuments = Array.isArray(location?.state?.vehicleDocuments) ? location.state.vehicleDocuments : [];
+  const vehicleDocTypes = [...new Set(vehicleDocuments.map((doc) => String(doc?.docType || doc?.type || "").toUpperCase()).filter(Boolean))];
+  const [selectedVehicleDocType, setSelectedVehicleDocType] = useState("");
+
+  useEffect(() => {
+    if (vehicleDocTypes.length > 0 && !selectedVehicleDocType) {
+      setSelectedVehicleDocType(vehicleDocTypes[0]);
+    }
+  }, [vehicleDocTypes, selectedVehicleDocType]);
+
+  const hasDocSelection = vehicleDocTypes.length > 0;
+  const normalizedSelectedVehicleDocType = String(selectedVehicleDocType || "").toUpperCase();
+  const showInsuranceField = hasDocSelection ? normalizedSelectedVehicleDocType.includes("INSURANCE") : true;
+  const showAutoNumberField = hasDocSelection ? normalizedSelectedVehicleDocType.includes("VEHICLE_PHOTO") : true;
+
 const validationSchema = Yup.object({
   name: Yup.string().required('Vehicle Name is required'),
   ownerName: Yup.string().required('Owner Name is required'),
-  autoNumber: Yup.string().required('Auto Number is required'),
+  autoNumber: showAutoNumberField ? Yup.string().required('Auto Number is required') : Yup.string(),
   address: Yup.string().required('Address is required'),
-  insurance: Yup.string().required('Insurance Expiry Date is required'),
+  insurance: showInsuranceField ? Yup.string().required('Insurance Expiry Date is required') : Yup.string(),
   autoType: Yup.string().required('Auto Type is required'),
   seater: Yup.string().required('Seater is required'),
   modelYear: Yup.string()
@@ -25,16 +49,6 @@ const validationSchema = Yup.object({
       return parseInt(value, 10) <= currentYear;
     }),
 });
-
-const AutoCreation = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { id } = useParams();
-  const [ownerAddressSuggestions, setOwnerAddressSuggestions] = useState([]);
-  const [accountInfo, setAccountInfo] = useState(null);
-
-  const accountId = location?.state?.accountId || id || '';
-  const ownerName = location?.state?.ownerName || accountInfo?.name || '';
 
   useEffect(() => {
     const fetchAccount = async () => {
@@ -119,6 +133,27 @@ const AutoCreation = () => {
       >
         {({ handleChange }) => (
           <Form className="space-y-4">
+            {vehicleDocTypes.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-gray-700">Vehicle Document Type</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {vehicleDocTypes.map((docType) => (
+                    <button
+                      key={docType}
+                      type="button"
+                      onClick={() => setSelectedVehicleDocType(docType)}
+                      className={`px-3 py-1 rounded-md text-xs border ${
+                        selectedVehicleDocType === docType
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white text-blue-gray-800 border-gray-300"
+                      }`}
+                    >
+                      {docType}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="text-sm font-medium text-gray-700">Vehicle Name</label>
@@ -132,11 +167,13 @@ const AutoCreation = () => {
                 <ErrorMessage name="ownerName" component="div" className="text-red-500 text-sm" />
               </div>
 
+              {showAutoNumberField && (
               <div>
                 <label htmlFor="autoNumber" className="text-sm font-medium text-gray-700">Auto Number</label>
                 <Field name="autoNumber" maxLength={10} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="autoNumber" component="div" className="text-red-500 text-sm" />
               </div>
+              )}
 
               <div>
                 <label htmlFor="address" className="text-sm font-medium text-gray-700">Address</label>
@@ -154,11 +191,13 @@ const AutoCreation = () => {
                 <ErrorMessage name="address" component="div" className="text-red-500 text-sm" />
               </div>
 
+              {showInsuranceField && (
               <div>
                 <label htmlFor="insurance" className="text-sm font-medium text-gray-700">Insurance Expiry Date</label>
                 <Field type="date" name="insurance" className="p-2 w-full border-2 rounded-md border-gray-300 shadow-sm" min={currentDate()} />
                 <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
               </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Auto Type</label>
