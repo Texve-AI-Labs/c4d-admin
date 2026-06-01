@@ -154,7 +154,7 @@ function SkipLogs() {
             <table className="w-full min-w-[1200px] table-auto">
               <thead>
                 <tr className={`border-b text-left ${ColorStyles.bgColor}`}>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Created Date</th>
+                  <th className="px-4 py-3 text-sm font-semibold text-white">Watch Date & Time</th>
                   <th className="px-4 py-3 text-sm font-semibold text-white">User Type</th>
                   {/* <th className="px-4 py-3 text-sm font-semibold">User ID</th> */}
                   <th className="px-4 py-3 text-sm font-semibold text-white">Platform</th>
@@ -162,7 +162,7 @@ function SkipLogs() {
                   <th className="px-4 py-3 text-sm font-semibold text-white">Screen</th>
                   <th className="px-4 py-3 text-sm font-semibold text-white">Component Type</th>
                   <th className="px-4 py-3 text-sm font-semibold text-white">Component Key</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Skip Action</th>
+                  {/* <th className="px-4 py-3 text-sm font-semibold text-white">Skip Action</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -177,7 +177,7 @@ function SkipLogs() {
                       <td className="px-4 py-3 text-sm">{item?.screen || "-"}</td>
                       <td className="px-4 py-3 text-sm">{item?.componentType || "-"}</td>
                       <td className="px-4 py-3 text-sm">{item?.componentKey || "-"}</td>
-                      <td className="px-4 py-3 text-sm">{item?.skipAction || "-"}</td>
+                      {/* <td className="px-4 py-3 text-sm">{item?.skipAction || "-"}</td> */}
                     </tr>
                   ))
                 ) : (
@@ -193,9 +193,31 @@ function SkipLogs() {
         </CardBody>
       </Card>
 
+      {rows.length > 0 && (
       <div className="mt-2 flex flex-col items-center gap-2">        
-        <div className="flex flex-wrap justify-center">{generatePageButtons()}</div>
+        <div className="flex flex-wrap items-center justify-center">
+            <Button
+              size="sm"
+              variant="text"
+              disabled={pagination.currentPage === 1 || loading}
+              onClick={() => handlePageChange(pagination.currentPage - 1)}
+              className="mx-1"
+            >
+              {"<"}
+            </Button>
+            {generatePageButtons()}
+            <Button
+              size="sm"
+              variant="text"
+              disabled={pagination.currentPage === pagination.totalPages || loading}
+              onClick={() => handlePageChange(pagination.currentPage + 1)}
+              className="mx-1"
+            >
+              {">"}
+            </Button>
+          </div>
       </div>
+      )}
     </div>
   );
 }

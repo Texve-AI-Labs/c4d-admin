@@ -270,6 +270,7 @@ const VehicleDocuments = () => {
                 type: account?.type || "Auto",
                 accountId,
                 fromDetails: true,
+                vehicleDocuments: vehicleDocsData,
               },
             });
           }}

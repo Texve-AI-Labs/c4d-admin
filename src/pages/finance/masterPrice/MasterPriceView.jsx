@@ -98,7 +98,16 @@ export function MasterPriceView() {
                 }
             } else if (selectedServiceType === 'RIDES') {
                 const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
-                setRidesData(data?.data);
+                if (data?.success) {
+                    const filteredData = zone
+                        ? data?.data.filter(item => item.zone === zone)
+                        : data?.data;
+                    // console.log("FILTERED DATA", filteredData);
+                    setRidesData(filteredData || []);
+                    // console.log("RIDES DATA", filteredData || []);
+                } else {
+                    setRidesData([]);
+                }
             }
             else if(selectedServiceType === 'AUTO') {
                 const data = await ApiRequestUtils.get(API_ROUTES.AUTO_PACKAGE_LIST,{

@@ -299,12 +299,31 @@ const AccountOnboardingDetails = () => {
 
   const validateAddressForm = () => {
     const nextErrors = {};
-    if (!String(addressForm.address || "").trim()) nextErrors.address = "Current Address is required";
-    if (!String(addressForm.street || "").trim()) nextErrors.street = "Street Name is required";
-    if (!String(addressForm.thaluk || "").trim()) nextErrors.thaluk = "Thaluk is required";
-    if (!String(addressForm.district || "").trim()) nextErrors.district = "District is required";
-    if (!String(addressForm.state || "").trim()) nextErrors.state = "State is required";
-    if (!/^\d{6}$/.test(String(addressForm.pincode || "").trim())) nextErrors.pincode = "Pincode must be exactly 6 digits";
+    const address = String(addressForm.address || "").trim();
+    const street = String(addressForm.street || "").trim();
+    const thaluk = String(addressForm.thaluk || "").trim();
+    const district = String(addressForm.district || "").trim();
+    const state = String(addressForm.state || "").trim();
+    const pincode = String(addressForm.pincode || "").trim();
+
+    if (!address) nextErrors.address = "Current Address is required";
+    else if (address.length < 5) nextErrors.address = "Current Address must be at least 5 characters";
+
+    if (!street) nextErrors.street = "Street Name is required";
+    else if (street.length < 2) nextErrors.street = "Street Name must be at least 2 characters";
+
+    if (!thaluk) nextErrors.thaluk = "Thaluk is required";
+    else if (!THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk)) nextErrors.thaluk = "Please select a valid Thaluk";
+
+    if (!district) nextErrors.district = "District is required";
+    else if (district.length < 2) nextErrors.district = "District must be at least 2 characters";
+
+    if (!state) nextErrors.state = "State is required";
+    else if (!STATE_LIST.some((item) => item.value === state || item.label === state)) nextErrors.state = "Please select a valid State";
+
+    if (!pincode) nextErrors.pincode = "Pincode is required";
+    else if (!/^\d{6}$/.test(pincode)) nextErrors.pincode = "Pincode must be exactly 6 digits";
+
     setAddressErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -342,6 +361,15 @@ const AccountOnboardingDetails = () => {
     } finally {
       setSavingAddress(false);
     }
+  };
+
+  const handleContinue = () => {
+    if (shouldShowPreviewAndAddress && !validateAddressForm()) {
+      const addressSection = document.getElementById("account-address-details");
+      if (addressSection) addressSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    navigate("/dashboard/vendors/account/owner-onboarding-bike");
   };
 
   const handleUploadDocument = async (event, row) => {
@@ -581,7 +609,7 @@ const AccountOnboardingDetails = () => {
           </table>
         </CardBody>
         {shouldShowPreviewAndAddress && previewableTypes.length > 0 && (
-            <div className="px-5 pb-4">
+            <div id="account-address-details" className="px-5 pb-4">
               <Typography className="text-sm font-medium text-gray-700 mb-2">Account Documents Preview</Typography>
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="lg:w-[26%] border border-blue-gray-100 rounded-lg overflow-hidden">
@@ -670,6 +698,14 @@ const AccountOnboardingDetails = () => {
                         state: parsed.state || prev.state || "",
                         pincode: parsed.pincode || prev.pincode || "",
                       }));
+                      setAddressErrors((prev) => ({
+                        ...prev,
+                        street: "",
+                        thaluk: "",
+                        district: "",
+                        state: "",
+                        pincode: "",
+                      }));
                     }}
                     className="mr-2"
                   />
@@ -731,7 +767,7 @@ const AccountOnboardingDetails = () => {
                     id="pincode"
                     maxLength={6}
                     value={addressForm.pincode}
-                    onChange={(e) => handleAddressInputChange("pincode", e.target.value)}
+                    onChange={(e) => handleAddressInputChange("pincode", e.target.value.replace(/\D/g, ""))}
                     className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                   />
                   {addressErrors.pincode ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.pincode}</Typography> : null}
@@ -750,7 +786,7 @@ const AccountOnboardingDetails = () => {
       <div className="flex flex-row mt-4">
         <Button
           fullWidth
-          onClick={() => navigate("/dashboard/vendors/account/owner-onboarding-bike")}
+          onClick={handleContinue}
           // disabled={!canContinue}
           className={`my-2 mx-2 ${ColorStyles.backButton}`}
         >

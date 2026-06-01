@@ -69,28 +69,29 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect, type }) =
   );
 };
 
-const validationSchema = Yup.object({
-  address: Yup.string().nullable(),
-  modelYear: Yup.string()
-    .required('Year of Model is required')
-    .matches(/^\d{4}$/, 'Model Year must be a 4-digit year')
-    .test('is-valid-year', 'Model Year cannot be in the future', (value) => {
-      if (!value) return true;
-      const currentYear = new Date().getFullYear();
-      return parseInt(value, 10) <= currentYear;
-    }),
-});
-
 const ParcelCabAdd = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { ownerName = '', accountId = '' } = location?.state || {};
+  const vehicleDocuments = Array.isArray(location?.state?.vehicleDocuments) ? location.state.vehicleDocuments : [];
+  const vehicleDocTypes = [...new Set(vehicleDocuments.map((doc) => String(doc?.docType || doc?.type || "").toUpperCase()).filter(Boolean))];
+  const [selectedVehicleDocType, setSelectedVehicleDocType] = useState("");
 
   const [ownerAddressSuggestions, setOwnerAddressSuggestions] = useState([]);
   const [serviceAreas, setServiceAreas] = useState([]);
   const [zones, setZones] = useState([]);
   const [serviceAreaFetchError, setServiceAreaFetchError] = useState('');
   const [zoneFetchError, setZoneFetchError] = useState('');
+  const hasDocSelection = vehicleDocTypes.length > 0;
+  const normalizedSelectedVehicleDocType = String(selectedVehicleDocType || "").toUpperCase();
+  const showInsuranceField = hasDocSelection ? normalizedSelectedVehicleDocType.includes("INSURANCE") : true;
+  const showBikeNumberField = hasDocSelection ? normalizedSelectedVehicleDocType.includes("VEHICLE_PHOTO") : true;
+
+  useEffect(() => {
+    if (vehicleDocTypes.length > 0 && !selectedVehicleDocType) {
+      setSelectedVehicleDocType(vehicleDocTypes[0]);
+    }
+  }, [vehicleDocTypes, selectedVehicleDocType]);
 
   useEffect(() => {
     const fetchServiceAreas = async () => {
@@ -158,6 +159,19 @@ const ParcelCabAdd = () => {
   };
 
   const currentDate = () => new Date().toISOString().split('T')[0];
+  const validationSchema = Yup.object({
+    address: Yup.string().nullable(),
+    vehicleNumber: showBikeNumberField ? Yup.string().required('Bike Number is required') : Yup.string(),
+    insurance: showInsuranceField ? Yup.string().required('Insurance Expiry Date is required') : Yup.string(),
+    modelYear: Yup.string()
+      .required('Year of Model is required')
+      .matches(/^\d{4}$/, 'Model Year must be a 4-digit year')
+      .test('is-valid-year', 'Model Year cannot be in the future', (value) => {
+        if (!value) return true;
+        const currentYear = new Date().getFullYear();
+        return parseInt(value, 10) <= currentYear;
+      }),
+  });
 
   return (
     <div className="p-4 mx-auto">
@@ -230,6 +244,27 @@ const ParcelCabAdd = () => {
           );
           return (
             <Form className="space-y-4 shadow-lg p-6 rounded-lg bg-white">
+              {vehicleDocTypes.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Vehicle Document Type</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {vehicleDocTypes.map((docType) => (
+                      <button
+                        key={docType}
+                        type="button"
+                        onClick={() => setSelectedVehicleDocType(docType)}
+                        className={`px-3 py-1 rounded-md text-xs border ${
+                          selectedVehicleDocType === docType
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white text-blue-gray-800 border-gray-300"
+                        }`}
+                      >
+                        {docType}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 {/* Vehicle Name */}
                 <div>
@@ -246,17 +281,19 @@ const ParcelCabAdd = () => {
                   <Field name="ownerName" className="p-2 w-full border-2 rounded-md border-gray-300 shadow-sm" />
                   <ErrorMessage name="ownerName" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div>
-                  <label htmlFor="vehicleNumber" className="text-sm font-medium text-gray-700">
-                    Bike Number
-                  </label>
-                  <Field
-                    name="vehicleNumber"
-                    maxLength={10}
-                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
-                  />
-                  <ErrorMessage name="vehicleNumber" component="div" className="text-red-500 text-sm" />
-                </div>
+                {showBikeNumberField && (
+                  <div>
+                    <label htmlFor="vehicleNumber" className="text-sm font-medium text-gray-700">
+                      Bike Number
+                    </label>
+                    <Field
+                      name="vehicleNumber"
+                      maxLength={10}
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="vehicleNumber" component="div" className="text-red-500 text-sm" />
+                  </div>
+                )}
                 <div>
                   <label htmlFor="address" className="text-sm font-medium text-gray-700">
                     Address
@@ -274,18 +311,20 @@ const ParcelCabAdd = () => {
                   </Field>
                   <ErrorMessage name="address" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div>
-                  <label htmlFor="insurance" className="text-sm font-medium text-gray-700">
-                    Insurance Expiry Date
-                  </label>
-                  <Field
-                    type="date"
-                    name="insurance"
-                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
-                    min={currentDate()}
-                  />
-                  <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
-                </div>
+                {showInsuranceField && (
+                  <div>
+                    <label htmlFor="insurance" className="text-sm font-medium text-gray-700">
+                      Insurance Expiry Date
+                    </label>
+                    <Field
+                      type="date"
+                      name="insurance"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                      min={currentDate()}
+                    />
+                    <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
+                  </div>
+                )}
                 <div className='hidden'>
                   <label className="text-sm font-medium text-gray-700">Bike Type</label>
                   <div className="space-x-4 mt-1">

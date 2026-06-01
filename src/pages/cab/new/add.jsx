@@ -10,6 +10,19 @@ import { CAB_ADD_SCHEMA } from '@/utils/validations';
 import LocationInput from '@/pages/account/owner-onboarding-cab/LocationInput';
 import AccountCreationTabs from '@/pages/account/owner-onboarding-cab/AccountCreationTabs';
 
+const LuggageAutoSync = ({ carType, setFieldValue, getLuggageForCarType, luggageCapacityMap }) => {
+    useEffect(() => {
+        const normalizedCarType = String(carType || '').toLowerCase();
+        if (!normalizedCarType) {
+            setFieldValue('luggage', '', false);
+            return;
+        }
+        setFieldValue('luggage', getLuggageForCarType(normalizedCarType), false);
+    }, [carType, luggageCapacityMap, setFieldValue, getLuggageForCarType]);
+
+    return null;
+};
+
 const updatePricesForCarType = (carType, values, setFieldValue, packageDetails) => {
     if (values.packages.length === 0) return;
 
@@ -148,6 +161,8 @@ const CabAddNew = () => {
     const [accountRelatedDrivers, setAccountRelatedDrivers] = useState([]);
     const [carType, setCarType] = useState([]);
     const [selectedCarType, setSelectedCarType] = useState('');
+    const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
+    const [luggageCapacityError, setLuggageCapacityError] = useState("");
     const { id } = useParams();
     const navigate = useNavigate();
     const [showCarTypeError, setShowCarTypeError] = useState(false);
@@ -272,6 +287,34 @@ const CabAddNew = () => {
         }
     };
 
+    const getLuggageCapacityDetails = async () => {
+        try {
+            const zone = resolvedAccount?.district || "Vellore";
+            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+                serviceType: "RIDES",
+                zone,
+            });
+            if (data?.success) {
+                setLuggageCapacityMap(data?.luggageCapacity || {});
+                setLuggageCapacityError("");
+            } else {
+                setLuggageCapacityMap({});
+                setLuggageCapacityError("Unable to load luggage capacity for this zone.");
+            }
+        } catch (error) {
+            console.error("Failed to fetch luggage capacity:", error);
+            setLuggageCapacityMap({});
+            setLuggageCapacityError("Unable to load luggage capacity for this zone.");
+        }
+    };
+
+    const getLuggageForCarType = (carTypeValue) => {
+        const normalized = String(carTypeValue || "").toLowerCase();
+        const apiValue = Number(luggageCapacityMap?.[normalized]);
+        if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
+        return "";
+    };
+
 
     useEffect(() => {
         getCarTypes();
@@ -282,6 +325,27 @@ const CabAddNew = () => {
         }
     }, [effectiveAccountId]);
 
+    useEffect(() => {
+        getLuggageCapacityDetails();
+    }, [resolvedAccount?.district]);
+
+
+    const normalizedSelectedVehicleDocType = String(selectedVehicleDocType || "").toUpperCase();
+    const isInsuranceDocSelected = normalizedSelectedVehicleDocType.includes("INSURANCE");
+    const isVehiclePhotoDocSelected = normalizedSelectedVehicleDocType.includes("VEHICLE_PHOTO");
+    const isInsuranceDocRequired = vehicleDocTypes.some((docType) => String(docType || "").toUpperCase() === "INSURANCE");
+    const isVehiclePhotoDocRequired = vehicleDocTypes.some((docType) => String(docType || "").toUpperCase() === "VEHICLE_PHOTO");
+
+    const cabAddSchema = Yup.object({
+        ...CAB_ADD_SCHEMA.fields,
+        carNumber: isVehiclePhotoDocRequired
+            ? Yup.string()
+                .required('Car Number is required')
+            : Yup.string(),
+        insurance: isInsuranceDocRequired
+            ? Yup.string().required('Insurance Expiry Date is required')
+            : Yup.string(),
+    });
 
     const initialValues = {
         name: cabVal?.name || "",
@@ -299,6 +363,7 @@ const CabAddNew = () => {
         driverAddress: cabVal?.driverAddress || "",
         licenseNumber: cabVal?.driverLicense || "",
         carType: cabVal?.carType || "",
+        luggage: cabVal?.luggage || "",
         packages: cabVal?.packages || [],
         prices: [],
     };
@@ -526,12 +591,18 @@ const CabAddNew = () => {
             {/* <h2 className="text-2xl font-bold mb-4">Add New Cab New</h2> */}
             <Formik
                 initialValues={initialValues}
-                validationSchema={CAB_ADD_SCHEMA}
+                validationSchema={cabAddSchema}
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
-                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue, touched }) => (
+                {({ handleSubmit, values, errors, handleChange, setFieldValue, touched, validateForm, setTouched }) => (
                     <Form className="space-y-6">
+                        <LuggageAutoSync
+                            carType={values.carType}
+                            setFieldValue={setFieldValue}
+                            getLuggageForCarType={getLuggageForCarType}
+                            luggageCapacityMap={luggageCapacityMap}
+                        />
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="name" className="text-sm font-medium text-gray-700">Vehicle Name</label>
@@ -603,8 +674,13 @@ const CabAddNew = () => {
                             </div>
                             <div>
                                 <label htmlFor="luggage" className="text-sm font-medium text-gray-700">Luggage</label>
-                                <Field type="text" name="luggage" className="p-2 w-full border-2  rounded-md border-gray-300" maxLength={10} />
+                                <Field type="text" name="luggage" className="p-2 w-full border-2 rounded-md border-gray-300 bg-gray-50" maxLength={10} readOnly />
                                 <ErrorMessage name="luggage" component="div" className="text-red-500 text-sm" />
+                                {String(values.carType || "").trim() && !String(values.luggage || "").trim() && (
+                                    <div className="text-red-500 text-sm mt-1">
+                                        {luggageCapacityError || "Luggage capacity is not configured for this car type in selected zone."}
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <label htmlFor="modelYear" className="text-sm font-medium text-gray-700">Year of Model</label>
@@ -855,11 +931,13 @@ const CabAddNew = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4 w-full mt-2">
+                                                    {isVehiclePhotoDocSelected && (
                                                     <div>
                                                         <label htmlFor="carNumber" className="text-sm font-medium text-gray-700">Car Number</label>
                                                         <Field type="text" name="carNumber" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                                         <ErrorMessage name="carNumber" component="div" className="text-red-500 text-sm" />
                                                     </div>
+                                                    )}
                                                     <div>
                                                         <label htmlFor="address" className="text-sm font-medium text-gray-700">Address</label>
                                                         <Field name="address">
@@ -877,11 +955,13 @@ const CabAddNew = () => {
                                                     </div>
                                                 </div>
 
+                                                {isInsuranceDocSelected && (
                                                 <div className="grid grid-cols-1 gap-2 w-full mt-2">
                                                     <label htmlFor="insurance" className="text-sm font-medium text-gray-700">Insurance Expiry Date</label>
                                                     <Field type="date" name="insurance" className="p-2 w-full rounded-xl border-2 border-gray-300" min={currentDate()} />
                                                     <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
                                                 </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -940,8 +1020,22 @@ const CabAddNew = () => {
                             <Button
                                 fullWidth
                                 color="black"
-                                onClick={handleSubmit}
-                                disabled={!dirty || !isValid}
+                                onClick={async () => {
+                                    const formErrors = await validateForm();
+                                    if (Object.keys(formErrors || {}).length > 0) {
+                                        setTouched(
+                                            Object.keys(formErrors).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
+                                            true
+                                        );
+                                        if (formErrors.insurance && isInsuranceDocRequired) {
+                                            setSelectedVehicleDocType("INSURANCE");
+                                        } else if (formErrors.carNumber && isVehiclePhotoDocRequired) {
+                                            setSelectedVehicleDocType("VEHICLE_PHOTO");
+                                        }
+                                        return;
+                                    }
+                                    handleSubmit();
+                                }}
                                 className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                             >
                                 Continue

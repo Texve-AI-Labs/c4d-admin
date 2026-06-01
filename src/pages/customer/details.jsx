@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Formik, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
-import { Button } from '@material-tailwind/react';
+import { Button, Dialog } from '@material-tailwind/react';
 import { useNavigate, useParams } from "react-router-dom";
 import { StarIcon } from '@heroicons/react/24/solid';
 import CustomerWalletLog from '@/components/CustomerWalletLog';
 import CustomerBookingNotes from '@/components/CustomerBookingNotes';
 import CustomerCallsLog from '@/components/CustomerCallsLog';
+import ConfirmBooking from '@/pages/booking/confirmBooking';
 import moment from "moment";
 
 const CustomerDetails = () => {
@@ -23,6 +24,7 @@ const CustomerDetails = () => {
         itemsPerPage: 15,
     });
     const [activeTab, setActiveTab] = useState('profile');
+    const [selectedBooking, setSelectedBooking] = useState(null);
 
     const tabs = [
         { key: 'profile', label: 'Profile' },
@@ -153,6 +155,14 @@ const CustomerDetails = () => {
         return { label: paymentStatus || '-', className };
     };
 
+    const openBookingDetails = (trip = {}) => {
+        const bookingId = trip?.id || trip?.bookingId || trip?.Booking?.id;
+        if (!bookingId) return;
+
+        const customerId = trip?.customerId || trip?.Customer?.id || id || 0;
+        setSelectedBooking({ id: bookingId, customerId });
+    };
+
 
     return (
         <>
@@ -233,8 +243,8 @@ const CustomerDetails = () => {
                                             <thead className=" text-left bg-blue-600 text-white">
                                                 <tr>
                                                     <th className="p-2 border">Trip ID</th>
-                                                    <th className="p-2 border">End Date</th>
-                                                    <th className="p-2 border">End Time</th>
+                                                    <th className="p-2 border">End Date & Time</th>
+                                                    {/* <th className="p-2 border">End </th> */}
                                                     <th className="p-2 border">Driver Name</th>
                                                     <th className="p-2 border">Rating</th>
                                                     <th className="p-2 border">Comment</th>
@@ -250,9 +260,14 @@ const CustomerDetails = () => {
 
                                                         return (
                                                             <tr key={trip.id}>
-                                                                <td className="p-2 border">{trip.id}</td>
-                                                                <td className="p-2 border">{trip.endDate}</td>
-                                                                <td className="p-2 border">{trip.endTime}</td>
+                                                                <td className="p-2 border underline cursor-pointer text-primary" onClick={() => openBookingDetails(trip)}>{trip.bookingNumber}</td>
+                                                                <td className="p-2 border">
+                                                                    {trip.endDate || '-'} {(() => {
+                                                                        const parsedTime = moment(trip.endTime, ['HH:mm:ss', 'HH:mm', 'hh:mm A'], true);
+                                                                        return parsedTime.isValid() ? parsedTime.format('HH:mm A') : '-';
+                                                                    })()}
+                                                                </td>
+                                                                {/* <td className="p-2 border">{}</td> */}
                                                                 <td className="p-2 border">{driverName}</td>
                                                                 <td className="p-2 border flex">
                                                                     {rating !== null ? rating : '0'}
@@ -297,7 +312,7 @@ const CustomerDetails = () => {
                                                     {/* <th className="p-2 border">Package</th> */}
                                                     <th className="p-2 border">Booking Type</th>
                                                     {/* <th className="p-2 border">Bookings</th> */}
-                                                    <th className="p-2 border">Trip Date & Time</th>
+                                                    <th className="p-2 border">Start Date & Time</th>
                                                     <th className="p-2 border whitespace-normal">pickup Location</th>
                                                     <th className="p-2 border whitespace-normal">Drop Location</th>
                                                     <th className="p-2 border">Status</th>
@@ -314,7 +329,12 @@ const CustomerDetails = () => {
                                                         const paymentMeta = getPaymentStatusMeta(trip.paymentStatus);
                                                         return (
                                                             <tr key={trip.bookingId}>
-                                                                <td className="p-2 border">{trip.bookingNumber || '-'}</td>
+                                                                <td
+                                                                    className="p-2 border underline cursor-pointer text-primary"
+                                                                    onClick={() => openBookingDetails(trip)}
+                                                                >
+                                                                    {trip.bookingNumber || '-'}
+                                                                </td>
                                                                 {/* <td className="p-2 border">{trip.serviceType || '-'}</td> */}
                                                                 {/* <td className="p-2 border">{trip.packageType || '-'}</td> */}
                                                                 {/* <td className="p-2 border">{trip.bookingType || '-'}</td> */}
@@ -456,6 +476,30 @@ const CustomerDetails = () => {
                     Back
                 </Button>
             </div>
+            <Dialog
+                open={Boolean(selectedBooking)}
+                handler={() => setSelectedBooking(null)}
+                size="xl"
+                className="max-h-[80vh] overflow-y-auto bg-white"
+            >
+                {selectedBooking && (
+                    <div className="p-4">
+                        <div className="flex justify-end mb-2">
+                            <Button
+                                size="sm"
+                                className="px-3 py-1 bg-red-600 text-white"
+                                onClick={() => setSelectedBooking(null)}
+                            >
+                                X
+                            </Button>
+                        </div>
+                        <ConfirmBooking
+                            bookingData={selectedBooking}
+                            setIsOpen={() => setSelectedBooking(null)}
+                        />
+                    </div>
+                )}
+            </Dialog>
         </>
     );
 };

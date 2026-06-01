@@ -80,27 +80,47 @@ const AddBanner = () => {
     })),
   ];
 
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
+  const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
+
   const validationSchema = Yup.object().shape({
-    // status: Yup.boolean().required('Status is required'),
     type: Yup.string().required('Type is required'),
     image: Yup.mixed()
       .required('Image is required')
       .test('fileType', 'Only JPEG or PNG or GIF or AVIF or WEBP files are allowed', (value) =>
-        value ? ['image/jpeg', 'image/png','image/gif','image/avif','image/webp'].includes(value.type) : false
+        value ? ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'].includes(value.type) : false
       ),
-      fromDate: Yup.string().required('Start Date is required'),
-      toDate: Yup.string().required('End Date is required'),
-      zone: Yup.string().required('Zone is required'),
-      startTime: Yup.string().required('Start Time is required'),
-      endTime: Yup.string().required('End Time is required'),
+    fromDate: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('Start Date is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    toDate: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('End Date is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    zone: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('Zone is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    startTime: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('Start Time is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    endTime: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('End Time is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    driverType: Yup.string().when('type', {
+      is: (type) => type === 'INTRO_SLIDES_DRIVER' || type === 'TRAINING_VIDEO_DRIVER',
+      then: (schema) => schema.required('Driver Type is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
-
-  const noValidationTypes = new Set([
-    'NEW_CUSTOMER',
-    'INTRO_SLIDES',
-    'INTRO_SLIDES_DRIVER',
-    'TRAINING_VIDEO_DRIVER',
-  ]);
 
   const handleImageUpload = (file, setFieldValue) => {
     const validTypes = ['image/jpeg', 'image/png','image/gif','image/avif','image/webp',];
@@ -207,9 +227,7 @@ const AddBanner = () => {
 
       <Formik
         initialValues={initialValues}
-        validationSchema={(values) =>
-          noValidationTypes.has(values?.type) ? Yup.object().shape({}) : validationSchema
-        }
+        validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, values,setFieldValue }) => {
