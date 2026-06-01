@@ -59,22 +59,24 @@ export function CustomerView() {
   const fetchCustomers = async (page = 1, searchQuery = '', showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
+      const normalizedSearch = searchQuery.trim();
+      const isSearchMode = Boolean(normalizedSearch);
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ALL_CUSTOMERS,{
         page: page,
         limit: pagination.itemsPerPage,
-        search: searchQuery.trim(),
+        search: normalizedSearch,
         zone: zoneFilter === 'All' ? undefined : zoneFilter,
-        forSearch:false
+        forSearch: isSearchMode
       });
       if (data?.success) {
         setCustomers(data?.data || []);
         setPagination({
           currentPage: page,
-          totalPages:searchQuery.trim() ? 1 : data?.pagination?.totalPages || 1,
+          totalPages: data?.pagination?.totalPages || 1,
           totalItems: data?.pagination?.totalItems || 0,
           itemsPerPage: data?.pagination?.itemsPerPage || 10,
-          search: searchQuery.trim(),
-          forSearch:false,
+          search: normalizedSearch,
+          forSearch: isSearchMode,
         });
       }
     } catch (error) {
