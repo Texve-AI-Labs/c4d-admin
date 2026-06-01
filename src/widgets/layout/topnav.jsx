@@ -48,6 +48,7 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/driver-incentive") ||
     path.startsWith("/dashboard/vendors/notificationlist") ||
     path.startsWith("/dashboard/vendors/customernotificationlist") ||
+    path.startsWith("/dashboard/vendors/skip-logs") ||
     path.startsWith("/dashboard/vendors/drivernotificationlist") ||
     path.startsWith("/dashboard/user/bannerimgview") ||
     path.startsWith("/dashboard/user/bannerimg/add")
