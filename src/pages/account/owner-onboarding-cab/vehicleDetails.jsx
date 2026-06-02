@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Typography, Button, Chip, Dialog, DialogHeader, DialogBody } from "@material-tailwind/react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -38,6 +38,7 @@ const getStatusLabel = (status) => {
 const VehicleOnboardingDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
   const [modalData, setModalData] = useState(null);
@@ -68,6 +69,7 @@ const VehicleOnboardingDetails = () => {
     if (onboardingData?.id) return onboardingData;
     return {};
   }, [onboardingData]);
+  const locationState = location?.state || {};
   const requiredVehicleDocs = account?.requiredDocuments?.vehicle || [];
   const vehicleUploads = account?.uploads?.vehicle || [];
   const vehicleStageStatus = account?.vehicleDocumentStatus?.status || "PENDING UPLOAD";
@@ -99,7 +101,18 @@ const VehicleOnboardingDetails = () => {
       };
     });
   }, [requiredVehicleDocs, vehicleUploads, vehiclePendingTypes, vehicleApprovedTypes]);
-  // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status));
+  const canContinue = rows.length > 0 && rows.every((row) => ["VERIFIED", "APPROVED"].includes(String(row.status || "").toUpperCase()));
+  const blockedVehicleDocuments = useMemo(() => {
+    return rows
+      .filter((row) => !["VERIFIED", "APPROVED"].includes(String(row.status || "").toUpperCase()))
+      .map((row) => toTitle(row.type))
+      .filter(Boolean);
+  }, [rows]);
+  const canContinueMessage = rows.length === 0
+    ? "No vehicle documents found."
+    : !canContinue
+      ? `Approve these vehicle documents: ${blockedVehicleDocuments.join(", ")}.`
+      : "";
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType);
 
@@ -302,13 +315,35 @@ const VehicleOnboardingDetails = () => {
       <div className="flex flex-row mt-4">
         <Button
           fullWidth
-          onClick={() => navigate("/dashboard/vendors/account/owner-onboarding-cab")}
-          // disabled={!canContinue}
+          onClick={() =>
+            navigate(`/dashboard/vendors/account/owner-onboarding-cab/cab/add/${id}`, {
+              state: {
+                ownerName: locationState.ownerName || account?.name || "",
+                type: locationState.type || account?.type || "",
+                accountId: locationState.accountId || account?.id || id,
+                vehicleDocuments: rows.map((row) => ({
+                  type: row.type,
+                  docType: row.type,
+                  status: row.status,
+                  createdAt: row.createdAt,
+                  image1: row.proof?.image1 || null,
+                  image2: row.proof?.image2 || null,
+                  documentId: row.proof?.id || null,
+                })),
+              },
+            })
+          }
+          disabled={!canContinue}
           className={`my-2 mx-2 ${ColorStyles.backButton}`}
         >
           Continue
         </Button>
       </div>
+      {!canContinue && canContinueMessage ? (
+        <Typography className="mt-1 text-xs font-medium text-red-600">
+          {canContinueMessage}
+        </Typography>
+      ) : null}
       {/* {!canContinue && (
         <Typography className="text-xs text-red-600 font-medium mt-1">
           Resolve all Pending Upload and Invalid documents to continue.
