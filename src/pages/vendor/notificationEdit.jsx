@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Formik, Field, ErrorMessage, Form } from 'formik';
+import React, { useEffect, useRef, useState } from 'react';
+import { Formik, Field, ErrorMessage, Form, useFormikContext } from 'formik';
 import { Button } from '@material-tailwind/react';
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
@@ -51,6 +51,51 @@ const NotificationListEdit = () => {
     return Number.isNaN(dt.getTime()) ? '' : dt.toISOString();
   };
 
+  const normalizeDeliverySchedule = (value) => String(value || '').trim().toUpperCase();
+
+  const buildNotificationSchedulePayload = (values) => {
+    const deliverySchedule = normalizeDeliverySchedule(values.deliverySchedule);
+    const isScheduledLater = deliverySchedule === 'SCHEDULE_LATER';
+
+    return {
+      deliverySchedule,
+      scheduledAtUtc: isScheduledLater ? toUtcIso(values.scheduledAtUtc) : '',
+    };
+  };
+
+  const NotificationTimeValidationWatcher = ({ validateNotificationTime }) => {
+    const { values } = useFormikContext();
+    const debounceRef = useRef(null);
+    const isFirstRunRef = useRef(true);
+
+    useEffect(() => {
+      if (isFirstRunRef.current) {
+        isFirstRunRef.current = false;
+        return () => {
+          if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+          }
+        };
+      }
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      debounceRef.current = setTimeout(() => {
+        validateNotificationTime(values);
+      }, 400);
+
+      return () => {
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+        }
+      };
+    }, [values.deliverySchedule, values.scheduledAtUtc, validateNotificationTime, values]);
+
+    return null;
+  };
+
   const toDateTimeLocalValue = (isoValue) => {
     if (!isoValue) return '';
     const dt = new Date(isoValue);
@@ -63,6 +108,7 @@ const NotificationListEdit = () => {
   const navigate = useNavigate();
   const [serviceAreas, setServiceAreas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const lastValidatedScheduleRef = useRef('');
 
   const [initialValues, setInitialValues] = useState({
     title: '',
@@ -124,8 +170,45 @@ const NotificationListEdit = () => {
     fetchNotificationById();
   }, [id]);
 
+  const validateNotificationTime = async (nextValues) => {
+    const { deliverySchedule, scheduledAtUtc } = buildNotificationSchedulePayload(nextValues);
+
+    if (deliverySchedule !== 'SCHEDULE_LATER' || !scheduledAtUtc) {
+      lastValidatedScheduleRef.current = '';
+      return true;
+    }
+
+    const validationKey = `${deliverySchedule}|${scheduledAtUtc}`;
+    if (lastValidatedScheduleRef.current === validationKey) {
+      return true;
+    }
+
+    const validationPayload = {
+      deliverySchedule,
+      scheduledAtUtc,
+    };
+    // console.log('VALIDATE_NOTIFICATION_TIME payload:', validationPayload);
+
+    const validationResponse = await ApiRequestUtils.post(
+      API_ROUTES.VALIDATE_NOTIFICATION_TIME,
+      validationPayload,
+      0,
+      { suppressAlert: true }
+    );
+
+    if (validationResponse?.code === 400 || validationResponse?.success === false) {
+      await showBadRequestAlert(validationResponse?.message);
+      return false;
+    }
+
+    lastValidatedScheduleRef.current = validationKey;
+    return true;
+  };
+
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
+      const { deliverySchedule, scheduledAtUtc } = buildNotificationSchedulePayload(values);
+
       const payload = {
         title: values.title,
         message: values.message,
@@ -143,7 +226,7 @@ const NotificationListEdit = () => {
             : toUtcIso(),
       };
 
-      console.log('Payload for update:', payload);
+      // console.log('Payload for update:', payload);
 
       const data = await ApiRequestUtils.update(API_ROUTES.UPDATE_NOTIFICATION, payload, 0, { suppressAlert: true });
       if (data?.code === 400) {
@@ -186,6 +269,7 @@ const NotificationListEdit = () => {
       >
         {({ isSubmitting, setFieldValue, values }) => (
           <Form className="space-y-4">
+            <NotificationTimeValidationWatcher validateNotificationTime={validateNotificationTime} />
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
