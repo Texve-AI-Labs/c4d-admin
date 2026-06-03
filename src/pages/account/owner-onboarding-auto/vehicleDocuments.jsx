@@ -57,8 +57,8 @@ const VehicleDocuments = () => {
       setAccount(accountData || null);
 
       const vehicleDocsRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_REQUIRED_DOCUMENTS, {
-        type: "ACCOUNT",
-        subType: normalizeSubType(accountData?.type),
+        subjectType: "ACCOUNT",
+        serviceType: normalizeSubType(accountData?.type),
       });
 
       const vehicleDocs = vehicleDocsRes?.data?.vehicleRequiredDocuments || [];
