@@ -1018,13 +1018,18 @@ if (!statusFilter.includes('All')) {
                     <div className="absolute top-0  right-0 flex gap-4 justify-end">
                         
                         <button
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded-lg text-sm shadow-lg"
+                            className={`bg-red-600 hover:bg-red-300 text-white px-2 py-2 rounded-lg text-sm shadow-lg ${loading ? 'opacity-80 cursor-not-allowed' : ''}`}
+                            disabled={loading}
                             onClick={() => {
                                 handleRefresh();
                             }}
                         >
                             <span className="flex items-center gap-2">
+                                {loading ? (
+                                    <Spinner className="h-4 w-4" />
+                                ) : (
                                 <img src="/img/refresh.png" alt="Refresh" className="w-4 h-4" />
+                                )}
                                 Refresh
                             </span>
                         </button>
