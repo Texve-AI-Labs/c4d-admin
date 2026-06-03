@@ -363,6 +363,13 @@ const validationSchema = Yup.object({
               <Button type="button" className={ColorStyles.backButton} onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-auto/vehicle-documents/${accountId}`)}>
                 Back
               </Button>
+              <Button
+                fullWidth
+                onClick={() => { navigate('/dashboard/vendors/account/owner-onboarding-auto'); }}
+                className='my-6 mx-2 text-white border-2 border-red-400 bg-red-900 rounded-xl'
+              >
+                Cancel
+              </Button>
               <Button type="submit" className={ColorStyles.continueButtonColor}>Create Auto</Button>
             </div>
           </Form>

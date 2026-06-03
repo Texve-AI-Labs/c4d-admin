@@ -8,6 +8,34 @@ import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 import LocationInput from "./LocationInput";
+const toTitle = (value) => {
+  if (!value) return "-";
+  return String(value)
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
+const getStatusColor = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["VERIFIED", "UPLOADED", "APPROVED"].includes(normalized)) return "green";
+  if (["PENDING", "PENDING VERIFICATION", "PENDING_VERIFICATION"].includes(normalized)) return "amber";
+  if (normalized === "PENDING UPLOAD") return "blue-gray";
+  if (normalized === "NOT_INTERESTED") return "yellow";
+  if (normalized === "NO_RESPONSE") return "gray";
+  if (normalized === "INVALID") return "orange";
+  if (normalized === "DECLINED") return "red";
+  return "blue-gray";
+};
+
+const getStatusLabel = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["PENDING", "PENDING VERIFICATION", "PENDING_VERIFICATION"].includes(normalized)) return "Pending Verification";
+  if (normalized === "PENDING UPLOAD") return "Pending Upload";
+  if (normalized === "APPROVED") return "Approved";
+  return toTitle(status);
+};
 
 const isPdfFile = (src = "") =>
   String(src).toLowerCase().includes(".pdf") || String(src).toLowerCase().startsWith("data:application/pdf");
@@ -154,13 +182,13 @@ const AccountDocuments = () => {
         docType,
         proof,
         type: item?.displayName || item?.label || docType,
-        status: proof?.image1 ? "UPLOADED" : "PENDING UPLOAD",
+        status: proof?.status || (proof?.image1 ? "UPLOADED" : "PENDING UPLOAD"),
         createdAt: proof?.created_at ? moment(proof.created_at).format("DD-MM-YYYY") : "-",
       };
     });
   }, [requiredDocs, proofsByType]);
   const accountDocsUploaded = useMemo(
-    () => rows.length > 0 && rows.every((row) => row.status === "UPLOADED"),
+    () => rows.length > 0 && rows.every((row) => row.status === "UPLOADED" || row.status === "VERIFIED" || row.status === "APPROVED"),
     [rows]
   );
   const accountDocumentStageStatus = account?.accountDocumentStatus?.status || "";
@@ -171,6 +199,7 @@ const AccountDocuments = () => {
       "PENDING VERIFICATION",
       "PENDING_VERIFICATION",
       "VERIFIED",
+      "APPROVED"
     ].includes(accountDocumentStageStatus) || !accountDocumentStageStatus);
   const shouldShowAddressForm = canShowVerificationView;
   const accountDocTypes = useMemo(() => rows.map((row) => row.docType), [rows]);
@@ -413,8 +442,8 @@ const AccountDocuments = () => {
                     <td className="py-3 px-5 border-b border-blue-gray-50">
                       <Chip
                         variant="ghost"
-                        color={row.status === "UPLOADED" ? "green" : "blue-gray"}
-                        value={row.status === "UPLOADED" ? "Uploaded" : "Pending Upload"}
+                        color={getStatusColor(row.status)}
+                        value={getStatusLabel(row.status)}
                         className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
                       />
                     </td>
@@ -439,6 +468,10 @@ const AccountDocuments = () => {
                       <Typography className="text-xs font-semibold text-blue-gray-900">{row.createdAt}</Typography>
                     </td>
                     <td className="py-3 px-5 border-b border-blue-gray-50">
+                      {String(row.proof?.status || "").toUpperCase() === "APPROVED" ? (
+                        <Typography className="text-xs font-semibold text-blue-gray-400">-</Typography>
+                      ) : (
+                        <div className="flex flex-col gap-1">
                       <label
                         htmlFor={`upload-${row.key}`}
                         className="inline-block text-center text-white border border-gray-400 bg-primary rounded-lg px-4 py-1 cursor-pointer text-xs"
@@ -454,6 +487,7 @@ const AccountDocuments = () => {
                         onChange={(e) => handleUploadDocument(e, row)}
                         disabled={Boolean(uploadingByType[row.docType])}
                       />
+                      </div>)}
                     </td>
                   </tr>
                 ))
