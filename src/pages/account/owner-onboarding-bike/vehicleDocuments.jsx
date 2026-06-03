@@ -37,6 +37,12 @@ const getStatusLabel = (status) => {
   return toTitle(status);
 };
 
+const getReviewStatus = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["UPLOADED","PENDING","PENDING UPLOAD"].includes(normalized)) return "PENDING VERIFICATION";
+  return normalized;
+};
+
 const normalizeSubType = () => "Parcel";
 
 const VehicleDocuments = () => {
@@ -47,6 +53,7 @@ const VehicleDocuments = () => {
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
   const [uploadErrorsByType, setUploadErrorsByType] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchData();
@@ -93,6 +100,20 @@ const VehicleDocuments = () => {
       };
     });
   }, [requiredDocs, proofsByType]);
+  const canContinue = rows.length > 0 && rows.every((row) => ["APPROVED", "VERIFIED"].includes(String(row.status || "").toUpperCase()));
+  const blockedVehicleDocuments = useMemo(
+    () =>
+      rows
+        .filter((row) => !["APPROVED", "VERIFIED"].includes(String(row.status || "").toUpperCase()))
+        .map((row) => row.type || row.docType)
+        .filter(Boolean),
+    [rows]
+  );
+  const canContinueMessage = rows.length === 0
+    ? "No required documents found."
+    : !canContinue
+      ? `Approve these vehicle documents: ${blockedVehicleDocuments.join(", ")}.`
+      : "";
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType);
 
@@ -175,6 +196,29 @@ const VehicleDocuments = () => {
     }
   };
 
+  const handleStatusChange = async (documentId, status) => {
+    if (!documentId) return;
+    try {
+      setUpdatingStatus(true);
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      const parsedUser = loggedInUser ? JSON.parse(loggedInUser) : {};
+      const verifiedBy = parsedUser?.name || "Admin";
+      const payload = { documentId, status, verifiedBy };
+      const response = await ApiRequestUtils.update(API_ROUTES.GET_DOCUMENT_DETAILS_LIST, payload);
+      if (response?.success) {
+        await fetchData();
+        setModalData(null);
+      } else {
+        window.alert(response?.message || "Failed to update status. Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed to update status", error);
+      window.alert("Failed to update status. Please try again.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
       <AccountCreationTabs activeStage={3} />
@@ -238,7 +282,12 @@ const VehicleDocuments = () => {
                       {row.proof?.image1 ? (
                         <Typography
                           className="text-xs font-semibold text-blue-700 underline cursor-pointer"
-                          onClick={() => setModalData({ image1: row.proof?.image1, image2: row.proof?.image2 })}
+                          onClick={() => setModalData({
+                            id: row.proof?.id,
+                            image1: row.proof?.image1,
+                            image2: row.proof?.image2,
+                            status: getReviewStatus(row.status),
+                          })}
                         >
                           View Details
                         </Typography>
@@ -297,6 +346,7 @@ const VehicleDocuments = () => {
         <Button
           fullWidth
           onClick={() => {
+            if (!canContinue) return;
             const accountId = account?.id || id;
             navigate(`/dashboard/vendors/account/owner-onboarding-bike/vehicle-creation/${id}`, {
               state: {
@@ -308,11 +358,15 @@ const VehicleDocuments = () => {
               },
             });
           }}
+          disabled={!canContinue}
           className={`my-2 mx-2 ${ColorStyles.continueButtonColor}`}
         >
           Continue
         </Button>
       </div>
+      {!canContinue && canContinueMessage ? (
+        <Typography className="mt-1 text-xs font-medium text-red-600">{canContinueMessage}</Typography>
+      ) : null}
 
       {modalData && (
         <Dialog open={Boolean(modalData)} handler={() => setModalData(null)} size="md">
@@ -357,6 +411,43 @@ const VehicleDocuments = () => {
                 </a>
               )}
             </div>
+            {["PENDING VERIFICATION"].includes(String(modalData?.status || "").toUpperCase()) ? (
+              <div className="flex justify-center gap-3 mt-4 flex-wrap">
+                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].map((nextStatus) => (
+                  <button
+                    key={nextStatus}
+                    type="button"
+                    disabled={updatingStatus}
+                    onClick={() => handleStatusChange(modalData?.id, nextStatus)}
+                    className={`px-3 py-1 rounded-md text-white disabled:opacity-60 text-xs ${
+                      nextStatus === "APPROVED"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : nextStatus === "NOT_INTERESTED"
+                          ? "bg-yellow-600 hover:bg-yellow-700"
+                          : nextStatus === "NO_RESPONSE"
+                            ? "bg-gray-600 hover:bg-gray-700"
+                            : nextStatus === "INVALID"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    {updatingStatus ? "Updating..." : toTitle(nextStatus)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {["NOT_INTERESTED", "NO_RESPONSE"].includes(String(modalData?.status || "").toUpperCase()) ? (
+              <div className="flex justify-center gap-3 mt-4 flex-wrap">
+                <button
+                  type="button"
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange(modalData?.id, "PENDING")}
+                  className="px-3 py-1 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-xs"
+                >
+                  {updatingStatus ? "Updating..." : "Reopen"}
+                </button>
+              </div>
+            ) : null}
           </DialogBody>
         </Dialog>
       )}
