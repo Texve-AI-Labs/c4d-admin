@@ -535,7 +535,7 @@ const ParcelCabAdd = () => {
                 </Button>
                 <Button
                   fullWidth
-                  className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl"
+                  className="my-6 mx-2 text-white border-2 border-red-400 bg-red-900 rounded-xl"
                   onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-bike`)}
                   type="reset"
                 >

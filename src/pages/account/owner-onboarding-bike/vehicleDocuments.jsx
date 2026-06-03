@@ -354,7 +354,15 @@ const VehicleDocuments = () => {
                 type: account?.type || "Parcel",
                 accountId,
                 fromDetails: true,
-                vehicleDocuments: vehicleDocsData,
+                vehicleDocuments: rows.map((row) => ({
+                  type: row.type,
+                  docType: row.docType,
+                  status: row.status,
+                  createdAt: row.createdAt,
+                  image1: row.proof?.image1 || null,
+                  image2: row.proof?.image2 || null,
+                  documentId: row.proof?.id || null,
+                })),
               },
             });
           }}
