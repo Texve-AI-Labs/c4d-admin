@@ -528,8 +528,15 @@ const ParcelCabAdd = () => {
               <div className="flex flex-row">
                 <Button
                   fullWidth
+                  onClick={() => { navigate(`/dashboard/vendors/account/owner-onboarding-bike/vehicle-documents/${values.accountId}`); }}
+                  className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
+                >
+                  Back
+                </Button>
+                <Button
+                  fullWidth
                   className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl"
-                  onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-bike/vehicle-documents/${values.accountId}`)}
+                  onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-bike`)}
                   type="reset"
                 >
                   Cancel
