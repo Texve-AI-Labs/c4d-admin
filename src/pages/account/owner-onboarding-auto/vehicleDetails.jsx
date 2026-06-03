@@ -35,6 +35,12 @@ const getStatusLabel = (status) => {
   return toTitle(status);
 };
 
+const getReviewStatus = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["UPLOADED","PENDING","PENDING UPLOAD"].includes(normalized)) return "PENDING VERIFICATION";
+  return normalized;
+};
+
 const VehicleOnboardingDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -264,7 +270,7 @@ const VehicleOnboardingDetails = () => {
                           setModalData({
                             id: row.proof?.id,
                             type: row.type,
-                            status: row.status,
+                            status: getReviewStatus(row.status),
                             image1: row.proof?.image1,
                             image2: row.proof?.image2,
                           })

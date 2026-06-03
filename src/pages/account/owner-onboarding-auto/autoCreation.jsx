@@ -359,18 +359,20 @@ const validationSchema = Yup.object({
                 </div>
               </CardBody>
             </Card>
-            <div className="flex gap-4 mt-4">
-              <Button type="button" className={ColorStyles.backButton} onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-auto/vehicle-documents/${accountId}`)}>
+            <div className="flex flex-row justify-center gap-4">
+              <Button type="button" className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl' onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-auto/vehicle-documents/${accountId}`)}>
                 Back
               </Button>
               <Button
-                fullWidth
+                
                 onClick={() => { navigate('/dashboard/vendors/account/owner-onboarding-auto'); }}
                 className='my-6 mx-2 text-white border-2 border-red-400 bg-red-900 rounded-xl'
               >
                 Cancel
               </Button>
-              <Button type="submit" className={ColorStyles.continueButtonColor}>Create Auto</Button>
+              <Button type="submit" className='my-6 mx-2 text-white border-2 border-green-400 bg-green-900 rounded-xl'>
+                Create Auto
+              </Button>
             </div>
           </Form>
         )}

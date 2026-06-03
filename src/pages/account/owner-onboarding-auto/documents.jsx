@@ -37,6 +37,12 @@ const getStatusLabel = (status) => {
   return toTitle(status);
 };
 
+const getReviewStatus = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["UPLOADED","PENDING", "PENDING UPLOAD"].includes(normalized)) return "PENDING VERIFICATION";
+  return normalized;
+};
+
 const isPdfFile = (src = "") =>
   String(src).toLowerCase().includes(".pdf") || String(src).toLowerCase().startsWith("data:application/pdf");
 
@@ -139,6 +145,7 @@ const AccountDocuments = () => {
   const [savingAddress, setSavingAddress] = useState(false);
   const [selectedAccountDocType, setSelectedAccountDocType] = useState("");
   const [previewZoom, setPreviewZoom] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchData();
@@ -202,6 +209,22 @@ const AccountDocuments = () => {
       "APPROVED"
     ].includes(accountDocumentStageStatus) || !accountDocumentStageStatus);
   const shouldShowAddressForm = canShowVerificationView;
+  const blockedAccountDocuments = useMemo(
+    () =>
+      rows
+        .filter((row) => !["UPLOADED", "VERIFIED", "APPROVED"].includes(String(row.status || "").toUpperCase()))
+        .map((row) => toTitle(row.type))
+        .filter(Boolean),
+    [rows]
+  );
+  const canContinue = shouldShowAddressForm;
+  const canContinueMessage = rows.length === 0
+    ? "No required documents found."
+    : blockedAccountDocuments.length > 0
+      ? `Approve these account documents: ${blockedAccountDocuments.join(", ")}.`
+      : !canContinue
+        ? "Document verification is pending."
+        : "";
   const accountDocTypes = useMemo(() => rows.map((row) => row.docType), [rows]);
 
   const subjectType = "ACCOUNT";
@@ -230,6 +253,29 @@ const AccountDocuments = () => {
   const handleAddressInputChange = (key, value) => {
     setAddressForm((prev) => ({ ...prev, [key]: value }));
     setAddressErrors((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const handleStatusChange = async (documentId, status) => {
+    if (!documentId) return;
+    try {
+      setUpdatingStatus(true);
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      const parsedUser = loggedInUser ? JSON.parse(loggedInUser) : {};
+      const verifiedBy = parsedUser?.name || "Admin";
+      const payload = { documentId, status, verifiedBy };
+      const response = await ApiRequestUtils.update(API_ROUTES.GET_DOCUMENT_DETAILS_LIST, payload);
+      if (response?.success) {
+        await fetchData();
+        setModalData(null);
+      } else {
+        window.alert(response?.message || "Failed to update status. Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed to update status", error);
+      window.alert("Failed to update status. Please try again.");
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   useEffect(() => {
@@ -453,8 +499,10 @@ const AccountDocuments = () => {
                           className="text-xs font-semibold text-blue-700 underline cursor-pointer"
                           onClick={() =>
                             setModalData({
+                              id: row.proof?.id,
                               image1: row.proof?.image1,
                               image2: row.proof?.image2,
+                              status: getReviewStatus(row.status),
                             })
                           }
                         >
@@ -678,17 +726,24 @@ const AccountDocuments = () => {
         <Button
           fullWidth
           onClick={async () => {
+            if (!canContinue) return;
             if (shouldShowAddressForm) {
               const ok = await saveAddressDetails();
               if (!ok) return;
             }
             navigate(`/dashboard/vendors/account/owner-onboarding-auto/vehicle-documents/${id}`);
           }}
+          disabled={!canContinue || savingAddress}
           className={`my-2 mx-2 ${ColorStyles.continueButtonColor}`}
         >
-          Continue
+          {savingAddress ? "Saving..." : "Continue"}
         </Button>
       </div>
+      {!canContinue && canContinueMessage ? (
+        <Typography className="mt-1 text-xs font-medium text-red-600">
+          {canContinueMessage}
+        </Typography>
+      ) : null}
 
       {modalData && (
         <Dialog open={Boolean(modalData)} handler={() => setModalData(null)} size="md">
@@ -733,6 +788,43 @@ const AccountDocuments = () => {
                 </a>
               )}
             </div>
+            {["PENDING VERIFICATION"].includes(String(modalData?.status || "").toUpperCase()) ? (
+              <div className="flex justify-center gap-3 mt-4 flex-wrap">
+                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].map((nextStatus) => (
+                  <button
+                    key={nextStatus}
+                    type="button"
+                    disabled={updatingStatus}
+                    onClick={() => handleStatusChange(modalData?.id, nextStatus)}
+                    className={`px-3 py-1 rounded-md text-white disabled:opacity-60 text-xs ${
+                      nextStatus === "APPROVED"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : nextStatus === "NOT_INTERESTED"
+                          ? "bg-yellow-600 hover:bg-yellow-700"
+                          : nextStatus === "NO_RESPONSE"
+                            ? "bg-gray-600 hover:bg-gray-700"
+                            : nextStatus === "INVALID"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    {updatingStatus ? "Updating..." : toTitle(nextStatus)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {["NOT_INTERESTED", "NO_RESPONSE"].includes(String(modalData?.status || "").toUpperCase()) ? (
+              <div className="flex justify-center gap-3 mt-4 flex-wrap">
+                <button
+                  type="button"
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange(modalData?.id, "PENDING")}
+                  className="px-3 py-1 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-xs"
+                >
+                  {updatingStatus ? "Updating..." : "Reopen"}
+                </button>
+              </div>
+            ) : null}
           </DialogBody>
         </Dialog>
       )}
