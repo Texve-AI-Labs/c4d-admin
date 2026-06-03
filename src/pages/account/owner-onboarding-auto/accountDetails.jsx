@@ -118,6 +118,12 @@ const getStatusLabel = (status) => {
   return toTitle(status);
 };
 
+const getReviewStatus = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["UPLOADED","PENDING","PENDING UPLOAD"].includes(normalized)) return "PENDING VERIFICATION";
+  return normalized;
+};
+
 const AccountOnboardingDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -229,13 +235,7 @@ const AccountOnboardingDetails = () => {
   );
   const shouldShowPreviewAndAddress = useMemo(() => {
     const normalizedStatus = String(accountStageStatus || "").toUpperCase();
-    const isEligibleStatus = [
-      "PENDING",
-      "PENDING VERIFICATION",
-      "PENDING_VERIFICATION",
-      "VERIFIED",
-    ].includes(normalizedStatus);
-    return allAccountDocsUploaded && isEligibleStatus;
+    return allAccountDocsUploaded && normalizedStatus === "VERIFIED";
   }, [allAccountDocsUploaded, accountStageStatus]);
   const getZoomKey = (docType, imageIndex) => `${docType || "UNKNOWN"}_${imageIndex}`;
   const getZoomValue = (docType, imageIndex) => previewZoom[getZoomKey(docType, imageIndex)] || 1;
@@ -255,7 +255,58 @@ const AccountOnboardingDetails = () => {
       setSelectedDocType(previewableTypes[0]);
     }
   }, [previewableTypes, selectedDocType]);
-  // const canContinue = rows.length > 0 && !rows.some((row) => ["PENDING UPLOAD", "INVALID", "DECLINED"].includes(row.status));
+  const isAddressFormComplete = useMemo(() => {
+    const address = String(addressForm.address || "").trim();
+    const street = String(addressForm.street || "").trim();
+    const thaluk = String(addressForm.thaluk || "").trim();
+    const district = String(addressForm.district || "").trim();
+    const state = String(addressForm.state || "").trim();
+    const pincode = String(addressForm.pincode || "").trim();
+
+    return (
+      address.length >= 5 &&
+      street.length >= 2 &&
+      thaluk.length > 0 &&
+      THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk) &&
+      district.length >= 2 &&
+      state.length > 0 &&
+      STATE_LIST.some((item) => item.value === state || item.label === state) &&
+      /^\d{6}$/.test(pincode)
+    );
+  }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.state, addressForm.pincode]);
+  const missingAddressFields = useMemo(() => {
+    const address = String(addressForm.address || "").trim();
+    const street = String(addressForm.street || "").trim();
+    const thaluk = String(addressForm.thaluk || "").trim();
+    const district = String(addressForm.district || "").trim();
+    const state = String(addressForm.state || "").trim();
+    const pincode = String(addressForm.pincode || "").trim();
+    const missing = [];
+
+    if (address.length < 5) missing.push("Current Address");
+    if (street.length < 2) missing.push("Street Name");
+    if (!thaluk || !THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk)) missing.push("Thaluk");
+    if (district.length < 2) missing.push("District");
+    if (!state || !STATE_LIST.some((item) => item.value === state || item.label === state)) missing.push("State");
+    if (!/^\d{6}$/.test(pincode)) missing.push("Pincode");
+
+    return missing;
+  }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.state, addressForm.pincode]);
+  const canContinue = shouldShowPreviewAndAddress && isAddressFormComplete;
+  const missingAccountDocuments = useMemo(() => {
+    return rows
+      .filter((row) => !["VERIFIED", "APPROVED"].includes(String(row.status || "").toUpperCase()))
+      .map((row) => toTitle(row.type))
+      .filter(Boolean);
+  }, [rows]);
+  const canContinueMessageParts = [];
+  if (missingAddressFields.length > 0) {
+    canContinueMessageParts.push(`Fill these address fields: ${missingAddressFields.join(", ")}.`);
+  }
+  if (missingAccountDocuments.length > 0) {
+    canContinueMessageParts.push(`Approve these account documents: ${missingAccountDocuments.join(", ")}.`);
+  }
+  const canContinueMessage = canContinueMessageParts.join(" ");
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
 
@@ -369,7 +420,7 @@ const AccountOnboardingDetails = () => {
       if (addressSection) addressSection.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
-    navigate("/dashboard/vendors/account/owner-onboarding-auto");
+    navigate(`/dashboard/vendors/account/owner-onboarding-auto/details/vehicle/${id}`);
   };
 
   const handleUploadDocument = async (event, row) => {
@@ -565,7 +616,7 @@ const AccountOnboardingDetails = () => {
                           setModalData({
                             id: row.proof?.id,
                             type: row.type,
-                            status: row.status,
+                            status: getReviewStatus(row.status),
                             image1: row.proof?.image1,
                             image2: row.proof?.image2,
                           })
@@ -787,12 +838,17 @@ const AccountOnboardingDetails = () => {
         <Button
           fullWidth
           onClick={handleContinue}
-          // disabled={!canContinue}
+          disabled={!canContinue}
           className={`my-2 mx-2 ${ColorStyles.backButton}`}
         >
           Continue
         </Button>
       </div>
+      {!canContinue && canContinueMessage ? (
+        <Typography className="mt-1 text-xs font-medium text-red-600">
+          {canContinueMessage}
+        </Typography>
+      ) : null}
       {/* {!canContinue && (
         <Typography className="text-xs text-red-600 font-medium mt-1">
           Resolve all Pending Upload and Invalid documents to continue.

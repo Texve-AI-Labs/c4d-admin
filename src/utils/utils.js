@@ -612,13 +612,11 @@ export const Utils = {
             validationCheckForDriver(values) ||
             !quoteDetails;
         const ridesContinueDisabled =
-            !(values.pickupAddress && values.dropAddress && selectedCustomer && quoteDetails) ||
-            isButtonDisabled;
+            !(values.pickupAddress && values.dropAddress && selectedCustomer && quoteDetails);
         const autoContinueDisabled =
             !(values.pickupAddress && values.dropAddress && selectedCustomer && values.sourceType && quoteDetails);
         const parcelContinueDisabled =
-            !(values.pickupAddress && values.dropAddress && values.sourceType && values.customerId?.id && values.rideTime && quoteDetails) ||
-            isButtonDisabled;
+            !(values.pickupAddress && values.dropAddress && values.sourceType && values.customerId?.id && values.rideTime && quoteDetails);
         const rentalContinueDisabled =
             !dirty ||
             !isValid ||
@@ -691,7 +689,6 @@ export const Utils = {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!selectedCustomer) return 'Please select customer.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
-            if (isButtonDisabled) return 'Selected locations are outside the service area. Please choose valid pickup/drop locations.';
         } else if (values.serviceType === 'AUTO') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!selectedCustomer) return 'Please select customer.';
@@ -703,7 +700,6 @@ export const Utils = {
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.rideTime) return 'Please select pickup date & time.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
-            if (isButtonDisabled) return 'Selected locations are outside the service area. Please choose valid pickup/drop locations.';
         } else if (values.serviceType === 'RENTAL') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!values.sourceType) return 'Please select Source Type.';

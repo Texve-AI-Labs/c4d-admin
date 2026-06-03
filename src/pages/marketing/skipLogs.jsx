@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, CardBody, Input, Spinner, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, Input, Option, Select, Spinner, Typography } from "@material-tailwind/react";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -7,6 +7,8 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 const INITIAL_FILTERS = {
   fromDate: "",
   toDate: "",
+  userType: "ALL",
+  screen: "ALL",
 };
 
 const formatDateTime = (value) => {
@@ -15,6 +17,20 @@ const formatDateTime = (value) => {
   if (!parsed.isValid()) return String(value);
   return parsed.format("DD-MM-YYYY hh:mm A");
 };
+
+const SKIP_LOG_COLUMNS = [
+  { key: "watchTime", label: "Watch Date & Time", getValue: (item) => formatDateTime(item?.created_at) },
+  { key: "zone", label: "Zone", getValue: (item) => item?.context?.zone || "-" },
+  { key: "userType", label: "User Type", getValue: (item) => item?.userType || "-" },
+  { key: "userId", label: "User ID", getValue: (item) => item?.userId || "-" },
+  { key: "userName", label: "User Name", getValue: (item) => item?.userDetails?.firstName || "-" },
+  { key: "phoneNumber", label: "Phone Number", getValue: (item) => item?.userDetails?.phoneNumber || "-" },
+  { key: "platform", label: "Platform", getValue: (item) => item?.platform || "-" },
+  { key: "appVersion", label: "App Version", getValue: (item) => item?.appVersion || "-" },
+  { key: "screen", label: "Screen", getValue: (item) => item?.screen || "-" },
+  { key: "componentType", label: "Component Type", getValue: (item) => item?.componentType || "-" },
+  { key: "componentKey", label: "Component Key", getValue: (item) => item?.componentKey || "-" },
+];
 
 function SkipLogs() {
   const [rows, setRows] = useState([]);
@@ -34,8 +50,9 @@ function SkipLogs() {
     };
 
     Object.entries(activeFilters).forEach(([key, value]) => {
-      if (String(value || "").trim()) {
-        pages[key] = String(value).trim();
+      const normalizedValue = String(value || "").trim();
+      if (normalizedValue && normalizedValue !== "ALL") {
+        pages[key] = normalizedValue;
       }
     });
 
@@ -127,19 +144,76 @@ function SkipLogs() {
             Skip Logs
           </Typography>          
 
-          <div className="mt-4 flex flex-wrap items-end gap-4">
+          <div className="mt-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:flex-nowrap md:items-end">
             <div className="w-full md:w-52">
               <Input type="date" label="From Date" value={filters.fromDate} onChange={(e) => handleFilterChange("fromDate", e.target.value)} />
             </div>
             <div className="w-full md:w-52">
               <Input type="date" label="To Date" value={filters.toDate} onChange={(e) => handleFilterChange("toDate", e.target.value)} />
             </div>
-            <Button onClick={handleSearch} disabled={loading} className={ColorStyles.bgColor}>
+            <div className="w-full md:w-52">
+              <Typography variant="small" className="mb-1 text-blue-gray-700">
+                User Type
+              </Typography>
+              <Select value={filters.userType} onChange={(value) => handleFilterChange("userType", value || "ALL")}>
+                <Option value="ALL">All</Option>
+                <Option value="DRIVER">DRIVER</Option>
+                <Option value="CUSTOMER">CUSTOMER</Option>
+              </Select>
+            </div>
+            <div className="w-full md:w-72 lg:w-96">
+              <Typography variant="small" className="mb-1 text-blue-gray-700">
+                Screen
+              </Typography>
+              <Select
+                value={filters.screen}
+                onChange={(value) => handleFilterChange("screen", value || "ALL")}
+                selected={(element) => element?.props?.children || "All"}
+              >
+                <Option value="ALL">All</Option>
+                <Option value="Home">Home</Option>
+                <Option value="RideTripRequest">RideTripRequest</Option>
+                <Option value="RideSelectionEstimationPage">RideSelectionEstimationPage</Option>
+                <Option value="PaymentSummaryModal">PaymentSummaryModal</Option>
+                <Option value="RidesTripDetails">RidesTripDetails</Option>
+                <Option value="Feedback">Feedback</Option>
+                <Option value="RentalDropTaxiBooking">RentalDropTaxiBooking</Option>
+                <Option value="Rides">Rides</Option>
+                <Option value="TripEnded">TripEnded</Option>
+                <Option value="RentalOutstationBooking">RentalOutstationBooking</Option>
+                <Option value="AutoBooking">AutoBooking</Option>
+                <Option value="RidesBooking">RidesBooking</Option>
+                <Option value="ReturnTripTab">ReturnTripTab</Option>
+                <Option value="Tier">Tier</Option>
+                <Option value="NotificationUpdates">NotificationUpdates</Option>
+                <Option value="ReturnTripDeals">ReturnTripDeals</Option>
+                <Option value="TripDetails">TripDetails</Option>
+                <Option value="StartTrip">StartTrip</Option>
+                <Option value="ParcelBooking">ParcelBooking</Option>
+                <Option value="HomeScreen">HomeScreen</Option>
+                <Option value="RidesDriverSearch">RidesDriverSearch</Option>
+                <Option value="SelectActingDriver">SelectActingDriver</Option>
+                <Option value="InsuranceVerification">InsuranceVerification</Option>
+                <Option value="AadharCardVerification">AadharCardVerification</Option>
+                <Option value="LaterBookingTripConfirmation">LaterBookingTripConfirmation</Option>
+                <Option value="RentalHourlyPackageBooking">RentalHourlyPackageBooking</Option>
+                <Option value="WalletTransaction">WalletTransaction</Option>
+                <Option value="NewCustomerIntro">NewCustomerIntro</Option>
+                <Option value="SignOutModal">SignOutModal</Option>
+                <Option value="RideSummaryModal">RideSummaryModal</Option>
+                <Option value="SubscriptionList">SubscriptionList</Option>
+              </Select>
+            </div>
+            </div>
+            <div className="flex w-full gap-2 md:w-auto">
+              <Button onClick={handleSearch} disabled={loading} className={`${ColorStyles.bgColor} w-full md:w-auto`}>
               {loading ? "Loading..." : "Search"}
             </Button>
-            <Button variant="outlined" onClick={handleClear} disabled={loading}>
+            <Button variant="outlined" onClick={handleClear} disabled={loading} className="w-full md:w-auto">
               Clear
             </Button>
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -151,17 +225,39 @@ function SkipLogs() {
               <Spinner />
             </div>
           ) : (
-            <table className="w-full min-w-[1200px] table-auto">
+            <>
+              <div className="space-y-3 p-3 md:hidden">
+                {rows.length ? (
+                  rows.map((item, index) => (
+                    <div className="rounded-lg border border-blue-gray-100 p-3" key={item?.id || item?._id || `${item?.userId || "row"}-${index}`}>
+                      <p className="text-xs text-blue-gray-500">{SKIP_LOG_COLUMNS[0].getValue(item)}</p>
+                      <p className="mt-1 text-sm font-medium text-blue-gray-900">{SKIP_LOG_COLUMNS[8].getValue(item)}</p>
+                      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-blue-gray-700">
+                        <span>User: {SKIP_LOG_COLUMNS[2].getValue(item)}</span>
+                        <span>Zone: {SKIP_LOG_COLUMNS[1].getValue(item)}</span>
+                        <span>User ID: {SKIP_LOG_COLUMNS[3].getValue(item)}</span>
+                        <span>Name: {SKIP_LOG_COLUMNS[4].getValue(item)}</span>
+                        <span>Phone: {SKIP_LOG_COLUMNS[5].getValue(item)}</span>
+                        <span>Platform: {SKIP_LOG_COLUMNS[6].getValue(item)}</span>
+                        <span>App: {SKIP_LOG_COLUMNS[7].getValue(item)}</span>
+                        <span>Type: {SKIP_LOG_COLUMNS[9].getValue(item)}</span>
+                        <span className="col-span-2">Key: {SKIP_LOG_COLUMNS[10].getValue(item)}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-2 py-6 text-center text-sm text-gray-500">No skip logs found.</div>
+                )}
+              </div>
+
+              <table className="hidden w-full min-w-[1200px] table-auto whitespace-nowrap md:table">
               <thead>
                 <tr className={`border-b text-left ${ColorStyles.bgColor}`}>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Watch Date & Time</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">User Type</th>
-                  {/* <th className="px-4 py-3 text-sm font-semibold">User ID</th> */}
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Platform</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">App Version</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Screen</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Component Type</th>
-                  <th className="px-4 py-3 text-sm font-semibold text-white">Component Key</th>
+                  {SKIP_LOG_COLUMNS.map((column) => (
+                    <th key={column.key} className="px-4 py-3 text-sm font-semibold text-white">
+                      {column.label}
+                    </th>
+                  ))}
                   {/* <th className="px-4 py-3 text-sm font-semibold text-white">Skip Action</th> */}
                 </tr>
               </thead>
@@ -169,26 +265,27 @@ function SkipLogs() {
                 {rows.length ? (
                   rows.map((item, index) => (
                     <tr className="border-b" key={item?.id || item?._id || `${item?.userId || "row"}-${index}`}>
-                      <td className="px-4 py-3 text-sm">{formatDateTime(item?.created_at)}</td>
-                      <td className="px-4 py-3 text-sm">{item?.userType || "-"}</td>
-                      {/* <td className="px-4 py-3 text-sm">{item?.userId || "-"}</td> */}
-                      <td className="px-4 py-3 text-sm">{item?.platform || "-"}</td>
-                      <td className="px-4 py-3 text-sm">{item?.appVersion || "-"}</td>
-                      <td className="px-4 py-3 text-sm">{item?.screen || "-"}</td>
-                      <td className="px-4 py-3 text-sm">{item?.componentType || "-"}</td>
-                      <td className="px-4 py-3 text-sm">{item?.componentKey || "-"}</td>
+                      {SKIP_LOG_COLUMNS.map((column) => (
+                        <td
+                          key={column.key}
+                          className={`px-4 py-3 text-sm ${column.key === "userId" ? "font-medium text-black" : ""}`}
+                        >
+                          {column.getValue(item)}
+                        </td>
+                      ))}
                       {/* <td className="px-4 py-3 text-sm">{item?.skipAction || "-"}</td> */}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={SKIP_LOG_COLUMNS.length} className="px-4 py-8 text-center text-sm text-gray-500">
                       No skip logs found.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+            </>
           )}
         </CardBody>
       </Card>

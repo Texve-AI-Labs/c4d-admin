@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Formik, Field, ErrorMessage, Form } from 'formik';
+import React, { useEffect, useRef, useState } from 'react';
+import { Formik, Field, ErrorMessage, Form, useFormikContext } from 'formik';
 import { Button } from '@material-tailwind/react';
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
@@ -41,6 +41,51 @@ const toUtcIso = (dateLikeValue) => {
   return Number.isNaN(dt.getTime()) ? '' : dt.toISOString();
 };
 
+const normalizeDeliverySchedule = (value) => String(value || '').trim().toUpperCase();
+
+const buildNotificationSchedulePayload = (values) => {
+  const deliverySchedule = normalizeDeliverySchedule(values.deliverySchedule);
+  const isScheduledLater = deliverySchedule === 'SCHEDULE_LATER';
+
+  return {
+    deliverySchedule,
+    scheduledAtUtc: isScheduledLater ? toUtcIso(values.scheduledAtUtc) : '',
+  };
+};
+
+const NotificationTimeValidationWatcher = ({ validateNotificationTime }) => {
+  const { values } = useFormikContext();
+  const debounceRef = useRef(null);
+  const isFirstRunRef = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRunRef.current) {
+      isFirstRunRef.current = false;
+      return () => {
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+        }
+      };
+    }
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      validateNotificationTime(values);
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [values.deliverySchedule, values.scheduledAtUtc, validateNotificationTime, values]);
+
+  return null;
+};
+
 const NotificationListApp = () => {
   const showBadRequestAlert = (message) =>
     Swal.fire({
@@ -64,10 +109,48 @@ const NotificationListApp = () => {
   };
 
   const [serviceAreas, setServiceAreas] = useState([]);
+  const lastValidatedScheduleRef = useRef('');
   const navigate = useNavigate();
+
+  const validateNotificationTime = async (nextValues) => {
+    const { deliverySchedule, scheduledAtUtc } = buildNotificationSchedulePayload(nextValues);
+
+    if (deliverySchedule !== 'SCHEDULE_LATER' || !scheduledAtUtc) {
+      lastValidatedScheduleRef.current = '';
+      return true;
+    }
+
+    const validationKey = `${deliverySchedule}|${scheduledAtUtc}`;
+    if (lastValidatedScheduleRef.current === validationKey) {
+      return true;
+    }
+
+    const validationPayload = {
+      deliverySchedule,
+      scheduledAtUtc,
+    };
+    // console.log('VALIDATE_NOTIFICATION_TIME payload:', validationPayload);
+
+    const validationResponse = await ApiRequestUtils.post(
+      API_ROUTES.VALIDATE_NOTIFICATION_TIME,
+      validationPayload,
+      0,
+      { suppressAlert: true }
+    );
+
+    if (validationResponse?.code === 400 || validationResponse?.success === false) {
+      await showBadRequestAlert(validationResponse?.message);
+      return false;
+    }
+
+    lastValidatedScheduleRef.current = validationKey;
+    return true;
+  };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
+      const { deliverySchedule, scheduledAtUtc } = buildNotificationSchedulePayload(values);
+
       const payload = {
         title: values.title,
         message: values.message,
@@ -82,10 +165,10 @@ const NotificationListApp = () => {
             ? toUtcIso(values.scheduledAtUtc)
             : toUtcIso(),
       };
-      console.log('Submitting payload:', payload);
+      // console.log('Submitting payload:', payload);
 
       const data = await ApiRequestUtils.post(API_ROUTES.POST_NOTIFICATION_ADD, payload, 0, { suppressAlert: true });
-      console.log('Submitted successfully:', data);
+      // console.log('Submitted successfully:', data);
       // resetForm();
       if (data?.code === 400) {
         await showBadRequestAlert(data?.message);
@@ -111,7 +194,7 @@ const NotificationListApp = () => {
         const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {
           type: 'Service Area',
         });
-        console.log('GEO MARKINGS RESPONSE:', response);
+        // console.log('GEO MARKINGS RESPONSE:', response);
         setServiceAreas(response?.data || []);
       } catch (error) {
         console.error('Error fetching GEO_MARKINGS_LIST:', error);
@@ -138,6 +221,7 @@ const NotificationListApp = () => {
       >
         {({ isSubmitting, setFieldValue, values }) => (
           <Form className="space-y-4">
+            <NotificationTimeValidationWatcher validateNotificationTime={validateNotificationTime} />
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>

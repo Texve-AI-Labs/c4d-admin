@@ -6,6 +6,40 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
+const toTitle = (value) => {
+  if (!value) return "-";
+  return String(value)
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
+const getStatusColor = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["VERIFIED", "UPLOADED", "APPROVED"].includes(normalized)) return "green";
+  if (["PENDING", "PENDING VERIFICATION", "PENDING_VERIFICATION"].includes(normalized)) return "amber";
+  if (normalized === "PENDING UPLOAD") return "blue-gray";
+  if (normalized === "NOT_INTERESTED") return "yellow";
+  if (normalized === "NO_RESPONSE") return "gray";
+  if (normalized === "INVALID") return "orange";
+  if (normalized === "DECLINED") return "red";
+  return "blue-gray";
+};
+
+const getStatusLabel = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["PENDING", "PENDING VERIFICATION", "PENDING_VERIFICATION"].includes(normalized)) return "Pending Verification";
+  if (normalized === "PENDING UPLOAD") return "Pending Upload";
+  if (normalized === "APPROVED") return "Approved";
+  return toTitle(status);
+};
+
+const getReviewStatus = (status) => {
+  const normalized = String(status || "").toUpperCase();
+  if (["UPLOADED","PENDING","PENDING UPLOAD"].includes(normalized)) return "PENDING VERIFICATION";
+  return normalized;
+};
 
 const normalizeSubType = () => "Auto";
 
@@ -17,6 +51,7 @@ const VehicleDocuments = () => {
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
   const [uploadErrorsByType, setUploadErrorsByType] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (id) fetchData();
@@ -29,8 +64,8 @@ const VehicleDocuments = () => {
       setAccount(accountData || null);
 
       const vehicleDocsRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_REQUIRED_DOCUMENTS, {
-        type: "ACCOUNT",
-        subType: normalizeSubType(accountData?.type),
+        subjectType: "ACCOUNT",
+        serviceType: normalizeSubType(accountData?.type),
       });
 
       const vehicleDocs = vehicleDocsRes?.data?.vehicleRequiredDocuments || [];
@@ -58,11 +93,25 @@ const VehicleDocuments = () => {
         docType,
         proof,
         type: item?.displayName || item?.label || docType,
-        status: proof?.image1 ? "UPLOADED" : "PENDING UPLOAD",
+        status: proof?.status || (proof?.image1 ? "UPLOADED" : "PENDING UPLOAD"),
         createdAt: proof?.created_at ? moment(proof.created_at).format("DD-MM-YYYY") : "-",
       };
     });
   }, [requiredDocs, proofsByType]);
+  const canContinue = rows.length > 0 && rows.every((row) => ["APPROVED", "VERIFIED"].includes(String(row.status || "").toUpperCase()));
+  const blockedVehicleDocuments = useMemo(
+    () =>
+      rows
+        .filter((row) => !["APPROVED", "VERIFIED"].includes(String(row.status || "").toUpperCase()))
+        .map((row) => row.type || row.docType)
+        .filter(Boolean),
+    [rows]
+  );
+  const canContinueMessage = rows.length === 0
+    ? "No required documents found."
+    : !canContinue
+      ? `Approve these vehicle documents: ${blockedVehicleDocuments.join(", ")}.`
+      : "";
 
   const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
 
@@ -145,6 +194,29 @@ const VehicleDocuments = () => {
     }
   };
 
+  const handleStatusChange = async (documentId, status) => {
+    if (!documentId) return;
+    try {
+      setUpdatingStatus(true);
+      const loggedInUser = localStorage.getItem("loggedInUser");
+      const parsedUser = loggedInUser ? JSON.parse(loggedInUser) : {};
+      const verifiedBy = parsedUser?.name || "Admin";
+      const payload = { documentId, status, verifiedBy };
+      const response = await ApiRequestUtils.update(API_ROUTES.GET_DOCUMENT_DETAILS_LIST, payload);
+      if (response?.success) {
+        await fetchData();
+        setModalData(null);
+      } else {
+        window.alert(response?.message || "Failed to update status. Please try again.");
+      }
+    } catch (error) {
+      console.error("Failed to update status", error);
+      window.alert("Failed to update status. Please try again.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
       <AccountCreationTabs activeStage={3} />
@@ -199,8 +271,8 @@ const VehicleDocuments = () => {
                     <td className="py-3 px-5 border-b border-blue-gray-50">
                       <Chip
                         variant="ghost"
-                        color={row.status === "UPLOADED" ? "green" : "blue-gray"}
-                        value={row.status === "UPLOADED" ? "Uploaded" : "Pending Upload"}
+                        color={getStatusColor(row.status)}
+                        value={getStatusLabel(row.status)}
                         className="py-0.5 px-2 text-[11px] font-medium normal-case w-fit"
                       />
                     </td>
@@ -208,7 +280,12 @@ const VehicleDocuments = () => {
                       {row.proof?.image1 ? (
                         <Typography
                           className="text-xs font-semibold text-blue-700 underline cursor-pointer"
-                          onClick={() => setModalData({ image1: row.proof?.image1, image2: row.proof?.image2 })}
+                          onClick={() => setModalData({
+                            id: row.proof?.id,
+                            image1: row.proof?.image1,
+                            image2: row.proof?.image2,
+                            status: getReviewStatus(row.status),
+                          })}
                         >
                           View Details
                         </Typography>
@@ -220,6 +297,9 @@ const VehicleDocuments = () => {
                       <Typography className="text-xs font-semibold text-blue-gray-900">{row.createdAt}</Typography>
                     </td>
                     <td className="py-3 px-5 border-b border-blue-gray-50">
+                      {String(row.proof?.status || "").toUpperCase() === "APPROVED" ? (
+                        <Typography className="text-xs font-semibold text-blue-gray-400">-</Typography>
+                      ) : (
                       <div className="flex flex-col gap-1">
                         <label
                           htmlFor={`upload-${row.key}`}
@@ -242,6 +322,7 @@ const VehicleDocuments = () => {
                           </Typography>
                         )}
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -263,6 +344,7 @@ const VehicleDocuments = () => {
         <Button
           fullWidth
           onClick={() => {
+            if (!canContinue) return;
             const accountId = account?.id || id;
             navigate(`/dashboard/vendors/account/owner-onboarding-auto/vehicle-creation/${id}`, {
               state: {
@@ -270,15 +352,27 @@ const VehicleDocuments = () => {
                 type: account?.type || "Auto",
                 accountId,
                 fromDetails: true,
-                vehicleDocuments: vehicleDocsData,
+                vehicleDocuments: rows.map((row) => ({
+                  type: row.type,
+                  docType: row.docType,
+                  status: row.status,
+                  createdAt: row.createdAt,
+                  image1: row.proof?.image1 || null,
+                  image2: row.proof?.image2 || null,
+                  documentId: row.proof?.id || null,
+                })),
               },
             });
           }}
+          disabled={!canContinue}
           className={`my-2 mx-2 ${ColorStyles.continueButtonColor}`}
         >
           Continue
         </Button>
       </div>
+      {!canContinue && canContinueMessage ? (
+        <Typography className="mt-1 text-xs font-medium text-red-600">{canContinueMessage}</Typography>
+      ) : null}
 
       {modalData && (
         <Dialog open={Boolean(modalData)} handler={() => setModalData(null)} size="md">
@@ -323,6 +417,43 @@ const VehicleDocuments = () => {
                 </a>
               )}
             </div>
+            {["PENDING VERIFICATION"].includes(String(modalData?.status || "").toUpperCase()) ? (
+              <div className="flex justify-center gap-3 mt-4 flex-wrap">
+                {["APPROVED", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].map((nextStatus) => (
+                  <button
+                    key={nextStatus}
+                    type="button"
+                    disabled={updatingStatus}
+                    onClick={() => handleStatusChange(modalData?.id, nextStatus)}
+                    className={`px-3 py-1 rounded-md text-white disabled:opacity-60 text-xs ${
+                      nextStatus === "APPROVED"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : nextStatus === "NOT_INTERESTED"
+                          ? "bg-yellow-600 hover:bg-yellow-700"
+                          : nextStatus === "NO_RESPONSE"
+                            ? "bg-gray-600 hover:bg-gray-700"
+                            : nextStatus === "INVALID"
+                              ? "bg-orange-600 hover:bg-orange-700"
+                              : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    {updatingStatus ? "Updating..." : toTitle(nextStatus)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {["NOT_INTERESTED", "NO_RESPONSE"].includes(String(modalData?.status || "").toUpperCase()) ? (
+              <div className="flex justify-center gap-3 mt-4 flex-wrap">
+                <button
+                  type="button"
+                  disabled={updatingStatus}
+                  onClick={() => handleStatusChange(modalData?.id, "PENDING")}
+                  className="px-3 py-1 rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-xs"
+                >
+                  {updatingStatus ? "Updating..." : "Reopen"}
+                </button>
+              </div>
+            ) : null}
           </DialogBody>
         </Dialog>
       )}
