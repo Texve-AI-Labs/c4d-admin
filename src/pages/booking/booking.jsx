@@ -1909,6 +1909,10 @@ const finalTotalAfterDiscounts =
         : totalestimationfare;
 const finalTotalAfterDiscountsWithCancelCharge =
     finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
+const isPeakHour = quoteDetails?.amount?.fareBreakdown?.isPeakHour === true;
+const priceDetailsCardClass = isPeakHour
+    ? "border rounded-xl bg-amber-50 p-4"
+    : "border rounded-xl bg-gray-200 p-4";
 
 
     return (
@@ -3384,8 +3388,15 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                 
                                               {values.serviceType == 'DRIVER' && values.packageTypeSelected !== 'Outstation' && quoteDetails && (
                                                     <Card className="my-6">
-                                                        <div className="border rounded-xl bg-gray-200 p-4">
-                                                        <h2 className="text-2xl font-bold text-center">Estimated Price Details</h2>
+                                                        <div className={priceDetailsCardClass}>
+                                                        <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+                                                            <span>Estimated Price Details</span>
+                                                            {isPeakHour && (
+                                                                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                                                    Peak Hrs
+                                                                </span>
+                                                            )}
+                                                        </h2>
                                                         <hr className="my-2 border border-black" />
                                                         <div className="mt-4">
                                                             <div className="flex justify-between">
@@ -3551,8 +3562,15 @@ const finalTotalAfterDiscountsWithCancelCharge =
                                                                 )}
                                                     {quoteDetails && (values.serviceType !== 'DRIVER' || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation')) && 
                                                     <Card className="my-6">
-                                                        <div className="border rounded-xl bg-gray-200 p-4">
-                                                            <h2 className="text-2xl font-bold text-center">Estimated Price Details</h2>
+                                                        <div className={priceDetailsCardClass}>
+                                                            <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+                                                                <span>Estimated Price Details</span>
+                                                                {isPeakHour && (
+                                                                    <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                                                        Peak Hrs
+                                                                    </span>
+                                                                )}
+                                                            </h2>
                                                             <hr className="my-2 border border-black" />
                                                             <div className="mt-4">
                                                                 <>
