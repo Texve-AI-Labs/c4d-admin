@@ -887,6 +887,7 @@ const handleSaveDriverEndLocation = async () => {
         explicitPremiumSurcharge > 0 ||
         premiumFareCandidate > 0;
     const isNearlyEqual = (a, b) => Math.abs(Number(a || 0) - Number(b || 0)) < 0.01;
+    const isPeakHour = bookingDetails?.estimatedFareBreakdown?.isPeakHour === true;
     const getSafePremiumEstimatedPrice = (baseValue) => {
         const base = Number(baseValue || 0);
         if (!isPremiumBooking) return base;
@@ -1666,7 +1667,14 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                 <Card className="mb-4 rounded-2xl border border-gray-100 shadow-sm">
                     <CardBody className="space-y-5">
                         <div className="flex items-center justify-between">
-                            <span className="text-lg font-semibold text-gray-900">Ride Details</span>
+                            <span className="text-lg font-semibold text-gray-900">
+                                Ride Details
+                                {isPeakHour && (
+                                    <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                                        Peak Hrs
+                                    </span>
+                                )}
+                            </span>
                             <Typography variant="h6" color="green"><a target="_blank" href={Utils.generateWhatsAppMessage(bookingDetails)}>Share on Whatsapp</a></Typography>
                         </div>
                         <div className="grid sm:grid-cols-2 gap-4 text-sm">
