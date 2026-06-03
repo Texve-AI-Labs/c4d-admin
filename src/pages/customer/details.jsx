@@ -11,6 +11,11 @@ import CustomerCallsLog from '@/components/CustomerCallsLog';
 import ConfirmBooking from '@/pages/booking/confirmBooking';
 import moment from "moment";
 
+const formatDateTime = (value, format = "DD-MM-YYYY hh:mm A") => {
+    const parsed = moment.utc(value);
+    return parsed.isValid() ? parsed.format(format) : "-";
+};
+
 const CustomerDetails = () => {
     const navigate = useNavigate();
     const [driverVal, setDriverVal] = useState({});
@@ -262,10 +267,7 @@ const CustomerDetails = () => {
                                                             <tr key={trip.id}>
                                                                 <td className="p-2 border underline cursor-pointer text-primary" onClick={() => openBookingDetails(trip)}>{trip.bookingNumber}</td>
                                                                 <td className="p-2 border">
-                                                                    {trip.endDate || '-'} {(() => {
-                                                                        const parsedTime = moment(trip.endTime, ['HH:mm:ss', 'HH:mm', 'hh:mm A'], true);
-                                                                        return parsedTime.isValid() ? parsedTime.format('HH:mm A') : '-';
-                                                                    })()}
+                                                                    {formatDateTime(trip.endedTime)}
                                                                 </td>
                                                                 {/* <td className="p-2 border">{}</td> */}
                                                                 <td className="p-2 border">{driverName}</td>
