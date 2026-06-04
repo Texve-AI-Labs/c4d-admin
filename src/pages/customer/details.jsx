@@ -12,7 +12,7 @@ import ConfirmBooking from '@/pages/booking/confirmBooking';
 import moment from "moment";
 
 const formatDateTime = (value, format = "DD-MM-YYYY hh:mm A") => {
-    const parsed = moment.utc(value);
+    const parsed = moment(value);
     return parsed.isValid() ? parsed.format(format) : "-";
 };
 
