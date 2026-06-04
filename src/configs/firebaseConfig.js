@@ -12,6 +12,8 @@ const firebaseConfig = {
   vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
 };
 
+console.log("Firebase Config check and :", firebaseConfig);
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 export const FirebaseMessaging = getMessaging(app);
