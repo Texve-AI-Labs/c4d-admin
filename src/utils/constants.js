@@ -16,9 +16,9 @@ export const constants = {
 };
 
 export const getBaseUrl = () => {
-    return constants.url + '/api/customer/dev';
+    return constants.url_sit + '/api/customer/dev';
 }
-export const DISABLE_GLOBAL_AUTOCOMPLETE = true; // true -> off false -> on
+export const DISABLE_GLOBAL_AUTOCOMPLETE = false; // true -> off false -> on
 
 
 export const FUTURE_FLAG = {
