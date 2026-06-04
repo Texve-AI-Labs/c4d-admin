@@ -9,14 +9,14 @@ export const constants = {
     // url_dev: 'https://perihelial-ariella-unserious.ngrok-free.dev',
     // url_dev: 'https://z2s9hjbf-3000.inc1.devtunnels.ms',
     url: import.meta.env.VITE_API_ENDPOINT,
-    url_sit: 'https://sit.api.c4d.smartapis.cyou',
+    // url_sit: 'https://sit.api.c4d.smartapis.cyou',
     url_uat: 'https://uat.api.c4d.smartapis.cyou',
     url_prepod: 'https://c4d-pre-prod-1089104308138.us-central1.run.app',
     // url_prod:'https://api.c4d.smartapis.cyou',
 };
 
 export const getBaseUrl = () => {
-    return constants.url_sit + '/api/customer/dev';
+     return (import.meta.env.VITE_URL_SIT) + '/api/customer/dev';
 }
 export const DISABLE_GLOBAL_AUTOCOMPLETE = false; // true -> off false -> on
 
