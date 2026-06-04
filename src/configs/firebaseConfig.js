@@ -11,8 +11,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
 };
+// // console.log(getMessaging(app));
+console.log("Firebase Config check and :", firebaseConfig);
 
 const app = initializeApp(firebaseConfig);
+console.log('Firebase Messaging checking:', getMessaging(app));
 const auth = getAuth(app);
 export const FirebaseMessaging = getMessaging(app);
 
