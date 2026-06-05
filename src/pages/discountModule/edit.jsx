@@ -21,11 +21,39 @@ const DiscountEdit = () => {
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null); 
   const [premiumServicesMap, setPremiumServicesMap] = useState({});
   const [alert, setAlert] = useState(null);
+  const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
+    DRIVER: [{ value: 'DRIVER', label: 'DRIVER' }],
+    CAB: [
+      { value: 'RIDES', label: 'RIDES' },
+      { value: 'RENTAL_HOURLY_PACKAGE', label: 'HOURLY PACKAGE' },
+      { value: 'RENTAL_DROP_TAXI', label: 'DROP TAXI' },
+      { value: 'RENTAL', label: 'OUTSTATION' },
+      { value: 'ALL', label: 'ALL' },
+    ],
+    AUTO: [{ value: 'AUTO', label: 'AUTO' }],
+    PARCEL: [{ value: 'PARCEL', label: 'PARCEL' }],
+  };
   const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
 
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
+  };
+  const getEntityFromServiceType = (serviceType) => {
+    const normalized = String(serviceType || '').trim().toUpperCase();
+    if (normalized === 'DRIVER') return 'DRIVER';
+    if (normalized === 'AUTO') return 'AUTO';
+    if (normalized === 'PARCEL') return 'PARCEL';
+    if (['RIDES', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'RENTAL','ALL'].includes(normalized)) return 'CAB';
+    return '';
+  };
+  const getServiceTypeOptions = (entity, currentServiceType) => {
+    const baseOptions = SERVICE_TYPE_OPTIONS_BY_ENTITY[entity] || [];
+    if (!currentServiceType) return baseOptions;
+    const normalizedCurrent = String(currentServiceType).trim().toUpperCase();
+    return baseOptions.some((option) => option.value === normalizedCurrent)
+      ? baseOptions
+      : [...baseOptions, { value: normalizedCurrent, label: normalizedCurrent }];
   };
 
   const formatDateOnly = (isoString) => {
@@ -136,6 +164,7 @@ const DiscountEdit = () => {
           })();
           setInitialValues({
             discountId: discountFromState.discountId || discountFromState.id,
+            entity: discountFromState.entity || getEntityFromServiceType(discountFromState.serviceType),
             discountType: initialDiscountType,
             percentage: discountFromState.percentage || '',
             amount:discountFromState.amount || '',
@@ -182,6 +211,7 @@ const DiscountEdit = () => {
           })();
           setInitialValues({
             discountId: data.discountId || data.id,
+            entity: data.entity || getEntityFromServiceType(data.serviceType),
             discountType: fetchedType,
             percentage: data.percentage || '',
             amount: data.amount || '',
@@ -253,6 +283,7 @@ const DiscountEdit = () => {
 
       const formData = new FormData();
       formData.append('discountId', Number(values.discountId));
+      formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
       formData.append('couponCode', values.couponCode);
@@ -299,11 +330,13 @@ const DiscountEdit = () => {
       if (isGeneralParcel) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
-        formData.append('isPremium', false);
-        formData.append('cabType', '');
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
+      } else if (values.serviceType === 'DRIVER') {
+        formData.append('cabType', values.cabType || null);
+      } else if (values.serviceType === 'AUTO') {
+        formData.append('isPremium', values.isPremium);
       } else {
       const finalCabType = values.isPremium
         ? (values.premiumCabType || '')
@@ -311,6 +344,7 @@ const DiscountEdit = () => {
       formData.append('cabType', finalCabType);
       formData.append('isPremium', values.isPremium);
       }
+      console.log('Submitting form with values:', values);
     const response = await ApiRequestUtils.updateDocs(API_ROUTES.PUT_DISCOUNT, formData);
 
       if (response?.success) {
@@ -340,7 +374,7 @@ const DiscountEdit = () => {
   }
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-4xl">
       {alert && (
         <div className="mb-2">
           <Alert color={alert.color}>{alert.message}</Alert>
@@ -366,6 +400,36 @@ const DiscountEdit = () => {
               <Field type="hidden" name="removeImage" />
               <Field type="hidden" name="removeDashboardOfferImg" />
               <Field type="hidden" name="discountId" />
+              <div>
+                <label className="text-sm font-medium text-gray-700">Entity Type</label>
+                <Field
+                  as="select"
+                  name="entity"
+                  onChange={(e) => {
+                    const nextEntity = e.target.value;
+                    const nextServiceTypeOptions = getServiceTypeOptions(nextEntity);
+                    const currentServiceType = String(values.serviceType || '').toUpperCase();
+                    setFieldValue('entity', nextEntity);
+                    setFieldValue(
+                      'serviceType',
+                      nextServiceTypeOptions.some((option) => option.value === currentServiceType) ? values.serviceType : ''
+                    );
+                    setFieldValue('parcelVehicleType', 'BIKE');
+                    setFieldValue('subZoneId', '');
+                    setFieldValue('isPremium', false);
+                    setFieldValue('cabType', '');
+                    setFieldValue('premiumCabType', '');
+                  }}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                >
+                  <option value="">Select Entity Type</option>
+                  <option value="DRIVER">Driver</option>
+                  <option value="CAB">Cab</option>
+                  <option value="AUTO">Auto</option>
+                  <option value="PARCEL">Parcel</option>
+                </Field>
+                <ErrorMessage name="entity" component="div" className="text-red-500 text-sm" />
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Offer Type</label>
                 <Field
@@ -402,14 +466,11 @@ const DiscountEdit = () => {
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
                   <option value="">Select Service Type</option>
-                  <option value="DRIVER">DRIVER</option>
-                  <option value="RIDES">RIDES</option>
-                  <option value="RENTAL_HOURLY_PACKAGE">HOURLY PACKAGE</option>
-                  <option value="RENTAL_DROP_TAXI">DROP TAXI</option>
-                  <option value="RENTAL">OUTSTATION</option>
-                  <option value="AUTO">AUTO</option>
-                  <option value="PARCEL">PARCEL</option>
-                  <option value="ALL">ALL</option>
+                  {getServiceTypeOptions(values.entity, values.serviceType).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </Field>
                 <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
               </div>

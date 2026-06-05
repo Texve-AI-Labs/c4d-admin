@@ -808,11 +808,14 @@ export const VERSION_CONTROL_EDIT=Yup.object({
    
  
 
-  export const DISCOUNT_ADD_SCHEMA = Yup.object({
+export const DISCOUNT_ADD_SCHEMA = Yup.object({
+    entity: Yup.string()
+        .oneOf(['DRIVER', 'CAB', 'AUTO', 'PARCEL'], 'Invalid entity type')
+        .required('Entity type is required'),
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
         .required('Offer type is required'),
-    couponCode: Yup.string().required('Coupon code is required'),  
+    // couponCode: Yup.string().required('Coupon code is required'),  
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
@@ -876,10 +879,13 @@ export const VERSION_CONTROL_EDIT=Yup.object({
 
 export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     discountId: Yup.number().required('Discount ID is required'),
+    entity: Yup.string()
+        .oneOf(['DRIVER', 'CAB', 'AUTO', 'PARCEL'], 'Invalid entity type')
+        .required('Entity type is required'),
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
         .required('Offer type is required'),
-    couponCode: Yup.string().required('Coupon code is required'),
+    // couponCode: Yup.string().required('Coupon code is required'),
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
