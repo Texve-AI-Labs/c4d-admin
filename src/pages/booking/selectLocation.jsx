@@ -21,6 +21,16 @@ const LocationInput = ({ value, onChange, onSelect, placeholder, suggestions }) 
         return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
     };
 
+const makeAddressPayload = (name, placeId) => ({
+    name,
+    ...(placeId ? { placeId } : {}),
+});
+
+const getSuggestionPlaceId = (suggestion) => {
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.placeId || suggestion.place_id || suggestion.id || '';
+};
+
     const getSuggestionTitle = (suggestion) => {
         if (typeof suggestion === 'string') {
             const [firstPart] = suggestion.split(',');
@@ -47,7 +57,7 @@ const LocationInput = ({ value, onChange, onSelect, placeholder, suggestions }) 
                     {suggestions.map((suggestion, index) => (
                         <ListItem
                             key={index}
-                            onClick={() => onSelect(getSuggestionText(suggestion))}
+                            onClick={() => onSelect(suggestion)}
                             className=" hover:bg-gray-100 cursor-pointer"
                         >
                             <div className="flex flex-col">
@@ -75,6 +85,8 @@ const SelectLocation = (props) => {
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
+    const [pickupPlaceId, setPickupPlaceId] = useState('');
+    const [dropPlaceId, setDropPlaceId] = useState('');
     const [mapCenter, setMapCenter] = useState({ lat: 12.906374, lng: 80.226452 });
     const [mapZoom, setMapZoom] = useState(10);
     const mapRef = useRef(null);
@@ -175,9 +187,10 @@ const SelectLocation = (props) => {
         }
     };
 
-    const handleSelectLocation = async (address, isPickup) => {
+    const handleSelectLocation = async (address,placeId, isPickup) => {
         const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, {
-            address
+            address,
+            placeId
         });
         if (data?.success) {
             const location = {
@@ -186,9 +199,11 @@ const SelectLocation = (props) => {
             };
             if (isPickup) {
                 setPickupAddress(address);
+                setPickupPlaceId(placeId || '');
                 setPickupLocation(location);
             } else {
                 setDropAddress(address);
+                setDropPlaceId(placeId || '');
                 setDropLocation(location);
             }
         }
@@ -205,14 +220,10 @@ const SelectLocation = (props) => {
             bookingId: props?.bookingId,
             pickupLat: pickupLocation.lat,
             pickupLong: pickupLocation.lng,
-            pickupAddress: {
-                name: pickupAddress,
-            },
+            pickupAddress: makeAddressPayload(pickupAddress, pickupPlaceId),
             dropLat: dropLocation?.lat,
             dropLong: dropLocation?.lng,
-            dropAddress: dropLocation ? {
-                name: dropAddress
-            } : null
+            dropAddress: dropLocation ? makeAddressPayload(dropAddress, dropPlaceId) : null
         };
         //console.log('apiReqBody:', apiReqBody);
         const data = await ApiRequestUtils.update(API_ROUTES.ADD_LOCATION, apiReqBody, props?.customerId);
@@ -257,6 +268,7 @@ const SelectLocation = (props) => {
         setPickupAddress(value);
         if (!value) {
             setPickupLocation(null);
+            setPickupPlaceId('');
         }
         searchLocations(value, true);
     };
@@ -271,7 +283,7 @@ const SelectLocation = (props) => {
                 <LocationInput
                     value={pickupAddress}
                     onChange={handlePickupAddressChange}
-                    onSelect={(address) => handleSelectLocation(address, true)}
+                    onSelect={(suggestion) => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), true)}
                     placeholder={props.serviceType !== 'CAR_WASH' ? "Enter pickup location" : "Enter location"}
                     suggestions={pickupSuggestions}
                 />
@@ -281,9 +293,10 @@ const SelectLocation = (props) => {
                     value={dropAddress}
                     onChange={(value) => {
                         setDropAddress(value);
+                        setDropPlaceId('');
                         searchLocations(value, false);
                     }}
-                    onSelect={(address) => handleSelectLocation(address, false)}
+                    onSelect={(suggestion) => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false)}
                     placeholder="Enter drop location (Optional)"
                     suggestions={dropSuggestions}
                 /></>}

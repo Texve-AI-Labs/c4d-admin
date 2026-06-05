@@ -18,6 +18,16 @@ const getSuggestionText = (suggestion) => {
     return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
 };
 
+const getSuggestionPlaceId = (suggestion) => {
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.placeId || suggestion.place_id || suggestion.id || '';
+};
+
+const makeAddressPayload = (name, placeId) => ({
+    name,
+    ...(placeId ? { placeId } : {}),
+});
+
 const getSuggestionTitle = (suggestion) => {
     if (typeof suggestion === 'string') {
         const [firstPart] = suggestion.split(',');
@@ -49,6 +59,8 @@ const EditBooking = (props) => {
     const [mapZoom, setMapZoom] = useState(10);
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
+    const [pickupPlaceId, setPickupPlaceId] = useState('');
+    const [dropPlaceId, setDropPlaceId] = useState('');
     const mapRef = useRef(null);
     const [quoteDetails, setQuoteDetails] = useState(null);
     const [quoteMeta, setQuoteMeta] = useState(null);
@@ -570,7 +582,9 @@ const getQuoteOutstationDetails = async (values) => {
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
         carType: bookingData?.carType ? bookingData?.carType : '',
         pickupAddress: bookingData?.pickupAddress?.name || '',
+        pickupPlaceId: bookingData?.pickupAddress?.placeId || '',
         dropAddress: bookingData?.dropAddress?.name || '',
+        dropPlaceId: bookingData?.dropAddress?.placeId || '',
         rideDate: bookingData?.fromDate ? moment(bookingData.fromDate).format('YYYY-MM-DD') : '',
         rideTime: bookingData?.fromDate ? moment(bookingData.fromDate).format('HH:mm') : '',
         toDate: bookingData?.toDate ? moment(bookingData.toDate).format('YYYY-MM-DD') : '',
@@ -578,11 +592,13 @@ const getQuoteOutstationDetails = async (values) => {
         acType: bookingData?.acType?.toUpperCase(),
         zone: bookingData?.zone || '',
         driverPickUpAddress: bookingData?.driverStartAddress?.name || '',
+        driverPickUpPlaceId: bookingData?.driverStartAddress?.placeId || '',
         driverPickUpLocation: bookingData?.driverStartLat && bookingData?.driverStartLong ? {
             lat: bookingData.driverStartLat,
             lng: bookingData.driverStartLong
         } : null,
         driverEndAddress: bookingData?.driverEndAddress?.name || '',
+        driverEndPlaceId: bookingData?.driverEndAddress?.placeId || '',
         driverEndLocation: bookingData?.driverEndLat && bookingData?.driverEndLong
             ? { lat: bookingData.driverEndLat, lng: bookingData.driverEndLong }
             : null,
@@ -816,12 +832,13 @@ const getQuoteOutstationDetails = async (values) => {
         }
     };
 
-    const handleSelectLocation = async (address, isPickup, type, setFieldValue, values) => {
-        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address });
+    const handleSelectLocation = async (address, isPickup, placeId,type, setFieldValue, values) => {
+        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address,placeId });
         if (data?.success) {
             const location = { lat: data.data.lat, lng: data.data.lng };
             if (isPickup) {
                 setFieldValue("pickupAddress", address);
+                setFieldValue("pickupPlaceId", placeId || "");
                 setFieldValue("pickupLocation", location);
                 setPickupLocation(location);
                 setPickupSuggestions([]);
@@ -847,24 +864,28 @@ const getQuoteOutstationDetails = async (values) => {
                         });
                         setFieldValue("pickupAddress", "");
                         setFieldValue("pickupLocation", null);
+                        setFieldValue("pickupPlaceId", "");
                         setPickupLocation(null);
                     }
                 }
             }
             else if (type === 'driver') {
                 setFieldValue("driverPickUpAddress", address);
+                setFieldValue("driverPickUpPlaceId", placeId || "");
                 setFieldValue("driverPickUpLocation", location);
                 setDriverPickUpLocation(location);
                 setDriverSuggestions([]);
             }
             else if (type === 'driverEnd') {
                 setFieldValue("driverEndAddress", address);
+                setFieldValue("driverEndPlaceId", placeId || "");
                 setFieldValue("driverEndLocation", location);
                 setDriverEndLocation(location);
                 setDriverEndSuggestions([]);
             }
             else {
                 setFieldValue("dropAddress", address);
+                setFieldValue("dropPlaceId", placeId || "");
                 setFieldValue("dropLocation", location);
                 setDropLocation(location);
                 setDropSuggestions([]);
@@ -973,19 +994,20 @@ const getQuoteOutstationDetails = async (values) => {
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
-                    pickupAddress: {
-                        name: values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name
-                    },
+                    pickupAddress: makeAddressPayload(
+                        values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name,
+                        values?.pickupPlaceId || bookingData?.pickupAddress?.placeId || ''
+                    ),
                     driverStartLat: values.driverPickUpLocation?.lat || bookingData?.driverStartLat || null,
                     driverStartLong: values.driverPickUpLocation?.lng || bookingData?.driverStartLong || null,
                     driverStartAddress: values.driverPickUpAddress
-                        ? { name: values.driverPickUpAddress }
+                        ? makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId || bookingData?.driverStartAddress?.placeId || '')
                         : bookingData?.driverStartAddress
-                            ? { name: bookingData.driverStartAddress.name }
+                            ? makeAddressPayload(bookingData.driverStartAddress.name, bookingData.driverStartAddress.placeId || '')
                             : null,
                driverEndLat : values.driverEndLocation?.lat || null,
                 driverEndLong : values.driverEndLocation?.lng || null,
-                driverEndAddress : values.driverEndAddress ? { name: values.driverEndAddress } : null,
+                driverEndAddress : values.driverEndAddress ? makeAddressPayload(values.driverEndAddress, values.driverEndPlaceId || '') : null,
                     dropLat: null,
                     dropLong: null,
                     dropAddress: null,
@@ -1007,8 +1029,9 @@ const getQuoteOutstationDetails = async (values) => {
                 if (!isLocalDropOnly && !isHourlyPackageSelection) {
                     data.dropLat = values?.dropLocation?.lat ? values?.dropLocation?.lat : bookingData?.dropLat
                     data.dropLong = values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong
-                    data.dropAddress = values?.dropLocation ? { name: values?.dropAddress } : bookingData?.dropAddress ? {
-                        name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name
+                    data.dropAddress = values?.dropLocation ? makeAddressPayload(values?.dropAddress, values.dropPlaceId) : bookingData?.dropAddress ? {
+                        name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name,
+                        placeId: values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
                     } : null
                 } else if (isHourlyPackageSelection) {
                     delete data.dropLat;
@@ -1028,14 +1051,13 @@ const getQuoteOutstationDetails = async (values) => {
                     bookingId: bookingData?.id,
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
-                    pickupAddress: {
-                        name: values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name
-                    },
+                    pickupAddress: makeAddressPayload(
+                        values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name,
+                        values?.pickupPlaceId || bookingData?.pickupAddress?.placeId || ''
+                    ),
                     driverStartLat: values.driverPickUpLocation?.lat,
                     driverStartLong: values.driverPickUpLocation?.lng,
-                    driverStartAddress: {
-                        name: values.driverPickUpAddress,
-                    },
+                    driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId || ''),
                     carType: values?.carType,
                     sourceType: values?.sourceType,
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {
@@ -1049,9 +1071,10 @@ const getQuoteOutstationDetails = async (values) => {
             // console.log("DADADAD", data)
                 data.dropLat = values?.dropLocation?.lat ? values?.dropLocation?.lat : bookingData?.dropLat
                 data.dropLong = values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong
-                data.dropAddress = {
-                    name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name
-                }
+                data.dropAddress = makeAddressPayload(
+                    values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name,
+                    values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
+                )
                 if (updateAdminDiscountPayload) {
                     data.adminDiscount = updateAdminDiscountPayload;
                 }
@@ -1066,14 +1089,16 @@ const getQuoteOutstationDetails = async (values) => {
                     bookingId: bookingData?.id,
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
-                    pickupAddress: {
-                        name: values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name
-                    },
+                    pickupAddress: makeAddressPayload(
+                        values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name,
+                        values?.pickupPlaceId || bookingData?.pickupAddress?.placeId || ''
+                    ),
                     dropLat: values?.dropLocation?.lat ? values?.dropLocation?.lat : bookingData?.dropLat,
                     dropLong: values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong,
-                    dropAddress: {
-                        name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name
-                    },
+                    dropAddress: makeAddressPayload(
+                        values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name,
+                        values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
+                    ),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                 isPremiumService : values?.isPremiumService ? true : false,
                     car_Type: values?.carType || '',
@@ -1588,7 +1613,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
-                                                                    handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue, values);
+                                                                    handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                 }}
                                                             >
                                                                 <div className="flex flex-col">
@@ -1622,7 +1647,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
-                                                                    handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue, values);
+                                                                    handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                 }}
                                                             >
                                                                 <div className="flex flex-col">
@@ -1659,7 +1684,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driver', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driver', setFieldValue, values)}
                                                             >
                                                                 <div className="flex flex-col">
                                                                     <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
@@ -1694,7 +1719,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driverEnd', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driverEnd', setFieldValue, values)}
                                                             >
                                                                 <div className="flex flex-col">
                                                                     <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
@@ -2282,8 +2307,9 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("pickupAddress", e.target.value);
                                                             setFieldValue("pickupLocation", null);
+                                                            setFieldValue("pickupPlaceId", "");
                                                             searchLocations(e.target.value, true);
-                                                        }}
+                                                    }}
                                                     />
                                                     {pickupSuggestions.length > 0 && (
                                                         <ul className="border rounded-lg bg-white mt-2">
@@ -2292,7 +2318,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
                                                                     <div className="flex flex-col">
@@ -2316,6 +2342,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("dropAddress", e.target.value);
                                                             setFieldValue("dropLocation", null);
+                                                            setFieldValue("dropPlaceId", "");
                                                             searchLocations(e.target.value, false);
                                                         }}
                                                     />
@@ -2326,7 +2353,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
                                                                     <div className="flex flex-col">
@@ -2353,6 +2380,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     onChange={(e) => {
                                                         setFieldValue("driverPickUpAddress", e.target.value);
                                                         setFieldValue("driverPickUpLocation", null);
+                                                        setFieldValue("driverPickUpPlaceId", "");
                                                         searchLocations(e.target.value, false, 'driver');
                                                     }}
                                                 />
@@ -2362,7 +2390,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driver', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driver', setFieldValue, values)}
                                                             >
                                                                 <div className="flex flex-col">
                                                                     <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
@@ -2688,6 +2716,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("pickupAddress", e.target.value);
                                                             setFieldValue("pickupLocation", null);
+                                                            setFieldValue("pickupPlaceId", "");
                                                             searchLocations(e.target.value, true);
                                                         }}
                                                     />
@@ -2698,7 +2727,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
                                                                     <div className="flex flex-col">
@@ -2724,6 +2753,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("dropAddress", e.target.value);
                                                             setFieldValue("dropLocation", null);
+                                                            setFieldValue("dropPlaceId", "");
                                                             searchLocations(e.target.value, false);
                                                         }}
                                                     />
@@ -2734,7 +2764,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
                                                                     <div className="flex flex-col">

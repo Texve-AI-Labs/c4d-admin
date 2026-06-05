@@ -37,6 +37,11 @@ const getSuggestionText = (suggestion) => {
     return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
 };
 
+const getSuggestionPlaceId = (suggestion) => {
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.placeId || suggestion.place_id || suggestion.id || '';
+};
+
 const getSuggestionTitle = (suggestion) => {
     if (typeof suggestion === 'string') {
         const [firstPart] = suggestion.split(',');
@@ -45,6 +50,11 @@ const getSuggestionTitle = (suggestion) => {
     if (!suggestion || typeof suggestion !== 'object') return '';
     return suggestion.title || suggestion.fullText || '';
 };
+
+const makeAddressPayload = (address, placeId) => ({
+    address,
+    ...(placeId ? { placeId } : {}),
+});
 
 const ConfirmBooking = (props) => {
     const [bookingDetails, setBookingDetails] = useState("");
@@ -68,6 +78,7 @@ const ConfirmBooking = (props) => {
     const [finalPaymentPirces, setFinalPaymentPrices] = useState({});
     const [isEditingDriverEnd, setIsEditingDriverEnd] = useState(false);
     const [driverEndAddress, setDriverEndAddress] = useState("");
+    const [driverEndPlaceId, setDriverEndPlaceId] = useState("");
     const [driverEndSuggestions, setDriverEndSuggestions] = useState([]);
     const [selectedDriverEndLocation, setSelectedDriverEndLocation] = useState(null);
     const [isEditingAdditionalCharges, setIsEditingAdditionalCharges] = useState(false);
@@ -537,11 +548,12 @@ const ConfirmBooking = (props) => {
   }
 };
 
-const handleSelectDriverEndLocation = async (address) => {
+const handleSelectDriverEndLocation = async (address,placeId) => {
   try {
-    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address });
+    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address,placeId });
     if (data?.success) {
       setDriverEndAddress(address);
+      setDriverEndPlaceId(placeId || "");
       setSelectedDriverEndLocation({ lat: data.data.lat, lng: data.data.lng });
       setDriverEndSuggestions([]);
     }
@@ -574,6 +586,7 @@ const handleSaveDriverEndLocation = async () => {
       bookingId: bookingDetails.id,
       driverEndLat: selectedDriverEndLocation.lat,
       driverEndLong: selectedDriverEndLocation.lng,
+      ...(driverEndPlaceId ? { driverEndPlaceId } : {}),
     };
 
     const response = await ApiRequestUtils.update(API_ROUTES.UPDATE_DRIVER_END_LOCATION, payload);
@@ -590,6 +603,7 @@ const handleSaveDriverEndLocation = async () => {
 
       setIsEditingDriverEnd(false);
       setDriverEndAddress("");
+      setDriverEndPlaceId("");
       setSelectedDriverEndLocation(null);
       // Refresh booking details
       getBookingById(bookingDetails.id, bookingDetails.customerId);
@@ -2294,6 +2308,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     color="blue"
                                     onClick={() => {
                                         setDriverEndAddress(bookingDetails?.driverEndAddress?.name || "");
+                                        setDriverEndPlaceId(bookingDetails?.driverEndAddress?.placeId || "");
                                         setDriverEndSuggestions([]);
                                         setIsEditingDriverEnd(true);
                                         }}
@@ -2313,6 +2328,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         onChange={(e) => {
                                         const query = e.target.value;
                                         setDriverEndAddress(query);
+                                        setDriverEndPlaceId("");
                                         if (query.length > 2) {
                                             searchDriverEndLocations(query);
                                         } else {
@@ -2329,7 +2345,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             key={index}
                                             className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-b-0"
                                             onClick={() => {
-                                                handleSelectDriverEndLocation(getSuggestionText(suggestion));
+                                                handleSelectDriverEndLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion));
                                             }}
                                             >
                                             <div className="flex flex-col">
@@ -2351,6 +2367,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         onClick={() => {
                                         setIsEditingDriverEnd(false);
                                         setDriverEndAddress("");
+                                        setDriverEndPlaceId("");
                                         setDriverEndSuggestions([]);
                                         setSelectedDriverEndLocation(null);
                                         }}
@@ -2976,9 +2993,14 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
             tripDate: bookingDetails?.fromDate ? moment(bookingDetails.fromDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD'),
             vehicleNumber: bookingDetails?.Cab?.carNumber || bookingDetails?.Parcel?.vehicleNumber || bookingDetails?.Auto?.autoNumber|| null,
             driverName: bookingDetails?.Driver?.firstName || null,
-            startAddress: bookingDetails?.pickupAddress?.name ? { address: bookingDetails.pickupAddress.name } : null,
+            startAddress: bookingDetails?.pickupAddress?.name
+                ? makeAddressPayload(bookingDetails.pickupAddress.name, bookingDetails?.pickupAddress?.placeId)
+                : null,
             endAddress: (bookingDetails?.dropAddress?.name || bookingDetails?.endAddress?.name)
-                ? { address: bookingDetails?.dropAddress?.name || bookingDetails?.endAddress?.name }
+                ? makeAddressPayload(
+                    bookingDetails?.dropAddress?.name || bookingDetails?.endAddress?.name,
+                    bookingDetails?.dropAddress?.placeId || bookingDetails?.endAddress?.placeId,
+                )
                 : null,
             startKm: startKm,
             endKm: endKm,

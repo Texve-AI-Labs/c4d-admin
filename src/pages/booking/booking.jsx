@@ -80,6 +80,16 @@ const getSuggestionText = (suggestion) => {
     return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
 };
 
+const getSuggestionPlaceId = (suggestion) => {
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.placeId || suggestion.place_id || suggestion.id || '';
+};
+
+const makeAddressPayload = (name, placeId) => ({
+    name,
+    ...(placeId ? { placeId } : {}),
+});
+
 const getSuggestionTitle = (suggestion) => {
     if (typeof suggestion === 'string') {
         const [firstPart] = suggestion.split(',');
@@ -490,11 +500,13 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
     //     }),
         pickupAddress: {
             name: values.pickupAddress || '',
+            placeId: values.pickupPlaceId || '',
             lat: values.pickupLocation?.lat || 0,
             lng: values.pickupLocation?.lng || 0,
         },
         dropAddress: values.dropAddress ? {
             name: values.dropAddress,
+            placeId: values.dropPlaceId || '',
             lat: values.dropLocation?.lat || 0,
             lng: values.dropLocation?.lng || 0,
         } : {},
@@ -827,14 +839,18 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         customerId: '',
         serviceType: '',
         cabType: '',
+        pickupPlaceId: '',
+        dropPlaceId: '',
         driverPickUpAddress: '',
         driverPickUpLocation: null,
+        driverPickUpPlaceId: '',
         luggage:'',
         seaterCapacity:'',
         sourceType: '',
         isPremiumService : '',
         driverEndAddress: '',
         driverEndLocation: null,
+        driverEndPlaceId: '',
         isPickupSameAsDriverStart: false,
         parcelVehicleType: 'BIKE',
         // weightRange: 'W_0_7',
@@ -959,10 +975,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setIsButtonDisabled(true);
 
         try {
-            const resolveLocationByAddress = async (address) => {
+            const resolveLocationByAddress = async (address,placeId) => {
                 if (!address) return null;
                 try {
-                    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address });
+                    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address,placeId });
                     if (data?.success && data?.data?.lat && data?.data?.lng) {
                         return { lat: data.data.lat, lng: data.data.lng };
                     }
@@ -1017,14 +1033,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 customerId: values?.customerId?.id,
                 pickupLat: pickupLocation?.lat,
                 pickupLong: pickupLocation?.lng,
-                pickupAddress: {
-                    name: pickupAddress,
-                },
+                pickupAddress: makeAddressPayload(pickupAddress, values.pickupPlaceId),
                 dropLat: dropLocation?.lat,
                 dropLong: dropLocation?.lng,
-                dropAddress: {
-                    name: dropAddress,
-                },
+                dropAddress: makeAddressPayload(dropAddress, values.dropPlaceId),
                 zone: actualZone,
                 landmark: values.landmark || '',
                 parcelVehicleType: values.parcelVehicleType || 'BIKE',
@@ -1132,19 +1144,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         const bookingData = {
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
-            pickupAddress: {
-                name: values.pickupAddress,
-            },
+            pickupAddress: makeAddressPayload(values.pickupAddress, values.pickupPlaceId),
             dropLat: values.dropLocation?.lat,
             dropLong: values.dropLocation?.lng,
-            dropAddress: {
-                name: values.dropAddress
-            },
+            dropAddress: makeAddressPayload(values.dropAddress, values.dropPlaceId),
             driverStartLat: values.driverPickUpLocation?.lat,
             driverStartLong: values.driverPickUpLocation?.lng,
-            driverStartAddress: {
-                name: values.driverPickUpAddress,
-            },
+            driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId),
             driverEndLat: values.driverEndLocation?.lat || null,
             source: 'Call',
             carType: values.carType,
@@ -1210,22 +1216,16 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         const bookingData = {
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
-            pickupAddress: {
-                name: values.pickupAddress,
-            },
+            pickupAddress: makeAddressPayload(values.pickupAddress, values.pickupPlaceId),
             dropLat: values.dropLocation?.lat,
             dropLong: values.dropLocation?.lng,
-            dropAddress: {
-                name: values.dropAddress,
-            },
+            dropAddress: makeAddressPayload(values.dropAddress, values.dropPlaceId),
             // bookingType: 'DROP ONLY',
             source: values.source || 'Call',
             sourceType: values.sourceType,
             driverStartLat: values.driverPickUpLocation?.lat,
             driverStartLong: values.driverPickUpLocation?.lng,
-            driverStartAddress: {
-                name: values.driverPickUpAddress,
-            },
+            driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId),
             driverEndLat: values.driverEndLocation?.lat || null,
             zone: actualZone, 
             landMark: values.landMark || '',
@@ -1337,9 +1337,11 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             pickupLong: values.pickupLocation.lng,
             pickupAddress: {
                 name: values.pickupAddress,
+                placeId: values.pickupPlaceId || '',
             },
             driverStartLat: values.driverPickUpLocation?.lat,
             driverStartLong: values.driverPickUpLocation?.lng,
+            driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId),
             source: 'Call',
             sourceType: values.sourceType,
             ...((values.sourceType === "Others" || values.sourceType === "Offline Ads") && {
@@ -1373,22 +1375,18 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (values.driverEndLocation) {
                 bookingData.driverEndLat = values.driverEndLocation.lat;
                 bookingData.driverEndLong = values.driverEndLocation.lng;
-                bookingData.driverEndAddress = {
-                    name: values.driverEndAddress,
-                };
+                bookingData.driverEndAddress = makeAddressPayload(values.driverEndAddress, values.driverEndPlaceId);
             }
 
             if (values.driverPickUpAddress) {
-                bookingData.driverStartAddress = {
-                    name: values.driverPickUpAddress,
-                };
+                bookingData.driverStartAddress = makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId);
             }
         }
        if (values.serviceType !== "RENTAL_DROP_TAXI") {
            if (values.driverEndLocation) {
                bookingData.driverEndLat = values.driverEndLocation.lat;
                bookingData.driverEndLong = values.driverEndLocation.lng;
-               bookingData.driverEndAddress = { name: values.driverEndAddress };
+               bookingData.driverEndAddress = makeAddressPayload(values.driverEndAddress, values.driverEndPlaceId);
            }
        }
 
@@ -1525,12 +1523,16 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         // Clear location-related fields
         setFieldValue('pickupAddress', '');
         setFieldValue('pickupLocation', null);
+        setFieldValue('pickupPlaceId', '');
         setFieldValue('dropAddress', '');
         setFieldValue('dropLocation', null);
+        setFieldValue('dropPlaceId', '');
         setFieldValue('driverPickUpAddress', '');
         setFieldValue('driverPickUpLocation', null);
+        setFieldValue('driverPickUpPlaceId', '');
         setFieldValue('driverEndAddress', '');
         setFieldValue('driverEndLocation', null);
+        setFieldValue('driverEndPlaceId', '');
         setFieldValue('isPickupSameAsDriverStart', false);
         setFieldValue('parcelVehicleType', 'BIKE');
         // setFieldValue('weightRange', 'W_0_7');
@@ -1616,12 +1618,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         }
     };
 
-   const handleSelectLocation = async (address, isPickup, type, setFieldValue, values) => {
-    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address });
+   const handleSelectLocation = async (address,placeId, isPickup, type, setFieldValue, values) => {
+    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address,placeId });
     if (data?.success) {
         const location = { lat: data.data.lat, lng: data.data.lng };
         if (isPickup) {
             setFieldValue("pickupAddress", address);
+            setFieldValue("pickupPlaceId", placeId || "");
             setFieldValue("pickupLocation", location);
             setPickupLocation(location);
             setPickupSuggestions([]);
@@ -1664,17 +1667,20 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             }
         } else if (type === 'driver') {
             setFieldValue("driverPickUpAddress", address);
+            setFieldValue("driverPickUpPlaceId", placeId || "");
             setFieldValue("driverPickUpLocation", location);
             setDriverPickUpLocation(location);
             setDriverSuggestions([]);
         }else if (type === 'driverEnd') {  // NEW
             setFieldValue("driverEndAddress", address);
+            setFieldValue("driverEndPlaceId", placeId || "");
             setFieldValue("driverEndLocation", location);
             setDriverEndLocation(location);
             setDriverEndSuggestions([]);
         } 
         else {
             setFieldValue("dropAddress", address);
+            setFieldValue("dropPlaceId", placeId || "");
             setFieldValue("dropLocation", location);
             setDropLocation(location);
             setDropSuggestions([]);
@@ -2847,6 +2853,7 @@ const priceDetailsCardClass = isPeakHour
                                                         onChange={(e) => {
                                                             setFieldValue("pickupAddress", e.target.value);
                                                             setFieldValue("pickupLocation", null);
+                                                            setFieldValue("pickupPlaceId", "");
                                                             if (values.serviceType === 'PARCEL') {
                                                                 setFieldValue("senderAddress", e.target.value);
                                                             }
@@ -2860,6 +2867,7 @@ const priceDetailsCardClass = isPeakHour
                                                             onClick={() => {
                                                             setFieldValue("pickupAddress", "");
                                                             setFieldValue("pickupLocation", null);
+                                                            setFieldValue("pickupPlaceId", "");
                                                            
                                                             }}
                                                         >
@@ -2870,11 +2878,11 @@ const priceDetailsCardClass = isPeakHour
                                                         {pickupSuggestions.length > 0 && (
                                                             <ul className="border rounded-lg bg-white mt-2">
                                                                 {pickupSuggestions.map((suggestion, index) => (
-                                                                    <li
-                                                                        key={index}
-                                                                        className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                        onClick={() => handleSelectLocation(getSuggestionText(suggestion), true, null, setFieldValue,values)}
-                                                                    >
+                                                                <li
+                                                                    key={index}
+                                                                    className="p-2 cursor-pointer hover:bg-gray-100"
+                                                                    onClick={() => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), true, null, setFieldValue,values)}
+                                                                >
                                                                         <div className="flex flex-col">
                                                                             <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
                                                                             {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
@@ -2901,6 +2909,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     onChange={(e) => {
                                                                         setFieldValue("dropAddress", e.target.value);
                                                                         setFieldValue("dropLocation", null);
+                                                                        setFieldValue("dropPlaceId", "");
                                                                         if (values.serviceType === 'PARCEL') {
                                                                             setFieldValue("receiverAddress", e.target.value);
                                                                         }
@@ -2914,6 +2923,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         onClick={() => {
                                                                         setFieldValue("dropAddress", "");
                                                                         setFieldValue("dropLocation", null);
+                                                                        setFieldValue("dropPlaceId", "");
                                                                         }}
                                                                     >
                                                                         ✕
@@ -2923,11 +2933,11 @@ const priceDetailsCardClass = isPeakHour
                                                                 {dropSuggestions.length > 0 && (
                                                                     <ul className="border rounded-lg bg-white mt-2">
                                                                         {dropSuggestions.map((suggestion, index) => (
-                                                                            <li
-                                                                                key={index}
-                                                                                className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                                onClick={() => {
-                                                                                    handleSelectLocation(getSuggestionText(suggestion), false, null, setFieldValue,values);
+                                                                <li
+                                                                    key={index}
+                                                                    className="p-2 cursor-pointer hover:bg-gray-100"
+                                                                    onClick={() => {
+                                                                                    handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false, null, setFieldValue,values);
                                                                                 }}
                                                                             >
                                                                                 <div className="flex flex-col">
@@ -2996,11 +3006,13 @@ const priceDetailsCardClass = isPeakHour
                                                                             if (e.target.checked) {
                                                                                 setFieldValue("driverPickUpAddress", values.pickupAddress);
                                                                                 setFieldValue("driverPickUpLocation", values.pickupLocation);
+                                                                                setFieldValue("driverPickUpPlaceId", values.pickupPlaceId || "");
                                                                                 setDriverPickUpLocation(values.pickupLocation || null);
                                                                                 setDriverSuggestions([]);
                                                                             } else {
                                                                                 setFieldValue("driverPickUpAddress", "");
                                                                                 setFieldValue("driverPickUpLocation", null);
+                                                                                setFieldValue("driverPickUpPlaceId", "");
                                                                                 setDriverPickUpLocation(null);
                                                                                 setDriverSuggestions([]);
                                                                             }
@@ -3020,6 +3032,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 onChange={(e) => {
                                                                     setFieldValue("driverPickUpAddress", e.target.value);
                                                                     setFieldValue("driverPickUpLocation", null);
+                                                                    setFieldValue("driverPickUpPlaceId", "");
                                                                     searchLocations(e.target.value, false,'driver');
                                                                 }}
                                                             />
@@ -3030,6 +3043,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     onClick={() => {
                                                                     setFieldValue("driverPickUpAddress", "");
                                                                     setFieldValue("driverPickUpLocation", null);
+                                                                    setFieldValue("driverPickUpPlaceId", "");
                                                                    
                                                                     }}
                                                                 >
@@ -3040,11 +3054,11 @@ const priceDetailsCardClass = isPeakHour
                                                             {driverSuggestions.length > 0 && (
                                                                 <ul className="border rounded-lg bg-white mt-2">
                                                                     {driverSuggestions.map((suggestion, index) => (
-                                                                        <li
-                                                                            key={index}
-                                                                            className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                            onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, 'driver', setFieldValue,values)}
-                                                                        >
+                                                                    <li
+                                                                        key={index}
+                                                                        className="p-2 cursor-pointer hover:bg-gray-100"
+                                                                            onClick={() => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false, 'driver', setFieldValue,values)}
+                                                                    >
                                                                             <div className="flex flex-col">
                                                                                 <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
                                                                                 {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
@@ -3079,11 +3093,13 @@ const priceDetailsCardClass = isPeakHour
                                                                         // Copy starting point to ending point
                                                                         setFieldValue("driverEndAddress", values.driverPickUpAddress);
                                                                         setFieldValue("driverEndLocation", values.driverPickUpLocation); // if you store lat/lng too
+                                                                        setFieldValue("driverEndPlaceId", values.driverPickUpPlaceId || "");
                                                                         setFieldValue("driverEndSuggestions([])", []); // Clear suggestions
                                                                     } else {
                                                                         // Clear ending point when unchecked
                                                                         setFieldValue("driverEndAddress", "");
                                                                         setFieldValue("driverEndLocation", null);
+                                                                        setFieldValue("driverEndPlaceId", "");
                                                                     }
                                                                 }}
                                                             />
@@ -3104,6 +3120,7 @@ const priceDetailsCardClass = isPeakHour
                                                             onChange={(e) => {
                                                                 setFieldValue("driverEndAddress", e.target.value);
                                                                 setFieldValue("driverEndLocation", null);
+                                                                setFieldValue("driverEndPlaceId", "");
                                                                 searchLocations(e.target.value, false, 'driverEnd');
                                                             }}
                                                         />
@@ -3114,6 +3131,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     onClick={() => {
                                                                     setFieldValue("driverEndAddress", "");
                                                                     setFieldValue("driverEndLocation", null);
+                                                                    setFieldValue("driverEndPlaceId", "");
                                                                    
                                                                     }}
                                                                 >
@@ -3125,12 +3143,12 @@ const priceDetailsCardClass = isPeakHour
                                                         {driverEndSuggestions.length > 0 && (
                                                             <ul className="border rounded-lg bg-white mt-2 max-h-40 overflow-y-auto z-10">
                                                                 {driverEndSuggestions.map((suggestion, index) => (
-                                                                    <li
-                                                                        key={index}
-                                                                        className="p-2 cursor-pointer hover:bg-gray-100"
+                                                                        <li
+                                                                            key={index}
+                                                                            className="p-2 cursor-pointer hover:bg-gray-100"
                                                                         onClick={() => {
                                                                             const selectedAddress = getSuggestionText(suggestion);
-                                                                            handleSelectLocation(selectedAddress, false, 'driverEnd', setFieldValue, values);
+                                                                            handleSelectLocation(selectedAddress, getSuggestionPlaceId(suggestion), false, 'driverEnd', setFieldValue, values);
                                                                             // Uncheck the "same as start" when user selects different location
                                                                             if (selectedAddress !== values.driverPickUpAddress) {
                                                                                 document.getElementById('sameAsStart').checked = false;
