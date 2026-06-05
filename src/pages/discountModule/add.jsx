@@ -249,7 +249,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
 };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-4xl">
       <h2 className="text-2xl font-bold mb-4">Add Discount</h2>
       <Formik
         initialValues={initialValues}

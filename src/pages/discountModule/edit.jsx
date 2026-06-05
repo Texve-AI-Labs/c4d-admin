@@ -340,7 +340,7 @@ const DiscountEdit = () => {
   }
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-4xl">
       {alert && (
         <div className="mb-2">
           <Alert color={alert.color}>{alert.message}</Alert>
