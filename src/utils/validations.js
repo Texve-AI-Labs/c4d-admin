@@ -812,7 +812,7 @@ export const VERSION_CONTROL_EDIT=Yup.object({
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
         .required('Offer type is required'),
-    couponCode: Yup.string().required('Coupon code is required'),  
+    // couponCode: Yup.string().required('Coupon code is required'),  
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
@@ -879,7 +879,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
         .required('Offer type is required'),
-    couponCode: Yup.string().required('Coupon code is required'),
+    // couponCode: Yup.string().required('Coupon code is required'),
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
