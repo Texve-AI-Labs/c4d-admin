@@ -14,14 +14,34 @@ const DiscountAdd = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null);
   const [premiumServicesMap, setPremiumServicesMap] = useState({});
+  const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
+    DRIVER: [
+      { value: 'DRIVER', label: 'DRIVER' },
+    ],
+    CAB: [
+      { value: 'RIDES', label: 'RIDES' },
+      { value: 'RENTAL_HOURLY_PACKAGE', label: 'HOURLY PACKAGE' },
+      { value: 'RENTAL_DROP_TAXI', label: 'DROP TAXI' },
+      { value: 'RENTAL', label: 'OUTSTATION' },
+      { value: 'ALL', label: 'ALL' },
+    ],
+    AUTO: [
+      { value: 'AUTO', label: 'AUTO' },
+    ],
+    PARCEL: [
+      { value: 'PARCEL', label: 'PARCEL' },
+    ],
+  };
 
   const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
   };
+  const getServiceTypeOptions = (entity) => SERVICE_TYPE_OPTIONS_BY_ENTITY[entity] || [];
 
   const initialValues = {
+    entity:'',
     serviceType: '',
     title: '',
     couponCode: '',
@@ -165,6 +185,7 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
       }
 
       const formData = new FormData();
+      formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
       formData.append('couponCode', values.couponCode);
@@ -207,15 +228,17 @@ if (values.removeDashboardOfferImg) {
       if (isGeneralParcel) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
-        formData.append('isPremium', false);
-        formData.append('cabType', '');
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
+      } else if (values.serviceType === 'DRIVER') {
+        formData.append('cabType', values.cabType || null);
+      } else if (values.serviceType === 'AUTO') {
+        formData.append('isPremium', values.isPremium);
       } else {
         const finalCabType = values.isPremium ? values.premiumCabType : values.cabType;
-      formData.append('cabType', finalCabType);
-      formData.append('isPremium', values.isPremium);
+        formData.append('cabType', finalCabType);
+        formData.append('isPremium', values.isPremium);
       }
       // console.log('Submitting form with values:', values);
       const res = await ApiRequestUtils.postDocs(API_ROUTES.POST_DISCOUNT, formData);
@@ -266,6 +289,32 @@ const getCurrentPremiumOptions = (currentServiceType) => {
             <div className="grid grid-cols-2 gap-4">
                 <Field type="hidden" name="removeImage" />
                 <Field type="hidden" name="removeDashboardOfferImg" />
+                <div>
+                <label className="text-sm font-medium text-gray-700">entity Type</label>
+                <Field
+                  as="select"
+                  name="entity"
+                    onChange={(e) => {
+                      const nextEntity = e.target.value;
+                      setFieldValue('entity', nextEntity);
+                      setFieldValue('serviceType', '');
+                      setFieldValue('parcelVehicleType', 'BIKE');
+                      setFieldValue('subZoneId', '');
+                      setFieldValue('isPremium', false);
+                      setFieldValue('cabType', '');
+                      setFieldValue('premiumCabType', '');
+                    }}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                >
+                  <option value="">Select Entity Type</option>
+                  <option value="DRIVER">Driver</option>
+                  <option value="CAB">Cab</option>
+                  <option value="AUTO">Auto</option>
+                  <option value="PARCEL">Parcel</option>
+                  
+                </Field>
+                <ErrorMessage name="entity" className="text-red-500 text-sm" component="div" />
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Offer Type</label>
                 <Field
@@ -309,14 +358,11 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
                   <option value="">Select Service Type</option>
-                  <option value="DRIVER">DRIVER</option>
-                  <option value="RIDES">RIDES</option>
-                  <option value="RENTAL_HOURLY_PACKAGE">HOURLY PACKAGE</option>
-                  <option value="RENTAL_DROP_TAXI">DROP TAXI</option>
-                  <option value="RENTAL">OUTSTATION</option>
-                  <option value="AUTO">AUTO</option>
-                    <option value="PARCEL">PARCEL</option>
-                  <option value="ALL">ALL</option>
+                  {getServiceTypeOptions(values.entity).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </Field>
                 <ErrorMessage name="serviceType" className="text-red-500 text-sm" component="div" />
               </div>
