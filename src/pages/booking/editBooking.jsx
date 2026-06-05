@@ -140,6 +140,7 @@ const EditBooking = (props) => {
             : totalEstimatedFareAfterSystemDiscount;
     const finalTotalAfterDiscountsWithCancelCharge =
         finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
+    const hasEstimatedPrice = Boolean(quoteDetails);
     const isPeakHour = quoteDetails?.amount?.fareBreakdown?.isPeakHour === true;
     const priceDetailsCardClass = isPeakHour
         ? "border rounded-xl bg-amber-50 p-4"
@@ -342,6 +343,9 @@ const EditBooking = (props) => {
 
     const sendQuotationLogs = async (bookingId, userId) => {
         try {
+            if (!Array.isArray(quotationLogs) || quotationLogs.length === 0) {
+                return;
+            }
             const updatedLogs = quotationLogs.map(log => ({
                 ...log,
                 bookingId: bookingId || 0,
@@ -832,14 +836,20 @@ const getQuoteOutstationDetails = async (values) => {
         }
     };
 
-    const handleSelectLocation = async (address, isPickup, placeId,type, setFieldValue, values) => {
+    const handleSelectLocation = async (address, isPickup, placeId, typeOrSetFieldValue, maybeSetFieldValue, maybeValues) => {
+        const hasExplicitType = typeof typeOrSetFieldValue === 'string';
+        const type = hasExplicitType ? typeOrSetFieldValue : undefined;
+        const setFieldValue = hasExplicitType ? maybeSetFieldValue : typeOrSetFieldValue;
+        const values = hasExplicitType ? maybeValues : maybeSetFieldValue;
+        const safeSetFieldValue = typeof setFieldValue === 'function' ? setFieldValue : null;
+
         const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address,placeId });
         if (data?.success) {
             const location = { lat: data.data.lat, lng: data.data.lng };
             if (isPickup) {
-                setFieldValue("pickupAddress", address);
-                setFieldValue("pickupPlaceId", placeId || "");
-                setFieldValue("pickupLocation", location);
+                safeSetFieldValue?.("pickupAddress", address);
+                safeSetFieldValue?.("pickupPlaceId", placeId || "");
+                safeSetFieldValue?.("pickupLocation", location);
                 setPickupLocation(location);
                 setPickupSuggestions([]);
 
@@ -853,7 +863,7 @@ const getQuoteOutstationDetails = async (values) => {
                         const newArea = serviceAreas.find(area => area.name === zoneData.serviceArea.name);
                         if (newArea && newArea.id !== parseInt(selectedAreaId)) {
                             setSelectedAreaId(newArea.id);
-                            setFieldValue("serviceTypeArea", newArea.id);
+                            safeSetFieldValue?.("serviceTypeArea", newArea.id);
                             getPackageListDetails(currentServiceType, newArea.name);
                         }
                     } else {
@@ -862,31 +872,31 @@ const getQuoteOutstationDetails = async (values) => {
                             text: zoneData.error || 'Service not available in this area.',
                             title: zoneData.title || 'Oops!'
                         });
-                        setFieldValue("pickupAddress", "");
-                        setFieldValue("pickupLocation", null);
-                        setFieldValue("pickupPlaceId", "");
+                        safeSetFieldValue?.("pickupAddress", "");
+                        safeSetFieldValue?.("pickupLocation", null);
+                        safeSetFieldValue?.("pickupPlaceId", "");
                         setPickupLocation(null);
                     }
                 }
             }
             else if (type === 'driver') {
-                setFieldValue("driverPickUpAddress", address);
-                setFieldValue("driverPickUpPlaceId", placeId || "");
-                setFieldValue("driverPickUpLocation", location);
+                safeSetFieldValue?.("driverPickUpAddress", address);
+                safeSetFieldValue?.("driverPickUpPlaceId", placeId || "");
+                safeSetFieldValue?.("driverPickUpLocation", location);
                 setDriverPickUpLocation(location);
                 setDriverSuggestions([]);
             }
             else if (type === 'driverEnd') {
-                setFieldValue("driverEndAddress", address);
-                setFieldValue("driverEndPlaceId", placeId || "");
-                setFieldValue("driverEndLocation", location);
+                safeSetFieldValue?.("driverEndAddress", address);
+                safeSetFieldValue?.("driverEndPlaceId", placeId || "");
+                safeSetFieldValue?.("driverEndLocation", location);
                 setDriverEndLocation(location);
                 setDriverEndSuggestions([]);
             }
             else {
-                setFieldValue("dropAddress", address);
-                setFieldValue("dropPlaceId", placeId || "");
-                setFieldValue("dropLocation", location);
+                safeSetFieldValue?.("dropAddress", address);
+                safeSetFieldValue?.("dropPlaceId", placeId || "");
+                safeSetFieldValue?.("dropLocation", location);
                 setDropLocation(location);
                 setDropSuggestions([]);
             }
@@ -2144,7 +2154,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     setFieldValue("submitType", "default");
                                         handleSubmit()
                                                 }}
-                                    disabled={!dirty || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
+                                    disabled={!hasEstimatedPrice || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
                                                 className='my-6 mx-2'
                                             >
                                     Continue
@@ -2585,7 +2595,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         setFieldValue("submitType", "rides");
                                                         handleSubmit()
                                                     }}
-                                                    disabled={!(values.pickupAddress && values.dropAddress) || isButtonDisabled}
+                                                    disabled={!(values.pickupAddress && values.dropAddress) || isButtonDisabled || !hasEstimatedPrice}
                                                     className='my-6 mx-2'
                                                 >
                                         Continue
@@ -2951,7 +2961,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                 setFieldValue("submitType", "auto");
                                                 handleSubmit()
                                             }}
-                                    disabled={!dirty || !isValid || (!values.pickupAddress && !values.dropAddress)}
+                                    disabled={!hasEstimatedPrice || !isValid || (!values.pickupAddress && !values.dropAddress)}
                                             className='my-6 mx-2'
                                         >
                                     Continue
