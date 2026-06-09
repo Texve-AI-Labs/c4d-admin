@@ -221,7 +221,7 @@ const AddBanner = () => {
   };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add Banner</h2>
       {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
 
