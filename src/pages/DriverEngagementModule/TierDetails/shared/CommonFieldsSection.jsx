@@ -9,7 +9,7 @@ function CommonFieldsSection({ form, onInputChange, serviceAreas = [] }) {
           <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">Type</Typography>
           <select name="type" value={form.type} onChange={onInputChange} className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 outline-none focus:border-blue-500">
             <option value="TIER_RULES">Tier Rules</option>
-            <option value="INCENTIVE_RULES">Incentive Rules</option>
+            {/* <option value="INCENTIVE_RULES">Incentive Rules</option> */}
             <option value="DISPATCH_RULES">Dispatch Rules</option>
           </select>
         </div>
