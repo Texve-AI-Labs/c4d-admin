@@ -8,6 +8,8 @@ import { extractApiErrorMessage, showTierErrorAlert } from "./shared/tierErrorAl
 import TierRulesSection from "./tier-rules/TierRulesSection";
 import IncentiveRulesSection from "./incentive-rules/IncentiveRulesSection";
 import DispatchRulesSection from "./dispatch-rules/DispatchRulesSection";
+import OnlineHoursRulesSection from "./online-hours-rules/OnlineHoursRulesSection";
+import ServiceTripRulesSection from "./service-trip-rules/ServiceTripRulesSection";
 
 const sanitizeDispatchConfigByZone = (config, zone) => {
   const normalizedZone = zone || "ALL";
@@ -41,6 +43,8 @@ const sanitizeDispatchConfigByZone = (config, zone) => {
 const SECTION_REGISTRY = {
   TIER_RULES: TierRulesSection,
   INCENTIVE_RULES: IncentiveRulesSection,
+  ONLINE_HOURS_RULES: OnlineHoursRulesSection,
+  SERVICE_TRIP_RULES: ServiceTripRulesSection,
   DISPATCH_RULES: DispatchRulesSection,
 };
 

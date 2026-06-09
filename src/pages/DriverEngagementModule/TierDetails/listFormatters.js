@@ -6,19 +6,48 @@ export const TIER_BADGE_CLASS = {
   ELITE: "bg-emerald-100 text-emerald-800",
 };
 
+const COMPONENT_RULE_TYPES = new Set(["ONLINE_HOURS_RULES", "SERVICE_TRIP_RULES"]);
+
+const getEnabledComponentTiers = (row) => {
+  const components = Array.isArray(row?.raw?.config?.components) ? row.raw.config.components : [];
+  const tiers = components[0]?.tiers;
+  if (!tiers || typeof tiers !== "object") return [];
+
+  return Object.keys(tiers).filter((tierKey) => {
+    const tierConfig = tiers[tierKey];
+    const rules = Array.isArray(tierConfig?.rules) ? tierConfig.rules : [];
+    return Boolean(tierConfig?.enabled) || rules.length > 0;
+  });
+};
+
 export const getTierDisplay = (row) => {
-  if (row.type !== "TIER_RULES") return "-";
+  if (row.type === "TIER_RULES") {
   const tiers = row?.raw?.config?.tiers;
   if (!tiers || typeof tiers !== "object") return "-";
   const keys = Object.keys(tiers).filter(Boolean);
   return keys.length ? keys.join(", ") : "-";
+  }
+
+  if (COMPONENT_RULE_TYPES.has(row.type)) {
+    const keys = getEnabledComponentTiers(row);
+    return keys.length ? keys.join(", ") : "-";
+  }
+
+  return "-";
 };
 
 export const getTierList = (row) => {
-  if (row.type !== "TIER_RULES") return [];
+  if (row.type === "TIER_RULES") {
   const tiers = row?.raw?.config?.tiers;
   if (!tiers || typeof tiers !== "object") return [];
   return Object.keys(tiers).filter(Boolean);
+  }
+
+  if (COMPONENT_RULE_TYPES.has(row.type)) {
+    return getEnabledComponentTiers(row);
+  }
+
+  return [];
 };
 
 export const formatTypeLabel = (value) => {
