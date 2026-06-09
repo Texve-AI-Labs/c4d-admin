@@ -49,6 +49,16 @@ const buildNotificationMessage = (payload = {}) => {
     return { title, body };
 };
 
+const canUsePushMessaging = () => {
+    return (
+        typeof window !== "undefined" &&
+        typeof navigator !== "undefined" &&
+        "serviceWorker" in navigator &&
+        "Notification" in window &&
+        "PushManager" in window
+    );
+};
+
 const FcmToast = () => {
     const [showNotification, setShowNotification] = useState(false);
     const [notification, setNotification] = useState({ body: "", title: "" });
@@ -60,9 +70,13 @@ const FcmToast = () => {
 
     useEffect(() => {
         const fetchToken = async () => {
+            if (!canUsePushMessaging()) {
+                return;
+            }
+
             try {
                 let token = await requestToken(); // Request FCM token on load
-                console.log("FCM Token:", token);
+                // console.log("FCM Token:", token);
             } catch (error) {
                 console.error("Error fetching FCM token:", error);
             }
@@ -70,8 +84,12 @@ const FcmToast = () => {
 
         fetchToken(); // Call the async function
 
+        if (!canUsePushMessaging()) {
+            return undefined;
+        }
+
         const unsubscribe = onMessage(FirebaseMessaging, (payload) => {
-            console.log("🔔 Foreground Notification:", payload);
+            // console.log("🔔 Foreground Notification:", payload);
             const adminDiscountEvent = parseAdminDiscountEvent(payload);
             if (adminDiscountEvent) {
                 window.dispatchEvent(
