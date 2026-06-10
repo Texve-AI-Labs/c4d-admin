@@ -47,6 +47,9 @@ const DiscountAdd = () => {
     couponCode: '',
     description: '',
     offerType: '',
+    targetMode: '',
+    minCompletedTrips: '',
+    maxCompletedTrips: '',
     discountType: '',
     percentage: '',
     amount: '',
@@ -185,10 +188,19 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
       }
 
       const formData = new FormData();
+      const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
       formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
+      if (values.offerType === 'CUSTOM') {
+        formData.append('targetMode', values.targetMode || '');
+        formData.append('allowedCount', '1');
+        formData.append('minCompletedTrips', values.minCompletedTrips === '' || values.minCompletedTrips === null || values.minCompletedTrips === undefined ? 0 : Number(values.minCompletedTrips));
+        formData.append('maxCompletedTrips', values.maxCompletedTrips === '' || values.maxCompletedTrips === null || values.maxCompletedTrips === undefined ? 0 : Number(values.maxCompletedTrips));
+      }
+      if (!isCustomSegment) {
       formData.append('couponCode', values.couponCode);
+      }
       formData.append('discountType', discountType);
       if ((discountType || '').toLowerCase() === 'percentage') {
         formData.append('percentage', values.percentage || '');
@@ -249,9 +261,18 @@ if (values.removeDashboardOfferImg) {
         return;
       }
       const newDiscountId = res?.data?.discountId || res?.data?.id || res?.discountId || res?.id || null;
-      if (values.offerType === 'CUSTOM') {
+      if (values.offerType === 'CUSTOM' && values.targetMode === 'TARGETED') {
         navigate('/dashboard/finance/custom-discount/add', {
-          state: { discountId: newDiscountId },
+          state: {
+            discountId: newDiscountId,
+            targetMode:'TARGETED',
+          },
+        });
+      } else if (values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT') {
+        navigate('/dashboard/finance/discountModuleList', {
+          state: {
+            targetMode:'SEGMENT',
+          },
         });
       } else {
       navigate('/dashboard/finance/discountModuleList');
@@ -281,6 +302,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, setFieldValue, values }) => {
+          const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
           const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
           const selectedParcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
           const subZoneOptions = getSubZoneOptions(values.serviceArea);
@@ -338,6 +360,53 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 </Field>
                 <ErrorMessage name="offerType" className="text-red-500 text-sm" component="div" />
               </div>
+              {values.offerType === 'CUSTOM' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Target Mode</label>
+                  <Field
+                    as="select"
+                    name="targetMode"
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    onChange={(e) => {
+                      const nextMode = e.target.value;
+                      setFieldValue('targetMode', nextMode);
+                      if (nextMode === 'SEGMENT') {
+                        setFieldValue('couponCode', '');
+                        setFieldValue('cabType', '');
+                        setFieldValue('premiumCabType', '');
+                        setFieldValue('isPremium', false);
+                      }
+                    }}
+                  >
+                    <option value="">Select Target Mode</option>
+                    <option value="TARGETED">TARGETED</option>
+                    <option value="SEGMENT">SEGMENT</option>
+                  </Field>
+                  <ErrorMessage name="targetMode" className="text-red-500 text-sm" component="div" />
+                </div>
+              )}
+              {values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT' && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Min Completed Trips</label>
+                    <Field
+                      type="number"
+                      name="minCompletedTrips"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="minCompletedTrips" className="text-red-500 text-sm" component="div" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Max Completed Trips</label>
+                    <Field
+                      type="number"
+                      name="maxCompletedTrips"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="maxCompletedTrips" className="text-red-500 text-sm" component="div" />
+                  </div>
+                </>
+              )}
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>
                 <Field
@@ -511,6 +580,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 <Field type="text" name="title" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="title" className="text-red-500 text-sm" component="div" />
               </div>
+            {!(values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT') && (
               <div>
                 <label htmlFor="couponCode" className="text-sm font-medium text-gray-700">Coupon Code</label>
                 <Field
@@ -520,6 +590,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 />
                 <ErrorMessage name="couponCode" className="text-red-500 text-sm" component="div" />
               </div>
+            )}
               <div>
                 <label className="text-sm font-medium text-gray-700">Discount Type</label>
                 <select

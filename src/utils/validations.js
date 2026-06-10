@@ -815,7 +815,26 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
         .required('Offer type is required'),
-    // couponCode: Yup.string().required('Coupon code is required'),  
+    targetMode: Yup.string().when('offerType', {
+        is: 'CUSTOM',
+        then: (schema) => schema.oneOf(['TARGETED', 'SEGMENT'], 'Invalid target mode').required('Target mode is required'),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    minCompletedTrips: Yup.number().when(['offerType', 'targetMode'], {
+        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
+        then: (schema) => schema.typeError('Minimum completed trips must be a number').required('Minimum completed trips is required'),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    maxCompletedTrips: Yup.number().when(['offerType', 'targetMode'], {
+        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
+        then: (schema) => schema.typeError('Maximum completed trips must be a number').required('Maximum completed trips is required'),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    couponCode: Yup.string().when(['offerType', 'targetMode'], {
+        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
+        then: (schema) => schema.notRequired(),
+        otherwise: (schema) => schema.required('Coupon code is required'),
+    }),  
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
@@ -887,7 +906,26 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
         .required('Offer type is required'),
-    // couponCode: Yup.string().required('Coupon code is required'),
+    targetMode: Yup.string().when('offerType', {
+        is: 'CUSTOM',
+        then: (schema) => schema.oneOf(['TARGETED', 'SEGMENT'], 'Invalid target mode').required('Target mode is required'),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    minCompletedTrips: Yup.number().when(['offerType', 'targetMode'], {
+        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
+        then: (schema) => schema.typeError('Minimum completed trips must be a number').required('Minimum completed trips is required'),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    maxCompletedTrips: Yup.number().when(['offerType', 'targetMode'], {
+        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
+        then: (schema) => schema.typeError('Maximum completed trips must be a number').required('Maximum completed trips is required'),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    couponCode: Yup.string().when(['offerType', 'targetMode'], {
+        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
+        then: (schema) => schema.notRequired(),
+        otherwise: (schema) => schema.required('Coupon code is required'),
+    }),
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
