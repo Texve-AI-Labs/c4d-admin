@@ -39,35 +39,23 @@ export const toForm = (item = {}) => ({
 });
 
 export const buildPayload = (form) => {
-  const rateType = String(form.rateType || "").toUpperCase() || (form.amount !== "" && form.amount !== null && form.amount !== undefined ? "FLAT_TRIP" : "PER_KM");
   const payload = {
     serviceType: String(form.serviceType || "").toUpperCase(),
     zone: String(form.zone || "").trim(),
     startDate: form.startDate,
     endDate: form.endDate,
-    rateType,
+    rateType: form.rateType || null,
     priority: form.priority === "" || form.priority === null || form.priority === undefined ? undefined : Number(form.priority),
     isActive: Boolean(form.isActive),
+    perKmRate: form.perKmRate === "" || form.perKmRate === null || form.perKmRate === undefined ? null : Number(form.perKmRate),
+    amount: form.amount === "" || form.amount === null || form.amount === undefined ? null : Number(form.amount),
+    minKm: form.minKm === "" || form.minKm === null || form.minKm === undefined ? null : Number(form.minKm),
+    maxKm: form.maxKm === "" || form.maxKm === null || form.maxKm === undefined ? null : Number(form.maxKm),
   };
-
-  if (rateType === "FLAT_TRIP") {
-    // payload.perKmRate = form.perKmRate === "" || form.perKmRate === null || form.perKmRate === undefined ? 0 : Number(form.perKmRate);
-    payload.amount = form.amount === "" || form.amount === null || form.amount === undefined ? undefined : Number(form.amount);
-  } else {
-    payload.perKmRate = form.perKmRate === "" || form.perKmRate === null || form.perKmRate === undefined ? undefined : Number(form.perKmRate);
-    payload.minKm = form.minKm === "" || form.minKm === null || form.minKm === undefined ? undefined : Number(form.minKm);
-    payload.maxKm = form.maxKm === "" || form.maxKm === null || form.maxKm === undefined ? undefined : Number(form.maxKm);
-  }
 
   if (form.ruleId !== undefined && form.ruleId !== null && form.ruleId !== "") {
     payload.ruleId = Number(form.ruleId);
   }
-
-  Object.keys(payload).forEach((key) => {
-    if (payload[key] === undefined || payload[key] === null || payload[key] === "") {
-      delete payload[key];
-    }
-  });
 
   return payload;
 };
@@ -103,7 +91,10 @@ export const validationSchema = Yup.object({
       otherwise: (schema) => schema.notRequired(),
     }),
   minKm: Yup.number()
-    .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .nullable()
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? null : value
+    )
     .typeError("Min KM must be a number")
     .min(0, "Min KM must be >= 0")
     .when("rateType", {
@@ -112,7 +103,10 @@ export const validationSchema = Yup.object({
       otherwise: (schema) => schema.notRequired(),
     }),
   maxKm: Yup.number()
-    .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .nullable()
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? null : value
+    )
     .typeError("Max KM must be a number")
     .min(0, "Max KM must be >= 0")
     .test("max-gte-min", "Max KM must be greater than or equal to Min KM", function (value) {
