@@ -1,36 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, CardHeader, Typography, Button, Spinner, Switch } from "@material-tailwind/react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { fetchZoneOptions } from "@/pages/marketing/DriverIncentive/zoneOptions";
+import { PRIORITY_OPTIONS, RATE_TYPES, SERVICE_TYPES, toForm } from "./utils";
 
-const getRuleId = (item = {}) => item?.ruleId || item?.id || item?._id;
-const SERVICE_TYPES = ["ALL", "DRIVER", "RENTAL", "RIDES", "AUTO", "PARCEL"];
-const PRIORITY_OPTIONS = [
-  { label: "High", value: 30 },
-  { label: "Medium", value: 60 },
-  { label: "Low", value: 90 },
-];
 const getPriorityLabel = (priority) =>
   PRIORITY_OPTIONS.find((item) => item.value === Number(priority))?.label || "Custom";
-const resolvePriorityValue = (priority) => {
-  const value = Number(priority);
-  if (PRIORITY_OPTIONS.some((item) => item.value === value)) return String(value);
-  return "60";
-};
-const toForm = (item = {}) => ({
-  ruleId: getRuleId(item),
-  serviceType: item?.serviceType || "ALL",
-  zone: item?.zone || "",
-  startDate: item?.startDate ? String(item.startDate).slice(0, 10) : "",
-  endDate: item?.endDate ? String(item.endDate).slice(0, 10) : "",
-  perKmRate: item?.perKmRate ?? "",
-  minKm: item?.minKm ?? 0,
-  maxKm: item?.maxKm ?? "",
-  priority: resolvePriorityValue(item?.priority),
-  isActive: Boolean(item?.isActive),
-});
 
 const DriverBonusDetails = () => {
   const { id } = useParams();
@@ -39,6 +16,12 @@ const DriverBonusDetails = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(toForm(location?.state?.item || {}));
   const [zoneOptions, setZoneOptions] = useState([]);
+
+  const rateType = String(form.rateType || "PER_KM").toUpperCase();
+  const rateLabel = rateType === "FLAT_TRIP" ? "Amount" : "Per KM Rate";
+  const rateValue = rateType === "FLAT_TRIP" ? form.amount : form.perKmRate;
+
+  const selectableZones = useMemo(() => zoneOptions.filter((zone) => String(zone.value || "").trim() !== ""), [zoneOptions]);
 
   useEffect(() => {
     const load = async () => {
@@ -104,14 +87,14 @@ const DriverBonusDetails = () => {
             <div>
               <label className="mb-1 block text-sm">Zone</label>
               <select className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.zone} disabled>
-                {zoneOptions.length === 0 ? (
+                {selectableZones.length === 0 ? (
                   <option value={form.zone || ""}>{form.zone || "No zones available"}</option>
                 ) : (
                   <>
-                    {!zoneOptions.find((zone) => zone.value === form.zone) && form.zone ? (
+                    {!selectableZones.find((zone) => zone.value === form.zone) && form.zone ? (
                       <option value={form.zone}>{form.zone}</option>
                     ) : null}
-                    {zoneOptions.map((zone) => (
+                    {selectableZones.map((zone) => (
                       <option key={zone.label} value={zone.value}>{zone.label}</option>
                     ))}
                   </>
@@ -127,9 +110,31 @@ const DriverBonusDetails = () => {
               <input type="date" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.endDate} disabled />
             </div>
             <div>
-              <label className="mb-1 block text-sm">Per KM Rate (₹)</label>
-              <input type="number" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.perKmRate} disabled />
+              <label className="mb-1 block text-sm">Rate Type</label>
+              <select className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={rateType} disabled>
+                {RATE_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
             </div>
+            <div>
+              <label className="mb-1 block text-sm">{rateLabel}</label>
+              <input type="number" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={rateValue} disabled />
+            </div>
+            {rateType === "PER_KM" ? (
+              <>
+                <div>
+                  <label className="mb-1 block text-sm">Min KM</label>
+                  <input type="number" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.minKm} disabled />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm">Max KM</label>
+                  <input type="number" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.maxKm} disabled />
+                </div>
+              </>
+            ) : (
+              <div className="md:col-span-2 rounded-md border border-dashed border-gray-300 bg-gray-50 p-3 text-sm text-gray-600">
+                KM range is not used for flat-trip rules.
+              </div>
+            )}
             <div>
               <label className="mb-1 block text-sm">Priority</label>
               <select className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.priority} disabled>
@@ -137,21 +142,14 @@ const DriverBonusDetails = () => {
                   <option key={priority.label} value={priority.value}>{priority.label}</option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm">Min KM</label>
-              <input type="number" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.minKm} disabled />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm">Max KM</label>
-              <input type="number" className="w-full rounded-md border border-gray-300 bg-gray-100 p-2" value={form.maxKm} disabled />
+              <p className="mt-1 text-xs text-gray-500">{getPriorityLabel(form.priority)}</p>
             </div>
             <div className="md:col-span-2">
               <Switch label={form.isActive ? "Active" : "Inactive"} checked={form.isActive} disabled />
             </div>
           </form>
 
-          <div className="mt-6 flex gap-2  justify-center">
+          <div className="mt-6 flex gap-2 justify-center">
             <Button color="gray" onClick={() => navigate("/dashboard/finance/driver-bonus/list")}>Back</Button>
             <Button className={ColorStyles.continueButtonColor} onClick={() => navigate(`/dashboard/finance/driver-bonus/edit/${ruleId}`, { state: { item: form } })}>Edit</Button>
           </div>
