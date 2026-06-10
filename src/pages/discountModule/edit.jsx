@@ -326,8 +326,9 @@ const DiscountEdit = () => {
         formData.append('dashboardExtImage', '');
       }
 
-      const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
-      if (isGeneralParcel) {
+      const isParcelService = values.serviceType === 'PARCEL';
+      const isGeneralParcel = values.offerType === 'GENERAL' && isParcelService;
+      if (isParcelService) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
@@ -454,13 +455,13 @@ const DiscountEdit = () => {
                     const nextServiceType = e.target.value;
                     setFieldValue('serviceType', nextServiceType);
                     setFieldValue('serviceArea', []);
-                    if (nextServiceType !== 'PARCEL') {
-                      setFieldValue('parcelVehicleType', 'BIKE');
-                      setFieldValue('subZoneId', '');
-                    } else if (values.offerType === 'GENERAL') {
+                    if (nextServiceType === 'PARCEL') {
                       setFieldValue('isPremium', false);
                       setFieldValue('cabType', '');
                       setFieldValue('premiumCabType', '');
+                    } else {
+                      setFieldValue('parcelVehicleType', 'BIKE');
+                      setFieldValue('subZoneId', '');
                     }
                   }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
@@ -571,7 +572,7 @@ const DiscountEdit = () => {
                 <p className="text-xs text-gray-500 mt-1">Leave blank to keep current image</p>
                 <ErrorMessage name="dashboardOfferImg" component="div" className="text-red-500 text-sm" />
               </div>
-              {!isGeneralParcel && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && (
               <div className="md:col-span-2">
                 <label className="flex items-center space-x-3 cursor-pointer text-lg font-medium">
                 <Field
@@ -621,7 +622,7 @@ const DiscountEdit = () => {
                 )}
               </div>
               )}
-              {!isGeneralParcel && !values.isPremium && values.serviceType !== 'AUTO' && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field

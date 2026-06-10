@@ -822,6 +822,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
         otherwise: (schema) => schema.nullable(),
@@ -830,18 +831,19 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
         otherwise: (schema) => schema.nullable(),
     }),
-    parcelVehicleType: Yup.string().when(['offerType', 'serviceType'], {
-        is: (offerType, serviceType) => offerType === 'GENERAL' && serviceType === 'PARCEL',
+    parcelVehicleType: Yup.string().when(['serviceType'], {
+        is: (serviceType) => serviceType === 'PARCEL',
         then: (schema) => schema.oneOf(['BIKE', 'AUTO'], 'Invalid Parcel Vehicle Type').required('Parcel Vehicle Type is required'),
         otherwise: (schema) => schema.nullable(),
     }),
-    subZoneId: Yup.string().when(['offerType', 'serviceType', 'parcelVehicleType'], {
-        is: (offerType, serviceType, parcelVehicleType) =>
-            offerType === 'GENERAL' && serviceType === 'PARCEL' && String(parcelVehicleType || '').toUpperCase() === 'BIKE',
+    subZoneId: Yup.string().when(['serviceType', 'parcelVehicleType'], {
+        is: (serviceType, parcelVehicleType) =>
+            serviceType === 'PARCEL' && String(parcelVehicleType || '').toUpperCase() === 'BIKE',
         then: (schema) => schema.required('Sub Zone is required'),
         otherwise: (schema) => schema.nullable(),
     }),
@@ -892,6 +894,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
         otherwise: (schema) => schema.nullable(),
@@ -900,18 +903,19 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
         otherwise: (schema) => schema.nullable(),
     }),
-    parcelVehicleType: Yup.string().when(['offerType', 'serviceType'], {
-        is: (offerType, serviceType) => offerType === 'GENERAL' && serviceType === 'PARCEL',
+    parcelVehicleType: Yup.string().when(['serviceType'], {
+        is: (serviceType) => serviceType === 'PARCEL',
         then: (schema) => schema.oneOf(['BIKE', 'AUTO'], 'Invalid Parcel Vehicle Type').required('Parcel Vehicle Type is required'),
         otherwise: (schema) => schema.nullable(),
     }),
-    subZoneId: Yup.string().when(['offerType', 'serviceType', 'parcelVehicleType'], {
-        is: (offerType, serviceType, parcelVehicleType) =>
-            offerType === 'GENERAL' && serviceType === 'PARCEL' && String(parcelVehicleType || '').toUpperCase() === 'BIKE',
+    subZoneId: Yup.string().when(['serviceType', 'parcelVehicleType'], {
+        is: (serviceType, parcelVehicleType) =>
+            serviceType === 'PARCEL' && String(parcelVehicleType || '').toUpperCase() === 'BIKE',
         then: (schema) => schema.required('Sub Zone is required'),
         otherwise: (schema) => schema.nullable(),
     }),
