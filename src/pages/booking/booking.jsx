@@ -1693,7 +1693,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: "AIzaSyBophy4_QEc4vRjYu222kNHtuNiDga29Uo"
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_SIT,
     });
 
     const validationCheckForDriver = (val) => {
