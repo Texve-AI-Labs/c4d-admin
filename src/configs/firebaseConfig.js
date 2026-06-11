@@ -14,8 +14,6 @@ const firebaseConfig = {
 // console.log("Firebase Config check and :", firebaseConfig);
 
 const app = initializeApp(firebaseConfig);
-// console.log('Firebase Messaging checking:', getMessaging(app));
-const auth = getAuth(app);
 export const FirebaseMessaging = getMessaging(app);
 
 const canUsePushMessaging = () => {
