@@ -22,7 +22,9 @@ function TierListFilters({
         >
           <option value="ALL">All</option>
           <option value="TIER_RULES">Tier Rules</option>
-          <option value="INCENTIVE_RULES">Incentive Rules</option>
+          {/* <option value="INCENTIVE_RULES">Incentive Rules</option> */}
+          <option value="ONLINE_HOURS_RULES">Online Hours Rules</option>
+          <option value="SERVICE_TRIP_RULES">Service Trip Rules</option>
           <option value="DISPATCH_RULES">Dispatch Rules</option>
         </select>
       </div>

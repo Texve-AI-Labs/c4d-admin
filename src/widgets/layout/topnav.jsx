@@ -47,6 +47,11 @@ export function Topnav({ permissions = [] }) {
   const isMarketingSection = 
     path.startsWith("/dashboard/vendors/driver-incentive") ||
     path.startsWith("/dashboard/vendors/notificationlist") ||
+    path.startsWith("/dashboard/vendors/notification/add") ||
+    path.startsWith("/dashboard/vendors/notification/edit") ||
+    path.startsWith("/dashboard/vendors/customerNotificationList") ||
+    path.startsWith("/dashboard/vendors/customerNotification/add") ||
+    path.startsWith("/dashboard/vendors/customerNotification/edit") ||
     path.startsWith("/dashboard/vendors/customernotificationlist") ||
     path.startsWith("/dashboard/vendors/skip-logs") ||
     path.startsWith("/dashboard/vendors/drivernotificationlist") ||

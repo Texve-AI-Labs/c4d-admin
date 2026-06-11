@@ -9,10 +9,14 @@ import CommonFieldsSection from "./shared/CommonFieldsSection";
 import TierRulesSection from "./tier-rules/TierRulesSection";
 import IncentiveRulesSection from "./incentive-rules/IncentiveRulesSection";
 import DispatchRulesSection from "./dispatch-rules/DispatchRulesSection";
+import OnlineHoursRulesSection from "./online-hours-rules/OnlineHoursRulesSection";
+import ServiceTripRulesSection from "./service-trip-rules/ServiceTripRulesSection";
 
 const SECTION_REGISTRY = {
   TIER_RULES: TierRulesSection,
   INCENTIVE_RULES: IncentiveRulesSection,
+  ONLINE_HOURS_RULES: OnlineHoursRulesSection,
+  SERVICE_TRIP_RULES: ServiceTripRulesSection,
   DISPATCH_RULES: DispatchRulesSection,
 };
 

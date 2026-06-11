@@ -6,15 +6,7 @@ import Swal from "sweetalert2";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { fetchZoneOptions } from "@/pages/marketing/DriverIncentive/zoneOptions";
-
-const SERVICE_TYPES = ["ALL", "DRIVER", "RENTAL", "RIDES", "AUTO", "PARCEL"];
-const PRIORITY_OPTIONS = [
-  { label: "High", value: 30 },
-  { label: "Medium", value: 60 },
-  { label: "Low", value: 90 },
-];
-const getPriorityLabel = (priority) =>
-  PRIORITY_OPTIONS.find((item) => item.value === Number(priority))?.label || "Custom";
+import { getPriorityLabel, RATE_TYPES, SERVICE_TYPES } from "./utils";
 
 const getRuleId = (item = {}) => item?.ruleId || item?.id || item?._id;
 
@@ -24,6 +16,7 @@ const DriverBonusList = () => {
   const [loading, setLoading] = useState(true);
   const [serviceTypeFilter, setServiceTypeFilter] = useState("ALL");
   const [zoneFilter, setZoneFilter] = useState("");
+  const [rateTypeFilter, setRateTypeFilter] = useState("ALL");
   const [isActiveFilter, setIsActiveFilter] = useState("true");
   const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
 
@@ -32,6 +25,7 @@ const DriverBonusList = () => {
       setLoading(true);
       const params = {
         serviceType: String(serviceTypeFilter || "ALL").toUpperCase() === "ALL" ? "" : String(serviceTypeFilter || "").toUpperCase(),
+        rateType: String(rateTypeFilter || "ALL").toUpperCase() === "ALL" ? "" : String(rateTypeFilter || "").toUpperCase(),
         isActive: isActiveFilter === "true",
       };
 
@@ -53,7 +47,7 @@ const DriverBonusList = () => {
 
   useEffect(() => {
     fetchRules();
-  }, [serviceTypeFilter, zoneFilter, isActiveFilter]);
+  }, [serviceTypeFilter, zoneFilter, rateTypeFilter, isActiveFilter]);
 
   useEffect(() => {
     const loadZones = async () => {
@@ -73,7 +67,7 @@ const DriverBonusList = () => {
       confirmButtonText: "OK",
       cancelButtonText: "Cancel",
       confirmButtonColor: "#2563eb",
-      cancelButtonColor: "#db1839"
+      cancelButtonColor: "#db1839",
     });
     if (!result.isConfirmed) return;
 
@@ -126,6 +120,12 @@ const DriverBonusList = () => {
               <option key={zone.label} value={zone.value}>{zone.label}</option>
             ))}
           </select>
+          <select className="rounded-md border border-gray-300 p-2 text-sm" value={rateTypeFilter} onChange={(e) => setRateTypeFilter(e.target.value)}>
+            <option value="ALL">ALL</option>
+            {RATE_TYPES.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
           <div className="inline-flex overflow-hidden rounded-md border border-gray-300">
             <button type="button" className={`px-3 py-2 text-sm ${isActiveFilter === "true" ? "bg-primary text-white" : "bg-white text-gray-700"}`} onClick={() => setIsActiveFilter("true")}>Active</button>
             <button type="button" className={`border-l border-gray-300 px-3 py-2 text-sm ${isActiveFilter === "false" ? "bg-primary text-white" : "bg-white text-gray-700"}`} onClick={() => setIsActiveFilter("false")}>Inactive</button>
@@ -146,15 +146,16 @@ const DriverBonusList = () => {
             <div className="flex items-center justify-center py-10"><Spinner className="h-12 w-12" /></div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1200px] table-auto">
+              <table className="w-full min-w-[1300px] table-auto">
                 <thead>
                   <tr>
                     <th className="px-5 py-3 text-left">Service</th>
                     <th className="px-5 py-3 text-left">Zone</th>
+                    <th className="px-5 py-3 text-left">Rate Type</th>
+                    <th className="px-5 py-3 text-left">Rate / Amount</th>
+                    <th className="px-5 py-3 text-left">KM Range</th>
                     <th className="px-5 py-3 text-left">Start</th>
                     <th className="px-5 py-3 text-left">End</th>
-                    <th className="px-5 py-3 text-left">Per KM Rate</th>
-                    <th className="px-5 py-3 text-left">KM Range</th>
                     <th className="px-5 py-3 text-left">Priority</th>
                     <th className="px-5 py-3 text-left">Status</th>
                     <th className="px-5 py-3 text-left">Actions</th>
@@ -162,29 +163,35 @@ const DriverBonusList = () => {
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
-                    <tr><td colSpan={9} className="px-5 py-4 text-center text-gray-600">No rules found</td></tr>
+                    <tr><td colSpan={10} className="px-5 py-4 text-center text-gray-600">No rules found</td></tr>
                   ) : (
-                    rows.map((row) => (
+                    rows.map((row) => {
+                      const rateType = String(row?.rateType || (row?.amount !== undefined && row?.amount !== null ? "FLAT_TRIP" : "PER_KM")).toUpperCase();
+                      const rateValue = rateType === "FLAT_TRIP" ? row?.amount : row?.perKmRate;
+                      const kmRange = rateType === "PER_KM" ? `${row?.minKm ?? 0} - ${row?.maxKm ?? "-"} Kms.` : "-";
+
+                      return (
                       <tr key={row._ruleId} className="border-b">
                         <td className="px-5 py-3 cursor-pointer text-primary underline" onClick={() => navigate(`/dashboard/finance/driver-bonus/details/${row._ruleId}`)}>{row?.serviceType || "-"}</td>
                         <td className="px-5 py-3">{row?.zone || "-"}</td>
+                        <td className="px-5 py-3">{rateType}</td>
+                        <td className="px-5 py-3 font-bold">₹ {rateValue ?? "-"}</td>
+                        <td className="px-5 py-3">{kmRange}</td>
                         <td className="px-5 py-3">{row?.startDate ? moment(row.startDate).format("DD-MM-YYYY") : "-"}</td>
                         <td className="px-5 py-3">{row?.endDate ? moment(row.endDate).format("DD-MM-YYYY") : "-"}</td>
-                        <td className="px-5 py-3 font-bold">₹ {row?.perKmRate ?? "-"}</td>
-                        <td className="px-5 py-3">{row?.minKm ?? 0} - {row?.maxKm ?? "-"} Kms.</td>
                         <td className="px-5 py-3">{getPriorityLabel(row?.priority)}</td>
                         <td className="px-5 py-3">
                           <Chip variant="ghost" color={row?.isActive ? "green" : "blue-gray"} value={row?.isActive ? "Active" : "Inactive"} className="w-fit" />
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex gap-2">
-                            
-                            {/* <Button size="sm" color="amber" className="rounded-xl" onClick={() => navigate(`/dashboard/finance/driver-bonus/edit/${row._ruleId}`, { state: { item: row } })}>Edit</Button> */}
-                            <Button size="sm" color="red" className="rounded-xl" onClick={() => handleDelete(row._ruleId)}>Delete</Button>
+                            <Button size="sm" color="amber" className="rounded-xl" onClick={() => navigate(`/dashboard/finance/driver-bonus/edit/${row._ruleId}`, { state: { item: row } })}>Edit</Button>
+                            {/* <Button size="sm" color="red" className="rounded-xl" onClick={() => handleDelete(row._ruleId)}>Delete</Button> */}
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

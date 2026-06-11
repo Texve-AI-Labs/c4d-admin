@@ -175,6 +175,9 @@ const DiscountEdit = () => {
             couponCode: discountFromState.couponCode || '',
             description: discountFromState.description || '',
             offerType: discountFromState.offerType || '',
+            targetMode: discountFromState.targetMode || 'TARGETED',
+            minCompletedTrips: discountFromState.minCompletedTrips ?? null,
+            maxCompletedTrips: discountFromState.maxCompletedTrips ?? null,
             isActive: discountFromState.isActive ? 'true' : 'false',
             cabType: discountFromState.isPremium ? '' : discountFromState.cabType || '',
             premiumCabType: discountFromState.isPremium ? discountFromState.cabType || '' : '',
@@ -222,6 +225,9 @@ const DiscountEdit = () => {
             title: data.title || '',
             description: data.description || '',
             offerType: data.offerType || '',
+            targetMode: data.targetMode || 'TARGETED',
+            minCompletedTrips: data.minCompletedTrips ?? null,
+            maxCompletedTrips: data.maxCompletedTrips ?? null,
             couponCode: data.couponCode || '',
             cabType: data.isPremium ? '' : data.cabType || '',
             premiumCabType: data.isPremium ? data.cabType || '' : '',
@@ -282,11 +288,20 @@ const DiscountEdit = () => {
       }
 
       const formData = new FormData();
+      const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
       formData.append('discountId', Number(values.discountId));
       formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
+      if (values.offerType === 'CUSTOM') {
+        formData.append('allowedCount', '1');
+        formData.append('minCompletedTrips', values.minCompletedTrips === '' || values.minCompletedTrips === null || values.minCompletedTrips === undefined ? 0 : Number(values.minCompletedTrips));
+        formData.append('maxCompletedTrips', values.maxCompletedTrips === '' || values.maxCompletedTrips === null || values.maxCompletedTrips === undefined ? 0 : Number(values.maxCompletedTrips));
+              formData.append('targetMode', values.targetMode || '');
+      }
+      if (!isCustomSegment) {
       formData.append('couponCode', values.couponCode);
+      }
       formData.append('discountType', discountType);
       if ((discountType || '').toLowerCase() === 'percentage') {
         formData.append('percentage', values.percentage || '');
@@ -326,8 +341,9 @@ const DiscountEdit = () => {
         formData.append('dashboardExtImage', '');
       }
 
-      const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
-      if (isGeneralParcel) {
+      const isParcelService = values.serviceType === 'PARCEL';
+      const isGeneralParcel = values.offerType === 'GENERAL' && isParcelService;
+      if (isParcelService) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
@@ -392,6 +408,7 @@ const DiscountEdit = () => {
           <Form className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               {(() => {
+                const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
                 const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
                 const selectedParcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
                 const subZoneOptions = getSubZoneOptions(values.serviceArea);
@@ -444,6 +461,44 @@ const DiscountEdit = () => {
                 </Field>
                 <ErrorMessage name="offerType" component="div" className="text-red-500 text-sm" />
               </div>
+              {values.offerType === 'CUSTOM' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Target Mode</label>
+                  <Field
+                    as="select"
+                    name="targetMode"
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    disabled
+                  >
+                    <option value="">Select Target Mode</option>
+                    <option value="TARGETED">TARGETED</option>
+                    <option value="SEGMENT">SEGMENT</option>
+                  </Field>
+                  <ErrorMessage name="targetMode" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
+              {values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT' && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Min Completed Trips</label>
+                    <Field
+                      type="number"
+                      name="minCompletedTrips"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="minCompletedTrips" component="div" className="text-red-500 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Max Completed Trips</label>
+                    <Field
+                      type="number"
+                      name="maxCompletedTrips"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="maxCompletedTrips" component="div" className="text-red-500 text-sm" />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>
@@ -454,13 +509,13 @@ const DiscountEdit = () => {
                     const nextServiceType = e.target.value;
                     setFieldValue('serviceType', nextServiceType);
                     setFieldValue('serviceArea', []);
-                    if (nextServiceType !== 'PARCEL') {
-                      setFieldValue('parcelVehicleType', 'BIKE');
-                      setFieldValue('subZoneId', '');
-                    } else if (values.offerType === 'GENERAL') {
+                    if (nextServiceType === 'PARCEL') {
                       setFieldValue('isPremium', false);
                       setFieldValue('cabType', '');
                       setFieldValue('premiumCabType', '');
+                    } else {
+                      setFieldValue('parcelVehicleType', 'BIKE');
+                      setFieldValue('subZoneId', '');
                     }
                   }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
@@ -571,7 +626,7 @@ const DiscountEdit = () => {
                 <p className="text-xs text-gray-500 mt-1">Leave blank to keep current image</p>
                 <ErrorMessage name="dashboardOfferImg" component="div" className="text-red-500 text-sm" />
               </div>
-              {!isGeneralParcel && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && (
               <div className="md:col-span-2">
                 <label className="flex items-center space-x-3 cursor-pointer text-lg font-medium">
                 <Field
@@ -621,7 +676,7 @@ const DiscountEdit = () => {
                 )}
               </div>
               )}
-              {!isGeneralParcel && !values.isPremium && values.serviceType !== 'AUTO' && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field
@@ -643,6 +698,7 @@ const DiscountEdit = () => {
                 <Field type="text" name="title" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="title" component="div" className="text-red-500 text-sm" />
               </div>
+              {!isCustomSegment && (
               <div>
                 <label htmlFor="couponCode" className="text-sm font-medium text-gray-700">Coupon Code</label>
                 <Field
@@ -652,6 +708,7 @@ const DiscountEdit = () => {
                 />
                 <ErrorMessage name="couponCode" component="div" className="text-red-500 text-sm" />
               </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-gray-700">Discount Type</label>
                 <select

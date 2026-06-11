@@ -41,7 +41,7 @@ const UserEdit = () => {
     const fetchItem = async (itemId) => {
         try {
             const data = await ApiRequestUtils.get(`${API_ROUTES.GET_USER_BY_ID}${itemId}`);
-            console.log('Fetched User Data:', data.data);
+            // console.log('Fetched User Data:', data.data);
             const permissionIds = data.data.permission.map((permName) => {
                 const matchingOption = PERMISSION_OPTIONS.find( (option) => option.name === permName || option.id === permName );
                 return matchingOption ? matchingOption.id : null;

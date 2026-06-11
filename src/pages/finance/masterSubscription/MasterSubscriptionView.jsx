@@ -1,5 +1,6 @@
+import React from "react";
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import {
@@ -13,7 +14,6 @@ import { Link, useNavigate } from 'react-router-dom';
 export function MasterSubscriptionView() {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
-    const [masterSubscriptionList, setMasterSubscriptionList] = useState([]);
     const [allAccounts, setAllAccounts] = useState([]);
     const [serviceFilter, setServiceFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -30,9 +30,8 @@ export function MasterSubscriptionView() {
                     params.status = statusFilter;
                 }
 
-                const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_MASTER_SUBSCRIPTION_LIST,params);
+                const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_MASTER_SUBSCRIPTION_LIST, params);
                 if (Array.isArray(data?.data)) {
-                    setMasterSubscriptionList(data.data);
                     setAllAccounts(data.data);
                 }
             } catch (error) {
@@ -42,29 +41,24 @@ export function MasterSubscriptionView() {
         fetchData();
     }, [serviceFilter, statusFilter]);
 
-    useEffect(() => {
-        getDetails(searchQuery.trim());
-    }, [searchQuery]);
-
-    const getDetails = (searchQuery) => {
-        if (searchQuery && searchQuery.trim() !== "") {
-            const query = searchQuery.toLowerCase();
-            const filteredAccounts = allAccounts.filter((acc) => {
-                const name = (acc?.name || "").toLowerCase(); // group name
-                const code = (acc?.code || "").toLowerCase();
-                const serviceType = (acc?.serviceType || "").toLowerCase();
-
-                return (
-                    name.includes(query) ||
-                    code.includes(query) ||
-                    serviceType.includes(query)
-                );
-            });
-            setMasterSubscriptionList(filteredAccounts);
-        } else {
-            setMasterSubscriptionList(allAccounts);
+    const masterSubscriptionList = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        if (!query) {
+            return allAccounts;
         }
-    };
+
+        return allAccounts.filter((acc) => {
+            const name = (acc?.name || "").toLowerCase();
+            const code = (acc?.code || "").toLowerCase();
+            const serviceType = (acc?.serviceType || "").toLowerCase();
+
+            return (
+                name.includes(query) ||
+                code.includes(query) ||
+                serviceType.includes(query)
+            );
+        });
+    }, [allAccounts, searchQuery]);
 
     function formatDate(isoDateString) {
         const date = new Date(isoDateString);
@@ -81,21 +75,41 @@ export function MasterSubscriptionView() {
         }));
     };
 
+    const formatAssignmentType = (assignmentType) => {
+        if (!assignmentType) return "-";
+        if (assignmentType === "TIER") return "Tier";
+        if (assignmentType === "DRIVER_ID") return "Driver ID";
+        if (assignmentType === "CAB_ID") return "Cab ID";
+        if (assignmentType === "AUTO_ID") return "Auto ID";
+        return assignmentType;
+    };
+
+    const formatAssignmentValue = (assignment) => {
+        const value = assignment?.assignmentValue;
+        if (!value) return "-";
+        if (assignment?.assignmentType === "TIER") {
+            if (value === "SILVER") return "Silver";
+            if (value === "GOLD") return "Gold";
+            if (value === "ELITE") return "Elite";
+        }
+        return value;
+    };
+
     return (
         <div className="mb-8 flex flex-col gap-12">
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-grow">
-                    <div className="relative flex-grow max-w-[320px]">
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="Search Subscription"
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
-                        </div>
+                        <div className="relative flex-grow max-w-[320px]">
+                            <input
+                                type="text"
+                                className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                placeholder="Search Subscription"
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
+                            </div>
                         </div>
                         <select
                             value={serviceFilter}
@@ -142,7 +156,8 @@ export function MasterSubscriptionView() {
                                         {[
                                             "Service Type",
                                             "Plan Group",
-                                            // "Group Code",
+                                            "Assignment Type",
+                                            "Assignment Value",
                                             "Zone",
                                             "Group Status",
                                             "Is Default",
@@ -164,19 +179,25 @@ export function MasterSubscriptionView() {
                                 </thead>
                                 <tbody>
                                     {masterSubscriptionList.map((group, index) => (
-                                        <>
+                                        <React.Fragment key={group.id || index}>
                                             <tr key={group.id || index} className="text-sm">
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-blue-600 underline cursor-pointer">
                                                     <Link to={`/dashboard/finance/master-subscription/details/${group.id}`}>
-                                                    {group.serviceType === 'RIDES_RENTAL_CABS'
-                                                        ? <div>Rides/Rental Cabs</div>
-                                                        : group.serviceType === "AUTO"
-                                                            ? <div>Autos</div>
-                                                            : "Acting_Driver"}
+                                                        {group.serviceType === 'RIDES_RENTAL_CABS'
+                                                            ? <div>Rides/Rental Cabs</div>
+                                                            : group.serviceType === "AUTO"
+                                                                ? <div>Autos</div>
+                                                                : "Acting_Driver"}
                                                     </Link>
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
                                                     {group.name || '-'}
+                                                </td>
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                    {formatAssignmentType(group.assignments?.[0]?.assignmentType)}
+                                                </td>
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                    {formatAssignmentValue(group.assignments?.[0])}
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
                                                     {group.zone || '-'}
@@ -200,7 +221,7 @@ export function MasterSubscriptionView() {
                                             {expandedGroups[group.id] && (
                                                 <tr>
                                                     <td
-                                                        colSpan={6}
+                                                        colSpan={8}
                                                         className="bg-blue-gray-50 border-b border-blue-gray-50 px-5 py-3"
                                                     >
                                                         {Array.isArray(group.plans) && group.plans.length > 0 ? (
@@ -239,9 +260,9 @@ export function MasterSubscriptionView() {
                                                                             </td>
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-blue-600 underline cursor-pointer">
                                                                                 <Link to={`/dashboard/finance/master-subscription/details/${group.id}`}>
-                                                                                {Number(plan.packagePrice || 0) === 0
-                                                                                    ? 'Free'
-                                                                                    : plan.packagePrice}
+                                                                                    {Number(plan.packagePrice || 0) === 0
+                                                                                        ? 'Free'
+                                                                                        : plan.packagePrice}
                                                                                 </Link>
                                                                             </td>
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
@@ -277,7 +298,7 @@ export function MasterSubscriptionView() {
                                                     </td>
                                                 </tr>
                                             )}
-                                        </>
+                                        </React.Fragment>
                                     ))}
                                 </tbody>
                             </table>
