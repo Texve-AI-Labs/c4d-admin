@@ -98,7 +98,7 @@ const SelectLocation = (props) => {
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_SIT,
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_UAT,
     });
     useEffect(() => {
         if (pickupLocation && dropLocation) {

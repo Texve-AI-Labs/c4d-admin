@@ -51,7 +51,7 @@ const GoogleMapDrawing = ({
   showDrawingManager = false
 }) => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_SIT,
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_UAT,
     libraries: LIBRARIES,
   });
 
