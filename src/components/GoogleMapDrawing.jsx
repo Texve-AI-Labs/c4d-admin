@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { themeColors } from '@/theme/colors';
-import { useLoadScript, GoogleMap, DrawingManager, Polygon } from '@react-google-maps/api';
+import { useLoadScript, GoogleMap, Polygon } from '@react-google-maps/api';
 
-// Keep libraries array static outside component
-const LIBRARIES = ['drawing', 'geometry'];
+// Keep libraries array static outside component.
+// The Maps drawing library was removed in v3.65, so polygon creation is handled manually.
+const LIBRARIES = ['geometry'];
 
 // Default center (Chennai)
 const defaultCenter = { lat: 12.9324523, lng: 79.1377447 };
@@ -28,13 +29,7 @@ const mapOptions = {
   draggableCursor: 'crosshair'
 };
 
-const drawingManagerOptions = {
-  drawingControl: true,
-  drawingControlOptions: {
-    position: 2, // TOP_CENTER
-    drawingModes: ['polygon']
-  },
-  polygonOptions: {
+const polygonOptions = {
     fillColor: themeColors.mapFill,
     fillOpacity: 0.4,
     strokeWeight: 2,
@@ -43,7 +38,6 @@ const drawingManagerOptions = {
     editable: true,
     draggable: true,
     zIndex: 1
-  }
 };
 
 const GoogleMapDrawing = ({
@@ -57,28 +51,14 @@ const GoogleMapDrawing = ({
   showDrawingManager = false
 }) => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_SIT,
     libraries: LIBRARIES,
-    version: "weekly"
   });
 
   const [map, setMap] = useState(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const drawingManagerRef = useRef(null);
   const polygonRefs = useRef([]);
-
-  const onLoadDrawingManager = useCallback((drawingMgr) => {
-    console.log('Drawing manager loaded');
-    drawingManagerRef.current = drawingMgr;
-  }, []);
-
-  const onUnmountDrawingManager = useCallback(() => {
-    console.log('Drawing manager unmounted');
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setMap(null);
-    }
-    drawingManagerRef.current = null;
-  }, []);
+  const [draftPath, setDraftPath] = useState([]);
 
   const onMapLoad = useCallback((map) => {
     setMap(map);
@@ -112,10 +92,7 @@ const GoogleMapDrawing = ({
       onPolygonComplete(coordinates);
     }
 
-    // Reset drawing mode
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setDrawingMode(null);
-    }
+    setDraftPath([]);
   }, [onPolygonComplete]);
 
   // Add handlers for polygon path updates
@@ -148,22 +125,44 @@ const GoogleMapDrawing = ({
     }
   }, [onPolygonDelete]);
 
-  // Effect to handle drawing manager visibility
   useEffect(() => {
-    if (drawingManagerRef.current) {
-      drawingManagerRef.current.setMap(showDrawingManager ? map : null);
+    if (!showDrawingManager) {
+      setDraftPath([]);
     }
   }, [showDrawingManager, map]);
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
-      if (drawingManagerRef.current) {
-        drawingManagerRef.current.setMap(null);
-        drawingManagerRef.current = null;
-      }
+      setDraftPath([]);
     };
   }, []);
+
+  const handleMapClick = useCallback((event) => {
+    if (!showDrawingManager || !event?.latLng) return;
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    setDraftPath((prev) => [...prev, { lat, lng }]);
+  }, [showDrawingManager]);
+
+  const handleUndoPoint = useCallback(() => {
+    setDraftPath((prev) => prev.slice(0, -1));
+  }, []);
+
+  const handleClearDraft = useCallback(() => {
+    setDraftPath([]);
+  }, []);
+
+  const handleFinishDraft = useCallback(() => {
+    if (draftPath.length < 3) {
+      window.alert('Please add at least 3 points before finishing the polygon.');
+      return;
+    }
+
+    if (onPolygonComplete) {
+      onPolygonComplete(draftPath);
+    }
+    setDraftPath([]);
+  }, [draftPath, onPolygonComplete]);
 
   if (loadError) {
     return (
@@ -193,10 +192,9 @@ const GoogleMapDrawing = ({
         <div className="bg-blue-gray-50 p-3 rounded-lg text-sm text-blue-gray-700">
           <p className="font-medium">Drawing Instructions:</p>
           <ol className="list-decimal ml-4 mt-1 space-y-1">
-            <li>Click the polygon icon in the toolbar at the top of the map</li>
-            <li>Click on the map to start drawing your polygon</li>
-            <li>Continue clicking to add more points</li>
-            <li>Click the first point again to complete the polygon</li>
+            <li>Click on the map to add points for the polygon</li>
+            <li>Use Undo or Clear if you need to adjust the draft</li>
+            <li>Click Finish Drawing once you have at least 3 points</li>
           </ol>
         </div>
       )}
@@ -207,19 +205,24 @@ const GoogleMapDrawing = ({
           zoom={zoom}
           options={mapOptions}
           onLoad={onMapLoad}
+          onClick={handleMapClick}
         >
-         {isMapLoaded && <DrawingManager
-            onLoad={onLoadDrawingManager}
-            onUnmount={onUnmountDrawingManager}
-            options={drawingManagerOptions}
-            onPolygonComplete={handlePolygonComplete}
-          />}
-          
+          {isMapLoaded && showDrawingManager && draftPath.length > 0 && (
+            <Polygon
+              path={draftPath}
+              options={{
+                ...polygonOptions,
+                editable: false,
+                draggable: false,
+              }}
+            />
+          )}
+
           {isMapLoaded && existingPolygons.map((polygonCoords, index) => (
             <Polygon
               key={index}
               path={polygonCoords}
-              options={{...drawingManagerOptions.polygonOptions}}
+              options={{ ...polygonOptions }}
               onLoad={polygon => {
                 polygonRefs.current[index] = polygon;
               }}
@@ -242,7 +245,19 @@ const GoogleMapDrawing = ({
             />
           ))}
         </GoogleMap>
-        
+        {showDrawingManager && (
+          <div className="absolute right-3 top-3 z-10 flex gap-2 rounded-lg bg-white/95 p-2 shadow-md">
+            <button type="button" className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white" onClick={handleFinishDraft}>
+              Finish Drawing
+            </button>
+            <button type="button" className="rounded-md bg-gray-200 px-3 py-2 text-sm font-medium text-gray-800" onClick={handleUndoPoint}>
+              Undo
+            </button>
+            <button type="button" className="rounded-md bg-red-100 px-3 py-2 text-sm font-medium text-red-700" onClick={handleClearDraft}>
+              Clear
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
