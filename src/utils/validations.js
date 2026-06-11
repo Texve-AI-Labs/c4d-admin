@@ -721,6 +721,12 @@ export const CAB_ADD_SCHEMA = Yup.object({
 });
 
 export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
+    assignmentType: Yup.string().required("Assignment Type is required"),
+    assignmentValue: Yup.string().required("Assignment Value is required"),
+    priority: Yup.number()
+        .typeError("Priority is required")
+        .moreThan(0, "Priority is required")
+        .required("Priority is required"),
     serviceType: Yup.string()
         .typeError("Service Type must be a String")
         .required("Service Type is required"),
@@ -748,11 +754,21 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
         .required("Total Price is required"),
 
     validityDays: Yup.number()
-        .typeError("validityDays  must be a number")
-        .required("validityDays  is required"),
+        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+        .when("type", {
+            is: (type) => type !== "PAID",
+            then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
+            otherwise: (schema) => schema.notRequired(),
+        }),
 
 });
 export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
+    assignmentType: Yup.string().required("Assignment Type is required"),
+    assignmentValue: Yup.string().required("Assignment Value is required"),
+    priority: Yup.number()
+        .typeError("Priority is required")
+        .moreThan(0, "Priority is required")
+        .required("Priority is required"),
     serviceType: Yup.string()
         .typeError("Service Type must be a String")
         .required("Service Type is required"),
@@ -781,8 +797,12 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
         .required("Total Price is required"),
 
     validityDays: Yup.number()
-        .typeError("validityDays  must be a number")
-        .required("validityDays  is required"),
+        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+        .when("type", {
+            is: (type) => type !== "PAID",
+            then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
+            otherwise: (schema) => schema.notRequired(),
+        }),
 });
 export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
     serviceType: Yup.string().required('Service Type is required'),
