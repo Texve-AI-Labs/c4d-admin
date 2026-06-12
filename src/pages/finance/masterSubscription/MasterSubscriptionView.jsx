@@ -22,7 +22,7 @@ export function MasterSubscriptionView() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const params = { includePlans: true };
+                const params = { includePlans: true, includeAssignments: true };
                 if (serviceFilter) {
                     params.serviceType = serviceFilter;
                 }

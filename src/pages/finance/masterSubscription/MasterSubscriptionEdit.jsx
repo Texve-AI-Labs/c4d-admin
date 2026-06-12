@@ -60,7 +60,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="assignmentType" className="text-sm font-medium text-gray-700">Assignment Type</label>
-              <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+              <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
                 <option value="">Select Assignment Type</option>
                 <option value="TIER">Tier</option>
                 <option value="DRIVER_ID">Driver ID</option>
@@ -72,14 +72,14 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             <div>
               <label htmlFor="assignmentValue" className="text-sm font-medium text-gray-700">Assignment Value</label>
               {values.assignmentType === "TIER" ? (
-                <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
                   <option value="">Select Tier</option>
                   <option value="SILVER">Silver</option>
                   <option value="GOLD">Gold</option>
                   <option value="ELITE">Elite</option>
                 </Field>
               ) :
-                <Field type="text" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm" placeholder={`Enter ${values.assignmentType === "DRIVER_ID" ? "Driver ID" : values.assignmentType === "CAB_ID" ? "Cab ID" : "Auto ID"}`} />
+                <Field type="text" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled placeholder={`Enter ${values.assignmentType === "DRIVER_ID" ? "Driver ID" : values.assignmentType === "CAB_ID" ? "Cab ID" : "Auto ID"}`} />
               }
 
             </div>
@@ -110,7 +110,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </div>
             <div>
               <label htmlFor="serviceType" className="text-sm font-medium text-gray-700">Service Type</label>
-              <Field as="select" name="serviceType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+              <Field as="select" name="serviceType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
                 <option value="">Select Service Type</option>
                 <option value="ACTING_DRIVER">Driver</option>
                 <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
@@ -370,6 +370,7 @@ const MasterSubscriptionEdit = () => {
         const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_MASTER_SUBSCRIPTION_DETAIL, {
           plans: groupId,
           includePlans: true,
+          includeAssignments: true
         });
 
         const numericId = Number(groupId);
