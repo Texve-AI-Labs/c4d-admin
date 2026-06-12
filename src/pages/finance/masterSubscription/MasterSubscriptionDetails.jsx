@@ -29,7 +29,7 @@ const MasterSubscriptionDetails = () => {
     useEffect(() => {
         const fetchData = async (groupId) => {
             try {
-                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_MASTER_SUBSCRIPTION_DETAIL, { plans: groupId, includePlans: true });
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_MASTER_SUBSCRIPTION_DETAIL, { plans: groupId, includePlans: true, includeAssignments: true });
                 // API may return { result } or { data: [group, ...] }
                 const numericId = Number(groupId);
                 let group = response?.result;
