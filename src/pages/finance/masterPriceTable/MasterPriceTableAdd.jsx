@@ -27,7 +27,7 @@ const PRICE_SCHEMA = Yup.object().shape({
     baseKm: Yup.number().required('Base Km is required'),
     baseFare: Yup.number().required('Base Fare is required'),
     ratePerKm: Yup.number().required('Rate Per Km is required'),
-    ratePerMin: Yup.number().required('Rate Per Min is required'),
+    // ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min is required'),
     rateParameter: Yup.string().required('Rate Parameter is required'),
     surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
@@ -73,7 +73,7 @@ const PriceAdd = () => {
         ratePerKmSuv:'',
         ratePerKmSedan:'',
         ratePerKmMVP: '',
-        ratePerMin: '',
+        // ratePerMin: '',
         additionalMin: '',
         rateParameter: '',
         surchargePercentage: '',
@@ -103,7 +103,7 @@ const PriceAdd = () => {
                 'kilometerPriceSuv':values.ratePerKmSuv,
                 'kilometerPriceSedan':values.ratePerKmSedan,
                 'kilometerPriceMVP': values.ratePerKmMVP,
-                'minCharge': values.ratePerMin,
+                // 'minCharge': values.ratePerMin,
                 'rateParameter': values.rateParameter,
                 'additionalMinCharge': values.additionalMin,
                 'freeExtraMinutes':values.freeExtraMinutes,
@@ -243,7 +243,7 @@ const PriceAdd = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Car Type</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th>
+                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                         </tr>
                                     </thead>
@@ -258,9 +258,9 @@ const PriceAdd = () => {
                                                 <Field type="number" name="ratePerKm" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -273,9 +273,9 @@ const PriceAdd = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmSedan" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -288,9 +288,9 @@ const PriceAdd = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmSuv" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -303,9 +303,9 @@ const PriceAdd = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmMVP" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
