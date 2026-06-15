@@ -198,7 +198,7 @@ export function MasterPriceDetailsAndEdit() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Kilometer</th>
                                      
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price(MUV)</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price(MUV)</th> */}
                                     
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
@@ -217,7 +217,7 @@ export function MasterPriceDetailsAndEdit() {
                                     <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || "-"}</td>

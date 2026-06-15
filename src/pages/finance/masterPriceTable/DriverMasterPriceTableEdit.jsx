@@ -235,7 +235,7 @@ const DriverMasterPriceTableEdit = () => {
                                     <tr className="bg-blue-600 text-white">
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Package </th>
                                         <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
-                                        <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price(MUV)</th>
+                                        {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price(MUV)</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
