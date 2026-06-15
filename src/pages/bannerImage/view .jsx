@@ -40,13 +40,14 @@ const BannerView = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  const formatDateAndTime = (dateValue, timeValue) => {
+  const formatDate = (dateValue) => {
     if (!dateValue) return '-';
-    const formattedDate = moment(dateValue).format('DD-MM-YYYY');
-    const formattedTime = timeValue
-      ? moment(timeValue, ['HH:mm:ss', 'HH:mm']).format('hh:mm A')
-      : moment(dateValue).format('hh:mm A');
-    return `${formattedDate} , ${formattedTime}`;
+    return moment(dateValue).format('DD-MM-YYYY');
+  };
+
+  const formatTime = (timeValue) => {
+    if (!timeValue) return '-';
+    return moment(timeValue, ['HH:mm:ss', 'HH:mm']).format('hh:mm A');
   };
 
   useEffect(() => {
@@ -280,6 +281,8 @@ const BannerView = () => {
                   <th className="py-3 px-5 text-left  text-gray-700">Redirect URL</th>
                   <th className="py-3 px-5 text-left  text-gray-700">From Date</th>
                   <th className="py-3 px-5 text-left  text-gray-700">To Date</th>
+                  <th className="py-3 px-5 text-left  text-gray-700">Schedule Start Time</th>
+                  <th className="py-3 px-5 text-left  text-gray-700">Schedule End Time</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Driver Type</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Status</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Position</th>
@@ -314,10 +317,16 @@ const BannerView = () => {
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>
                       <td className="py-3 px-5 break-all">{item.redirectUrl || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
-                        {formatDateAndTime(item.fromDate, item.startTime)}
+                        {formatDate(item.fromDate)}
+                      </td>
+                      <td className="py-3 px-5 whitespace-nowrap">
+                        {formatDate(item.toDate)}
+                      </td>
+                      <td className="py-3 px-5 whitespace-nowrap">
+                        {formatTime(item.startTime)}
                       </td> 
                       <td className="py-3 px-5 whitespace-nowrap">
-                        {formatDateAndTime(item.toDate, item.endTime)}
+                        {formatTime(item.endTime)}
                       </td>
                       <td className="py-3 px-5">
                         {formatTypeText(item.driverType)}
