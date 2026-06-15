@@ -130,8 +130,8 @@ export function MasterPriceAdd() {
                                 <Field as="select" name="serviceType" className="p-2 w-full rounded-md border-2 border-gray-300">
                                     <option value="">Select Service Type</option>
                                     <option value="DRIVER">Acting Driver</option>
-                                    <option value="RIDES">Rides</option>
-                                    <option value="RENTAL">Rental</option>
+                                    {/* <option value="RIDES">Rides</option>
+                                    <option value="RENTAL">Rental</option> */}
                                 </Field>
                                 <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
                             </div>
@@ -191,7 +191,7 @@ export function MasterPriceAdd() {
                                     <tr className="bg-blue-600 text-white">
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Package (Hrs/Kms)</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price (MUV)</th>
+                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price (MUV)</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
@@ -213,10 +213,10 @@ export function MasterPriceAdd() {
                                             <Field type="number" name="price" className="w-full text-center border rounded p-2" />
                                             <ErrorMessage name="price" component="div" className="text-red-500 text-xs" />
                                         </td>
-                                        <td className="px-2 py-3 border">
+                                        {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="priceMVP" className="w-full text-center border rounded p-2" />
                                             <ErrorMessage name="priceMVP" component="div" className="text-red-500 text-xs" />
-                                        </td>
+                                        </td> */}
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="kilometer" className="w-full text-center border rounded p-2" />
                                         </td>

@@ -247,7 +247,7 @@ export function MasterPriceView() {
                                         "Trip Type",
                                         "Package (Hrs)",
                                         "Price",
-                                        "Price (MUV)",
+                                        // "Price (MUV)",
                                         "Package KM",
                                         "Additional Mins Price",
                                         "Extra KM Price",
@@ -309,11 +309,11 @@ export function MasterPriceView() {
                                                     {price}
                                                 </Typography>
                                             </td>
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {priceMVP}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {kilometer || "-"}
