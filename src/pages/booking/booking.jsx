@@ -19,7 +19,7 @@ import CustomerAdd from '../customer/add';
 import SelectLocation from './selectLocation';
 import BookingItem from "./confirmBooking"
 import { BOOKING_FEATURES } from '../../utils/constants';
-import {buildAdminDiscountPayload,isAdminDiscountEffective,buildAdminDiscountFromQuoteMeta} from './utils/adminDiscount';
+import {buildAdminDiscountPayload,isAdminDiscountEffective,buildAdminDiscountFromQuoteMeta,sanitizeAdminDiscountValue} from './utils/adminDiscount';
 import { normalizeQuoteRef } from './utils/quoteRef';
 import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
 import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
@@ -3378,7 +3378,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     </Field>
                                                                 </div>
                                                                 <div>
-                                                                    <label className="block text-sm font-medium text-black-700">Discount Value</label>
+                                                                    <label className="block text-sm font-medium text-black-700">Discount Value  <span className="text-red-500">value min 0.01 max 5</span></label>
                                                                     <Field
                                                                         type="number"
                                                                         name="adminDiscountValue"
@@ -3386,6 +3386,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         step="0.01"
                                                                         className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                                         placeholder="Enter value"
+                                                                        onChange={(e) => setFieldValue('adminDiscountValue', sanitizeAdminDiscountValue(e.target.value))}
                                                                     />
                                                                 </div>
                                                                 <div>
