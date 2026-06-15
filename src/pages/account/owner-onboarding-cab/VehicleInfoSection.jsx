@@ -620,7 +620,7 @@ const VehicleInfoSection = ({
                             "Bonus Credit",
                             "Utilized Credit",
                             "Nett Credit",
-                            "Remaining Credit",
+                            // "Remaining Credit",
                             "Status",
                             "Cashback Amount",
                             "Created At",
@@ -661,9 +661,9 @@ const VehicleInfoSection = ({
                             <td className="px-3 py-2">
                               <Typography className="text-blue-gray-900 font-medium">{row.nettCredit}</Typography>
                             </td>
-                            <td className="px-3 py-2">
+                            {/* <td className="px-3 py-2">
                               <Typography className="text-blue-gray-900 font-medium">{row.remainingCredit}</Typography>
-                            </td>
+                            </td> */}
                             <td className="px-3 py-2">
                               <Chip value={row.status} color={getStatusChipColor(row.status)} variant="ghost" className="w-fit" />
                             </td>
