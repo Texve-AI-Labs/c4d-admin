@@ -27,7 +27,7 @@ const PRICE_SCHEMA = Yup.object().shape({
     baseFare: Yup.number().required('Base Fare is required'),
     kilometer: Yup.number().required('Kilometer is required'),
     kilometerPrice: Yup.number().required('Kilometer Rate is required'),
-    extraKmPrice: Yup.number().required('Additional Kilometer Price is required'),
+    // extraKmPrice: Yup.number().required('Additional Kilometer Price is required'),
     additionalMinCharge: Yup.number().required('Additional Min is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
     cancelMins: Yup.number().required('Cancellation Mins is required'),
@@ -267,16 +267,19 @@ const RentalsMasterPriceEdit = () => {
                                 <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm"  />
                                 <ErrorMessage name="baseKm" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {values?.type !== 'Outstation' && <div>
-                                <label className="text-sm font-medium text-gray-700">KM</label>
-                                <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="kilometer" component="div" className="text-red-500 text-sm" />
-                            </div>}
+                            {values?.type !== 'Outstation' && (<>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Package KM</label>
+                                    <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                    <ErrorMessage name="kilometer" component="div" className="text-red-500 text-sm" />
+                                </div>
+                            
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Additional KM Rate</label>
                                 <Field type="number" name="extraKmPrice" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="extraKmPrice" component="div" className="text-red-500 text-sm" />
                             </div>
+                            </>)}
                              <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />

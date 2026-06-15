@@ -36,7 +36,7 @@ const PRICE_SCHEMA = Yup.object().shape({
     ratePerKmMVP: Yup.number().required('Rate Per Km MUV is required'),
     ratePerKmSuv: Yup.number().required('Rate Per Km Suv is required'),
     ratePerKmSedan: Yup.number().required('Rate Per Km Sedan is required'),
-    ratePerMin: Yup.number().required('Rate Per Min is required'),
+    // ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min is required'),
     rateParameter: Yup.string().required('Rate Parameter is required'),
     surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
@@ -78,7 +78,7 @@ const PriceEdit = () => {
                     ratePerKmMVP: data.data.kilometerPriceMVP,
                     ratePerKmSedan: data.data.kilometerPriceSedan,
                     ratePerKmSuv: data.data.kilometerPriceSuv,
-                    ratePerMin: data.data.minCharge,
+                    // ratePerMin: data.data.minCharge,
                     additionalMin: data.data.additionalMinCharge,
                     rateParameter: data.data.rateParameter,
                     surchargePercentage: data.data.surChargePercentage,
@@ -134,7 +134,7 @@ const PriceEdit = () => {
                 kilometerPriceSedan: Number(values.ratePerKmSedan),
                 kilometerPriceSuv: Number(values.ratePerKmSuv),
                 kilometerPriceMVP: Number(values.ratePerKmMVP),
-                minCharge: Number(values.ratePerMin),
+                // minCharge: Number(values.ratePerMin),
                 additionalMinCharge: Number(values.additionalMin),
                 freeExtraMinutes: Number(values.freeExtraMinutes),
                 rateParameter: values.rateParameter,
@@ -304,7 +304,7 @@ const PriceEdit = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Car Type</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th>
+                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                         </tr>
                                     </thead>
@@ -327,10 +327,10 @@ const PriceEdit = () => {
                                                 />
                                                 <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1 border">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -346,10 +346,10 @@ const PriceEdit = () => {
                                                 <Field type="number" name="ratePerKmSedan" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKmSedan" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -365,10 +365,10 @@ const PriceEdit = () => {
                                                 <Field type="number" name="ratePerKmSuv" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKmSuv" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -384,10 +384,10 @@ const PriceEdit = () => {
                                                 <Field type="number" name="ratePerKmMVP" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKmMVP" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
