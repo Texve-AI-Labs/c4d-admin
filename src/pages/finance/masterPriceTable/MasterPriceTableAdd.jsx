@@ -34,6 +34,8 @@ const PRICE_SCHEMA = Yup.object().shape({
     nightCharge: Yup.number().required('Night Charge is required'),
     cancellationMins: Yup.number().required('Cancellation Mins is required'),
     cancellationCharge: Yup.number().required('Cancellation Charge is required'),
+    waitingMins: Yup.number().required('Waiting Mins is required'),
+    waitingCharge: Yup.number().required('Waiting Charge is required'),
     status: Yup.string().required('Status is required'),
     zone: Yup.string().required('Zone is required'),
 });
@@ -223,7 +225,7 @@ const PriceAdd = () => {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
-                                <Field type="time" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
