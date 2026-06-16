@@ -63,7 +63,10 @@ const PriceDetails = () => {
                     freeExtraMinutes: data?.data?.freeExtraMinutes || '',
                     driverCancelMins: Utils.convertTimeFormatToMinutes(data?.data?.driverCancelMins) || '',
                     driverFreeCancellationsPerDay: data?.data?.driverFreeCancellationsPerDay || '',
-                    driverCancellationCharge: data?.data?.driverCancellationCharge || ''
+                    driverCancellationCharge: data?.data?.driverCancellationCharge || '',
+                    waitingMins: Utils.convertTimeFormatToMinutes(data?.data?.waitingMins),
+                    waitingCharge: data?.data?.waitingCharge,
+
                 });
                 setPeakHours(data.data.peakHours);
                 setPremiumConfig(data.data.premiumConfig);
@@ -132,6 +135,14 @@ const PriceDetails = () => {
                                     <span className="text-gray-600">to</span>
                                     <Field type="time" name="nightHoursTo" disabled className="p-3 rounded-md border-gray-300 bg-gray-100" />
                                 </div>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" disabled className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" disabled className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                             </div>
                         </div>
 
