@@ -23,7 +23,7 @@ function CommonFieldsSection({ form, onInputChange, serviceAreas = [] }) {
           </select>
         </div>
         <div>
-          <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">Name</Typography>
+          <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">Name <span className="text-red-500">*</span></Typography>
           <input
             name="name"
             value={form.name}
@@ -47,7 +47,7 @@ function CommonFieldsSection({ form, onInputChange, serviceAreas = [] }) {
           </select>
         </div>
         <div>
-          <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">Description</Typography>
+          <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">Description <span className="text-red-500">*</span></Typography>
           <textarea name="description" value={form.description} onChange={onInputChange} rows={4} placeholder="Description" className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 outline-none focus:border-blue-500" />
         </div>
       </div>
