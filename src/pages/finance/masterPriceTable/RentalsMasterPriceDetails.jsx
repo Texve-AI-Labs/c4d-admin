@@ -74,6 +74,8 @@ const RentalsPriceMasterDetails = () => {
                     additionalMinChargeSedan:data?.data?.additionalMinChargeSedan,
                     cancelMins: Utils.convertTimeFormatToMinutes(data?.data?.cancelMins),
                     cancelCharge: data?.data?.cancelCharge,
+                    waitingMins: Utils.convertTimeFormatToMinutes(data?.data?.waitingMins),
+                    waitingCharge: data?.data?.waitingCharge,
 
                     acKilometerPrice: data?.data?.acKilometerPrice || 0,
                     acKilometerPriceMVP: data?.data?.acKilometerPriceMVP || 0,
@@ -190,6 +192,14 @@ const RentalsPriceMasterDetails = () => {
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
                                 <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
