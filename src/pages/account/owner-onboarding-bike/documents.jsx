@@ -146,10 +146,26 @@ const AccountDocuments = () => {
   const [selectedAccountDocType, setSelectedAccountDocType] = useState("");
   const [previewZoom, setPreviewZoom] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [serviceAreas, setServiceAreas] = useState([]);
 
   useEffect(() => {
     if (id) fetchData();
   }, [id]);
+
+  useEffect(() => {
+    const fetchServiceAreas = async () => {
+      try {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" });
+        if (response?.success) {
+          setServiceAreas(Array.isArray(response.data) ? response.data : []);
+        }
+      } catch (err) {
+        console.error("Failed to load service areas", err);
+      }
+    };
+
+    fetchServiceAreas();
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -669,12 +685,19 @@ const AccountDocuments = () => {
               </div>
               <div>
                 <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
-                <input
+                <select
                   id="district"
                   value={addressForm.district}
                   onChange={(e) => handleAddressInputChange("district", e.target.value)}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
-                />
+                >
+                  <option value="">Select District</option>
+                  {serviceAreas.map((area) => (
+                    <option key={area.id} value={area.name}>
+                      {area.name}
+                    </option>
+                  ))}
+                </select>
                 {addressErrors.district ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.district}</Typography> : null}
               </div>
               <div>

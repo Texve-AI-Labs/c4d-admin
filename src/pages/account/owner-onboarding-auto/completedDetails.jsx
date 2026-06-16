@@ -150,6 +150,7 @@ const CompletedOnboardingDetails = () => {
   const [savingAccountDetails, setSavingAccountDetails] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [isSameAddress, setIsSameAddress] = useState(false);
+  const [serviceAreas, setServiceAreas] = useState([]);
   const [vehicleStatusById, setVehicleStatusById] = useState({});
   const [vehicleBlockedReasonById, setVehicleBlockedReasonById] = useState({});
   const [vehicleAddressSuggestionsById, setVehicleAddressSuggestionsById] = useState({});
@@ -180,6 +181,18 @@ const CompletedOnboardingDetails = () => {
     };
 
     fetchAllUsers();
+  }, []);
+
+  useEffect(() => {
+    const fetchServiceAreas = async () => {
+      try {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" });
+        if (response?.success) setServiceAreas(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        console.error("Error fetching service areas:", error);
+      }
+    };
+    fetchServiceAreas();
   }, []);
 
   const fetchOnboardingDetails = async () => {
@@ -361,7 +374,7 @@ const CompletedOnboardingDetails = () => {
         const label = toLabel(key);
         const displayLabel = label === "Has Vehicle" ? "Isvehicle" : label;
         if (displayLabel === "Id") return null;
-        if (["Available Status", "Service Type"].includes(label)) return null;
+        if (["Available Status", "Service Type", "Zone"].includes(label)) return null;
         if (["Phone Number", "Owner Phone Number"].includes(label)) {
           return { label: displayLabel, value: formatIndianPhone(value) };
         }
@@ -917,6 +930,19 @@ const CompletedOnboardingDetails = () => {
                             ).map((thaluk) => (
                               <option key={thaluk.value} value={thaluk.value}>
                                 {thaluk.label}
+                              </option>
+                            ))}
+                          </select>
+                      ) : key === "district" ? (
+                        <select
+                          value={accountDraft?.[key] || ""}
+                          onChange={(e) => setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        >
+                          <option value="">Select District</option>
+                          {serviceAreas.map((area) => (
+                            <option key={area.id} value={area.name}>
+                              {area.name}
                               </option>
                             ))}
                           </select>
