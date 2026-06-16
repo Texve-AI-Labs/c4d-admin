@@ -30,3 +30,12 @@ export const buildAdminDiscountFromQuoteMeta = (adminDiscount = null) => {
   if (remarks) payload.remarks = remarks;
   return payload;
 };
+
+export const sanitizeAdminDiscountValue = (value) => {
+  if (value === '' || value === null || value === undefined) return '';
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return '';
+  if (parsed < 0) return '0';
+  if (parsed > 5) return '5';
+  return String(value);
+};

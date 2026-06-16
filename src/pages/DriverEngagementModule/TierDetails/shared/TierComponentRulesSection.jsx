@@ -397,7 +397,7 @@ function TierComponentRulesSection({
                     className="h-4 w-4 rounded border-blue-gray-300"
                   />
                   <Typography variant="small" color="blue-gray">
-                    Enabled
+                    Enabled <span className=" text-red-500">*</span>
                   </Typography>
                 </label>
               </div>

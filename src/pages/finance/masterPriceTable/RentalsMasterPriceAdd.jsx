@@ -36,6 +36,8 @@ const PRICE_SCHEMA = Yup.object().shape({
     nightCharge: Yup.number().required('Night Charge is required'),
     cancelMins: Yup.number().required('Cancellation Mins is required'),
     cancelCharge: Yup.number().required('Cancellation Charge is required'),
+    waitingMins: Yup.number().required('Waiting Mins is required'),
+    waitingCharge: Yup.number().required('Waiting Charge is required'),
     status: Yup.string().required('Status is required'),
 });
 
@@ -78,6 +80,8 @@ useEffect(() => {
         cancelCharge: '',
         nightCharge: '',
         status: 'ACTIVE',
+        waitingMins: Utils.convertMinutesToTimeFormat || 0,
+        waitingCharge: '',
 
         // baseFare Drop only and Round Trip
         baseFare: '',
@@ -208,6 +212,8 @@ useEffect(() => {
                 'status': values.status === "ACTIVE" ? 1 : 0,
                 "cancelMins": Utils.convertMinutesToTimeFormat(values.cancelMins),
                 "cancelCharge": Number(values.cancelCharge),
+                "waitingMins": Utils.convertMinutesToTimeFormat(values.waitingMins),
+                "waitingCharge": Number(values.waitingCharge),
                 'extraKmPrice': Number(values.extraKmPrice),
                 "price":Number(values.price),
                 "priceMVP":Number(values.priceMVP),
@@ -369,6 +375,16 @@ useEffect(() => {
                                 <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancelCharge" component="div" className="text-red-500 text-sm" />
                             </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
+                            </div>                            
                         </div>
                         
                        <div>

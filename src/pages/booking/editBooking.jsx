@@ -9,7 +9,7 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, BOOKING_FEATURES } from '@/utils/constants';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
-import { buildAdminDiscountPayload, isAdminDiscountEffective } from './utils/adminDiscount';
+import { buildAdminDiscountPayload, isAdminDiscountEffective, sanitizeAdminDiscountValue } from './utils/adminDiscount';
 import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
 
 const getSuggestionText = (suggestion) => {
@@ -1255,7 +1255,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         </Field>
                                                     </div>
                                                     <div>
-                                                        <label className="block text-sm font-medium text-black-700">Discount Value</label>
+                                                        <label className="block text-sm font-medium text-black-700">Discount Value <span className="text-red-500">value min 0.01 max 5</span></label>
                                                         <Field
                                                             type="number"
                                                             name="adminDiscountValue"
@@ -1264,6 +1264,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             step="0.01"
                                                             className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                             placeholder="Enter value"
+                                                            onChange={(e) => setFieldValue('adminDiscountValue', sanitizeAdminDiscountValue(e.target.value))}
                                                         />
                                                     </div>
                                                     <div>

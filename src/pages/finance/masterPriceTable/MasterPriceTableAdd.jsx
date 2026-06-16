@@ -34,6 +34,8 @@ const PRICE_SCHEMA = Yup.object().shape({
     nightCharge: Yup.number().required('Night Charge is required'),
     cancellationMins: Yup.number().required('Cancellation Mins is required'),
     cancellationCharge: Yup.number().required('Cancellation Charge is required'),
+    waitingMins: Yup.number().required('Waiting Mins is required'),
+    waitingCharge: Yup.number().required('Waiting Charge is required'),
     status: Yup.string().required('Status is required'),
     zone: Yup.string().required('Zone is required'),
 });
@@ -73,6 +75,8 @@ const PriceAdd = () => {
         ratePerKmSuv:'',
         ratePerKmSedan:'',
         ratePerKmMVP: '',
+        waitingMins:'',
+        waitingCharge:'',
         // ratePerMin: '',
         additionalMin: '',
         rateParameter: '',
@@ -103,6 +107,8 @@ const PriceAdd = () => {
                 'kilometerPriceSuv':values.ratePerKmSuv,
                 'kilometerPriceSedan':values.ratePerKmSedan,
                 'kilometerPriceMVP': values.ratePerKmMVP,
+                'waitingMins': Utils.convertMinutesToTimeFormat(values.waitingMins),
+                'waitingCharge': values.waitingCharge,
                 // 'minCharge': values.ratePerMin,
                 'rateParameter': values.rateParameter,
                 'additionalMinCharge': values.additionalMin,
@@ -216,6 +222,16 @@ const PriceAdd = () => {
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="freeExtraMinutes" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>

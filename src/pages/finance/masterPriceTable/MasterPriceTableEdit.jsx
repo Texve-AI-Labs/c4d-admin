@@ -44,6 +44,8 @@ const PRICE_SCHEMA = Yup.object().shape({
     nightCharge: Yup.number().required('Night Charge is required'),
     cancellationMins: Yup.number().required('Cancellation Mins is required'),
     cancellationCharge: Yup.number().required('Cancellation Charge is required'),
+    waitingMins: Yup.number().required('Waiting Mins is required'),
+    waitingCharge: Yup.number().required('Waiting Charge is required'),
     status: Yup.string().required('Status is required'),
     zone: Yup.string().required('Zone is required'), // Added zone validation
 });
@@ -92,7 +94,9 @@ const PriceEdit = () => {
                     freeExtraMinutes: data.data.freeExtraMinutes || '',
                     driverCancelMins: Utils.convertTimeFormatToMinutes(data.data.driverCancelMins) || '',
                     driverFreeCancellationsPerDay: data.data.driverFreeCancellationsPerDay || '',
-                    driverCancellationCharge: data.data.driverCancellationCharge || ''
+                    driverCancellationCharge: data.data.driverCancellationCharge || '',
+                    waitingMins: Utils.convertTimeFormatToMinutes(data.data.waitingMins),
+                    waitingCharge: data.data.waitingCharge,
                 });
                 setPeakHours(data.data.peakHours || []);
                 initialPeakHoursRef.current = data.data.peakHours;
@@ -152,7 +156,9 @@ const PriceEdit = () => {
                 zone: values.zone,
                 driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
                 driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay),
-                driverCancellationCharge: Number(values.driverCancellationCharge)
+                driverCancellationCharge: Number(values.driverCancellationCharge),
+                waitingMins: Utils.convertMinutesToTimeFormat(values.waitingMins),
+                waitingCharge: Number(values.waitingCharge),
             };
             // console.log("Request Body for Update:", reqBody);
             const response = await ApiRequestUtils.update(API_ROUTES.RIDES_PRICE_EDIT, reqBody);
@@ -291,6 +297,16 @@ const PriceEdit = () => {
                                 <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
                                 <Field type="number" name="cancellationCharge" className="mt-1 p-3 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancellationCharge" component="div" className="text-red-500 text-xs mt-1" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300" />
+                                <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-xs mt-1" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="mt-1 p-3 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                            
                         </div>
