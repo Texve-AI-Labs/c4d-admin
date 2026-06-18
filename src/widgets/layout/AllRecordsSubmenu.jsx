@@ -36,12 +36,26 @@ function AllRecordsSubmenu({ miniSidenav }) {
     { label: "Rentals Records", path: "/dashboard/booking/list/rentals", icon: "/img/rental.png" },
     { label: "Parcel Records", path: "/dashboard/booking/list/Parcel", icon: "/img/Parcel_driver.png" },
     { label: "Return Trips Records", path: "/dashboard/booking/list/returntrips", icon: "/img/rides.png" },
-    { label: "Return Trip Driver Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" },
+    ...(pathname.startsWith("/dashboard/booking/list/returntrips") ||
+    pathname.startsWith("/dashboard/vendors/driver-return-trips")
+      ? [{ label: "Return Trip Driver Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" }]
+      : []),
   ];
 
+  const rowSize = 6;
+  const rows = [];
+  for (let i = 0; i < items.length; i += rowSize) {
+    rows.push(items.slice(i, i + rowSize));
+  }
+
   return (
-    <ul className={NAV_UI.topnav.list}>
-      {items.map(({ label, path, icon }) => (
+    <div>
+      {rows.map((row, index) => (
+        <ul
+          key={`all-records-row-${index}`}
+          className={index === 0 ? NAV_UI.topnav.list : NAV_UI.topnav.secondaryList}
+        >
+      {row.map(({ label, path }) => (
         <li key={label}>
           <NavLink to={path} end={false}>
             <Button
@@ -63,6 +77,8 @@ function AllRecordsSubmenu({ miniSidenav }) {
         </li>
       ))}
     </ul>
+      ))}
+    </div>
   );
 }
 
