@@ -44,10 +44,20 @@ const NotificationListEdit = () => {
       text: message || 'Bad request',
       confirmButtonText: 'OK',
       confirmButtonColor: '#2563eb',
+      buttonsStyling: false,
+      didOpen: () => {
+        const confirmButton = Swal.getConfirmButton();
+        if (confirmButton) {
+          confirmButton.style.backgroundColor = '#2563eb';
+          confirmButton.style.color = '#ffffff';
+          confirmButton.style.padding = '8px 16px';
+        }
+      },
     });
 
   const toUtcIso = (dateLikeValue) => {
-    const dt = dateLikeValue ? new Date(dateLikeValue) : new Date();
+    if (!dateLikeValue) return '';
+    const dt = new Date(dateLikeValue);
     return Number.isNaN(dt.getTime()) ? '' : dt.toISOString();
   };
 
@@ -182,6 +192,7 @@ const NotificationListEdit = () => {
     if (lastValidatedScheduleRef.current === validationKey) {
       return true;
     }
+    lastValidatedScheduleRef.current = validationKey;
 
     const validationPayload = {
       deliverySchedule,
@@ -197,11 +208,10 @@ const NotificationListEdit = () => {
     );
 
     if (validationResponse?.code === 400 || validationResponse?.success === false) {
+      lastValidatedScheduleRef.current = '';
       await showBadRequestAlert(validationResponse?.message);
       return false;
     }
-
-    lastValidatedScheduleRef.current = validationKey;
     return true;
   };
 
@@ -223,7 +233,7 @@ const NotificationListEdit = () => {
         scheduledAtUtc:
           values.deliverySchedule === 'SCHEDULE_LATER'
             ? toUtcIso(values.scheduledAtUtc)
-            : toUtcIso(),
+            : '',
       };
 
       // console.log('Payload for update:', payload);
