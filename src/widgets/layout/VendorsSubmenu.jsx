@@ -47,7 +47,6 @@ function VendorsSubmenu({ miniSidenav }) {
       case "All Pending Documents":
         return pathname.startsWith("/dashboard/doc-verification/pending");
       case "Return Trip Driver Details":
-        return pathname.startsWith("/dashboard/vendors/driver-return-trips");
       default:
         return pathname.startsWith(target);
     }
@@ -62,7 +61,6 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Cab List", path: "/dashboard/vendors/vehicleList", icon: "/img/vehicles.png" },
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
     { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
-    { label: "Return Trip Driver Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" },
     ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
       ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
       : []),

@@ -881,7 +881,7 @@ export const routes = [
         path: "/vendors/driver-return-trips",
         element: <DriverReturnTripsList />,
         display: true,
-        permission: "Vendors",
+        permission: "All bookings",
       },
 
       {
