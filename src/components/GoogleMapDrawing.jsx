@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { themeColors } from '@/theme/colors';
-import { useLoadScript, GoogleMap, Polygon } from '@react-google-maps/api';
+import { useLoadScript, GoogleMap, Polygon, Marker } from '@react-google-maps/api';
 
 // Keep libraries array static outside component.
 // The Maps drawing library was removed in v3.65, so polygon creation is handled manually.
@@ -44,6 +44,7 @@ const GoogleMapDrawing = ({
   center = defaultCenter,
   zoom = 12,
   existingPolygons = [],
+  initialPolygon = [],
   onPolygonComplete,
   onPolygonUpdate,
   onPolygonDelete,
@@ -59,12 +60,13 @@ const GoogleMapDrawing = ({
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const polygonRefs = useRef([]);
   const [draftPath, setDraftPath] = useState([]);
+  const [completedPath, setCompletedPath] = useState([]);
 
   const onMapLoad = useCallback((map) => {
     setMap(map);
-    map.setCenter(defaultCenter);
+    map.setCenter(center);
     
-  }, []);
+  }, [center]);
 
   useEffect(() => {
     if (map) {
@@ -128,8 +130,16 @@ const GoogleMapDrawing = ({
   useEffect(() => {
     if (!showDrawingManager) {
       setDraftPath([]);
+      setCompletedPath([]);
     }
   }, [showDrawingManager, map]);
+
+  useEffect(() => {
+    if (showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length >= 3) {
+      setDraftPath(initialPolygon);
+      setCompletedPath([]);
+    }
+  }, [initialPolygon, showDrawingManager]);
 
   useEffect(() => {
     return () => {
@@ -150,6 +160,7 @@ const GoogleMapDrawing = ({
 
   const handleClearDraft = useCallback(() => {
     setDraftPath([]);
+    setCompletedPath([]);
   }, []);
 
   const handleFinishDraft = useCallback(() => {
@@ -161,6 +172,7 @@ const GoogleMapDrawing = ({
     if (onPolygonComplete) {
       onPolygonComplete(draftPath);
     }
+    setCompletedPath(draftPath);
     setDraftPath([]);
   }, [draftPath, onPolygonComplete]);
 
@@ -207,9 +219,38 @@ const GoogleMapDrawing = ({
           onLoad={onMapLoad}
           onClick={handleMapClick}
         >
+          {isMapLoaded && showDrawingManager && completedPath.length > 0 && draftPath.length === 0 && (
+            <Polygon
+              path={completedPath}
+              options={{
+                ...polygonOptions,
+                editable: false,
+                draggable: false,
+              }}
+            />
+          )}
+
           {isMapLoaded && showDrawingManager && draftPath.length > 0 && (
             <Polygon
               path={draftPath}
+              options={{
+                ...polygonOptions,
+                editable: false,
+                draggable: false,
+              }}
+            />
+          )}
+
+          {isMapLoaded && showDrawingManager && draftPath.map((point, index) => (
+            <Marker
+              key={`${point.lat}-${point.lng}-${index}`}
+              position={point}
+              label={`${index + 1}`}
+            />
+          ))}
+          {isMapLoaded && !showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length > 0 && (
+            <Polygon
+              path={initialPolygon}
               options={{
                 ...polygonOptions,
                 editable: false,

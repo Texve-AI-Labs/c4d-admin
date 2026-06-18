@@ -195,7 +195,7 @@ const ZonesTab = () => {
   };
 
   const handlePolygonComplete = (coords) => {
-    setCoordinates(coords);
+    setCoordinates(Array.isArray(coords) ? [...coords] : coords);
   };
 
   const handleServiceAreaChange = (value) => {
@@ -231,7 +231,8 @@ const ZonesTab = () => {
               onPolygonComplete={handlePolygonComplete}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
-              existingPolygons={updatedZones.map(zone => zone.coordinates)}
+              existingPolygons={selectedItem ? updatedZones.map(zone => zone.coordinates) : []}
+              hideExistingPolygons={!selectedItem}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"

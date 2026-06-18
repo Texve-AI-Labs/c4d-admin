@@ -55,6 +55,16 @@ const getStatusChipStyles = (status = "") => {
   }
 };
 
+const getDurationChipStyles = () => ({
+  color: "amber",
+  className: "bg-amber-100 text-amber-800",
+});
+
+const getDiscountChipStyles = () => ({
+  color: "purple",
+  className: "bg-purple-100 text-purple-800",
+});
+
 const formatDuration = (minutesValue) => {
   const totalMinutes = Number(minutesValue);
 
@@ -204,7 +214,7 @@ export function DriverReturnTripsList() {
     return Number.isInteger(num) ? String(num) : String(num);
   };
   return (
-    <div className="mb-8 py-4 flex flex-col gap-12">
+    <div className="mb-8 py-4 flex flex-col gap-12 mt-12">
       <Card>
         <CardHeader variant="gradient" className={`mb-8 p-6 flex-1 justify-between items-center rounded-xl
           ${ColorStyles.bgColor}`}>
@@ -215,19 +225,19 @@ export function DriverReturnTripsList() {
           </div>
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-[980px] table-auto">
             <thead>
               <tr>
                 {["Created Date","Duration","status", "Zone", "Driver Name", "Phone Number","Pickup Location", "Destination Location","Car Type","Total","Discount"].map((el) => (
                   <th
                     key={el}
-                    className="border-b border-blue-gray-50 py-3 px-5 text-left"
+                    className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap"
                   >
                     {el === "Created Date" ? (
-                      <div onClick={() => handleSort("created_at")} className="cursor-pointer flex items-center">    
+                      <div onClick={() => handleSort("created_at")} className="cursor-pointer flex items-center whitespace-nowrap">    
                       <Typography
                         variant="small"
-                        className="text-[11px] font-bold uppercase text-black"
+                        className="text-[11px] font-bold uppercase text-black whitespace-nowrap"
                       >
                         {el}
                       </Typography>
@@ -242,7 +252,7 @@ export function DriverReturnTripsList() {
                     ) : (
                       <Typography
                         variant="small"
-                        className="text-[11px] font-bold uppercase text-black"
+                        className="text-[11px] font-bold uppercase text-black whitespace-nowrap"
                       >
                         {el}
                       </Typography>
@@ -272,6 +282,8 @@ export function DriverReturnTripsList() {
                 accounts.map(
                   ({ id, zone,created_at, name, phoneNumber,Driver,firstName,address,pickupLocation,destinationLocation,fareSnapshot,carType,fareBreakdown,total,discount,status,metadata,durationMinutes }, key) => {
                     const statusStyles = getStatusChipStyles(status);
+                    const durationStyles = getDurationChipStyles();
+                    const discountStyles = getDiscountChipStyles();
                     const displayDuration = formatDuration(
                       metadata?.durationMinutes ?? durationMinutes
                     );
@@ -282,17 +294,20 @@ export function DriverReturnTripsList() {
 
                     return (
                       <tr key={id}>
-                        <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
+                        <td className={`${className} whitespace-nowrap`}>
+                          <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
                            {moment(created_at).format("DD-MM-YYYY" + " hh:mm A")}
                           </Typography>
                         </td>
-                         <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
-                           {displayDuration}
-                          </Typography>
+                         <td className={`${className} whitespace-nowrap`}>
+                          <Chip
+                            variant="ghost"
+                            color={durationStyles.color}
+                            value={displayDuration}
+                            className={`py-0.5 px-2 text-[11px] font-medium w-fit ${durationStyles.className}`}
+                          />
                         </td>
-                           <td className={className}>
+                           <td className={`${className} whitespace-nowrap`}>
                           <Chip
                             variant="ghost"
                             color={statusStyles.color}
@@ -300,20 +315,20 @@ export function DriverReturnTripsList() {
                             className={`py-0.5 px-2 text-[11px] font-medium w-fit ${statusStyles.className}`}
                           />
                         </td>
-                        <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
+                        <td className={`${className} whitespace-nowrap`}>
+                          <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
                             {zone}
                           </Typography>
                         </td>
-                        <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
+                        <td className={`${className} whitespace-nowrap`}>
+                          <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
                          {Driver?.firstName || name || 'N/A'}
                          </Typography>
                         </td>
                         
                       
-                        <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
+                        <td className={`${className} whitespace-nowrap`}>
+                          <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
                             {formatPhoneNumber(Driver?.phoneNumber || phoneNumber) || 'N/A'}
                           </Typography>
                         </td>
@@ -327,20 +342,23 @@ export function DriverReturnTripsList() {
                             {destinationLocation?.address || 'N/A'}
                           </Typography>
                         </td>
-                          <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
+                          <td className={`${className} whitespace-nowrap`}>
+                          <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
                             {fareSnapshot?.carType || 'N/A'}
                           </Typography>
                         </td>
-                          <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
+                          <td className={`${className} whitespace-nowrap`}>
+                          <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
                             {fareSnapshot?.fareBreakdown?.total || 'N/A'}
                           </Typography>
                         </td>
-                         <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-900">
-                            {formatDiscount(discount)} %
-                          </Typography>
+                         <td className={`${className} whitespace-nowrap`}>
+                          <Chip
+                            variant="ghost"
+                            color={discountStyles.color}
+                            value={`${formatDiscount(discount)} %`}
+                            className={`py-0.5 px-2 text-[11px] font-medium w-fit ${discountStyles.className}`}
+                          />
                         </td>                     
 
                       </tr>

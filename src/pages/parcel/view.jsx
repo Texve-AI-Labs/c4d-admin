@@ -177,11 +177,12 @@ export function ParcelView({ type, ownerName, id }) {
 
   return (
     <div className="flex flex-col gap-12 mt-6">
-      <div className="p-4  border border-gray-300 rounded-lg shadow-sm">
-        <div className="relative flex-grow max-w-[500px]">
+      <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="relative w-full max-w-md">
           <input
             type="text"
-            className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-2xl border border-gray-300 px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Search parcel"
             value={searchQuery}
             onChange={(e) => {
@@ -189,9 +190,19 @@ export function ParcelView({ type, ownerName, id }) {
               debouncedFetch(e.target.value);
             }}
           />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            </div>
           </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="flex shrink-0 items-center gap-1 text-white bg-primary p-2 hover:bg-blue-50"
+            onClick={handleRefreshFilters}
+          >
+            <ArrowPathIcon className="h-4 w-4" />
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -210,15 +221,7 @@ export function ParcelView({ type, ownerName, id }) {
                 Bike details List
               </Typography>
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="flex items-center gap-1 p-2 bg-white text-blue-700 hover:bg-blue-50"
-                  onClick={handleRefreshFilters}
-                >
-                  <ArrowPathIcon className="h-4 w-4" />
-                  Refresh
-                </Button>
+                <Typography variant="h6" color="white">{pagination.totalItems} Bike{pagination.totalItems !== 1 ? 's' : ''} found</Typography>
               {type === 'Parcel' && (
                   <Button
                     className={`text-white ${ColorStyles.addButtonColor}`}
