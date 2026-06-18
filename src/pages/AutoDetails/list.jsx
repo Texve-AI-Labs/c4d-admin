@@ -243,7 +243,7 @@ export function AutoDetailsList({ id = 0 }) {
           <>
             <CardHeader variant="gradient" color="blue" className="mb-8 p-6 flex justify-between items-center">
               <Typography variant="h6" color="white">Autos List</Typography>
-              {/* <Typography variant="h6" color="white">{vehicleList.length} vehicles found</Typography> */}
+              <Typography variant="h6" color="white">{pagination.totalItems} Auto{pagination.totalItems !== 1 ? 's' : ''} found</Typography>
             </CardHeader>
             <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
               <table className="w-full min-w-[640px] table-auto">
