@@ -15,6 +15,7 @@ import moment from "moment";
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 
 const DRIVER_RETURN_TRIP_VIEW_FILTERS_KEY = 'driverReturnTripViewFilters';
+const getDriverReturnTripViewFiltersKey = (tab) => `${DRIVER_RETURN_TRIP_VIEW_FILTERS_KEY}_${String(tab || '').toUpperCase()}`;
 
 const isBrowser = () => typeof window !== 'undefined';
 
@@ -87,6 +88,7 @@ const formatDuration = (minutesValue) => {
 export function DriverReturnTripsList() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("Active");
 
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
 
@@ -96,7 +98,7 @@ export function DriverReturnTripsList() {
       totalPages: 1,
       itemsPerPage: 15,
     };
-    const stored = getItemSafe(DRIVER_RETURN_TRIP_VIEW_FILTERS_KEY);
+    const stored = getItemSafe(getDriverReturnTripViewFiltersKey("Active"));
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -116,21 +118,27 @@ export function DriverReturnTripsList() {
       currentPage: pagination.currentPage,
     };
 
-    setItemSafe(DRIVER_RETURN_TRIP_VIEW_FILTERS_KEY, JSON.stringify(data));
-  }, [pagination.currentPage]);
+    setItemSafe(getDriverReturnTripViewFiltersKey(activeTab), JSON.stringify(data));
+  }, [pagination.currentPage, activeTab]);
 
   const fetchDrivers = async (page = 1, showLoader = true) => {
     if (showLoader) setLoading(true);
     try {
-      const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DRIVER_RETURN_TRIP_DETAILS, {
+      const queryParams = {
         page,
         limit: pagination.itemsPerPage,
-      });
+      };
+      if (activeTab === "Active") {
+        queryParams.status = "ACTIVE";
+      }
+      const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DRIVER_RETURN_TRIP_DETAILS,queryParams);
       if (data?.success) {
         setAccounts(data?.data);
+        const totalPages = data?.pagination?.totalPages || 1;
+        const normalizedPage = Math.min(page, totalPages);
         setPagination({
-          currentPage: page,
-          totalPages: data?.pagination?.totalPages || 1,
+          currentPage: normalizedPage,
+          totalPages,
           itemsPerPage: data?.pagination?.itemsPerPage || 15,
         });
       }
@@ -144,7 +152,22 @@ export function DriverReturnTripsList() {
 
   useEffect(() => {
     fetchDrivers(pagination.currentPage, true);
-  }, [pagination.currentPage]);
+  }, [pagination.currentPage, activeTab]);
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    const stored = getItemSafe(getDriverReturnTripViewFiltersKey(activeTab));
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Number.isFinite(parsed?.currentPage) && parsed.currentPage > 0) {
+          setPagination((prev) => ({ ...prev, currentPage: parsed.currentPage }));
+        }
+      } catch {
+        // Ignore malformed storage and fall back to page 1.
+      }
+    }
+  }, [activeTab]);
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
       setPagination((prev) => ({ ...prev, currentPage: page }));
@@ -224,6 +247,36 @@ export function DriverReturnTripsList() {
             </Typography>
           </div>
         </CardHeader>
+        <div className="px-6 pb-4">
+          <div className="inline-flex rounded-lg bg-blue-gray-50 p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("Active");
+              }}
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "Active"
+                  ? "bg-white text-blue-gray-900 shadow"
+                  : "text-blue-gray-600"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("In-Active");
+              }}
+              className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                activeTab === "In-Active"
+                  ? "bg-white text-blue-gray-900 shadow"
+                  : "text-blue-gray-600"
+              }`}
+            >
+              In-Active
+            </button>
+          </div>
+        </div>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
           <table className="w-full min-w-[980px] table-auto">
             <thead>
@@ -332,12 +385,12 @@ export function DriverReturnTripsList() {
                             {formatPhoneNumber(Driver?.phoneNumber || phoneNumber) || 'N/A'}
                           </Typography>
                         </td>
-                        <td className={className}>
+                        <td className={`${className} whitespace-nowrap`}>
                           <Typography className="text-xs font-semibold text-blue-gray-900">
                             {pickupLocation?.address || 'N/A'}
                           </Typography>
                         </td>
-                          <td className={className}>
+                          <td className={`${className} whitespace-nowrap`}>
                           <Typography className="text-xs font-semibold text-blue-gray-900">
                             {destinationLocation?.address || 'N/A'}
                           </Typography>
@@ -349,7 +402,7 @@ export function DriverReturnTripsList() {
                         </td>
                           <td className={`${className} whitespace-nowrap`}>
                           <Typography className="text-xs font-semibold text-blue-gray-900 whitespace-nowrap">
-                            {fareSnapshot?.fareBreakdown?.total || 'N/A'}
+                            ₹ {fareSnapshot?.fareBreakdown?.total || 'N/A'}
                           </Typography>
                         </td>
                          <td className={`${className} whitespace-nowrap`}>
