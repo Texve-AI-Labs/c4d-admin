@@ -13,6 +13,15 @@ const PRIORITY_OPTIONS = [
   { label: "Low", value: 50 },
 ];
 
+const getApplicableEntity = (serviceType) => {
+  const mapping = {
+    ACTING_DRIVER: "DRIVER",
+    RIDES_RENTAL_CABS: "CAB",
+    AUTO: "AUTO",
+  };
+  return mapping[serviceType] || "";
+};
+
 const initialValues = {
   groupName: "",
   description: "",
@@ -392,6 +401,7 @@ const MasterSubscriptionAdd = () => {
         name: values.groupName || "",
         description: values.description || "",
         serviceType: values.serviceType || "",
+        applicableEntity: getApplicableEntity(values.serviceType),
         zone: values.zone || "",
         status: values.status || "ACTIVE",
         isDefault: values.isDefault || false,

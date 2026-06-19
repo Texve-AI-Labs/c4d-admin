@@ -8,11 +8,16 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 const MasterSubscriptionDetails = () => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const normalizeApplicableEntity = (value) => {
+        if (Array.isArray(value)) return value[0] || "";
+        return value || "";
+    };
     const [initialValues, setInitialValues] = useState({
         // plan group level (match Add page)
         name: "",
         description: "",
         serviceType: "",
+        applicableEntity: "",
         assignmentType: "",
         assignmentValue: "",
         priority: "",
@@ -56,6 +61,7 @@ const MasterSubscriptionDetails = () => {
                         zone: group.zone || "",
                         description: group.description || "",
                         serviceType: group.serviceType || "",
+                        applicableEntity: normalizeApplicableEntity(group.applicableEntity),
                         assignmentType: group.assignments?.[0]?.assignmentType || "",
                         assignmentValue: group.assignments?.[0]?.assignmentValue || "",
                         priority: group.priority ?? "",
@@ -134,6 +140,10 @@ const MasterSubscriptionDetails = () => {
                                         <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
                                         <option value="AUTO">Autos</option>
                                     </Field>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Applicable Entity</label>
+                                    <Field type="text" name="applicableEntity" disabled className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-100" />
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Status</label>

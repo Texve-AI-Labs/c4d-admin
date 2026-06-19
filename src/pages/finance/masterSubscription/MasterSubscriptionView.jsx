@@ -95,6 +95,25 @@ export function MasterSubscriptionView() {
         return value;
     };
 
+    const getStatusBadgeClass = (status) => {
+        switch ((status || "").toUpperCase()) {
+            case "ACTIVE":
+                return "bg-green-100 text-green-700 border-green-200";
+            case "INACTIVE":
+                return "bg-red-100 text-red-700 border-red-200";
+            case "SCHEDULED":
+                return "bg-amber-100 text-amber-700 border-amber-200";
+            default:
+                return "bg-gray-100 text-gray-700 border-gray-200";
+        }
+    };
+
+    const getDefaultBadgeClass = (isDefault) => {
+        return isDefault
+            ? "bg-blue-100 text-blue-700 border-blue-200"
+            : "bg-gray-100 text-gray-700 border-gray-200";
+    };
+
     return (
         <div className="mb-8 flex flex-col gap-12">
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
@@ -150,7 +169,7 @@ export function MasterSubscriptionView() {
                             </Typography>
                         </CardHeader>
                         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-                            <table className="w-full min-w-[640px] table-auto">
+                            <table className="w-full min-w-full table-auto">
                                 <thead>
                                     <tr>
                                         {[
@@ -165,7 +184,7 @@ export function MasterSubscriptionView() {
                                         ].map((el) => (
                                             <th
                                                 key={el}
-                                                className="border-b border-blue-gray-50 py-3 px-5 text-left"
+                                                className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap"
                                             >
                                                 <Typography
                                                     variant="small"
@@ -181,7 +200,7 @@ export function MasterSubscriptionView() {
                                     {masterSubscriptionList.map((group, index) => (
                                         <React.Fragment key={group.id || index}>
                                             <tr key={group.id || index} className="text-sm">
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-blue-600 underline cursor-pointer">
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-blue-600 underline cursor-pointer whitespace-nowrap">
                                                     <Link to={`/dashboard/finance/master-subscription/details/${group.id}`}>
                                                         {group.serviceType === 'RIDES_RENTAL_CABS'
                                                             ? <div>Rides/Rental Cabs</div>
@@ -190,25 +209,33 @@ export function MasterSubscriptionView() {
                                                                 : "Acting_Driver"}
                                                     </Link>
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {group.name || '-'}
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {formatAssignmentType(group.assignments?.[0]?.assignmentType)}
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {formatAssignmentValue(group.assignments?.[0])}
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {group.zone || '-'}
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
-                                                    {group.status || '-'}
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
+                                                    <span
+                                                        className={`inline-flex items-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(group.status)}`}
+                                                    >
+                                                        {group.status || '-'}
+                                                    </span>
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
-                                                    {group.metadata?.isDefault ? 'Yes' : 'No'}
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
+                                                    <span
+                                                        className={`inline-flex items-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold ${getDefaultBadgeClass(group.metadata?.isDefault)}`}
+                                                    >
+                                                        {group.metadata?.isDefault ? 'Yes' : 'No'}
+                                                    </span>
                                                 </td>
-                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black">
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     <button
                                                         type="button"
                                                         onClick={() => toggleExpand(group.id)}
@@ -240,7 +267,7 @@ export function MasterSubscriptionView() {
                                                                         ].map((el) => (
                                                                             <th
                                                                                 key={el}
-                                                                                className="border-b border-blue-gray-100 py-2 px-3 text-left"
+                                                                                className="border-b border-blue-gray-100 py-2 px-3 text-left whitespace-nowrap"
                                                                             >
                                                                                 <Typography
                                                                                     variant="small"
@@ -255,32 +282,32 @@ export function MasterSubscriptionView() {
                                                                 <tbody>
                                                                     {group.plans.map((plan) => (
                                                                         <tr key={plan.id} className="hover:bg-blue-gray-100">
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {plan.name || '-'}
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-blue-600 underline cursor-pointer">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-blue-600 underline cursor-pointer whitespace-nowrap">
                                                                                 <Link to={`/dashboard/finance/master-subscription/details/${group.id}`}>
                                                                                     {Number(plan.packagePrice || 0) === 0
                                                                                         ? 'Free'
                                                                                         : plan.packagePrice}
                                                                                 </Link>
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {Number(plan.price || 0) === 0 ? 'Free' : plan.price}
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {plan.bonusPrice || '-'}
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {plan.totalPrice || '-'}
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {plan.type || '-'}
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {plan.validityDays || '-'}
                                                                             </td>
-                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {plan.earningStrategy || '-'}
                                                                             </td>
                                                                         </tr>
