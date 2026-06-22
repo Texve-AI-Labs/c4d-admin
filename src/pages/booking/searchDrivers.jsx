@@ -31,7 +31,7 @@ export function SearchDrivers(props) {
     const [checkingStatusDriverIds, setCheckingStatusDriverIds] = useState([]);
     const [cabTypeFilter, setCabTypeFilter] = useState(['All']);
     const [checkingAllStatus, setCheckingAllStatus] = useState(false);
-    const [seconds, setSeconds] = useState(15);
+    const [seconds, setSeconds] = useState(30);
     const parcelVehicleType = props?.bookingData?.parcelVehicleType || "BIKE";
     const parcelSubZoneId =  props?.bookingData?.subZoneId || null;
     const shouldIncludeParcelSubZone = Boolean(parcelSubZoneId) && parcelVehicleType !== "AUTO";
@@ -39,6 +39,21 @@ export function SearchDrivers(props) {
     const showParcelSubZone = props?.bookingData?.serviceType === "PARCEL" && parcelVehicleType === "BIKE";
     const parcelVehicleLabel = isParcelAuto ? "Auto" : "Bike";
     const parcelVehiclePlural = isParcelAuto ? "Autos" : "Bikes";
+    const isBookingAccepted = props?.bookingData?.status === "BOOKING_ACCEPTED";
+    const laterButtonLabel = isBookingAccepted
+        ? "Go To List"
+        : props?.bookingData?.serviceType !== "DRIVER"
+            ? "Assign Cab Later"
+            : "Assign Captain Later";
+    const assignButtonLabel = isBookingAccepted
+        ? "Go To List"
+        : props?.bookingData?.serviceType === "AUTO"
+            ? "Assign Auto"
+            : props?.bookingData?.serviceType === "PARCEL"
+                ? `Assign ${parcelVehicleLabel}`
+                : props?.bookingData?.serviceType !== "DRIVER"
+                    ? "Assign Cab"
+                    : "Assign Captain";
 
     const checkPresence = async (driverId, rowId) => {
         setCheckingStatusDriverIds((prev) => [...prev, driverId]);
@@ -52,14 +67,14 @@ export function SearchDrivers(props) {
                 await getDriversList();
                 setCheckingStatusDriverIds(prev => prev.filter(id => id !== driverId));
                 setStatusCheckedDriverIds(prev => [...prev, driverId]);
-            }, 15000);
+            }, 30000);
         } catch (error) {
             console.error("Error checking presence:", error);
             setCheckingStatusDriverIds(prev => prev.filter(id => id !== driverId));
         }
     };
 
-    const CountdownTimer = ({ duration = 15 }) => {
+    const CountdownTimer = ({ duration = 30 }) => {
   const [seconds, setSeconds] = useState(duration);
 
   useEffect(() => {
@@ -110,7 +125,7 @@ export function SearchDrivers(props) {
                 setCheckingStatusDriverIds([]);
                 setCheckingAllStatus(false);
                 console.log("All driver statuses checked");
-            }, 15000);
+            }, 30000);
         
         } catch (error) {
             console.error("Error checking presence:", error);
@@ -201,7 +216,7 @@ export function SearchDrivers(props) {
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
-                        }, 15000);
+                        }, 30000);
                     } else {
                         setLoadingRides(false);
                         setLoading(false);
@@ -251,7 +266,7 @@ export function SearchDrivers(props) {
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
-                        }, 15000);
+                        }, 30000);
                     } else {
                         setLoadingRides(false);
                         setLoading(false);
@@ -298,7 +313,7 @@ export function SearchDrivers(props) {
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
-                        }, 15000);
+                        }, 30000);
                     } else {
                         setLoadingRides(false);
                         setLoading(false);
@@ -765,7 +780,7 @@ export function SearchDrivers(props) {
                                                                 onClick={() => { onAssignDriver(props?.bookingData?.serviceType, id, props?.bookingData?.serviceType == 'DRIVER' ? id : Drivers[0]?.id) }}
                                                                 className="text-xs font-semibold text-white bg-primary"
                                                             >
-                                                                {props?.bookingData?.serviceType !== "DRIVER" ? "Assign Cab" : "Assign Captain"}
+                                                                {assignButtonLabel}
                                                             </Button>}
                                                         </td>
                                                     </tr>
@@ -788,7 +803,7 @@ export function SearchDrivers(props) {
                             onClick={() => { props?.onNext() }}
                             className='text-white border-2 bg-primary rounded-xl'
                         >
-                            {props?.bookingData?.serviceType !== "DRIVER" ? "Assign Cab Later" : "Assign Captain Later"}
+                            {laterButtonLabel}
                         </Button>
                     </div>
                 </div >
@@ -810,10 +825,10 @@ export function SearchDrivers(props) {
                                             </Typography>
                                             <div className="flex flex-col items-center gap-4">
                                                 <div className="text-5xl font-bold text-blue-600">
-                                                    <CountdownTimer duration={15} />
+                                                    <CountdownTimer duration={30} />
                                                 </div>
                                                 <Progress
-                                                    value={((15 - seconds) / 15) * 100}
+                                                    value={((30 - seconds) / 30) * 100}
                                                     color="blue"
                                                     className="w-80 h-4"
                                                 />
@@ -844,7 +859,7 @@ export function SearchDrivers(props) {
                                                 No Response
                                             </Typography>
                                             <Typography color="gray" className="mb-6 max-w-sm">
-                                                No driver accepted the request in 15 seconds.
+                                                No driver accepted the request in 30 seconds.
                                             </Typography>
                                             {/* <Button color="blue" onClick={() => props?.onNext()}>
                                                 Assign Manually
