@@ -2646,10 +2646,10 @@ const priceDetailsCardClass = isPeakHour
                                                                             return item.type === 'CarWash';
                                                                         }
                                                                         else if (values.serviceType === 'DRIVER') {
-                                                                            return item.serviceType === 'DRIVER' && item.type === 'Local';
+                                                                            return item.serviceType === 'DRIVER' && item.type === 'Local' && item.status === '1';
                                                                         }
                                                                         else if (values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE') {
-                                                                            return item.serviceType === 'RENTAL' || item.serviceType === 'RENTAL_HOURLY_PACKAGE' && item.type === 'Local';
+                                                                            return item.serviceType === 'RENTAL'  && item.type === 'Local' && item.status === '1';
                                                                         }
                                                                         const isLocal = values.packageTypeSelected === 'Local';
 
