@@ -724,7 +724,6 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             packageType:'Local',
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             carType: val.serviceType === 'DRIVER' ? 'Mini' : val.carType || '',
-            period: val.serviceType === 'RENTAL_HOURLY_PACKAGE' || val?.serviceType === 'DRIVER' ? packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected))?.period || '' : '',
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
             driverStartLat: val?.driverPickUpLocation?.lat,
@@ -736,7 +735,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             zone: actualZone,
             isPremiumService : val?.isPremiumService ? true : false
         };
-        if (val?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && val?.serviceType !== 'AUTO') {
+        if (val.serviceType === 'RENTAL_HOURLY_PACKAGE' || val?.serviceType === 'DRIVER') {
+            quoteDate.period = packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected))?.period || '';
+        }
+        if (val?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && val?.serviceType !== 'AUTO' &&  val?.serviceType !== 'RIDES') {
             quoteDate.bookingType = val?.tripType ? val.tripType.toUpperCase() : '';
         }
         const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW ? buildAdminDiscountPayload(val) : null;
@@ -1151,7 +1153,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             driverStartLat: values.driverPickUpLocation?.lat,
             driverStartLong: values.driverPickUpLocation?.lng,
             driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId),
-            driverEndLat: values.driverEndLocation?.lat || null,
             source: 'Call',
             carType: values.carType,
             sourceType: values.sourceType,
@@ -1521,9 +1522,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
 
     const resetPackageValues = (setFieldValue, newServiceType) => {
         // Clear location-related fields
-        setFieldValue('pickupAddress', '');
-        setFieldValue('pickupLocation', null);
-        setFieldValue('pickupPlaceId', '');
+        // setFieldValue('pickupAddress', '');
+        // setFieldValue('pickupLocation', null);
+        // setFieldValue('pickupPlaceId', '');
         setFieldValue('dropAddress', '');
         setFieldValue('dropLocation', null);
         setFieldValue('dropPlaceId', '');
@@ -1547,10 +1548,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        setFieldValue('carType', '');
-        setFieldValue('cabType', '');
-        setFieldValue('luggage', '');
-        setFieldValue('seaterCapacity', '');
+        // setFieldValue('carType', '');
+        // setFieldValue('cabType', '');
+        // setFieldValue('luggage', '');
+        // setFieldValue('seaterCapacity', '');
         setFieldValue('acType', '');
         setFieldValue('transmissionType', '');
 
@@ -2645,10 +2646,10 @@ const priceDetailsCardClass = isPeakHour
                                                                             return item.type === 'CarWash';
                                                                         }
                                                                         else if (values.serviceType === 'DRIVER') {
-                                                                            return item.serviceType === 'DRIVER' && item.type === 'Local';
+                                                                            return item.serviceType === 'DRIVER' && item.type === 'Local' && item.status === '1';
                                                                         }
                                                                         else if (values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE') {
-                                                                            return item.serviceType === 'RENTAL' || item.serviceType === 'RENTAL_HOURLY_PACKAGE' && item.type === 'Local';
+                                                                            return item.serviceType === 'RENTAL'  && item.type === 'Local' && item.status === '1';
                                                                         }
                                                                         const isLocal = values.packageTypeSelected === 'Local';
 

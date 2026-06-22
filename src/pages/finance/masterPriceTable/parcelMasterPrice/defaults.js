@@ -45,6 +45,8 @@ export const createInitialParcelForm = (overrides = {}) => ({
   baseFare: "",
   baseKm: "",
   kilometerPrice: "",
+  cancelMins: "",
+  cancelCharge: "",
   driverCancelMins: "",
   driverFreeCancellationsPerDay: "",
   driverCancellationCharge: "",
