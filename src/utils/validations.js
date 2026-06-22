@@ -750,8 +750,7 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
 
     totalPrice: Yup.number()
         .typeError("Total Price must be a number")
-        .positive("Total Price must be greater than zero")
-        .required("Total Price is required"),
+        .notRequired("Total Price is not required"),
 
     validityDays: Yup.number()
         .transform((value, originalValue) => (originalValue === "" ? undefined : value))
@@ -793,8 +792,7 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
 
     totalPrice: Yup.number()
         .typeError("Total Price must be a number")
-
-        .required("Total Price is required"),
+        .notRequired("Total Price is not required"),
 
     validityDays: Yup.number()
         .transform((value, originalValue) => (originalValue === "" ? undefined : value))
