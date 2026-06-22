@@ -40,7 +40,7 @@ const initialValuesTemplate = {
   priority: "",
   totalPrice: 0,
   type: "",
-  validityDays: 0,
+  // validityDays: 0,
   earningStrategy: "",
   earningWindowDays: "",
   plans: [],
@@ -186,7 +186,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     price: "",
                     bonusPrice: "",
                     totalPrice: "",
-                    validityDays: "",
+                    // validityDays: "",
                     earningStrategy: "",
                     earningWindowDays: "",
                   },
@@ -246,15 +246,14 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               <Field type="number" name="totalPrice" readOnly className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-100" />
               <ErrorMessage name="totalPrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
-            {values.type !== "PAID" && (
+            {/* {values.type !== "PAID" && (
               <div>
                 <label htmlFor="validityDays" className="text-sm font-medium text-gray-700">Validity (Months)</label>
                 <Field type="number" name="validityDays" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                 <ErrorMessage name="validityDays" component="div" className="text-red-500 text-sm my-1" />
               </div>
-            )}
-            {values.type === "PAID" && (
-              <>
+            )} */}
+          
                 <div>
                   <label className="text-sm font-medium text-gray-700">Earning Strategy</label>
                   <Field as="select" name="earningStrategy" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -263,12 +262,12 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     <option value="UNLIMITED">Unlimited</option>
                   </Field>
                 </div>
+           
                 <div>
                   <label className="text-sm font-medium text-gray-700">Earning Window Days</label>
-                  <Field type="number" name="earningWindowDays" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled={values.earningStrategy !== "UNLIMITED"} placeholder={values.earningStrategy === "UNLIMITED" ? "Enter days" : "Only for Unlimited"} />
+                  <Field type="number" name="earningWindowDays" className="p-2 w-full rounded-md border-gray-300 shadow-sm"  placeholder="Enter days" />
                 </div>
-              </>
-            )}
+             
           </div>
 
           {values.plans && values.plans.length > 0 && (
@@ -308,12 +307,12 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     <label className="text-sm font-medium text-gray-700">Total Credits</label>
                     <Field type="number" name={`plans[${index}].totalPrice`} readOnly className="p-2 w-full rounded-md border-gray-300 bg-gray-100 shadow-sm" />
                   </div>
-                  {plan.type !== "PAID" && (
+                  {/* {plan.type !== "PAID" && (
                     <div>
                       <label className="text-sm font-medium text-gray-700">Validity (Months)</label>
                       <Field type="number" name={`plans[${index}].validityDays`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                     </div>
-                  )}
+                  )} */}
                   {plan.type === "PAID" && (
                     <>
                       <div>
@@ -326,7 +325,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-700">Earning Window Days</label>
-                        <Field type="number" name={`plans[${index}].earningWindowDays`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled={plan.earningStrategy !== "UNLIMITED"} placeholder={plan.earningStrategy === "UNLIMITED" ? "Enter days" : "Only for Unlimited"} />
+                        <Field type="number" name={`plans[${index}].earningWindowDays`} className="p-2 w-full rounded-md border-gray-300 shadow-sm"  placeholder="Enter days" />
                       </div>
                     </>
                   )}
@@ -420,9 +419,9 @@ const MasterSubscriptionEdit = () => {
             bonusPrice: primaryPlan.bonusPrice || 0,
             totalPrice: primaryPlan.totalPrice || 0,
             type: primaryPlan.type || "",
-            validityDays: primaryPlan.type === "PAID" ? "" : primaryPlan.validityDays ?? "",
-            earningStrategy: primaryPlan.type === "PAID" ? primaryPlan.earningStrategy || "" : "",
-            earningWindowDays: primaryPlan.type === "PAID" && primaryPlan.earningStrategy === "UNLIMITED" ? primaryPlan.earningWindowDays ?? "" : "",
+            // validityDays: primaryPlan.type === "PAID" ? "" : primaryPlan.validityDays ?? "",
+            earningStrategy: primaryPlan.earningStrategy ,
+            earningWindowDays:primaryPlan.earningWindowDays,
             plans: extraPlans.map((p) => ({
               id: p.id,
               serviceType: p.serviceType || group.serviceType || "",
@@ -432,9 +431,9 @@ const MasterSubscriptionEdit = () => {
               price: p.price || 0,
               bonusPrice: p.bonusPrice || 0,
               totalPrice: p.totalPrice || 0,
-              validityDays: p.type === "PAID" ? "" : p.validityDays ?? "",
-              earningStrategy: p.type === "PAID" ? p.earningStrategy || "" : "",
-              earningWindowDays: p.type === "PAID" && p.earningStrategy === "UNLIMITED" ? p.earningWindowDays ?? "" : "",
+              // validityDays: p.type === "PAID" ? "" : p.validityDays ?? "",
+              earningStrategy: p.earningStrategy ,
+              earningWindowDays: p.earningWindowDays 
             })),
           });
           setExistingAssignments(assignments);
@@ -460,10 +459,10 @@ const MasterSubscriptionEdit = () => {
         name: values.name || "",
         bonusPrice: Number(values.bonusPrice) || 0,
         totalPrice: Number(values.totalPrice) || 0,
-        validityDays: values.type === "PAID" ? null : Number(values.validityDays || 0),
+        // validityDays: values.type === "PAID" ? null : Number(values.validityDays || 0),
         type: values.type,
-        earningStrategy: values.type === "FREE" ? "CREDIT" : values.earningStrategy || null,
-        earningWindowDays: values.type !== "FREE" && values.earningStrategy === "UNLIMITED" ? Number(values.earningWindowDays || 0) : null,
+        earningStrategy:  values.earningStrategy || null,
+        earningWindowDays: Number(values.earningWindowDays || 0)
       };
 
       const extraPlans = Array.isArray(values.plans)
@@ -476,7 +475,7 @@ const MasterSubscriptionEdit = () => {
             plan.price ||
             plan.bonusPrice ||
             plan.totalPrice ||
-            plan.validityDays ||
+            // plan.validityDays ||
             plan.earningStrategy
           )
           .map((plan) => ({
@@ -488,10 +487,10 @@ const MasterSubscriptionEdit = () => {
             name: plan.name || "",
             bonusPrice: Number(plan.bonusPrice || 0),
             totalPrice: Number(plan.totalPrice || 0),
-            validityDays: plan.type === "PAID" ? null : Number(plan.validityDays || 0),
+            // validityDays: plan.type === "PAID" ? null : Number(plan.validityDays || 0),
             type: plan.type || "",
-            earningStrategy: plan.type === "FREE" ? "CREDIT" : plan.earningStrategy || null,
-            earningWindowDays: plan.type !== "FREE" && plan.earningStrategy === "UNLIMITED" ? Number(plan.earningWindowDays || 0) : null,
+            earningStrategy: plan.earningStrategy || null,
+            earningWindowDays:  Number(plan.earningWindowDays || 0)
           }))
         : [];
 

@@ -274,10 +274,10 @@ const MasterSubscriptionDetails = () => {
                                                 <label className="text-sm font-medium text-gray-700">Total Credits</label>
                                                 <Field type="number" name={`plans[${index}].totalPrice`} disabled className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-100" />
                                             </div>
-                                            <div>
+                                            {/* <div>
                                                 <label className="text-sm font-medium text-gray-700">Validity (Months)</label>
                                                 <Field type="number" name={`plans[${index}].validityDays`} disabled className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-100" />
-                                            </div>
+                                            </div> */}
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Earning Strategy</label>
                                                 <Field as="select" name={`plans[${index}].earningStrategy`} disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100">
