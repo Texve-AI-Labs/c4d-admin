@@ -481,6 +481,34 @@ export default function ParcelMasterPriceForm({
           </Card>
 
           <Card className="rounded-none">
+            <CardBody className="space-y-4">
+              <Typography variant="h6" className="font-semibold text-gray-900">Cancellation</Typography>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Cancellation Mins</label>
+                  <UiInput
+                    className={inputClass}
+                    type="number"
+                    readOnly={readOnly}
+                    value={form.cancelMins}
+                    onChange={(e) => updateField("cancelMins", e.target.value)}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Cancellation Charge</label>
+                  <UiInput
+                    className={inputClass}
+                    type="number"
+                    readOnly={readOnly}
+                    value={form.cancelCharge}
+                    onChange={(e) => updateField("cancelCharge", e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="rounded-none">
             <CardBody className="space-y-4 bg-white">
               <Typography variant="h6" className="font-semibold text-gray-900">Driver Cancellation</Typography>
               <div className="overflow-x-auto rounded-lg shadow border border-gray-300">
