@@ -988,7 +988,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
     const bookingTimes = Utils.generateBookingTimesForDay(moment().add(1, 'days'));
     const shouldShowReceipt = bookingDetails && (bookingDetails.status === BOOKING_STATUS.END_OTP || ((bookingDetails.status === BOOKING_STATUS.ENDED || bookingDetails.status === BOOKING_STATUS.PAYMENT_REQUESTED) && !!amount));
     const isTerminalStatus = [BOOKING_STATUS.ENDED,BOOKING_STATUS.END_OTP,BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.CANCELLED,BOOKING_STATUS.CUSTOMER_CANCELLED,BOOKING_STATUS.SUPPORT_CANCELLED].includes(bookingDetails?.status);
-    const shouldShowEndOtp = [BOOKING_STATUS.END_OTP,BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.ENDED,BOOKING_STATUS.COMPLETED].includes(bookingDetails?.status);         // BOOKING_STATUS.STARTED,
+    const shouldShowEndOtp = [BOOKING_STATUS.TRIP_ENDED,BOOKING_STATUS.END_OTP,BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.ENDED,BOOKING_STATUS.COMPLETED].includes(bookingDetails?.status);         // BOOKING_STATUS.STARTED,
     const extraHoursMinutes = Number(bookingDetails?.finalFareBreakdown?.extraHours?.minutes || bookingDetails?.extraHours || 0);
     const hasExtraHours = extraHoursMinutes > 0;
     const extraHoursRate = Number(bookingDetails?.finalFareBreakdown?.extraHours?.rate || bookingDetails?.extraHourPrice || 0);
