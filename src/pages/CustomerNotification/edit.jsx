@@ -60,7 +60,7 @@ const response = await ApiRequestUtils.get(`${API_ROUTES.GET_CUSTOMER_NOTIFICATI
 
     const fetchGeoData = async () => {
       try {
-        const response = await ApiRequestUtils.getWithQueryParam('/geo-markings', {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
           type: 'Service Area',
         });
         setServiceAreas(response?.data || []);
@@ -115,14 +115,14 @@ const response = await ApiRequestUtils.get(`${API_ROUTES.GET_CUSTOMER_NOTIFICATI
 
   if (loading) {
     return (
-      <div className="p-4 mx-auto">
+      <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
         <Typography className="text-center">Loading...</Typography>
       </div>
     );
   }
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Edit Notification</h2>
       {error && (
         <Typography color="red" className="text-center mb-4">

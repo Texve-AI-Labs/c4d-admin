@@ -191,7 +191,7 @@ const AutoDetails = ({ btnShow = false, noApprove = false }) => {
             </div>
             <AutoDriverAccountNotes accountId={accountVal?.id} />
             {accountVal && !btnShow && <AutoList cabsList={accountVal?.Autos} id={accountVal?.id} ownerName={accountVal?.name} type={accountVal?.type} />}
-            {accountVal && accountVal?.id && <DocumentsList id={accountVal?.id} type={'account'} noApprove={noApprove} serviceType={accountVal?.type} />}
+            {accountVal && accountVal?.id && (<DocumentsList id={accountVal?.id} type={'account'} noApprove={noApprove} autoList={accountVal?.Autos} serviceType={accountVal?.type} /> )}
             {accountVal && accountVal?.documentLog && <DocumentLogs documentlogs={accountVal?.documentLog} />}
             {!btnShow &&
                 <div className='flex justify-center w-full'>

@@ -98,7 +98,16 @@ export function MasterPriceView() {
                 }
             } else if (selectedServiceType === 'RIDES') {
                 const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
-                setRidesData(data?.data);
+                if (data?.success) {
+                    const filteredData = zone
+                        ? data?.data.filter(item => item.zone === zone)
+                        : data?.data;
+                    // console.log("FILTERED DATA", filteredData);
+                    setRidesData(filteredData || []);
+                    // console.log("RIDES DATA", filteredData || []);
+                } else {
+                    setRidesData([]);
+                }
             }
             else if(selectedServiceType === 'AUTO') {
                 const data = await ApiRequestUtils.get(API_ROUTES.AUTO_PACKAGE_LIST,{
@@ -236,16 +245,18 @@ export function MasterPriceView() {
                                         "Zone",
                                         "Service Type",
                                         "Trip Type",
-                                        "Hours",
-                                        "Round Trip Rate",
-                                        "Drop Only < 50KM",
-                                        "Round Trip Rate - MUV",
-                                        "Night Hours (10PM TO 6AM)",
-                                        "Night Charges (10PM TO 6AM)",
-                                        "Food Charges",
-                                        "Cancel Charge",
-                                        "Extra Hours",
-                                        "Cancellation Mins"
+                                        "Package (Hrs)",
+                                        "Price",
+                                        // "Price (MUV)",
+                                        "Package KM",
+                                        "Additional Mins Price",
+                                        "Extra KM Price",
+                                        "Free Extra (mins)",
+                                        "Waiting Charge",
+                                        "Night Charge",
+                                        "Cancellation Mins",
+                                        "Cancellation Charge",
+                                        "Food Charges"
                                     ]
                                         .map((el, index) => (
                                             <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left pb-4 ${ColorStyles.bgColor}`}>
@@ -261,7 +272,7 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {localPackageList.map(({ id, zone,serviceType, type, period, dropPrice, dropPriceAbove,priceSUV, addtionalmins, priceMVP, nighthours,nightHoursFrom,nightHoursTo, nightCharge, cancelCharge, extraPrice, cancelMins, surCharge, price }, key) => {
+                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP, additionalMinCharge, extraKmPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
                                     const className = `py-3 px-5 ${key === localPackageList.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                                     return (
                                         <tr key={id}>
@@ -298,20 +309,34 @@ export function MasterPriceView() {
                                                     {price}
                                                 </Typography>
                                             </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {dropPrice} Extra
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {priceMVP}
                                                 </Typography>
+                                            </td> */}
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {kilometer || "-"}
+                                                </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                {/* {`${nightHoursFrom} - ${nightHoursTo}` ? null : ""} */}
-                                                {nightHoursFrom && nightHoursTo ? `${nightHoursFrom} - ${nightHoursTo}` : ""}
+                                                    {additionalMinCharge || "-"}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {extraKmPrice || "-"}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {freeExtraMinutes || "-"}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {waitingCharge || "-"}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
@@ -319,9 +344,9 @@ export function MasterPriceView() {
                                                     {nightCharge}
                                                 </Typography>
                                             </td>
-                                             <td className={className}>
+                                            <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {dropPriceAbove}
+                                                    {Utils.convertTimeFormatToMinutes(cancelMins)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
@@ -331,12 +356,7 @@ export function MasterPriceView() {
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {extraPrice}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {Utils.convertTimeFormatToMinutes(cancelMins)}
+                                                    {dropPriceAbove || "-"}
                                                 </Typography>
                                             </td>
                                         </tr>

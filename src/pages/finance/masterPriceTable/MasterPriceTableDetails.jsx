@@ -8,6 +8,8 @@ import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import RidesPeakHourTableDetails from './RidesPeakHourTableDetails';
 import PremiumPriceDetails from '@/components/PremiumPriceDetails';
+import DemandPriceTable from './DemandPrice';
+import { Typography } from "@material-tailwind/react";
 
 const PriceDetails = () => {
     const [initialValues, setInitialValues] = useState(null);
@@ -15,6 +17,7 @@ const PriceDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [peakHours, setPeakHours] = useState([])
+    const [demandRules, setDemandRules] = useState([]);
     const [premiumConfig ,setPremiumConfig] = useState({});
 
     useEffect(() => {
@@ -46,7 +49,7 @@ const PriceDetails = () => {
                     ratePerKmMVP: data?.data?.kilometerPriceMVP,
                     ratePerKmSedan: data?.data?.kilometerPriceSedan,
                     ratePerKmSuv: data?.data?.kilometerPriceSuv,
-                    ratePerMin: data?.data?.minCharge,
+                    // ratePerMin: data?.data?.minCharge,
                     additionalMin: data?.data?.additionalMinCharge,
                     rateParameter: data?.data?.rateParameter,
                     surchargePercentage: data?.data?.surChargePercentage,
@@ -58,9 +61,16 @@ const PriceDetails = () => {
                     status: data.data.status == 1 ? "ACTIVE": 'IN_ACTIVE',
                     zone: data?.data?.zone || '',
                     freeExtraMinutes: data?.data?.freeExtraMinutes || '',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(data?.data?.driverCancelMins) || '',
+                    driverFreeCancellationsPerDay: data?.data?.driverFreeCancellationsPerDay || '',
+                    driverCancellationCharge: data?.data?.driverCancellationCharge || '',
+                    waitingMins: Utils.convertTimeFormatToMinutes(data?.data?.waitingMins),
+                    waitingCharge: data?.data?.waitingCharge,
+
                 });
                 setPeakHours(data.data.peakHours);
                 setPremiumConfig(data.data.premiumConfig);
+                setDemandRules(data.data.demandRules|| []);
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -126,6 +136,14 @@ const PriceDetails = () => {
                                     <Field type="time" name="nightHoursTo" disabled className="p-3 rounded-md border-gray-300 bg-gray-100" />
                                 </div>
                             </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" disabled className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" disabled className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                            </div>
                         </div>
 
                         {/* Your Requested Table - Base Fare + Rate Per Km */}
@@ -137,7 +155,7 @@ const PriceDetails = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Car Type</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th>
+                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                         </tr>
                                     </thead>
@@ -151,9 +169,9 @@ const PriceDetails = () => {
                                                 <Field type="number" name="ratePerKm" disabled className=" p-1  rounded-md bg-gray-50" />
                                             </td>
                                             
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" disabled className=" p-1  rounded-md bg-gray-50" />
-                                            </td>
+                                            </td> */}
                                              <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" disabled className=" p-1  rounded-md bg-gray-50" />
                                             </td>
@@ -166,9 +184,9 @@ const PriceDetails = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmSedan" disabled className=" p-1  rounded-md bg-gray-50" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" disabled className=" p-1  rounded-md bg-gray-50" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" disabled className=" p-1  rounded-md bg-gray-50" />
                                             </td>
@@ -181,9 +199,9 @@ const PriceDetails = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmSuv" disabled className=" p-1 rounded-md bg-gray-50" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" disabled className=" p-1  rounded-md bg-gray-50" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" disabled className=" p-1  rounded-md bg-gray-50" />
                                             </td>
@@ -196,9 +214,9 @@ const PriceDetails = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmMVP" disabled className=" p-1 rounded-md bg-gray-50" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" disabled className=" p-1  rounded-md bg-gray-50" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" disabled className=" p-1  rounded-md bg-gray-50" />
                                             </td>
@@ -207,7 +225,48 @@ const PriceDetails = () => {
                                 </table>
                             </div>
                         </div>
+                        <div className='overflow-x-auto m-2'>
+                            <Typography className='font-semibold'>Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary  text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancelMins"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                                disabled
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverFreeCancellationsPerDay"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                                disabled
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancellationCharge"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                                disabled
+                                            />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                         <RidesPeakHourTableDetails priceData={peakHours}/>
+                        <DemandPriceTable demandRules={demandRules}/>
                         <PremiumPriceDetails premiumData={premiumConfig}/>
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className={`my-6 mx-2 ${ColorStyles.backButton}`}>

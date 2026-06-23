@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Card,
     CardBody,
@@ -11,11 +11,6 @@ import {
     Checkbox,
     IconButton,
     Spinner,
-    Tabs,
-    TabsHeader,
-    TabsBody,
-    Tab,
-    TabPanel,
 } from "@material-tailwind/react";
 import { FaArrowRight, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser } from 'react-icons/fa';
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -23,13 +18,46 @@ import { API_ROUTES, BOOKING_STATUS, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import moment from "moment";
+import { useBookingQuerySummary } from "./hooks/useBookingQuerySummary";
+import { useBookingSummaryRealtime } from "./hooks/useBookingSummaryRealtime";
+import { useRealtimeEvents } from "@/context/realtimeEvents";
 // import DateRangeFilter from './DateRangeFilter';
-
-const BOOKING_FILTERS_KEY = 'bookingListFilters';
 
 const isBrowser = () => typeof window !== 'undefined';
 
+const toStorageScope = (pathname = '') => {
+    const normalized = String(pathname || '').toLowerCase();
+    const scope = normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    return scope || 'dashboard_booking';
+};
+
+const getBookingFiltersKey = (pathname) => `bookingFilters_${toStorageScope(pathname)}`;
+const getBookingSearchKey = (pathname) => `bookingSearchId_${toStorageScope(pathname)}`;
+const LEGACY_BOOKING_FILTERS_KEY = 'bookingListFilters';
+const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
+const getDateFilterFromTab = (tab) =>
+    tab === 'TODAY' ? 'Today' : tab === 'REMAINING' ? 'Future' : tab === 'CUSTOM_DATE' ? 'Custom date' : 'All';
+
 const getItemSafe = (key) => {
+    if (!isBrowser()) return null;
+    try {
+        return sessionStorage.getItem(key);
+    } catch (error) {
+        console.error(`Error getting sessionStorage key "${key}":`, error);
+        return null;
+    }
+};
+
+const setItemSafe = (key, value) => {
+    if (!isBrowser()) return;
+    try {
+        sessionStorage.setItem(key, value);
+    } catch (error) {
+        console.error(`Error setting sessionStorage key "${key}":`, error);
+    }
+};
+
+const getLocalItemSafe = (key) => {
     if (!isBrowser()) return null;
     try {
         return localStorage.getItem(key);
@@ -39,18 +67,16 @@ const getItemSafe = (key) => {
     }
 };
 
-const setItemSafe = (key, value) => {
-    if (!isBrowser()) return;
+const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServiceTypeFilter, setSourceFilter, setTripCoordinatorFilter, setZoneFilter, setDateFilter, setCustomDateFrom, setCustomDateTo, setPagination, setFiltersLoaded }) => {
     try {
-        localStorage.setItem(key, value);
-    } catch (error) {
-        console.error(`Error setting localStorage key "${key}":`, error);
-    }
-};
-
-const loadBookingFilters = ({setActiveTab,setStatusFilter,setServiceTypeFilter,setSourceFilter,setTripCoordinatorFilter,setZoneFilter,setDateFilter,setCustomDateFrom,setCustomDateTo,setPagination,setFiltersLoaded}) => {
-    try {
-        const storedFilters = getItemSafe(BOOKING_FILTERS_KEY);
+        let storedFilters = getItemSafe(filtersKey);
+        if (!storedFilters) {
+            const legacyFilters = getItemSafe(LEGACY_BOOKING_FILTERS_KEY);
+            if (legacyFilters) {
+                storedFilters = legacyFilters;
+                setItemSafe(filtersKey, legacyFilters);
+            }
+        }
         if (!storedFilters) {
             setFiltersLoaded(true);
             return;
@@ -58,23 +84,15 @@ const loadBookingFilters = ({setActiveTab,setStatusFilter,setServiceTypeFilter,s
 
         const parsed = JSON.parse(storedFilters);
 
-        if (parsed.activeTab) {
-            setActiveTab(parsed.activeTab);
-        }
+        const restoredActiveTab = parsed.activeTab || 'ALL_BOOKINGS';
+        setActiveTab(restoredActiveTab);
         if (Array.isArray(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
         if (Array.isArray(parsed.serviceTypeFilter)) setServiceTypeFilter(parsed.serviceTypeFilter);
         if (Array.isArray(parsed.sourceFilter)) setSourceFilter(parsed.sourceFilter);
         if (Array.isArray(parsed.tripCoordinatorFilter)) setTripCoordinatorFilter(parsed.tripCoordinatorFilter);
         if (Array.isArray(parsed.zoneFilter)) setZoneFilter(parsed.zoneFilter);
-        // Keep date filter consistent with active tab
-        if (parsed.activeTab === 'CUSTOM_DATE') 
-            {
-                setDateFilter('Custom date');
-            }
-        else if (parsed.dateFilter) 
-            {
-            setDateFilter(parsed.dateFilter);
-        }
+        // Keep date filter strictly derived from active tab to avoid UI/API mismatch.
+        setDateFilter(getDateFilterFromTab(restoredActiveTab));
         if (parsed.customDateFrom) setCustomDateFrom(parsed.customDateFrom);
         if (parsed.customDateTo) setCustomDateTo(parsed.customDateTo);
         if (typeof parsed.currentPage === 'number') {
@@ -84,38 +102,40 @@ const loadBookingFilters = ({setActiveTab,setStatusFilter,setServiceTypeFilter,s
             }));
         }
     } catch (error) {
-        console.error('Error loading booking list filters from localStorage:', error);
+        console.error('Error loading booking list filters from sessionStorage:', error);
     } finally {
         setFiltersLoaded(true);
     }
 };
 
-const saveBookingFilters = ({activeTab,statusFilter,serviceTypeFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter,customDateFrom,customDateTo,currentPage}) => {
-    try {
-        const filtersToStore = {activeTab,statusFilter,serviceTypeFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter,customDateFrom,customDateTo,currentPage};
-        setItemSafe(BOOKING_FILTERS_KEY, JSON.stringify(filtersToStore));
-    } catch (error) {
-        console.error('Error saving booking list filters to localStorage:', error);
-    }
-};
-
-        const getInitialActiveTab = () => {
+        const getInitialActiveTab = (filtersKey) => {
             try {
-                const storedFilters = getItemSafe(BOOKING_FILTERS_KEY);
-                if (!storedFilters) return "ALL_BOOKINGS";
+                const storedFilters = getItemSafe(filtersKey);
+                if (!storedFilters) {
+                    const legacyFilters = getItemSafe(LEGACY_BOOKING_FILTERS_KEY);
+                    if (!legacyFilters) return "ALL_BOOKINGS";
+                    const parsedLegacy = JSON.parse(legacyFilters);
+                    return parsedLegacy.activeTab || "ALL_BOOKINGS";
+                }
                 const parsed = JSON.parse(storedFilters);
                 return parsed.activeTab || "ALL_BOOKINGS";
             } catch (error) {
-                console.error('Error reading initial activeTab from localStorage:', error);
+                console.error('Error reading initial activeTab from sessionStorage:', error);
                 return "ALL_BOOKINGS";
             }
         };
 
 export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange }) {
     const navigate = useNavigate();
+    const location = useLocation();
+    const isReturnTripsList =
+        String(type || "").toUpperCase() === "RETURN_TRIPS" ||
+        String(location.pathname || "").toLowerCase().includes("/booking/list/returntrips");
+    const bookingFiltersKey = getBookingFiltersKey(location.pathname);
+    const bookingSearchKey = getBookingSearchKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
     const [selectedBookingId, setSelectedBookingId] = useState(null);
-    const [activeTab, setActiveTab] = useState(getInitialActiveTab);
+    const [activeTab, setActiveTab] = useState(() => getInitialActiveTab(bookingFiltersKey));
     const [statusFilter, setStatusFilter] = useState(['All']);
     const [serviceTypeFilter, setServiceTypeFilter] = useState(['All']);
     const [sourceFilter, setSourceFilter] = useState(['All']);
@@ -152,9 +172,76 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [isCustomDatePopoverOpen, setIsCustomDatePopoverOpen] = useState(false);
     const [followupLoading, setFollowupLoading] = useState({});
     const [allUsers, setAllUsers] = useState([]); 
+    const latestRequestRef = useRef(0);
+    const summaryRequestRef = useRef(0);
+    const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
+
+    const getInquiryTypeFromPath = (pathname = "") => {
+        const path = String(pathname || "").toLowerCase();
+        if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
+        if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
+        if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB_BOOKING";
+        if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
+        if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
+        if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
+        if (path.startsWith("/dashboard/booking/list/returntrips")) return "RETURN_TRIPS";
+        if (path.startsWith("/dashboard/auto")) return "AUTO";
+        if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
+        return "";
+    };
+
+// useEffect(() => {
+//     try {
+//         const normalizedPath = String(location.pathname || "").toLowerCase();
+//         const getInquiryTypeFromPath = (path) => {
+//             if (path.startsWith("/dashboard/auto")) return "AUTO";
+//             if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
+//             if (path.startsWith("/dashboard/booking/list/rentals")) return "RENTAL";
+//             if (path.startsWith("/dashboard/booking/list/cabbooking")) return "CAB";
+//             if (path.startsWith("/dashboard/booking/list/carwash")) return "CAR_WASH";
+//             if (path.startsWith("/dashboard/booking/list/actingdriver")) return "DRIVER";
+//             if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
+//             if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
+//             return "";
+//         };
+//         const normalizeType = (rawType) => {
+//             const value = String(rawType || "").trim().toUpperCase();
+//             if (value === "CAB_BOOKING") return "CAB";
+//             return value;
+//         };
+//         const isHomeBookingView = normalizedPath === "/dashboard/booking" && (!type || String(type).trim() === "");
+//         const isAllInquiriesView =
+//             normalizedPath.startsWith("/dashboard/booking/list") ||
+//             normalizedPath.startsWith("/dashboard/auto");
+//         const totalPendings = String(counts?.totalPendings ?? "0");
+//         const inquiryType = getInquiryTypeFromPath(normalizedPath) || normalizeType(type) || "ALL_CABS";
+
+//         if (isHomeBookingView) {
+//             sessionStorage.setItem("totalPendings", totalPendings);
+//             sessionStorage.setItem("bookingCounts", JSON.stringify(counts || {}));
+//             window.dispatchEvent(
+//                 new CustomEvent("booking-count-updated", {
+//                     detail: { scope: "home", totalPendings },
+//                 })
+//             );
+//         }
+
+//         if (isAllInquiriesView) {
+//             const key = `sidebar.inquiries.${inquiryType}.totalPendings`;
+//             sessionStorage.setItem(key, totalPendings);
+//             window.dispatchEvent(
+//                 new CustomEvent("booking-count-updated", {
+//                     detail: { scope: "all-inquiries", totalPendings, inquiryType },
+//                 })
+//             );
+//         }
+//     } catch (error) {
+//         console.error("Error syncing booking counts to sessionStorage:", error);
+//     }
+// }, [counts, location.pathname, type]);
 
 useEffect(() => {
-  const storedUser = getItemSafe('loggedInUser');
+  const storedUser = getLocalItemSafe('loggedInUser');
   if (storedUser) {
     const userData = JSON.parse(storedUser);     
     setUserId(userData.id); 
@@ -192,26 +279,54 @@ useEffect(() => {
 }, []);
 
     useEffect(() => {
-        loadBookingFilters({setActiveTab,setStatusFilter,setServiceTypeFilter,setSourceFilter,setTripCoordinatorFilter,setZoneFilter,setDateFilter,setCustomDateFrom,setCustomDateTo,setPagination,setFiltersLoaded,
+        setFiltersLoaded(false);
+        loadBookingFilters({
+            filtersKey: bookingFiltersKey,
+            setActiveTab,
+            setStatusFilter,
+            setServiceTypeFilter,
+            setSourceFilter,
+            setTripCoordinatorFilter,
+            setZoneFilter,
+            setDateFilter,
+            setCustomDateFrom,
+            setCustomDateTo,
+            setPagination,
+            setFiltersLoaded,
         });
-    }, []);
+    }, [bookingFiltersKey]);
 
     useEffect(() => {
         if (!filtersLoaded) return;
-            saveBookingFilters({activeTab,statusFilter,serviceTypeFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter,customDateFrom,customDateTo,currentPage: pagination.currentPage
-        });
-    }, [filtersLoaded,activeTab,statusFilter,serviceTypeFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter,customDateFrom,customDateTo,pagination.currentPage]);
+        try {
+            const filtersToStore = {
+                activeTab,
+                statusFilter,
+                serviceTypeFilter,
+                sourceFilter,
+                tripCoordinatorFilter,
+                zoneFilter,
+                dateFilter,
+                customDateFrom,
+                customDateTo,
+                currentPage: pagination.currentPage,
+            };
+            setItemSafe(bookingFiltersKey, JSON.stringify(filtersToStore));
+        } catch (error) {
+            console.error('Error saving booking list filters to sessionStorage:', error);
+        }
+    }, [filtersLoaded, bookingFiltersKey, activeTab, statusFilter, serviceTypeFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, pagination.currentPage]);
 
     useEffect(() => {
-        const stored = getItemSafe('bookingSearchId') || '';
+        const stored = getItemSafe(bookingSearchKey) || getItemSafe(LEGACY_BOOKING_SEARCH_KEY) || '';
         const newEffective = searchBookingId || stored;
         setEffectiveSearchId(newEffective);
         if (newEffective) {
-            setItemSafe('bookingSearchId', newEffective);
+            setItemSafe(bookingSearchKey, newEffective);
         } else if (!searchBookingId) {
-            setItemSafe('bookingSearchId', '');
+            setItemSafe(bookingSearchKey, '');
         }
-    }, [searchBookingId]);
+    }, [searchBookingId, bookingSearchKey]);
     const handleToggleDriverHours = () => {
   setShowDriverHours(true);
 };
@@ -223,6 +338,8 @@ useEffect(() => {
   setSelectedTime(driverData ? moment(driverData.date_time).format(' hh:mm A') : moment().format(' hh:mm A'));
   setShowDriverHours(false); // Hide the popup after selection
 };
+
+const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({pagination,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId,activeTab,dateFilter,customDateFrom,customDateTo,customerId,type,summaryRequestRef,setCounts,});
 const fetchServiceAreas = async () => {
         try {
             const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {});
@@ -238,6 +355,13 @@ const fetchServiceAreas = async () => {
     useEffect(() => {
         fetchServiceAreas();
     }, []);
+    // useEffect(() => {
+    //     if (isReturnTripsList && activeTab !== "TODAY") {
+    //         setActiveTab("TODAY");
+    //         setDateFilter("Today");
+    //         setIsCustomDatePopoverOpen(false);
+    //     }
+    // }, [isReturnTripsList, activeTab]);
 const handleTabChange = (value) => {
     if (typeof value !== 'string') {
         console.warn('Unexpected value in handleTabChange:', value);
@@ -248,14 +372,19 @@ const handleTabChange = (value) => {
         setActiveTab(value);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         // Reset all filters when switching tabs
-        setStatusFilter(['All']);
-        setServiceTypeFilter(['All']);
-        setSourceFilter(['All']);
-        setTripCoordinatorFilter(['All']);
-        setZoneFilter(['All']);
+        const resetStatusFilter = ['All'];
+        const resetServiceTypeFilter = ['All'];
+        const resetSourceFilter = ['All'];
+        const resetTripCoordinatorFilter = ['All'];
+        const resetZoneFilter = ['All'];
+        setStatusFilter(resetStatusFilter);
+        setServiceTypeFilter(resetServiceTypeFilter);
+        setSourceFilter(resetSourceFilter);
+        setTripCoordinatorFilter(resetTripCoordinatorFilter);
+        setZoneFilter(resetZoneFilter);
                 setCustomDateFrom('');
                 setCustomDateTo('');
-                setDateFilter(value === 'TODAY' ? 'Today' : value === 'REMAINING' ? 'Future' : value === 'CUSTOM_DATE' ? 'Custom date' : 'All');
+        setDateFilter(getDateFilterFromTab(value));
 
             if (value === 'CUSTOM_DATE') {
                 setIsCustomDatePopoverOpen(true);
@@ -357,7 +486,6 @@ const handleTabChange = (value) => {
         </Popover>
     );
 
-    const location = useLocation();
     const paramsPassed = location.state;
 
     useEffect(() => {
@@ -368,7 +496,8 @@ const handleTabChange = (value) => {
 
     const getBookingsList = async (page = 1) => {
         // For custom date tab, only hit API when both dates are selected
-        if ((activeTab === 'CUSTOM_DATE' || dateFilter === 'Custom date') && (!customDateFrom || !customDateTo)) {return;}
+        if (activeTab === 'CUSTOM_DATE' && (!customDateFrom || !customDateTo)) {return;}
+        const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
     try {
       const filterType = {
@@ -387,18 +516,18 @@ if (!statusFilter.includes('All')) {
         let startDate = '';
         let endDate = '';
 
-        if (activeTab === 'TODAY' || dateFilter === 'Today') {
+        if (activeTab === 'TODAY') {
             const today = moment().format('YYYY-MM-DD');
             startDate = today;
             endDate = today;
-        } else if (activeTab === 'REMAINING' || dateFilter === 'Future') {
+        } else if (activeTab === 'REMAINING') {
             const tomorrow = moment().add(1, 'day').format('YYYY-MM-DD');
             startDate = tomorrow;
             endDate = "";
         } else if (dateFilter === 'Last 7 days') {
             startDate = moment().subtract(7, 'days').format('YYYY-MM-DD');
             endDate = moment().format('YYYY-MM-DD');
-        } else if (activeTab === 'CUSTOM_DATE' || dateFilter === 'Custom date') {
+        } else if (activeTab === 'CUSTOM_DATE') {
             startDate = customDateFrom;
             endDate = customDateTo;
         } else {
@@ -424,6 +553,9 @@ if (!statusFilter.includes('All')) {
             queryParams.endDate = endDate;
         }
         const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_BOOKINGS, queryParams);
+        if (currentRequestId !== latestRequestRef.current) {
+            return;
+        }
         if (data?.success) {
             if (data?.data?.length > 0) {
             setBookingsList(data?.data);
@@ -456,6 +588,9 @@ if (!statusFilter.includes('All')) {
         setOnlineDrivers([]);
         setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount: "0", uniqueCustomerPerDayBookingCount:"0" });
     } finally {
+        if (currentRequestId !== latestRequestRef.current) {
+            return;
+        }
         setLoading(false);
         }
     };
@@ -514,6 +649,24 @@ if (!statusFilter.includes('All')) {
 
         // return () => clearInterval(intervalId);
     }, [customerId, effectiveSearchId, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
+
+    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,buildSummaryQueryParams,fetchBookingSummary,pagination,customerId,effectiveSearchId,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter});
+
+    useEffect(() => {
+        const totalPendings = Number(counts?.totalPendings || 0);
+        const normalizedPath = String(location.pathname || "").toLowerCase();
+        const inferredInquiryType = getInquiryTypeFromPath(normalizedPath);
+        const normalizedType = String(type || inferredInquiryType || "ALL_CABS").toUpperCase();
+
+        if (normalizedPath === "/dashboard/booking") {
+            updateHomeTotalPendings(totalPendings);
+            return;
+        }
+
+        if (normalizedPath.startsWith("/dashboard/booking/list") || normalizedPath.startsWith("/dashboard/auto")) {
+            updateInquiryTotalPendings(normalizedType, totalPendings);
+        }
+    }, [counts?.totalPendings, location.pathname, type, updateHomeTotalPendings, updateInquiryTotalPendings]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= pagination.totalPages) {
@@ -646,18 +799,58 @@ if (!statusFilter.includes('All')) {
 
     const allTabLabel =
         type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" : "All Bookings";
+    const tableHeaders = isReturnTripsList
+        ? ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
+        : ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Assign Captain"];
 
-    const tabs = [
-        { label: allTabLabel, value:'ALL_BOOKINGS'},
-        // { label: 'Past', value:'PAST'},
-        { label: 'Today', value: 'TODAY' },
-        { label: 'Future', value: 'REMAINING' },
-        { label: 'Custom date', value: 'CUSTOM_DATE' },
-    ];
+    const tabs = useMemo(
+        () =>
+            isReturnTripsList
+        ? [
+            { label: allTabLabel, value:'ALL_BOOKINGS'},
+            { label: 'Today', value: 'TODAY' },
+            { label: 'Custom date', value: 'CUSTOM_DATE' }
+        ]
+        : [
+            { label: allTabLabel, value:'ALL_BOOKINGS'},
+            { label: 'Today', value: 'TODAY' },
+            { label: 'Future', value: 'REMAINING' },
+            { label: 'Custom date', value: 'CUSTOM_DATE' },
+                  ],
+        [isReturnTripsList, allTabLabel]
+    );
+    const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
+
+    useEffect(() => {
+        if (!tabValues.includes(activeTab)) {
+            const fallbackTab = tabValues[0] || 'ALL_BOOKINGS';
+            setActiveTab(fallbackTab);
+            setDateFilter(getDateFilterFromTab(fallbackTab));
+        }
+    }, [activeTab, tabValues]);
+
+    const handleTabKeyDown = (event, value) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handleTabChange(value);
+            return;
+        }
+        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+
+        event.preventDefault();
+        const currentIndex = tabValues.indexOf(value);
+        if (currentIndex < 0) return;
+
+        const delta = event.key === 'ArrowRight' ? 1 : -1;
+        const nextIndex = (currentIndex + delta + tabValues.length) % tabValues.length;
+        const nextTab = tabValues[nextIndex];
+        handleTabChange(nextTab);
+    };
 
     const handleRefresh = () => {
         // Set manual filter flag to prevent useEffect conflicts
         setIsManualDateFilter(true);
+        const refreshedTab = isReturnTripsList ? 'TODAY' : 'ALL_BOOKINGS';
         
         // Reset all filters to their default state
         setStatusFilter(['All']);
@@ -665,13 +858,30 @@ if (!statusFilter.includes('All')) {
         setTripCoordinatorFilter(['All']);
         setServiceTypeFilter(['All']);
         setZoneFilter(['All']);
-        setDateFilter('All');
+        setActiveTab(refreshedTab);
+        setDateFilter(getDateFilterFromTab(refreshedTab));
         setCustomDateFrom('');
         setCustomDateTo('');
+        setIsCustomDatePopoverOpen(false);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setEffectiveSearchId('');
-        localStorage.removeItem('bookingSearchId');
-        triggerFilteredAPICall('', '', 1, ['All'], ['All'], ['All'], ['All'], ['All'], '');
+        sessionStorage.removeItem(bookingSearchKey);
+        sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+        const today = moment().format('YYYY-MM-DD');
+        const startDate = refreshedTab === 'TODAY' ? today : '';
+        const endDate = refreshedTab === 'TODAY' ? today : '';
+        triggerFilteredAPICall(
+            startDate,
+            endDate,
+            1,
+            ['All'],
+            ['All'],
+            ['All'],
+            ['All'],
+            ['All'],
+            '',
+            refreshedTab
+        );
     };
 
 //     // Date filtering implementation
@@ -693,7 +903,8 @@ if (!statusFilter.includes('All')) {
 // };
 
     // Function to trigger API call with specific dates (bypasses state timing issues)
-   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId) => {
+   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab) => {
+        const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
         
         // Clear existing data to show loading state
@@ -701,7 +912,7 @@ if (!statusFilter.includes('All')) {
         
         try {
             const filterType = {
-                type: activeTab,
+                type: activeTabParam,
                 source: sourceFilterParam,
                 tripCoordinator: tripCoordinatorFilterParam,
                 zone: zoneFilterParam.includes('All') ? ["All"] : zoneFilterParam,
@@ -737,6 +948,9 @@ if (!statusFilter.includes('All')) {
             // console.log('Triggering API call with dates:', { startDate, endDate, queryParams });
             
             const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_BOOKINGS, queryParams);
+            if (currentRequestId !== latestRequestRef.current) {
+                return;
+            }
             if (data?.success) {
                 if (data?.data?.length > 0) {
                     setBookingsList(data?.data);
@@ -762,6 +976,9 @@ if (!statusFilter.includes('All')) {
             setBookingsList([]);
             setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0" });
         } finally {
+            if (currentRequestId !== latestRequestRef.current) {
+                return;
+            }
             setLoading(false);
         }
     };
@@ -801,13 +1018,18 @@ if (!statusFilter.includes('All')) {
                     <div className="absolute top-0  right-0 flex gap-4 justify-end">
                         
                         <button
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-2 py-2 rounded-lg text-sm shadow-lg"
+                            className={`bg-red-600 hover:bg-red-300 text-white px-2 py-2 rounded-lg text-sm shadow-lg ${loading ? 'opacity-80 cursor-not-allowed' : ''}`}
+                            disabled={loading}
                             onClick={() => {
                                 handleRefresh();
                             }}
                         >
                             <span className="flex items-center gap-2">
+                                {loading ? (
+                                    <Spinner className="h-4 w-4" />
+                                ) : (
                                 <img src="/img/refresh.png" alt="Refresh" className="w-4 h-4" />
+                                )}
                                 Refresh
                             </span>
                         </button>
@@ -834,7 +1056,7 @@ if (!statusFilter.includes('All')) {
                                         </Typography>
                                         <div className="flex items-center justify-center w-full">
                                             <Typography variant="h6" className="font-bold text-2xl">
-                                                {counts[item.key]}
+                                                {counts?.[item.key] ?? "0"}
                                             </Typography>
                                         </div>
                                     </div>
@@ -953,18 +1175,24 @@ if (!statusFilter.includes('All')) {
                     </button>
                 </div> */}
                 <CardBody className='pt-0'>
-                    <Tabs  value={activeTab} >
-                        <TabsHeader className="bg-gray-300 z-0 mb-4">
+                    <div className="bg-gray-300 z-0 mb-4 rounded-lg">
                     <div className="flex w-full items-center">
-                        <div className="flex w-full">
+                        <div className="flex w-full p-1" role="tablist" aria-label="Booking date tabs">
                             {tabs.map(({ label, value }) => (
-                                <Tab
+                                <button
                                     key={value}
-                                    value={value}
+                                    type="button"
                                     onClick={() => handleTabChange(value)}
-                                    className='cursor-pointer flex-1 text-center'
+                                    onKeyDown={(event) => handleTabKeyDown(event, value)}
+                                    role="tab"
+                                    aria-selected={activeTab === value}
+                                    className={`cursor-pointer flex-1 text-center px-3 py-1 rounded-md ${
+                                        activeTab === value
+                                            ? 'bg-gray-50 shadow-sm text-black'
+                                            : 'text-black hover:bg-gray-200'
+                                    }`}
                                 >
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center w-full gap-1">
                                     <Typography variant="small" className="font-bold">
                                         {label}
                                     </Typography>
@@ -1022,12 +1250,12 @@ if (!statusFilter.includes('All')) {
                             </Popover>
                                 )}
                     </div>
-                </Tab>
+                </button>
             ))}
         </div>
                             </div>
-                        </TabsHeader>
-                        <TabsBody className='overflow-x-scroll px-0 pt-0 pb-2'>
+                        </div>
+                        <div className='overflow-x-scroll px-0 pt-0 pb-2'>
 
 
 
@@ -1036,17 +1264,12 @@ if (!statusFilter.includes('All')) {
                     <div className="flex justify-center items-center h-screen">
                         <Spinner className="h-12 w-12" />
                     </div>
-                                    ) : bookingsList.length === 0 ? (
-                            <Typography variant="h5" className='text-gray-900'>
-                                No Bookings
-                                {/* {activeTab} Bookings ({statusFilter ? ('status'): statusFilter.join(', ')}): {bookingsList.length} */}
-                            </Typography>
                         ) : (
                             <>
                                 <table className="w-full table-auto">
                                     <thead>
                                         <tr>
-                                            {["Booking ID", "Customer Name","Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status","Trip Owner", "Follow Up", "Assign Captain"].map((el) => ( // , "Owner" => cd before Source Type
+                                            {tableHeaders.map((el) => ( // , "Owner" => cd before Source Type
 
                                                 <th
                                                     key={el}
@@ -1182,6 +1405,13 @@ if (!statusFilter.includes('All')) {
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        {bookingsList.length === 0 && (
+                                            <tr>
+                                                <td colSpan={tableHeaders.length} className="p-5 text-center text-gray-700 font-medium">
+                                                    No Bookings
+                                                </td>
+                                            </tr>
+                                        )}
                                         {showReassignModal && (
                                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                                             <div className="bg-white/95 p-6 rounded-lg max-w-md w-full h-80">
@@ -1380,7 +1610,8 @@ if (!statusFilter.includes('All')) {
                                                                 }`}
                                                             />
                                                         </td>
-                                                       <td className={className}>
+                                                       {!isReturnTripsList && (
+                                                    <td className={className}>
                                                             {data?.userId ? (
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.User?.name}
@@ -1400,6 +1631,8 @@ if (!statusFilter.includes('All')) {
                                                                 </Button>
                                                             )}
                                                         </td>
+                                                        )}
+                                                        {!isReturnTripsList && (
                                                         <td className={className}>
                                                             <button
                                                                 className={`text-xs font-semibold text-white flex items-center justify-center gap-2 rounded-sm px-2 py-2 ${(data?.followup || 'NONE') === 'NONE'
@@ -1422,8 +1655,10 @@ if (!statusFilter.includes('All')) {
                                                                 )} */}
                                                                 {getFollowup(data?.followup || 'NONE')}
                                                             </button>
-                                                         </td>
+                                                            </td>
+                                                        )}
                                                         
+                                                        {!isReturnTripsList && (
                                                         <td className={className}>
                                                             {/* {data?.status === 'STARTED' &&
                                                                 <Button
@@ -1518,6 +1753,7 @@ if (!statusFilter.includes('All')) {
                                                                 </Button>
                                                             }
                                                         </td>
+                                                        )}
                                                </tr>
                         );
                                             }
@@ -1547,8 +1783,7 @@ if (!statusFilter.includes('All')) {
                                 </div>
                             </>
                         )}
-                        </TabsBody>
-                    </Tabs>
+                        </div>
                     </CardBody>
                 </Card>
             

@@ -8,7 +8,7 @@ import AllRecordsSubmenu from "./AllRecordsSubmenu";
 import SupportSubmenu from "./SupportSubmenu";
 import FinanceSubmenu from "./FinanceSubmenu";
 import DriverEngagementSubmenu from "./DriverEngagementSubmenu";
-import { NAV_UI } from "@/utils/constants";
+import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 export function Topnav({ permissions = [] }) {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
@@ -21,16 +21,19 @@ export function Topnav({ permissions = [] }) {
 
   const isAllRecordsSection =
     path.startsWith("/dashboard/booking/list") ||
-    path.startsWith("/dashboard/auto");
+    path.startsWith("/dashboard/auto") ||
+    path.startsWith("/dashboard/vendors/driver-return-trips");
 
   const isCustomersSection =
     path.startsWith("/dashboard/customers");
 
   const isSupportSection =
     path.startsWith("/dashboard/rental-rate-card") ||
-    path.startsWith("/dashboard/leads");
+    path.startsWith("/dashboard/leads") ||
+    (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && path.startsWith("/dashboard/support/admin-discount-history"));
 
   const isVendorsSection =
+    path.startsWith("/dashboard/vendors/account/owner-onboarding-cab") ||
     path.startsWith("/dashboard/vendors/account") ||
     path.startsWith("/dashboard/vendors/account/drivers") ||
     path.startsWith("/dashboard/vendors/vehiclelist") ||
@@ -44,7 +47,13 @@ export function Topnav({ permissions = [] }) {
   const isMarketingSection = 
     path.startsWith("/dashboard/vendors/driver-incentive") ||
     path.startsWith("/dashboard/vendors/notificationlist") ||
+    path.startsWith("/dashboard/vendors/notification/add") ||
+    path.startsWith("/dashboard/vendors/notification/edit") ||
+    path.startsWith("/dashboard/vendors/customerNotificationList") ||
+    path.startsWith("/dashboard/vendors/customerNotification/add") ||
+    path.startsWith("/dashboard/vendors/customerNotification/edit") ||
     path.startsWith("/dashboard/vendors/customernotificationlist") ||
+    path.startsWith("/dashboard/vendors/skip-logs") ||
     path.startsWith("/dashboard/vendors/drivernotificationlist") ||
     path.startsWith("/dashboard/user/bannerimgview") ||
     path.startsWith("/dashboard/user/bannerimg/add")
@@ -68,6 +77,7 @@ export function Topnav({ permissions = [] }) {
       !isInstantRewardRoute &&
       !isCustomDiscountRoute) ||
     path.startsWith("/dashboard/admin/geo-markings") ||
+    path.startsWith("/dashboard/admin/driver-cancellation-history") ||
     path.startsWith("/dashboard/user/versioncontrol") ||
     // path.startsWith("/dashboard/driverengagement") ||
     // Also show admin top bar on Trip Master and Calls

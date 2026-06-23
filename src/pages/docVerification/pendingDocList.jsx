@@ -28,9 +28,9 @@ const isBrowser = () => typeof window !== "undefined";
 const getItemSafe = (key) => {
   if (!isBrowser()) return null;
   try {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   } catch (err) {
-    console.error(`Error reading localStorage key "${key}":`, err);
+    console.error(`Error reading sessionStorage key "${key}":`, err);
     return null;
   }
 };
@@ -38,18 +38,18 @@ const getItemSafe = (key) => {
 const setItemSafe = (key, value) => {
   if (!isBrowser()) return;
   try {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   } catch (err) {
-    console.error(`Error writing localStorage key "${key}":`, err);
+    console.error(`Error writing sessionStorage key "${key}":`, err);
   }
 };
 
 const removeItemSafe = (key) => {
   if (!isBrowser()) return;
   try {
-    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
   } catch (err) {
-    console.error(`Error removing localStorage key "${key}":`, err);
+    console.error(`Error removing sessionStorage key "${key}":`, err);
   }
 };
 
@@ -108,6 +108,7 @@ export function PendingDocList() {
   const [filtersLoaded, setFiltersLoaded] = useState(false);
   const navigate = useNavigate();
   const latestRequestIdRef = useRef(0);
+  const prevSearchRef = useRef('');
   const resolveAccountType = (record = {}) => {
     const serviceType = record["Account.serviceType"];
     if (record["Register.id"] || record["Driver.id"] || serviceType == null || serviceType === "") return "Driver";
@@ -210,7 +211,9 @@ export function PendingDocList() {
 
   useEffect(() => {
     if (!filtersLoaded) return;
-    fetchDoc(pagination.currentPage, pagination.search, true);
+    const searchChanged = prevSearchRef.current !== (pagination.search || '');
+    prevSearchRef.current = pagination.search || '';
+    fetchDoc(pagination.currentPage, pagination.search, !searchChanged);
   }, [filtersLoaded, pagination.currentPage, pagination.itemsPerPage, pagination.search, typeFilter]);
 
   useEffect(() => {

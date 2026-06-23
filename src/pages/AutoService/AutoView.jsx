@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Card,
   CardHeader,
@@ -31,9 +31,9 @@ const isBrowser = () => typeof window !== 'undefined';
 const getItemSafe = (key) => {
   if (!isBrowser()) return null;
   try {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   } catch (err) {
-    console.error(`Error reading localStorage key "${key}":`, err);
+    console.error(`Error reading sessionStorage key "${key}":`, err);
     return null;
   }
 };
@@ -41,9 +41,9 @@ const getItemSafe = (key) => {
 const setItemSafe = (key, value) => {
   if (!isBrowser()) return;
   try {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   } catch (err) {
-    console.error(`Error writing localStorage key "${key}":`, err);
+    console.error(`Error writing sessionStorage key "${key}":`, err);
   }
 };
  
@@ -71,6 +71,7 @@ export function AutoView() {
   const [zoneFilter, setZoneFilter] = useState(['All']);
   const [zoneOptions, setZoneOptions] = useState([]);
   const [kycStatusCounts, setKycStatusCounts] = useState(EMPTY_KYC_STATUS_COUNTS);
+  const prevSearchRef = useRef('');
 
   const [pagination, setPagination] = useState(() => {
     const stored = getItemSafe(AUTO_VIEW_FILTERS_KEY);
@@ -105,7 +106,7 @@ export function AutoView() {
  
   const [filtersLoaded, setFiltersLoaded] = useState(false);
  
-  // Load filters from localStorage on initial mount
+  // Load filters from sessionStorage on initial mount
   useEffect(() => {
     const stored = getItemSafe(AUTO_VIEW_FILTERS_KEY);
     if (!stored) {
@@ -136,7 +137,7 @@ export function AutoView() {
     }
   }, []);
  
-  // Save filters to localStorage whenever they change
+  // Save filters to sessionStorage whenever they change
   useEffect(() => {
     if (!filtersLoaded) return;
  
@@ -215,7 +216,9 @@ export function AutoView() {
 
   useEffect(() => {
   if (!filtersLoaded) return;
-    fetchAccounts(pagination.currentPage, pagination.search, true);
+    const searchChanged = prevSearchRef.current !== (pagination.search || '');
+    prevSearchRef.current = pagination.search || '';
+    fetchAccounts(pagination.currentPage, pagination.search, !searchChanged);
   }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, sourceFilter,
       serviceTypeFilter, documentTypeFilter, availableStatusFilter, zoneFilter]);
  
@@ -234,7 +237,7 @@ export function AutoView() {
   }, [location, navigate]);
  
   const handleRefresh = () => {
-    localStorage.removeItem(AUTO_VIEW_FILTERS_KEY);
+    sessionStorage.removeItem(AUTO_VIEW_FILTERS_KEY);
     setPagination({
       currentPage: 1,
       totalPages: 1,

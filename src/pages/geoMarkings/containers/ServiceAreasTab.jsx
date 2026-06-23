@@ -29,7 +29,7 @@ const ServiceAreasTab = () => {
   const fetchServiceAreas = async () => {
     try {
       setIsLoading(true);
-      const response = await ApiRequestUtils.get(`${API_ROUTES.GEO_MARKINGS_LIST}?type=Service%20Area`);
+      const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {type: 'Service Area'});
       if (response?.success) {
         setServiceAreas(response.data || []);
         setUpdatedServiceAreas(response.data || []); // Initialize local copy
@@ -45,9 +45,7 @@ const ServiceAreasTab = () => {
 
   const fetchZones = async () => {                      
     try {
-      const response = await ApiRequestUtils.get(
-        `${API_ROUTES.GEO_MARKINGS_LIST}?type=Zone`
-      );
+      const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {type: 'Zone'});
       if (response?.success) {
         setZones(response.data || []);
       }
@@ -150,7 +148,7 @@ const ServiceAreasTab = () => {
   };
 
   const handlePolygonComplete = (coords) => {
-    setCoordinates(coords);
+    setCoordinates(Array.isArray(coords) ? [...coords] : coords);
   };
 
   const handlePolygonUpdate = (newCoordinates, index) => {
@@ -199,7 +197,8 @@ const ServiceAreasTab = () => {
               onPolygonComplete={handlePolygonComplete}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
-              existingPolygons={updatedServiceAreas.map(area => area.coordinates)}
+              existingPolygons={selectedItem ? updatedServiceAreas.map(area => area.coordinates) : []}
+              hideExistingPolygons={!selectedItem}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"

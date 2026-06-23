@@ -230,6 +230,60 @@ export function OnlineRegistrationView(){
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <Typography className="text-xs font-semibold text-blue-gray-600">
+                                        VEHICLE PHOTO
+                                        </Typography>
+                                        <Typography
+                                        className={`text-xs font-semibold ${
+                                            documents.VEHICLE_PHOTO === "APPROVED"
+                                            ? "text-green-500"
+                                            : documents.VEHICLE_PHOTO === "PENDING"
+                                            ? "text-yellow-500"
+                                            : documents.VEHICLE_PHOTO === "DECLINED"
+                                            ? "text-red-500"
+                                            : "text-gray-500"
+                                        }`}
+                                        >
+                                        {documents.VEHICLE_PHOTO}
+                                        </Typography>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                                        INSURANCE
+                                        </Typography>
+                                        <Typography
+                                        className={`text-xs font-semibold ${
+                                            documents.INSURANCE === "APPROVED"
+                                            ? "text-green-500"
+                                            : documents.INSURANCE === "PENDING"
+                                            ? "text-yellow-500"
+                                            : documents.INSURANCE === "DECLINED"
+                                            ? "text-red-500"
+                                            : "text-gray-500"
+                                        }`}
+                                        >
+                                        {documents.INSURANCE}
+                                        </Typography>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                                        PERMIT
+                                        </Typography>
+                                        <Typography
+                                        className={`text-xs font-semibold ${
+                                            documents.PERMIT === "APPROVED"
+                                            ? "text-green-500"
+                                            : documents.PERMIT === "PENDING"
+                                            ? "text-yellow-500"
+                                            : documents.PERMIT === "DECLINED"
+                                            ? "text-red-500"
+                                            : "text-gray-500"
+                                        }`}
+                                        >
+                                        {documents.PERMIT}
+                                        </Typography>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <Typography className="text-xs font-semibold text-blue-gray-600">
                                         PHOTO
                                         </Typography>
                                         <Typography
@@ -284,7 +338,10 @@ export function OnlineRegistrationView(){
                                             documents.PAN === "APPROVED" &&
                                             documents.PHOTO === "APPROVED" &&
                                             documents.AADHAAR === "APPROVED" &&
-                                            (documents.LICENSE === "APPROVED" || documents.RC_COPY === "APPROVED")
+                                            (documents.LICENSE === "APPROVED" || documents.RC_COPY === "APPROVED") &&
+                                            documents.VEHICLE_PHOTO === "APPROVED" &&
+                                            documents.INSURANCE === "APPROVED" &&
+                                            documents.PERMIT === "APPROVED"
                                         ) {
                                             return (
                                                 <>

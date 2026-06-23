@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button, Typography } from "@material-tailwind/react";
-import { NAV_UI } from "@/utils/constants";
+import { FUTURE_FLAG, NAV_UI } from "@/utils/constants";
 
 function VendorsSubmenu({ miniSidenav }) {
   const getItemClasses = (isActive) =>
@@ -20,7 +20,7 @@ function VendorsSubmenu({ miniSidenav }) {
     switch (label) {
       case "All Cab Owners":
         // Only highlight Owners on the main owners page
-        return pathname === "/dashboard/vendors/account";
+        return pathname === "/dashboard/vendors/account/owner-onboarding-cab";
       case "All Acting Driver":
         return pathname.startsWith("/dashboard/vendors/account/drivers");
       case "All Cab List":
@@ -32,11 +32,11 @@ function VendorsSubmenu({ miniSidenav }) {
       case "Online Vehicles List":
         return pathname.startsWith("/dashboard/vendors/onlinevehicleslist");
       case "All Auto Owner":
-        return pathname.startsWith("/dashboard/vendors/account/autoview");
+        return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-auto");
       case "All Auto List":
         return pathname.startsWith("/dashboard/vendors/account/autolist");
       case "All Bike Owner":
-        return pathname.startsWith("/dashboard/vendors/account/parcel/list");
+        return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike");
       case "All Bike List":
         return (
           pathname.startsWith("/dashboard/vendors/account/parcel") &&
@@ -46,22 +46,27 @@ function VendorsSubmenu({ miniSidenav }) {
         return pathname.startsWith("/dashboard/doc-verification");
       case "All Pending Documents":
         return pathname.startsWith("/dashboard/doc-verification/pending");
+      case "Return Trip Driver Details":
       default:
         return pathname.startsWith(target);
     }
   };
 
   const items = [
-    { label: "All Cab Owners", path: "/dashboard/vendors/account", icon: "/img/owners.png" },
+    { label: "All Cab Owners", path: "/dashboard/vendors/account/owner-onboarding-cab", icon: "/img/owners.png" },
     { label: "All Acting Driver", path: "/dashboard/vendors/account/drivers", icon: "/img/acting_driver.png" },
-    { label: "All Auto Owner", path: "/dashboard/vendors/account/autoview", icon: "/img/parcel_list.png" },
-    { label: "All Bike Owner", path: "/dashboard/vendors/account/parcel/list", icon: "/img/parcel_list.png" },
+    { label: "All Auto Owner", path: "/dashboard/vendors/account/owner-onboarding-auto", icon: "/img/parcel_list.png" },
+    { label: "All Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },
     { label: "Online Vehicles List", path: "/dashboard/vendors/onlineVehiclesList", icon: "/img/vehicleslist.png" },
     { label: "All Cab List", path: "/dashboard/vendors/vehicleList", icon: "/img/vehicles.png" },
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
-              { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
-    { label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" },
-    { label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" },
+    { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
+    ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
+      ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
+      : []),
+    ...(FUTURE_FLAG.PENDING_DOCUMENTS_LIST
+      ? [{ label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" }]
+      : []),
   ];
   const rowSize = 5;
   const rows = [];

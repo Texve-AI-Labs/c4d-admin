@@ -1,8 +1,11 @@
+export const buildWeightLabel = (minKg, maxKg) => {
+  const min = toNum(minKg);
+  if (maxKg === null || maxKg === "") return `${min}+ kg`;
+  return `${min} to ${toNum(maxKg)} kg`;
+};
+
 export const defaultWeightRows = [
-  { code: "W_0_1", minKg: 0, maxKg: 1, amount: 0 },
-  { code: "W_1_5", minKg: 1, maxKg: 5, amount: 25 },
-  { code: "W_5_10", minKg: 5, maxKg: 10, amount: 45 },
-  { code: "W_10_PLUS", minKg: 10, maxKg: null, amount: 70 },
+  { code: "W_0_1", minKg: 0, maxKg: 1, label: "0 to 1 kg", amount: 0 },
 ];
 
 export const defaultSurcharge = (status = "INACTIVE", type = "FLAT", value = 0) => ({
@@ -42,10 +45,15 @@ export const createInitialParcelForm = (overrides = {}) => ({
   baseFare: "",
   baseKm: "",
   kilometerPrice: "",
+  cancelMins: "",
+  cancelCharge: "",
+  driverCancelMins: "",
+  driverFreeCancellationsPerDay: "",
+  driverCancellationCharge: "",
   peakHourEnabled: false,
   peakHour: [{ start: "", end: "", kilometerPrice: "" }],
   parcelPricing: {
-    weightSurcharge: defaultWeightRows,
+    weightSurcharge: defaultWeightRows.map((row) => ({ ...row })),
     weatherSurcharge: defaultSimpleSurcharge("ACTIVE", 20),
     handlingSurcharge: defaultSimpleSurcharge("ACTIVE", 15),
     nightSurcharge: defaultNightSurcharge("ACTIVE", "22:00", "05:00", 25),

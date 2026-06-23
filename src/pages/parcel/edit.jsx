@@ -1,14 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles, DISTRICT_LIST, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@/utils/constants';
+import { API_ROUTES, ColorStyles, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@/utils/constants';
 import { Alert, Button, Input, List, ListItem, Dialog, DialogHeader, DialogBody, Typography, Card, CardBody, Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ACCOUNT_EDIT_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
 
     return (
         <div className="relative">
@@ -34,13 +50,23 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
-                                onSelect(suggestion);
+                                const selectedText = getSuggestionText(suggestion);
+                                form.setFieldValue(field.name, selectedText);
+                                if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                             }}
                             className="hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -78,15 +104,15 @@ const DocumentUpload = ({ label, value, name, onChange, setModalData, fullDocVal
                     <label htmlFor={name} className="inline-block text-center text-white border border-gray-400 bg-blue-600 rounded-lg px-4 py-1 cursor-pointer hover:bg-blue-700 transition-colors">
                         Update
                     </label>
-                    <input
-                        type="file"
-                        accept="image/*, application/pdf"
-                        id={name}
-                        name={name}
-                        onChange={onChange}
-                        className="hidden"
-                        multiple={name !== "livePhoto" && name !== "bankStatementImage"}
-                    />
+                        <input
+                            type="file"
+                            accept="image/*, application/pdf"
+                            id={name}
+                            name={name}
+                            onChange={onChange}
+                            className="hidden"
+                            multiple={name !== "livePhoto" && name !== "bankStatementImage" && name !== "insurranceImage"}
+                        />
                 </div>
             </td>
             <td className="py-3 px-5 border-b border-blue-gray-50">
@@ -120,12 +146,14 @@ const ParcelEdit = () => {
     const [isSameAddress, setIsSameAddress] = useState(false);
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [serviceAreas, setServiceAreas] = useState([]);
     const [imagePreviews, setImagePreviews] = useState({
         aadhaarImage: null,
         livePhoto: null,
         drivingLicenseImage: null,
         panImage: null,
         rcImage: null,
+        vehiclePhotoImage: null,
         bankStatementImage: null,
         insurranceImage: null,
     });
@@ -133,6 +161,30 @@ const ParcelEdit = () => {
     useEffect(() => {
         fetchItem(id);
     }, [id]);
+
+    useEffect(() => {
+        const fetchGeoData = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+                    type: 'Service Area',
+                });
+                setServiceAreas(response?.data || []);
+            } catch (error) {
+                console.error('Error fetching service areas:', error);
+            }
+        };
+
+        fetchGeoData();
+    }, []);
+
+    const districtOptions = [...new Set(
+        serviceAreas
+            .map((area) => area?.district || area?.name)
+            .filter(Boolean)
+    )].map((district) => ({
+        id: district,
+        name: district,
+    }));
 
     const getDocumentByType = (value, type) => {
         return value.find(proof => proof.type === type) || "";
@@ -148,6 +200,7 @@ const ParcelEdit = () => {
             bankStatementImage: getDocumentByType(data?.data?.data?.Proofs || [], KYC_PROCESS.BANK_STATEMENT),
             panImage: getDocumentByType(data?.data?.data?.Proofs || [], KYC_PROCESS.PAN),
             rcImage: getDocumentByType(data?.data?.data?.Proofs || [], KYC_PROCESS.RC_COPY),
+            vehiclePhotoImage: getDocumentByType(data?.data?.data?.Proofs || [], KYC_PROCESS.VEHICLE_PHOTO),
             insurranceImage: getDocumentByType(data?.data?.data?.Proofs || [], KYC_PROCESS.INSURANCE),
         });
     };
@@ -193,6 +246,9 @@ const ParcelEdit = () => {
                 case 'drivingLicenseImage':
                     type = KYC_PROCESS.DRIVING_LICENSE;
                     break;
+                case 'vehiclePhotoImage':
+                    type = KYC_PROCESS.VEHICLE_PHOTO;
+                    break;
                 case 'panImage':
                     type = KYC_PROCESS.PAN;
                     break;
@@ -214,7 +270,7 @@ const ParcelEdit = () => {
             formData.append('accountId', String(accountIdNum));
             
             // Handle single or multiple files
-            const isSingleFile = label === "livePhoto" || label === "bankStatementImage";
+            const isSingleFile = label === "livePhoto" || label === "bankStatementImage" || label === "insurranceImage";
             
             if (files[0]) {
                 formData.append('image1', files[0]);
@@ -319,17 +375,10 @@ const ParcelEdit = () => {
         setSubmitting(false);
     };
 
-    const parseAddress = (address) => {
-        if (!address) return { street: "", taluk: "", district: "", state: "", pincode: "" };
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            pincode: "",
-        };
-    };
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
     if (loading) {
         return <div className="flex justify-center items-center h-screen"><Spinner className="h-12 w-12" /></div>;
@@ -438,7 +487,14 @@ const ParcelEdit = () => {
                                 </div>
                                 <div>
                                     <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
-                                    <Field type="text" name="district" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                    <Field as="select" name="district" className="p-2 w-full rounded-md border-gray-300 shadow-sm">
+                                        <option value="">Select District</option>
+                                        {districtOptions.map((district) => (
+                                            <option key={district.id} value={district.id}>
+                                                {district.name}
+                                            </option>
+                                        ))}
+                                    </Field>
                                 </div>
                                 <div>
                                     <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>
@@ -513,6 +569,22 @@ const ParcelEdit = () => {
                                                 onChange={(e) => handleImageUpload(e, setFieldValue, "rcImage", imagePreviews?.rcImage?.id)}
                                                 setModalData={setModalData}
                                                 fullDocVal={imagePreviews.rcImage}
+                                            />
+                                            <DocumentUpload
+                                                label="Vehicle Photo"
+                                                value={imagePreviews.vehiclePhotoImage?.image1}
+                                                name="vehiclePhotoImage"
+                                                onChange={(e) => handleImageUpload(e, setFieldValue, "vehiclePhotoImage", imagePreviews?.vehiclePhotoImage?.id)}
+                                                setModalData={setModalData}
+                                                fullDocVal={imagePreviews.vehiclePhotoImage}
+                                            />
+                                            <DocumentUpload
+                                                label="Insurance"
+                                                value={imagePreviews.insurranceImage?.image1}
+                                                name="insurranceImage"
+                                                onChange={(e) => handleImageUpload(e, setFieldValue, "insurranceImage", imagePreviews?.insurranceImage?.id)}
+                                                setModalData={setModalData}
+                                                fullDocVal={imagePreviews.insurranceImage}
                                             />
                                         </tbody>
                                     </table>

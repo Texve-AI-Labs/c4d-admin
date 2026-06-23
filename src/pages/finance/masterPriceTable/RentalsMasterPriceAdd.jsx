@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { Alert, Button } from '@material-tailwind/react';
+import { Alert, Button, Typography } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
@@ -29,13 +29,15 @@ const PRICE_SCHEMA = Yup.object().shape({
     // kilometerRoundPriceSuv: Yup.number().required('kilometer Round Price Suv  is required'),
     // kilometerRoundPriceSedan: Yup.number().required('kilometer Round Price Sedan is required'),
     
-    extraKmPrice: Yup.number().required('Additional Kilometer Price is required'),
+    // extraKmPrice: Yup.number().required('Additional Kilometer Price is required'),
     additionalMinCharge: Yup.number().required('Additional Min is required'),
     // tollCharge: Yup.number().required('Toll Charge is required'),
     // driverCharge: Yup.number().required('Driver Charge is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
     cancelMins: Yup.number().required('Cancellation Mins is required'),
     cancelCharge: Yup.number().required('Cancellation Charge is required'),
+    waitingMins: Yup.number().required('Waiting Mins is required'),
+    waitingCharge: Yup.number().required('Waiting Charge is required'),
     status: Yup.string().required('Status is required'),
 });
 
@@ -78,6 +80,8 @@ useEffect(() => {
         cancelCharge: '',
         nightCharge: '',
         status: 'ACTIVE',
+        waitingMins: Utils.convertMinutesToTimeFormat || 0,
+        waitingCharge: '',
 
         // baseFare Drop only and Round Trip
         baseFare: '',
@@ -145,6 +149,9 @@ useEffect(() => {
         acExtraKilometerRoundPriceMVP: "",
         acExtraKilometerRoundPriceSuv: "",
         acExtraKilometerRoundPriceSedan: "",
+        driverCancelMins:"",
+        driverFreeCancellationsPerDay:"",
+        driverCancellationCharge:"",
     };
 
     const onSubmit = async (values, { setSubmitting }) => {
@@ -205,6 +212,8 @@ useEffect(() => {
                 'status': values.status === "ACTIVE" ? 1 : 0,
                 "cancelMins": Utils.convertMinutesToTimeFormat(values.cancelMins),
                 "cancelCharge": Number(values.cancelCharge),
+                "waitingMins": Utils.convertMinutesToTimeFormat(values.waitingMins),
+                "waitingCharge": Number(values.waitingCharge),
                 'extraKmPrice': Number(values.extraKmPrice),
                 "price":Number(values.price),
                 "priceMVP":Number(values.priceMVP),
@@ -224,6 +233,9 @@ useEffect(() => {
                 "acKilometerPriceMVP": Number(values.acKilometerPriceMVP),
                 "acKilometerPriceSuv": Number(values.acKilometerPriceSuv),
                 "acKilometerPriceSedan": Number(values.acKilometerPriceSedan),
+              "driverCancelMins": Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+              "driverFreeCancellationsPerDay": Number(values.driverFreeCancellationsPerDay),
+              "driverCancellationCharge": Number(values.driverCancellationCharge),
             };
             const data = await ApiRequestUtils.post(API_ROUTES.ADD_RENTALS_PRICE_TABLE, reqBody);
             if (data?.success) {
@@ -288,16 +300,18 @@ useEffect(() => {
                                 <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="baseKm" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {values.type !== 'Outstation' && <div>
-                                <label className="text-sm font-medium text-gray-700">KM</label>
+                            {values.type !== 'Outstation' && (<>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Package KM</label>
                                 <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="kilometer" component="div" className="text-red-500 text-sm" />
-                            </div>}
+                            </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Additional KM Rate</label>
                                 <Field type="number" name="extraKmPrice" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="extraKmPrice" component="div" className="text-red-500 text-sm" />
                             </div>
+                            </>)}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
@@ -361,6 +375,16 @@ useEffect(() => {
                                 <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancelCharge" component="div" className="text-red-500 text-sm" />
                             </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
+                            </div>                            
                         </div>
                         
                        <div>
@@ -970,6 +994,43 @@ useEffect(() => {
               </td>
             </>
           )}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div className='overflow-x-auto m-2'>
+    <Typography className='font-semibold'>Driver Cancellation</Typography>
+    <table className="w-full border border-collapse text-sm text-center">
+      <thead>
+        <tr className="bg-primary  text-white">
+          <th>Driver Cancel Mins</th>
+          <th>Driver Free Cancellations Per Day</th>
+          <th>Driver Cancellation Charge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td className="border p-2">
+            <Field
+              type="number"
+              name="driverCancelMins"
+              className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+            />
+          </td>
+          <td className="border p-2">
+            <Field
+              type="number"
+              name="driverFreeCancellationsPerDay"
+              className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+            />
+          </td>
+          <td className="border p-2">
+            <Field
+              type="number"
+              name="driverCancellationCharge"
+              className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+            />
+          </td>
         </tr>
       </tbody>
     </table>

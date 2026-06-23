@@ -33,7 +33,7 @@ const SearchableDropdown = ({ searchVal, addVal, selected, options, onSelect, se
     const handleSearchChange = (e) => {
         const value = e.target.value;
         setSearchText(value);
-        if(value.startsWith('C4D') && value.length > 3){
+        if (value.startsWith('C4D') && value.length > 3 && typeof setSearchBookingId === 'function') {
             setSearchBookingId(value);
         }
         onSelect("");
@@ -63,7 +63,9 @@ const SearchableDropdown = ({ searchVal, addVal, selected, options, onSelect, se
     const handleClear = (e) => {
         e.stopPropagation();
         setSearchText('');
-        setSearchBookingId('')
+        if (typeof setSearchBookingId === 'function') {
+            setSearchBookingId('');
+        }
         setSelectedValue(null);
         onSelect(options);
         setIsOpen(false);

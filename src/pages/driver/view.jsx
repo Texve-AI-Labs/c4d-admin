@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Card,
   CardHeader,
@@ -31,9 +31,9 @@ const isBrowser = () => typeof window !== 'undefined';
 const getItemSafe = (key) => {
   if (!isBrowser()) return null;
   try {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   } catch (err) {
-    console.error(`Error reading localStorage key "${key}":`, err);
+    console.error(`Error reading sessionStorage key "${key}":`, err);
     return null;
   }
 };
@@ -41,20 +41,11 @@ const getItemSafe = (key) => {
 const setItemSafe = (key, value) => {
   if (!isBrowser()) return;
   try {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   } catch (err) {
-    console.error(`Error writing localStorage key "${key}":`, err);
+    console.error(`Error writing sessionStorage key "${key}":`, err);
   }
 };
- 
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
-
 export function DriverView() {
   const [drivers, setDrivers] = useState([]);
   const [alert, setAlert] = useState(false);
@@ -67,6 +58,7 @@ export function DriverView() {
   const [zoneFilter, setZoneFilter] = useState(['All']);
 const [zoneOptions, setZoneOptions] = useState([]);
   const [kycStatusCounts, setKycStatusCounts] = useState(EMPTY_KYC_STATUS_COUNTS);
+  const prevSearchRef = useRef('');
 
   const [pagination, setPagination] = useState(() => {
     const stored = getItemSafe(DRIVER_VIEW_FILTERS_KEY);
@@ -107,7 +99,7 @@ const [zoneOptions, setZoneOptions] = useState([]);
 
   const navigate = useNavigate();
  
-  // Load filters from localStorage on initial mount
+  // Load filters from sessionStorage on initial mount
   useEffect(() => {
     const stored = getItemSafe(DRIVER_VIEW_FILTERS_KEY);
     if (!stored) {
@@ -138,7 +130,7 @@ const [zoneOptions, setZoneOptions] = useState([]);
     }
   }, []);
  
-  // Save filters to localStorage whenever they change
+  // Save filters to sessionStorage whenever they change
   useEffect(() => {
     if (!filtersLoaded) return;
  
@@ -209,8 +201,7 @@ const [zoneOptions, setZoneOptions] = useState([]);
     }
   };
 
-  const getDrivers = useCallback(
-    debounce((searchQuery) => {
+  const getDrivers = useCallback((searchQuery) => {
       setPagination((prev) => {
         if (prev.search === searchQuery) return prev;
         return {
@@ -219,9 +210,7 @@ const [zoneOptions, setZoneOptions] = useState([]);
         search: searchQuery,
       };
       });
-    }, 1000),
-    []
-  );
+  }, []);
  
   useEffect(() => {
     if (!filtersLoaded) return;
@@ -230,7 +219,9 @@ const [zoneOptions, setZoneOptions] = useState([]);
 
   useEffect(() => {
     if (!filtersLoaded) return;
-    fetchDrivers(pagination.currentPage, pagination.search, true);
+    const searchChanged = prevSearchRef.current !== (pagination.search || '');
+    prevSearchRef.current = pagination.search || '';
+    fetchDrivers(pagination.currentPage, pagination.search, !searchChanged);
   }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, sourceFilter,
       serviceTypeFilter, subscriptionStatusFilter, documentTypeFilter, zoneFilter]);
  
@@ -245,7 +236,7 @@ const [zoneOptions, setZoneOptions] = useState([]);
   }, [paramsPassed, navigate, location.pathname]);
  
   const handleRefresh = () => {
-    localStorage.removeItem(DRIVER_VIEW_FILTERS_KEY);
+    sessionStorage.removeItem(DRIVER_VIEW_FILTERS_KEY);
     setPagination({
       currentPage: 1,
       totalPages: 1,

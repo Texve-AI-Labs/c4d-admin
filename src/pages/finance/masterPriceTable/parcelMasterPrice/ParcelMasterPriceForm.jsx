@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Button, Card, CardBody, Typography, Switch } from "@material-tailwind/react";
 import { ColorStyles } from "@/utils/constants";
 import { buildParcelPayload } from "./mapper";
-import { buildWeightCode, normalizeParcelVehicleType, toNum } from "./defaults";
+import { buildWeightCode, buildWeightLabel, normalizeParcelVehicleType, toNum } from "./defaults";
 import { validateParcelForm } from "./validation";
 
 const inputClass = "w-full min-w-0";
@@ -20,6 +20,31 @@ const toTitleCase = (value) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
+const normalizeSingleWeightRow = (row = {}) => {
+  const minKg = row?.minKg ?? 0;
+  const maxKg = row?.maxKg ?? 1;
+  return {
+    code: row?.code || buildWeightCode(minKg, maxKg),
+    minKg,
+    maxKg,
+    label: row?.label || buildWeightLabel(minKg, maxKg),
+    amount: row?.amount ?? 0,
+  };
+};
+
+const normalizeWeightSurcharge = (rows) => {
+  const list = Array.isArray(rows) ? rows : [];
+  return [normalizeSingleWeightRow(list[0])];
+};
+
+const normalizeParcelFormWeightRows = (nextForm) => ({
+  ...nextForm,
+  parcelPricing: {
+    ...nextForm.parcelPricing,
+    weightSurcharge: normalizeWeightSurcharge(nextForm?.parcelPricing?.weightSurcharge),
+  },
+});
+
 export default function ParcelMasterPriceForm({
   title,
   initialForm,
@@ -35,11 +60,11 @@ export default function ParcelMasterPriceForm({
   primaryButtonLabel,
   onPrimaryButtonClick,
 }) {
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(() => normalizeParcelFormWeightRows(initialForm));
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setForm(initialForm);
+    setForm(normalizeParcelFormWeightRows(initialForm));
   }, [initialForm]);
 
   const selectedServiceArea = useMemo(
@@ -83,40 +108,15 @@ export default function ParcelMasterPriceForm({
       ...prev,
       parcelPricing: {
         ...prev.parcelPricing,
-        weightSurcharge: prev.parcelPricing.weightSurcharge.map((row, i) =>
-          i === idx ? { ...row, [key]: value } : row
-        ),
-      },
-    }));
-  };
-
-  const addWeightRow = () => {
-    const list = form.parcelPricing.weightSurcharge || [];
-    const last = list[list.length - 1];
-    const nextMin = last ? toNum(last.maxKg) || toNum(last.minKg) : 0;
-    setForm((prev) => ({
-      ...prev,
-      parcelPricing: {
-        ...prev.parcelPricing,
-        weightSurcharge: [
-          ...prev.parcelPricing.weightSurcharge,
-          {
-            code: buildWeightCode(nextMin, null),
-            minKg: nextMin,
-            maxKg: null,
-            amount: 0,
-          },
-        ],
-      },
-    }));
-  };
-
-  const removeWeightRow = (idx) => {
-    setForm((prev) => ({
-      ...prev,
-      parcelPricing: {
-        ...prev.parcelPricing,
-        weightSurcharge: prev.parcelPricing.weightSurcharge.filter((_, i) => i !== idx),
+        weightSurcharge: prev.parcelPricing.weightSurcharge.map((row, i) => {
+          if (i !== idx) return row;
+          const nextRow = { ...row, [key]: value };
+          return {
+            ...nextRow,
+            code: buildWeightCode(nextRow.minKg, nextRow.maxKg),
+            label: buildWeightLabel(nextRow.minKg, nextRow.maxKg),
+          };
+        }),
       },
     }));
   };
@@ -376,12 +376,7 @@ export default function ParcelMasterPriceForm({
     );
   };
 
-  const formatWeightRangeLabel = (row) => {
-    const min = toNum(row?.minKg);
-    const max = row?.maxKg;
-    if (max === null || max === "") return `${min}+ kg`;
-    return `${min} to ${toNum(max)} kg`;
-  };
+  const formatWeightRangeLabel = (row) => buildWeightLabel(row?.minKg, row?.maxKg);
 
   return (
     <div className="p-4 mx-auto space-y-6">
@@ -485,6 +480,82 @@ export default function ParcelMasterPriceForm({
             </CardBody>
           </Card>
 
+          <Card className="rounded-none">
+            <CardBody className="space-y-4">
+              <Typography variant="h6" className="font-semibold text-gray-900">Cancellation</Typography>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Cancellation Mins</label>
+                  <UiInput
+                    className={inputClass}
+                    type="number"
+                    readOnly={readOnly}
+                    value={form.cancelMins}
+                    onChange={(e) => updateField("cancelMins", e.target.value)}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Cancellation Charge</label>
+                  <UiInput
+                    className={inputClass}
+                    type="number"
+                    readOnly={readOnly}
+                    value={form.cancelCharge}
+                    onChange={(e) => updateField("cancelCharge", e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="rounded-none">
+            <CardBody className="space-y-4 bg-white">
+              <Typography variant="h6" className="font-semibold text-gray-900">Driver Cancellation</Typography>
+              <div className="overflow-x-auto rounded-lg shadow border border-gray-300">
+                <table className="min-w-full">
+                  <thead className="bg-blue-600">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white">Driver Cancel Mins</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white">Free Cancellations / Day</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-white">Driver Cancellation Charge</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y">
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-2">
+                        <UiInput
+                          className={inputClass}
+                          type="number"
+                          readOnly={readOnly}
+                          value={form.driverCancelMins}
+                          onChange={(e) => updateField("driverCancelMins", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-6 py-2">
+                        <UiInput
+                          className={inputClass}
+                          type="number"
+                          readOnly={readOnly}
+                          value={form.driverFreeCancellationsPerDay}
+                          onChange={(e) => updateField("driverFreeCancellationsPerDay", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-6 py-2">
+                        <UiInput
+                          className={inputClass}
+                          type="number"
+                          readOnly={readOnly}
+                          value={form.driverCancellationCharge}
+                          onChange={(e) => updateField("driverCancellationCharge", e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardBody>
+          </Card>
+
           <Card  className="rounded-none">
             <CardBody className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
@@ -529,7 +600,6 @@ export default function ParcelMasterPriceForm({
             <CardBody className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
               <Typography variant="h6" className="font-semibold text-gray-900">Weight Surcharge</Typography>
-              <Button type="button" size="sm" className="bg-black" disabled={readOnly} onClick={addWeightRow}>Add Slab</Button>
             </div>
             <div className="space-y-2">
               {form.parcelPricing.weightSurcharge.map((row, idx) => (
@@ -549,11 +619,12 @@ export default function ParcelMasterPriceForm({
                     <UiInput className={inputClass} type="number" readOnly={readOnly} value={row.maxKg === null ? "" : row.maxKg} placeholder={row.maxKg === null ? "Open ended (+)" : ""} onChange={(e) => updateWeightRow(idx, "maxKg", e.target.value === "" ? null : e.target.value)} />
                   </div>
                   <div className="min-w-0">
+                    <label className="text-xs font-semibold text-gray-500 uppercase">Label</label>
+                    <UiInput className={inputClass} type="text" readOnly value={row.label || formatWeightRangeLabel(row)} disabled />
+                  </div>
+                  <div className="min-w-0">
                     <label className="text-xs font-semibold text-gray-500 uppercase">Amount</label>
                     <UiInput className={inputClass} type="number" readOnly={readOnly} value={row.amount} onChange={(e) => updateWeightRow(idx, "amount", e.target.value)} />
-                  </div>
-                  <div className="flex items-end">
-                    <Button type="button" size="sm" color="red" disabled={readOnly || form.parcelPricing.weightSurcharge.length === 1} onClick={() => removeWeightRow(idx)}>Remove</Button>
                   </div>
                 </div>
               ))}

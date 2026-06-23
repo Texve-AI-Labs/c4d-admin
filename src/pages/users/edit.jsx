@@ -41,7 +41,7 @@ const UserEdit = () => {
     const fetchItem = async (itemId) => {
         try {
             const data = await ApiRequestUtils.get(`${API_ROUTES.GET_USER_BY_ID}${itemId}`);
-            console.log('Fetched User Data:', data.data);
+            // console.log('Fetched User Data:', data.data);
             const permissionIds = data.data.permission.map((permName) => {
                 const matchingOption = PERMISSION_OPTIONS.find( (option) => option.name === permName || option.id === permName );
                 return matchingOption ? matchingOption.id : null;
@@ -107,7 +107,7 @@ const UserEdit = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white rounded-xl shadow-md w-full">
             {alert && (
                 <div className='mb-2'>
                     <Alert
@@ -131,24 +131,24 @@ const UserEdit = () => {
 
                             <div>
                                 <label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</label>
-                                <Field type="text" name="name" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="text" name="name" className="border-2 p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                             </div>
 
                             <div>
                                 <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                <Field type="tel" name="phoneNumber" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                <Field type="tel" name="phoneNumber" className="border-2 p-2 w-full rounded-md border-gray-300" maxLength={10} />
                                 <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                             </div>
 
                             <div>
                                 <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
-                                <Field type="text" name="email" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="text" name="email" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                                <Field type="text" name="password" placeholder="******" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="text" name="password" placeholder="******" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
@@ -175,7 +175,7 @@ const UserEdit = () => {
                                     displayValue="name"
                                     selectedValues={PERMISSION_OPTIONS.filter((option) => values.permission.includes(option.id) )}
                                     placeholder="Select options"
-                                    className="w-full rounded-m border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200"
+                                    className="w-full rounded-md border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200"
                                     showCheckbox={true}
                                     onSelect={(selectedList, selectedItem) => {
                                         setFieldValue(
@@ -255,7 +255,7 @@ const UserEdit = () => {
                             </Button>
                             <Button
                                 fullWidth
-                                color="black"
+                                color="blue"
                                 onClick={handleSubmit}
                                 disabled={!isValid}
                                 className='my-6 mx-2'

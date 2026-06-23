@@ -28,6 +28,7 @@ export function NotificationList() {
     totalItems: 0,
     itemsPerPage: 15,
   });
+  const [cancellingId, setCancellingId] = useState(null);
 
   const fetchNotificationList = async (page = 1, showLoader = true) => {
     try {
@@ -113,6 +114,27 @@ export function NotificationList() {
     });
   };
 
+  const handleCancelNotification = async (id) => {
+    try {
+      setCancellingId(id);
+      const response = await ApiRequestUtils.post(API_ROUTES.CANCEL_NOTIFICATION, {
+        marketingId: id,
+      });
+
+      if (response?.success) {
+        setNotificationItems((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, status: 'CANCELLED' } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to cancel notification:', error);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const generatePageButtons = () => {
     const buttons = [];
     const maxVisible = 5;
@@ -137,6 +159,34 @@ export function NotificationList() {
       );
     }
     return buttons;
+  };
+
+  const getStatusMeta = (status) => {
+    const value = String(status || '').toUpperCase();
+    if (value === 'SENT' || value === 'ACTIVE') {
+      return { label: 'Sent', className: 'text-xs text-green-700' };
+    }
+    if (value === 'PENDING') {
+      return { label: 'Pending', className: 'text-xs text-blue-700' };
+    }
+    if (value === 'CANCELLED' || value === 'INACTIVE') {
+      return { label: 'Cancelled', className: 'text-xs text-red-700' };
+    }
+    if (value === 'FAILED') {
+      return { label: 'Failed', className: 'text-xs text-red-700' };
+    }
+    return { label: '-', className: 'text-xs text-gray-700' };
+  };
+
+  const getDeliveryScheduleMeta = (deliverySchedule) => {
+    const value = String(deliverySchedule || '').toUpperCase();
+    if (value === 'SEND_NOW') {
+      return { label: 'Send Now', className: 'text-xs text-blue-700' };
+    }
+    if (value === 'SCHEDULE_LATER') {
+      return { label: 'Schedule Later', className: 'text-xs text-purple-700' };
+    }
+    return { label: '-', className: 'text-xs text-gray-700' };
   };
 
   // FilterPopover component for App and City filters
@@ -187,16 +237,16 @@ export function NotificationList() {
           </Typography>
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-max table-auto">
             <thead>
               <tr>
                 {/* <th className="border-b border-blue-gray-50 py-3 px-5 text-left">Title</th> */}
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">Type</th>
-                 <th className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Type</th>
+                 <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">
                  <div className="flex items-center gap-2">
                   
                     <FilterPopover
-                      title={<span className="text-base font-semibold text-gray-700">Time Zone</span>}
+                      title={<span className="text-sm font-semibold text-gray-700">Time Zone</span>}
                       options={[
                         { value: 'ALL', label: 'All' },
                         { value: 'MORNING', label: 'Morning' },
@@ -208,11 +258,11 @@ export function NotificationList() {
                     />
                   </div>
                 </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">
                   <div className="flex items-center justify-between">
                   
                     <FilterPopover
-                      title={<span className="text-base font-semibold text-gray-700">App</span>}
+                      title={<span className="text-sm font-semibold text-gray-700">App</span>}
                       options={[
                         { value: 'All', label: 'All' },
                         { value: 'CUSTOMER', label: 'Customer' },
@@ -223,12 +273,12 @@ export function NotificationList() {
                     />
                   </div>
                 </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">Message</th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Message</th>
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">
                   <div className="flex items-center justify-between">
                    
                     <FilterPopover
-                      title={<span className="text-base font-semibold text-gray-700">City</span>}
+                      title={<span className="text-sm font-semibold text-gray-700">City</span>}
                       options={[
                         { value: 'All', label: 'All' },
                         { value: 'Chennai', label: 'Chennai' },
@@ -241,13 +291,17 @@ export function NotificationList() {
                     />
                   </div>
                 </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">Created Date</th>
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Status</th>
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Delivery Schedule</th>
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Scheduled At</th>
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Created Date</th>
+                <th className="text-sm border-b border-blue-gray-50 py-3 px-5 text-left">Action</th>
               </tr>
             </thead>
             <tbody>
               {notification.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-3 px-5 text-center">
+                  <td colSpan="10" className="py-3 px-5 text-center">
                     No Notification List
                   </td>
                 </tr>
@@ -257,13 +311,52 @@ export function NotificationList() {
                   .filter((item) => cityFilter.includes('All') || cityFilter.includes(item.city))
                   .filter((item) => timingFilter.includes('All') || timingFilter.includes(item.timing))
                   .map((item, index) => (
-                    <tr key={item.id || index} className="border-b border-blue-gray-50">
+                    <tr key={item.id || index} className="border-b border-blue-gray-50 text-sm">
                     <td className="py-3 px-5">{item.type || '-'}</td>
                      <td className="py-3 px-5">{item.timing || '-'}</td>
                     <td className="py-3 px-5">{item.app || '-'}</td>
                     <td className="py-3 px-5">{item.message || '-'}</td>
                     <td className="py-3 px-5">{item.city || '-'}</td>
+                    <td className="py-3 px-5">
+                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 ${getStatusMeta(item.status).className}`}>
+                        {getStatusMeta(item.status).label}
+                      </span>
+                    </td>
+                    <td className="py-3 px-5">
+                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 ${getDeliveryScheduleMeta(item.deliverySchedule).className}`}>
+                        {getDeliveryScheduleMeta(item.deliverySchedule).label}
+                      </span>
+                    </td>
+                    <td className="py-3 px-5">
+                      {item?.scheduledAtUtc && moment(item.scheduledAtUtc).isValid()
+                        ? moment(item.scheduledAtUtc).format('DD-MM-YYYY / hh:mm A')
+                        : '-'}
+                    </td>
                     <td className="py-3 px-5">{moment(item?.created_at).format('DD-MM-YYYY / hh:mm A') || '-'}</td>                  
+                    <td className="py-3 px-5">
+                      <div className="flex items-center gap-2">
+                      {item.status !== 'SENT' && item.status !== 'CANCELLED' && item.status !== 'PROCESSING' && item.status !== 'FAILED' && (
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/dashboard/vendors/notification/edit/${item.id}`)}
+                          className="px-5 py-3 text-[10px] font-semibold bg-primary text-white"
+                        >
+                          Edit
+                        </Button>
+                      )}
+                      {item.status !== 'SENT' && item.status !== 'CANCELLED' && item.status !== 'PROCESSING' && item.status !== 'FAILED' && (
+                        <Button
+                          size="sm"
+                          color="red"
+                          onClick={() => handleCancelNotification(item.id)}
+                          className="px-5 py-3 text-[10px] font-semibold"
+                          disabled={cancellingId === item.id}
+                        >
+                          {cancellingId === item.id ? 'Cancelling...' : 'Cancel'}
+                        </Button>
+                      )}
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

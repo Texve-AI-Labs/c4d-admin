@@ -134,16 +134,17 @@ const DiscountView = () => {
            <Spinner className="h-10 w-10" />
           </div>
           ) : (
-            <table className="w-full min-w-[1000px] table-auto">
+            <table className="w-full min-w-[1000px] table-auto whitespace-nowrap">
               <thead>
                 <tr>
-                  <th className="py-3 px-5 text-left">Service Type</th>
-                  <th className="py-3 px-5 text-left">Offer Type</th>
-                  <th className="py-3 px-5 text-left">Title</th>
-                  <th className="py-3 px-5 text-left">Coupon Code</th>
-                  <th className="py-3 px-5 text-left">Description</th>
-                  <th className="py-3 px-5 text-left">Discount Type</th>
-                  <th className="py-3 px-5 text-left">
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Service Type</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Offer Type</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Target Mode</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Title</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Coupon Code</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Description</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Discount Type</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => handleSort('startDate')}
@@ -166,13 +167,13 @@ const DiscountView = () => {
                       </span>
                     </button>
                   </th>
-                  <th className="py-3 px-5 text-left">End Date</th>
-                  <th className="py-3 px-5 text-left">Status</th>
-                  <th className="py-3 px-5 text-left">Image</th>
-                  <th className="py-3 px-5 text-left">Premium</th>
-                  <th className="py-3 px-5 text-left">Cab Type</th>
-                  <th className="py-3 px-5 text-left">City</th>
-                  <th className="py-3 px-5 text-left">Actions</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">End Date</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Status</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Image</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Premium</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Cab Type</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">City</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,16 +188,17 @@ const DiscountView = () => {
                 ) : (
                   displayedDiscounts.map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="py-3 px-5">{serviceTypeLabels[item.serviceType] || item.serviceType}</td>
-                      <td className="py-3 px-5">{item.offerType || '-'}</td>
-                      <td className="py-3 px-5">{item.title || '-'}</td>
-                      <td className="py-3 px-5 font-semibold">
+                      <td className="py-3 px-5 whitespace-nowrap">{serviceTypeLabels[item.serviceType] || item.serviceType}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">{item.offerType || '-'}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">{item.targetMode || '-'}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">{item.title || '-'}</td>
+                      <td className="py-3 px-5 font-semibold whitespace-nowrap">
                         <div className=' text-green-600'>
                             {item.couponCode || '-'}
                         </div>
                         </td>
-                      <td className="py-3 px-5">{item.description || '-'}</td>
-                      <td className="py-3 px-5">
+                      <td className="py-3 px-5 whitespace-nowrap">{item.description || '-'}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">
                         {(() => {
                           const normalizedType = (item.discountType || (Number(item.amount) > 0 ? 'IsAmount' : 'percentage'))?.toLowerCase();
                           if (normalizedType === 'isamount' || normalizedType === 'amount' || normalizedType === 'flat') {
@@ -207,14 +209,14 @@ const DiscountView = () => {
                           return percent !== null && percent !== undefined && percent !== '' ? `${percent}%` : '-';
                         })()}
                       </td>
-                      <td className="py-3 px-5">{moment(item.startDate).format('DD-MM-YYYY ')}</td>
-                      <td className="py-3 px-5">{moment(item.endDate).format('DD-MM-YYYY ')}</td>
-                      <td className="py-3 px-5">
+                      <td className="py-3 px-5 whitespace-nowrap">{moment(item.startDate).format('DD-MM-YYYY ')}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">{moment(item.endDate).format('DD-MM-YYYY ')}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">
                         {item.isActive
                           ? <span className="text-green-600 font-semibold">Active</span>
                           : <span className="text-red-600 font-semibold">Inactive</span>}
                       </td>
-                      <td className="py-3 px-5">
+                      <td className="py-3 px-5 whitespace-nowrap">
                         {item.imageUrl ? (
                           <img
                             src={item.imageUrl}
@@ -227,9 +229,9 @@ const DiscountView = () => {
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-5">{item.isPremium ? 'Premium' : 'Not Premium'}</td>
-                      <td className="py-3 px-5">{item.cabType || item.parcelVehicleType || '-'}</td>
-                      <td className="py-3 px-5">
+                      <td className="py-3 px-5 whitespace-nowrap">{item.isPremium ? 'Premium' : 'Not Premium'}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">{item.cabType || item.parcelVehicleType || '-'}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">
                         {item.serviceArea && item.serviceArea.length > 0 ? (
                           item.serviceArea.map((area, index) => (
                             <span key={index} className="mr-2">{area}</span>
@@ -238,7 +240,7 @@ const DiscountView = () => {
                           '-'
                         )}
                       </td>
-                      <td className="py-3 px-5">
+                      <td className="py-3 px-5 whitespace-nowrap">
                         <Button
                           onClick={() =>
                             navigate(`/dashboard/finance/discountModule/edit/${item.id}`, {

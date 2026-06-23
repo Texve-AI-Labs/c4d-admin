@@ -11,7 +11,9 @@ const tabs = ['Daily', 'Weekly', 'Monthly'];
 const Reports = ({ accountId }) => {
   const [activeTab, setActiveTab] = useState('Weekly');
   const [fromDate, setFromDate] = useState(new Date(new Date().setDate(new Date().getDate() - 6)).toISOString().split('T')[0]);
+  const [updatedStartDate, setUpdatedStartDate] = useState('');
   const [toDate, setToDate] = useState(new Date().toISOString().split('T')[0]);
+  const [updatedEndDate, setUpdatedEndDate] = useState('');
   const [vehicleFilter, setVehicleFilter] = useState('All Vehicles');
   const [driverFilter, setDriverFilter] = useState('All Drivers');
   const [trips, setTrips] = useState([]);
@@ -28,6 +30,8 @@ const Reports = ({ accountId }) => {
   const [exportLoading, setExportLoading] = useState(false);
   const [userRole, setUserRole] = useState('');
   const [permsLoaded, setPermsLoaded] = useState(false);
+
+  const isUpdateDateRangeInvalid = Boolean(updatedStartDate && updatedEndDate && updatedStartDate > updatedEndDate);
 
   const [summary, setSummary] = useState({
     totalTrips: 0,
@@ -103,6 +107,22 @@ useEffect(() => {
 
   useEffect(() => {
     const fetchTrips = async () => {
+      if (isUpdateDateRangeInvalid) {
+        setTrips([]);
+        setSummary({
+          totalTrips: 0,
+          totalKm: 0,
+          fuelUsed: 0,
+          fuelCost: 0,
+          totalFare: 0,
+          profitLoss: 0,
+          totalTollCost: 0,
+          totalPermitCost: 0,
+        });
+        setError('Update From Date must be less than or equal to Update Trip To Date.');
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -114,6 +134,8 @@ useEffect(() => {
           cabId: vehicleFilter === 'All Vehicles' ? '' : vehicleFilter,
           driverId: driverFilter === 'All Drivers' ? '' : driverFilter,
         };
+        if (updatedStartDate) params.updatedStartDate = updatedStartDate;
+        if (updatedEndDate) params.updatedEndDate = updatedEndDate;
         const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_TRIP_REPORTS, params);
         // console.log("Fetched trip data:", data);
 
@@ -163,7 +185,7 @@ useEffect(() => {
     };
 
     fetchTrips();
-  }, [fromDate, toDate, vehicleFilter, driverFilter, activeTab, currentPage]);
+  }, [fromDate, toDate, vehicleFilter, driverFilter, activeTab, currentPage, updatedStartDate, updatedEndDate, isUpdateDateRangeInvalid]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -198,18 +220,27 @@ useEffect(() => {
   };
 
   const handleExportExcel = async () => {
+    if (isUpdateDateRangeInvalid) {
+      setError('Update From Date must be less than or equal to Update Trip To Date.');
+      return;
+    }
+
     try {
       setExportLoading(true);
+    const exportParams = {
+      fromDate,
+      toDate,
+      cabId: vehicleFilter === 'All Vehicles' ? '' : vehicleFilter,
+      driverId: driverFilter === 'All Drivers' ? '' : driverFilter,
+    };
+    if (updatedStartDate) exportParams.updatedStartDate = updatedStartDate;
+    if (updatedEndDate) exportParams.updatedEndDate = updatedEndDate;
+
     const response = await ApiRequestUtils.fetchExcelDownload(
-  API_ROUTES.EXPORT_EXCEL_TRIP_DETAILS,
-  0, // custID if needed, else 0
-  {
-    fromDate,
-    toDate,
-    cabId: vehicleFilter === 'All Vehicles' ? '' : vehicleFilter,
-    driverId: driverFilter === 'All Drivers' ? '' : driverFilter,
-  }
-);
+      API_ROUTES.EXPORT_EXCEL_TRIP_DETAILS,
+      0, // custID if needed, else 0
+      exportParams
+    );
 
       
       const blob = new Blob([response.data], {
@@ -280,9 +311,9 @@ useEffect(() => {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2 lg:grid-cols-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">From Date</label>
+            <label className="block text-sm font-medium text-gray-700">Trip From Date</label>
             <input
               type="date"
               value={fromDate}
@@ -291,7 +322,7 @@ useEffect(() => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">To Date</label>
+            <label className="block text-sm font-medium text-gray-700">Trip To Date</label>
             <input
               type="date"
               value={toDate}
@@ -299,6 +330,57 @@ useEffect(() => {
               className="mt-1 block w-full border-gray-300 rounded-md"
             />
           </div>
+          <div>
+            <Button
+              size="sm"
+              className="bg-orange-500 px-3 py-1 text-xs text-white shadow-none"
+              onClick={() => {
+                setFromDate('');
+                setToDate('');
+                setCurrentPage(1);
+              }}
+            >
+              Clear 
+              {/* Trip Dates */}
+            </Button>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Updated Start Date</label>
+            <input
+              type="date"
+              value={updatedStartDate}
+              onChange={(e) => setUpdatedStartDate(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Updated End Date</label>
+            <input
+              type="date"
+              value={updatedEndDate}
+              onChange={(e) => setUpdatedEndDate(e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md"
+            />
+          </div>
+          <div>
+            <Button
+              size="sm"
+              className="bg-indigo-500 px-3 py-1 text-xs text-white shadow-none"
+              onClick={() => {
+                setUpdatedStartDate('');
+                setUpdatedEndDate('');
+                setCurrentPage(1);
+                setError(null);
+              }}
+            >
+              Clear 
+              {/* Updated Dates */}
+            </Button>
+          </div>
+          
+          
+        </div>
+        <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Vehicle Number</label>
             {loadingVehicles ? (
@@ -366,7 +448,8 @@ useEffect(() => {
         </div>
         <div className="weekly-report">
           <h3 className="text-lg font-semibold mb-4 text-center bg-primary-900 text-white p-2 rounded" style={{ width: '100%' }}>
-            Root Cabs Report - {fromDate} to {toDate}</h3>
+            Root Cabs Report - {fromDate} to {toDate}
+          </h3>
           {loading ? (
             <div className="flex justify-center items-center">
               <Spinner className="h-12 w-12" />

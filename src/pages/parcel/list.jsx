@@ -96,16 +96,14 @@ export function ParcelDetailsList({ id = 0 }) {
         currentPage: 1,
         search: searchQuery,
       }));
-      fetchParcelList(1, searchQuery, true);
     }, 1000),
-    [fetchParcelList]
+    []
   );
 
   // Handle page change
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
       setPagination((prev) => ({ ...prev, currentPage: page }));
-      fetchParcelList(page, pagination.search, true);
     }
   };
 

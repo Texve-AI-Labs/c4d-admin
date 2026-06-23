@@ -3,6 +3,8 @@ import Swal from "sweetalert2";
 const FALLBACK_ERROR_MESSAGE = "Something went wrong. Please try again.";
 const TOKEN_REPLACEMENTS = {
   TIER_RULES: "Tier Rules",
+  ONLINE_HOURS_RULES: "Online Hours Rules",
+  SERVICE_TRIP_RULES: "Service Trip Rules",
   SILVER: "Silver",
   GOLD: "Gold",
   ELITE: "Elite",

@@ -2,14 +2,40 @@ import React, { useState, useEffect } from 'react';
 // import Select from 'react-select';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, DISTRICT_LIST, STATE_LIST, THALUK_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, STATE_LIST, THALUK_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
 import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import { Alert, Button, Dialog, DialogHeader, DialogBody, Typography, Card, CardBody, Input, List, ListItem, Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from "react-router-dom";
 import Select from 'react-select'
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const getPrimaryLabel = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (suggestion && typeof suggestion === 'object') {
+            return suggestion.title || suggestion.name || suggestion.label || '';
+        }
+        return '';
+    };
+    const getSuggestionLabel = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (suggestion && typeof suggestion === 'object') {
+            return (
+                suggestion.fullText ||
+                suggestion.name ||
+                suggestion.address ||
+                suggestion.label ||
+                suggestion.title ||
+                suggestion.subtitle ||
+                suggestion.formatted_address ||
+                suggestion.description ||
+                suggestion.display_name ||
+                ''
+            );
+        }
+        return '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -41,14 +67,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
+                                const selectedValue = getSuggestionLabel(suggestion);
+                                form.setFieldValue(field.name, selectedValue);
                                 onSelect(suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
                             }}
                             className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-semibold text-gray-900">
+                                    {getPrimaryLabel(suggestion) || getSuggestionLabel(suggestion)}
+                                </Typography>
+                                {typeof suggestion === 'object' && suggestion?.fullText ? (
+                                    <Typography variant="small" className="text-gray-600 text-xs">
+                                        {suggestion.fullText}
+                                    </Typography>
+                                ) : null}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -68,6 +104,7 @@ const AccountAdd = (props) => {
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [isSameAddress, setIsSameAddress] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [serviceAreas, setServiceAreas] = useState([]);
     const [ownerAdded, setOwnerAdded] = useState({
         ownerId: "",
         value: false
@@ -78,9 +115,12 @@ const AccountAdd = (props) => {
         policeClearance: null,
         livePhoto: null,
         drivingLicenseImage: null,
+        vehiclePhoto: null,
         consentForm: null,
         panImage: null,
         bankStatementImage: null,
+        insurance: null,
+        permit: null,
     });
 
     const initialValues = {
@@ -96,6 +136,21 @@ const AccountAdd = (props) => {
         state: "",
         pincode: "",
     };
+
+    useEffect(() => {
+        const fetchGeoData = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+                    type: 'Service Area',
+                });
+                setServiceAreas(response?.data || []);
+            } catch (error) {
+                console.error('Error fetching service areas:', error);
+            }
+        };
+
+        fetchGeoData();
+    }, []);
 
     const onSubmit = async (values, { setSubmitting, setFieldError }) => {
         // console.log('Form submission started with values:', values);
@@ -138,9 +193,13 @@ const AccountAdd = (props) => {
         setSubmitting(false);
     };
 
-    const districtOptions = DISTRICT_LIST.map(district => ({
-        id: district.value,
-        name: district.label
+    const districtOptions = [...new Set(
+        serviceAreas
+            .map((area) => area?.district || area?.name)
+            .filter(Boolean)
+    )].map((district) => ({
+        id: district,
+        name: district
     }));
 
     const thalukOptions = THALUK_LIST.map(thaluk => ({
@@ -177,7 +236,7 @@ const AccountAdd = (props) => {
                             name={name}
                             onChange={onChange}
                             className="hidden"
-                            multiple={name !== "livePhoto" && name !== "bankStatement"}
+                            multiple={name !== "livePhoto" && name !== "bankStatement" && name !== "insurance" && name !== "permit"}
                         />
                     </div>
                 </td>
@@ -187,7 +246,7 @@ const AccountAdd = (props) => {
                             variant="small"
                             className="font-semibold underline cursor-pointer text-primary-900"
                             onClick={() => {
-                                if (label === 'Live Photo' || label === 'Bank Statement') {
+                                if (label === 'Live Photo' || label === 'Bank Statement' || label === 'Insurance' || label === 'Permit') {
                                     setModalData({
                                         image1: fullDocVal?.image1
                                     });
@@ -288,17 +347,43 @@ const AccountAdd = (props) => {
                 setFieldValue(label, uploadedFiles);
             }
 
-
-
-            const type = label === 'aadhaarImage' ? KYC_PROCESS.AADHAAR : label === 'rc' ? KYC_PROCESS.RC_COPY : label === 'drivingLicenseImage' ? KYC_PROCESS.DRIVING_LICENSE : label === 'panImage' ? KYC_PROCESS.PAN : KYC_PROCESS.LIVE_PHOTO;
+            let type = "";
+            switch (label) {
+                case "aadhaarImage":
+                    type = KYC_PROCESS.AADHAAR;
+                    break;
+                case "rc":
+                    type = KYC_PROCESS.RC_COPY;
+                    break;
+                case "drivingLicenseImage":
+                    type = KYC_PROCESS.DRIVING_LICENSE;
+                    break;
+                case "vehiclePhoto":
+                    type = KYC_PROCESS.VEHICLE_PHOTO;
+                    break;
+                case "panImage":
+                    type = KYC_PROCESS.PAN;
+                    break;
+                case "insurance":
+                    type = KYC_PROCESS.INSURANCE;
+                    break;
+                case "permit":
+                    type = KYC_PROCESS.PERMIT;
+                    break;
+                default:
+                    break;
+            }
             const formData = new FormData();
+            const isSingleFileDoc = label === "insurance" || label === "permit";
 
             formData.append('image1', files[0]);
-            formData.append('extImage1', files[0].name.split('.')[1]);
+            formData.append('extImage1', files[0].name.split('.').pop());
             formData.append('fileTypeImage1', files[0].type);
+            if (files[1] && !isSingleFileDoc) {
             formData.append('image2', files[1]);
-            formData.append('extImage2', files[1].name.split('.')[1]);
+            formData.append('extImage2', files[1].name.split('.').pop());
             formData.append('fileTypeImage2', files[1].type);
+            }
             formData.append('type', type);
             formData.append('accountId', ownerAdded?.ownerId);
 
@@ -417,8 +502,7 @@ const AccountAdd = (props) => {
             return;
         }
 
-        const parsedAddress = parseAddress(place.formatted_address);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(place.formatted_address, place.address_components);
 
         setFieldValue("address", place.formatted_address);
 
@@ -431,29 +515,11 @@ const AccountAdd = (props) => {
         }
     };
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     return (
         <div className="p-4">
@@ -753,15 +819,32 @@ const AccountAdd = (props) => {
                                                     fullDocVal={imagePreviews.rc}
                                                     image2={imagePreviews.rc?.image2}
                                                     />
-                                            {values.type !== "Company" && values.type !== "Individual" && (
-                                            <>
+                                                    <DocumentUpload
+                                                    label="Vehicle Photo"
+                                                    value={imagePreviews.vehiclePhoto?.image1}
+                                                    name="vehiclePhoto"
+                                                    onChange={(e) => handleImageUpload(e, setFieldValue, "vehiclePhoto")}
+                                                    setModalData={setModalData}
+                                                    fullDocVal={imagePreviews.vehiclePhoto}
+                                                    image2={imagePreviews.vehiclePhoto?.image2}
+                                                    />
                                                     <DocumentUpload
                                                         label="Insurance"
-                                                        value={values.insurance}
+                                                        value={imagePreviews.insurance?.image1}
                                                         name="insurance"
-                                                        onChange={(e) => handleUpload(e, setFieldValue, "insurance")}
+                                                        onChange={(e) => handleImageUpload(e, setFieldValue, "insurance")}
                                                         setModalData={setModalData}
+                                                        fullDocVal={imagePreviews.insurance}
                                                     />
+                                                    <DocumentUpload
+                                                        label="Permit"
+                                                        value={imagePreviews.permit?.image1}
+                                                        name="permit"
+                                                        onChange={(e) => handleImageUpload(e, setFieldValue, "permit")}
+                                                        setModalData={setModalData}
+                                                        fullDocVal={imagePreviews.permit}
+                                                    />
+                                                    {values.type !== "Company" && values.type !== "Individual" && (
                                                     <DocumentUpload
                                                         label="Bank Statement"
                                                         value={imagePreviews.bankStatement?.image1}
@@ -771,7 +854,6 @@ const AccountAdd = (props) => {
                                                         fullDocVal={imagePreviews.bankStatement}
                                                         image2={imagePreviews.bankStatement?.image2}
                                                     />
-                                            </>
                                             )}
                                         </tbody>
                                         </table>

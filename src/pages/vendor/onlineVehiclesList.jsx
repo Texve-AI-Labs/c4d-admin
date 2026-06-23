@@ -40,12 +40,14 @@ export function OnlineVehiclesList({ id = 0 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [driverIds, setDriverIds] = useState([]);
   const navigate = useNavigate();
+  const prevSearchRef = useRef('');
 
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: 15,
+    search: '',
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const driverType = typeFilter[0] === 'All' ? "All" : typeFilter[0];
@@ -113,8 +115,8 @@ export function OnlineVehiclesList({ id = 0 }) {
     }
   };
 
-  const fetchCabList = async (page = 1, search = searchQuery) => {
-    setLoading(true);
+  const fetchCabList = async (page = 1, search = '', showLoader = true) => {
+    if (showLoader) setLoading(true);
     try {
       const params = {
         isToday: 'true',
@@ -148,6 +150,7 @@ export function OnlineVehiclesList({ id = 0 }) {
           totalPages: data?.pagination?.totalPages || 1,
           totalItems: data?.pagination?.totalItems || 0,
           itemsPerPage: data?.pagination?.itemsPerPage || 15,
+          search: search.trim(),
         });
       } else {
         console.error('API request failed:', data?.message);
@@ -155,7 +158,7 @@ export function OnlineVehiclesList({ id = 0 }) {
     } catch (error) {
       console.error('Error fetching vehicle list:', error);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
@@ -168,7 +171,7 @@ export function OnlineVehiclesList({ id = 0 }) {
     if (value) {
       const intervalSeconds = parseInt(value);
       intervalRef.current = setInterval(() => {
-        fetchCabList();
+        fetchCabList(pagination.currentPage, pagination.search, false);
       }, intervalSeconds * 1000);
     }
   };
@@ -180,17 +183,18 @@ export function OnlineVehiclesList({ id = 0 }) {
   };
 
   useEffect(() => {
-    fetchCabList(pagination.currentPage);
-  }, [pagination.currentPage, typeFilter]);
+    const searchChanged = prevSearchRef.current !== (pagination.search || '');
+    prevSearchRef.current = pagination.search || '';
+    fetchCabList(pagination.currentPage, pagination.search, !searchChanged);
+  }, [id, pagination.currentPage, pagination.search, typeFilter]);
 
   useEffect(() => {
-    fetchCabList();
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [id]);
+  }, []);
 
   const filteredVehicles = vehicleList.filter((v) => {
     if (typeFilter[0] === 'All') return true;
@@ -290,8 +294,7 @@ export function OnlineVehiclesList({ id = 0 }) {
 
   const debouncedFetchCabList = useRef(
     debounce((searchTerm) => {
-      setPagination(prev => ({ ...prev, currentPage: 1 }));
-      fetchCabList(1, searchTerm);
+      setPagination(prev => ({ ...prev, currentPage: 1, search: searchTerm.trim() }));
     }, 600)
   ).current;
 
@@ -330,7 +333,7 @@ export function OnlineVehiclesList({ id = 0 }) {
             <button
               onClick={() => {
                 setSearchQuery('');
-                debouncedFetchCabList('')
+                setPagination((prev) => ({ ...prev, currentPage: 1, search: '' }));
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-red-600 text-xl font-bold"
             >

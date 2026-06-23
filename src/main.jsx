@@ -15,15 +15,25 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@material-tailwind/react";
 import { MaterialTailwindControllerProvider } from "@/context";
+import { setupGlobalAutocompleteOff } from "@/utils/autocompleteUtils";
 import "../public/css/tailwind.css";
 // import { Provider } from "react-redux";
 // import store from "./pages/redux/store";
+
+function GlobalAutocompleteOff() {
+  React.useEffect(() => {
+    return setupGlobalAutocompleteOff();
+  }, []);
+
+  return null;
+}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider>
         <MaterialTailwindControllerProvider>
+          <GlobalAutocompleteOff />
           {/* <Provider store={store}> */}
           <App />
           {/* </Provider> */}

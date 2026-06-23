@@ -53,7 +53,7 @@ const CombineAdd = () => {
   useEffect(() => {
     const fetchGeoData = async () => {
       try {
-        const response = await ApiRequestUtils.getWithQueryParam('/geo-markings', {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
           type: 'Service Area',
         });
         setServiceAreas(response?.data || []);
@@ -88,7 +88,7 @@ const CombineAdd = () => {
   ];
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add New</h2>
       {error && (
         <Typography color="red" className="text-center mb-4">

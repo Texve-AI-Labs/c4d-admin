@@ -43,7 +43,7 @@ import { SubscriptionView } from './pages/subscription/view';
 import SubscriptionAdd from "./pages/subscription/add";
 import AllBookingsLists from "./pages/booking/allBookingLists";
 import { PendingDocList } from "./pages/docVerification/pendingDocList";
-import { BOOKING_SERVICE_TYPE } from "./utils/constants";
+import { BOOKING_FEATURES, BOOKING_SERVICE_TYPE } from "./utils/constants";
 import { AllVehicles } from "./pages/vendor";
 import { CabSubscriptionView } from "./pages/finance/subscription/cab-subscription-view";
 import CabSubscriptionAdd from "./pages/finance/subscription/cab-subscription-add";
@@ -75,14 +75,17 @@ import RentalsMasterPriceEdit from "./pages/finance/masterPriceTable/RentalsMast
 import GeoMarkings from "./pages/geoMarkings/geoMarkings";
 import NotificationList from "./pages/vendor/notificationList";
 import NotificationListApp from "./pages/vendor/notificationadd";
+import NotificationListEdit from "./pages/vendor/notificationEdit";
 import DriverIncentiveList from "./pages/marketing/DriverIncentive/list";
 import DriverIncentiveEdit from "./pages/marketing/DriverIncentive/edit";
 import DriverIncentiveAdd from "./pages/marketing/DriverIncentive/add";
+import SkipLogs from "./pages/marketing/skipLogs";
 import InstantReward from "./pages/vendor/instantReward";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
 import DriverNotificationListEdit from "./pages/vendor/driverNotificationEdit";
+import DriverReturnTripsList from "./pages/vendor/driverReturnTripsList";
 import VersionControlList from "./pages/versionControl/VersionControlList";
 import VersionControlEdit from "./pages/versionControl/VersionControlEdit";
 import DiscountView from "./pages/discountModule/view";
@@ -91,6 +94,10 @@ import DiscountAdd from "./pages/discountModule/add";
 import GstView from "./pages/GST/view";
 import GstAdd from "./pages/GST/add";
 import GstEdit from "./pages/GST/edit";
+import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
+import DriverFeedbackEdit from "./pages/GST/driverFeedbackEdit";
+import LuggagePolicyAdd from "./pages/GST/luggagePolicyAdd";
+import LuggagePolicyEdit from "./pages/GST/luggagePolicyEdit";
 import BannerView from "./pages/bannerImage/view ";
 import AddBanner from "./pages/bannerImage/add";
 import TestimoinalView from "./pages/testimoinal/view";
@@ -113,6 +120,7 @@ import ParcelDetailsList from "./pages/parcel/list";
 import ParcelCabAdd from "./pages/cab/addParcelCab";
 import ParcelCabDetails from "./pages/cab/parcelCabDetails";
 import ParcelCabEdit from "./pages/cab/parcelCabEdit";
+import CabAddNew from "./pages/cab/new/add";
 import ParcelMasterPriceAdd from "./pages/finance/masterPriceTable/ParcelMasterPriceTableAdd";
 import ParcelMasterPriceEdit from "./pages/finance/masterPriceTable/ParcelMasterPriceTableEdit";
 import ParcelMasterPriceDetails from "./pages/finance/masterPriceTable/ParcelMasterPriceTableDetails";
@@ -131,6 +139,10 @@ import CustomerDiscountList from "./pages/finance/customerDiscount/list";
 import DriverOfferList from "./pages/finance/driverOffer/DriverOfferList";
 import DriverOfferAdd from "./pages/finance/driverOffer/add";
 import DriverOfferAssign from "./pages/finance/driverOffer/DriverOfferAssign";
+import DriverBonusList from "./pages/finance/driverBonus/list";
+import DriverBonusAdd from "./pages/finance/driverBonus/add";
+import DriverBonusEdit from "./pages/finance/driverBonus/edit";
+import DriverBonusDetails from "./pages/finance/driverBonus/details";
 import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
@@ -142,6 +154,31 @@ import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
 import DriverMonitoringList from "./pages/DriverEngagementModule/DriverMonitoring/list";
 import IncentivePayoutList from "./pages/DriverEngagementModule/IncentivePayout/list";
 import DriverEngagementAuditLogs from "./pages/DriverEngagementModule/AuditLogs/list";
+import AccountList from "./pages/account/owner-onboarding-cab/list";
+import AddAccountNew from "./pages/account/owner-onboarding-cab/add";
+import AccountDocuments from "./pages/account/owner-onboarding-cab/documents";
+import VehicleDocuments from "./pages/account/owner-onboarding-cab/vehicleDocuments";
+import AccountOnboardingDetails from "./pages/account/owner-onboarding-cab/accountDetails";
+import VehicleOnboardingDetails from "./pages/account/owner-onboarding-cab/vehicleDetails";
+import CompletedOnboardingDetails from "./pages/account/owner-onboarding-cab/completedDetails";
+import OwnerOnboardingAutoList from "./pages/account/owner-onboarding-auto/list";
+import OwnerOnboardingAutoAdd from "./pages/account/owner-onboarding-auto/add";
+import OwnerOnboardingAutoDocuments from "./pages/account/owner-onboarding-auto/documents";
+import OwnerOnboardingAutoVehicleDocuments from "./pages/account/owner-onboarding-auto/vehicleDocuments";
+import OwnerOnboardingAutoAccountDetails from "./pages/account/owner-onboarding-auto/accountDetails";
+import OwnerOnboardingAutoVehicleDetails from "./pages/account/owner-onboarding-auto/vehicleDetails";
+import OwnerOnboardingAutoCompletedDetails from "./pages/account/owner-onboarding-auto/completedDetails";
+import OwnerOnboardingAutoCreation from "./pages/account/owner-onboarding-auto/autoCreation";
+import OwnerOnboardingBikeList from "./pages/account/owner-onboarding-bike/list";
+import OwnerOnboardingBikeAdd from "./pages/account/owner-onboarding-bike/add";
+import OwnerOnboardingBikeDocuments from "./pages/account/owner-onboarding-bike/documents";
+import OwnerOnboardingBikeVehicleDocuments from "./pages/account/owner-onboarding-bike/vehicleDocuments";
+import OwnerOnboardingBikeAccountDetails from "./pages/account/owner-onboarding-bike/accountDetails";
+import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-bike/vehicleDetails";
+import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
+import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
+import DriverCancellationHistoryList from "./pages/user/CancelltionHistory/list";
+import AdminDiscountHistory from "./pages/support/adminDiscountHistory";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -288,9 +325,25 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "marketing edit",
+        path: "/vendors/notification/edit/:id",
+        element: <NotificationListEdit />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "customer notification",
         path: "/vendors/customerNotificationList",
         element: <CombineView />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "skip logs",
+        path: "/vendors/skip-logs",
+        element: <SkipLogs />,
         display: true,
         permission: "Marketing",
       },
@@ -483,6 +536,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver feedback add",
+        path: "/finance/driver-feedback/add",
+        element: <DriverFeedbackAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver feedback edit",
+        path: "/finance/driver-feedback/edit/:id",
+        element: <DriverFeedbackEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Luggage policy add",
+        path: "/finance/luggage-policy/add",
+        element: <LuggagePolicyAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Luggage policy edit",
+        path: "/finance/luggage-policy/edit/:id",
+        element: <LuggagePolicyEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Banner image view",
         path: "/user/bannerimgView",
         element: <BannerView />,
@@ -511,6 +596,14 @@ export const routes = [
         path: "/users",
         element: <UserView />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Cancellation History",
+        path: "/admin/driver-cancellation-history",
+        element: <DriverCancellationHistoryList />,
+        display: false,
         permission: "Users",
       },
       {
@@ -589,6 +682,206 @@ export const routes = [
         element: <AccountView />,
         display: true,
         permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add Account New",
+        path: "/vendors/account/owner-onboarding-cab/add",
+        element: <AddAccountNew />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account Documents",
+        path: "/vendors/account/owner-onboarding-cab/documents/:id",
+        element: <AccountDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vehicle Documents",
+        path: "/vendors/account/owner-onboarding-cab/vehicle-documents/:id",
+        element: <VehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Add New Cab",
+        path: "/vendors/account/owner-onboarding-cab/cab/add/:id",
+        element: <CabAddNew />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account List",
+        path: "/vendors/account/owner-onboarding-cab",
+        element: <AccountList />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Account Onboarding Details",
+        path: "/vendors/account/owner-onboarding-cab/details/account/:id",
+        element: <AccountOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vehicle Onboarding Details",
+        path: "/vendors/account/owner-onboarding-cab/details/vehicle/:id",
+        element: <VehicleOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Completed Onboarding Details",
+        path: "/vendors/account/owner-onboarding-cab/details/completed/:id",
+        element: <CompletedOnboardingDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto List",
+        path: "/vendors/account/owner-onboarding-auto",
+        element: <OwnerOnboardingAutoList />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Add",
+        path: "/vendors/account/owner-onboarding-auto/add",
+        element: <OwnerOnboardingAutoAdd />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Documents",
+        path: "/vendors/account/owner-onboarding-auto/documents/:id",
+        element: <OwnerOnboardingAutoDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Vehicle Documents",
+        path: "/vendors/account/owner-onboarding-auto/vehicle-documents/:id",
+        element: <OwnerOnboardingAutoVehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Account Details",
+        path: "/vendors/account/owner-onboarding-auto/details/account/:id",
+        element: <OwnerOnboardingAutoAccountDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Vehicle Details",
+        path: "/vendors/account/owner-onboarding-auto/details/vehicle/:id",
+        element: <OwnerOnboardingAutoVehicleDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Completed Details",
+        path: "/vendors/account/owner-onboarding-auto/details/completed/:id",
+        element: <OwnerOnboardingAutoCompletedDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Auto Vehicle Creation",
+        path: "/vendors/account/owner-onboarding-auto/vehicle-creation/:id",
+        element: <OwnerOnboardingAutoCreation />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike List",
+        path: "/vendors/account/owner-onboarding-bike",
+        element: <OwnerOnboardingBikeList />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Add",
+        path: "/vendors/account/owner-onboarding-bike/add",
+        element: <OwnerOnboardingBikeAdd />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Documents",
+        path: "/vendors/account/owner-onboarding-bike/documents/:id",
+        element: <OwnerOnboardingBikeDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Documents",
+        path: "/vendors/account/owner-onboarding-bike/vehicle-documents/:id",
+        element: <OwnerOnboardingBikeVehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Account Details",
+        path: "/vendors/account/owner-onboarding-bike/details/account/:id",
+        element: <OwnerOnboardingBikeAccountDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Details",
+        path: "/vendors/account/owner-onboarding-bike/details/vehicle/:id",
+        element: <OwnerOnboardingBikeVehicleDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Completed Details",
+        path: "/vendors/account/owner-onboarding-bike/details/completed/:id",
+        element: <OwnerOnboardingBikeCompletedDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Vehicle Creation",
+        path: "/vendors/account/owner-onboarding-bike/vehicle-creation/:id",
+        element: <OwnerOnboardingBikeCreation />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Return Trip Driver Details",
+        path: "/vendors/driver-return-trips",
+        element: <DriverReturnTripsList />,
+        display: true,
+        permission: "All bookings",
       },
 
       {
@@ -695,6 +988,14 @@ export const routes = [
           display: false,
           permission: "All bookings",
         },
+        {
+        icon: <UserIcon {...icon} />,
+        name: "Return Trips Records",
+        path: "/booking/list/returntrips",
+        element: <AllBookingsLists type={BOOKING_SERVICE_TYPE.RETURN_TRIPS} />,
+        display: false,
+        permission: "All bookings",
+      },
       {
         icon: <UserIcon {...icon} />,
         name: "Document Verification",
@@ -804,6 +1105,38 @@ export const routes = [
         name: "Cash Back Edit",
         path: "/finance/cash-back/edit/:id",
         element: <CashBackEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus List",
+        path: "/finance/driver-bonus/list",
+        element: <DriverBonusList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus Add",
+        path: "/finance/driver-bonus/add",
+        element: <DriverBonusAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus Edit",
+        path: "/finance/driver-bonus/edit/:id",
+        element: <DriverBonusEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Bonus Details",
+        path: "/finance/driver-bonus/details/:id",
+        element: <DriverBonusDetails />,
         display: false,
         permission: "Users",
       },
@@ -1099,8 +1432,16 @@ export const routes = [
         {
           icon: <UserIcon {...icon} />,
           name: "bike",
-          path: "/vendors/account/parcel/allVehicles/add",
+          path: "/vendors/account/parcel/allVehicles/add/old",
           element: <ParcelCabAdd />,
+          display: true,
+          permission: "Vendors"
+        },
+         {
+          icon: <UserIcon {...icon} />,
+          name: "bike",
+          path: "/vendors/account/parcel/allVehicles/add",
+          element: <OwnerOnboardingBikeCreation />,
           display: true,
           permission: "Vendors"
         },
@@ -1202,6 +1543,16 @@ export const routes = [
         display: true,
         permission: "Support"
       },
+      ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
+        ? [{
+            icon: <UserIcon {...icon} />,
+            name: "Admin Discount History",
+            path: "/support/admin-discount-history",
+            element: <AdminDiscountHistory />,
+            display: true,
+            permission: "Support"
+          }]
+        : []),
       {
         icon: <UserIcon {...icon} />,
         name: "exotel calls",

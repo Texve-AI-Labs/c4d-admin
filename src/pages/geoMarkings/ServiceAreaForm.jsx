@@ -65,17 +65,15 @@ const ServiceAreaForm = ({
 
   // Fix: Handle both string and array for highlightedService
   const initialHighlighted = useMemo(() => {
-    if (!initialData?.highlightedService) return '';
+    if (!initialData?.highlightedService) return [];
     if (typeof initialData.highlightedService === 'string') {
       return initialServiceTypes.includes(initialData.highlightedService)
-        ? initialData.highlightedService
-        : '';
+       ? [initialData.highlightedService]: [];
     }
     if (Array.isArray(initialData.highlightedService)) {
-      const valid = initialData.highlightedService.find(hs => initialServiceTypes.includes(hs));
-      return valid || '';
+      return initialData.highlightedService.filter((hs) => initialServiceTypes.includes(hs));
     }
-    return '';
+    return [];
   }, [initialData?.highlightedService, initialServiceTypes]);
 
   const initialNewServices = useMemo(() => {
@@ -96,7 +94,7 @@ const ServiceAreaForm = ({
     parcelSubServices: initialParcelSubServices,
     services: initialServiceTypes,
     quickServices: initialQuickServices,
-    highlightedService: initialHighlighted, // ← Now string (single value)
+    highlightedService: initialHighlighted,
     newServices: initialNewServices,
   });
 
@@ -106,6 +104,7 @@ const ServiceAreaForm = ({
   const [parcelSubServicesError, setParcelSubServicesError] = useState(null);
   const [servicesError, setServicesError] = useState(null);
   const [quickServiceError, setQuickServiceError] = useState(null);
+  const [highlightedServiceError, setHighlightedServiceError] = useState(null);
   const [newServicesError, setNewServicesError] = useState(null);
 
   const [isSubmittingFull, setIsSubmittingFull] = useState(false);
@@ -148,8 +147,8 @@ const ServiceAreaForm = ({
     typeof value === 'string' && /^#([0-9A-Fa-f]{6})$/.test(value);
 
   const validateServices = (arr) => {
-    if (arr.length < 4) {
-      setServicesError('Please select at least 4 Service Types');
+    if (arr.length < 3) {
+      setServicesError('Please select at least 3 Service Types');
       return false;
     }
     setServicesError(null);
@@ -157,11 +156,20 @@ const ServiceAreaForm = ({
   };
 
   const validateQuickServices = (arr) => {
-    if (arr.length !== 4) {
-      setQuickServiceError('Please select exactly 4 Quick Services');
+    if (arr.length !== 3) {
+      setQuickServiceError('Please select exactly 3 Quick Services');
       return false;
     }
     setQuickServiceError(null);
+    return true;
+  };
+
+  const validateHighlightedServices = (arr) => {
+    if (arr.length !== 1) {
+      setHighlightedServiceError('Please select exactly 1 Highlighted Services');
+      return false;
+    }
+    setHighlightedServiceError(null);
     return true;
   };
 
@@ -191,9 +199,8 @@ const ServiceAreaForm = ({
     const hadParcel = formData.services.includes(PARCEL_SERVICE_TYPE);
     const hasParcel = values.includes(PARCEL_SERVICE_TYPE);
     const filteredQuick = formData.quickServices.filter((qs) => values.includes(qs));
-    const newHighlighted = values.includes(formData.highlightedService)
-      ? formData.highlightedService
-      : '';
+    const filteredHighlighted = (formData.highlightedService || [])
+      .filter((hs) => values.includes(hs));
     const nextParcelSubServices = hasParcel
       ? hadParcel
         ? formData.parcelSubServices
@@ -205,7 +212,7 @@ const ServiceAreaForm = ({
       services: values,
       parcelSubServices: nextParcelSubServices,
       quickServices: filteredQuick,
-      highlightedService: newHighlighted,
+      highlightedService: filteredHighlighted,
     }));
 
     if (!hasParcel) {
@@ -213,6 +220,7 @@ const ServiceAreaForm = ({
     }
     validateServices(values);
     validateQuickServices(filteredQuick);
+    validateHighlightedServices(filteredHighlighted);
   };
   const handleParcelSubServicesChange = (selected) => {
     const values = selected ? selected.map((s) => s.value) : [];
@@ -230,10 +238,12 @@ const ServiceAreaForm = ({
   };
 
   const handleHighlightedChange = (selected) => {
+    const values = selected ? selected.map((s) => s.value) : [];
     setFormData((prev) => ({
       ...prev,
-      highlightedService: selected ? selected.value : '',
+      highlightedService: values,
     }));
+    validateHighlightedServices(values);
   };
 
   const handleNewServiceSelectChange = (selected) => {
@@ -317,6 +327,7 @@ const ServiceAreaForm = ({
     setParcelSubServicesError(null);
     setServicesError(null);
     setQuickServiceError(null);
+    setHighlightedServiceError(null);
 
     let hasError = false;
 
@@ -340,6 +351,7 @@ const ServiceAreaForm = ({
 
     if (!validateServices(formData.services)) hasError = true;
     if (!validateQuickServices(formData.quickServices)) hasError = true;
+    if (!validateHighlightedServices(formData.highlightedService || [])) hasError = true;
 
     if (!coordinates || coordinates.length < 3) {
       setError('Please draw a valid polygon with at least 3 points');
@@ -382,7 +394,7 @@ const ServiceAreaForm = ({
         description: formData.description,
         services: formData.services,
         quickServices: formData.quickServices,
-        highlightedService: formData.highlightedService || null,
+        highlightedService: formData.highlightedService,
         newServices: { data: cleanNewServices },
         coordinates,
       };
@@ -456,7 +468,7 @@ const ServiceAreaForm = ({
             Service Types <span className="text-red-500">*</span>
           </label>
           <Typography variant="small" color="gray" className="mb-1">
-            Select at least 4 service types.
+            Select at least 3 service types.
           </Typography>
           <Select
             isMulti
@@ -671,7 +683,7 @@ const ServiceAreaForm = ({
             Quick Service <span className="text-red-500">*</span>
           </label>
           <Typography variant="small" color="gray" className="mb-1">
-            Select exactly 4 quick services.
+            Select exactly 3 quick services.
           </Typography>
           <Select
             isMulti
@@ -685,7 +697,7 @@ const ServiceAreaForm = ({
             placeholder={
               availableQuickOptions.length === 0
                 ? 'First select Service Types'
-                : 'Select exactly 4 quick services'
+                : 'Select exactly 3 quick services'
             }
             isDisabled={availableQuickOptions.length === 0}
             menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
@@ -705,24 +717,38 @@ const ServiceAreaForm = ({
         {/* Highlighted Service */}
         <div className="relative z-50">
           <label className="block text-sm text-gray-700 mb-1">
-            Highlighted Service <span className="text-gray-500 text-xs">(optional, max 1)</span>
+            Highlighted Service <span className="text-red-500">*</span>
           </label>
           <Select
+            isMulti
             options={availableHighlightedOptions}
-            value={
-              availableHighlightedOptions.find((opt) => opt.value === formData.highlightedService) || null
-            }
+            value={availableHighlightedOptions.filter((opt) =>
+              (formData.highlightedService || []).includes(opt.value)
+            )}
             onChange={handleHighlightedChange}
-            isClearable
+            closeMenuOnSelect={false}
             placeholder={
               availableHighlightedOptions.length === 0
                 ? 'First select Service Types'
-                : 'Select one highlighted service (optional)'
+                : 'Select highlighted services'
             }
             isDisabled={availableHighlightedOptions.length === 0}
             menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
-            styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+            styles={{
+              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              control: (base, state) => ({
+                ...base,
+                borderColor: highlightedServiceError ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
+                boxShadow: highlightedServiceError
+                  ? '0 0 0 1px #ef4444'
+                  : state.isFocused
+                    ? '0 0 0 1px #3b82f6'
+                    : 'none',
+                '&:hover': { borderColor: highlightedServiceError ? '#ef4444' : '#9ca3af' },
+              }),
+            }}
           />
+          {highlightedServiceError && <p className="text-red-500 text-xs mt-1">{highlightedServiceError}</p>}
         </div>
 
         {/* Submit */}

@@ -28,7 +28,7 @@ const ParcelCabDetails = ({ btnShow = false, noApprove = false }) => {
         address: bike?.result?.curAddress || "",
         status: bike?.result?.status || "",
         insurance: bike?.result?.insurance || "",
-        vehicleType: bike?.result?.vehicleType || "",
+        vehicleType: "BIKE",
         seater: bike?.result?.seater || "",
         modelYear: bike?.result?.modelYear || "",
         serviceArea: bike?.result?.serviceArea || bike?.result?.subZone?.parent?.name || "",
@@ -74,7 +74,7 @@ const ParcelCabDetails = ({ btnShow = false, noApprove = false }) => {
                                     <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
                                 </div>
 
-                                <div>
+                                <div className='hidden'>
                                     <label htmlFor="vehicleType" className="text-sm font-medium text-gray-700">Bike Type</label>
                                     <Field type="text" name="vehicleType" disabled className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
                                     <ErrorMessage name="vehicleType" component="div" className="text-red-500 text-sm" />

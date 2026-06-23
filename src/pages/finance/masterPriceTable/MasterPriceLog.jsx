@@ -3,6 +3,7 @@ import { Card, CardBody, Typography } from "@material-tailwind/react";
 import moment from "moment";
 import { API_ROUTES } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
+import { Utils } from "@/utils/utils";
 
 const MasterPriceLog = ({ id }) => {
     const [documentslogs, setDocumentLogs] = useState([]);
@@ -47,6 +48,14 @@ const MasterPriceLog = ({ id }) => {
         "extra_km_price": "Additional KM Rate",
         "toll_charge": "Toll Charge",
         "driver_charge": "Driver Charge",
+        "driver_cancel_mins": "Driver Cancel Mins",
+        "driver_free_cancellations_per_day": "Driver Free Cancellations / Day",
+        "driver_cancellation_charge": "Driver Cancellation Charge",
+        "driverCancelMins": "Driver Cancel Mins",
+        "driverFreeCancellationsPerDay": "Driver Free Cancellations / Day",
+        "driverCancellationCharge": "Driver Cancellation Charge",
+        "demandRules": "Demand Rules",
+        "demand_rules": "Demand Rules",
     };
 
     const formatPeakHours = (peakHours) => {
@@ -65,6 +74,21 @@ const MasterPriceLog = ({ id }) => {
             .join(", ");
     };
 
+    const formatDemandRules = (rulesRaw) => {
+        const rules = Array.isArray(rulesRaw) ? rulesRaw : [];
+        if (!rules.length) return "-";
+        return rules
+            .map((rule) => {
+                const name = rule?.name || "Rule";
+                const mode = rule?.pricingMode || "-";
+                const value = rule?.value ?? "-";
+                const priority = rule?.priority ?? "-";
+                const active = rule?.isActive ? "Active" : "Inactive";
+                return `${name} (${mode}: ${value}, priority: ${priority}, ${active})`;
+            })
+            .join(" | ");
+    };
+
 
     const formatValue = (field, value) => {
         if (value === null || value === undefined || value === "") {
@@ -75,6 +99,18 @@ const MasterPriceLog = ({ id }) => {
 
         if (normalizedField === "peak_hours") {
             return formatPeakHours(value);
+        }
+
+        if (normalizedField === "demandrules" || normalizedField === "demand_rules") {
+            return formatDemandRules(value);
+        }
+
+        if (
+            normalizedField === "cancel_mins" ||
+            normalizedField === "driver_cancel_mins" ||
+            normalizedField === "drivercancelmins"
+        ) {
+            return Utils.convertTimeFormatToMinutes(value);
         }
 
 
@@ -122,7 +158,11 @@ const MasterPriceLog = ({ id }) => {
                                     const updatedFields = Array.from(new Set([
                                         ...Object.keys(oldData || {}),
                                         ...Object.keys(newData || {}),
-                                    ]));
+                                    ])).filter((field) => {
+                                        const oldVal = oldData?.[field];
+                                        const newVal = newData?.[field];
+                                        return JSON.stringify(oldVal ?? null) !== JSON.stringify(newVal ?? null);
+                                    });
                                     const fieldsToRender = updatedFields.length ? updatedFields : ["-"];
 
                                     return fieldsToRender.map((field, fieldIndex) => {

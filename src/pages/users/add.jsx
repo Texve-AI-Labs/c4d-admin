@@ -76,7 +76,7 @@ const UserAdd = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white rounded-xl shadow-md w-full">
             {alert && (
                 <div className='mb-2'>
                     <Alert
@@ -101,24 +101,24 @@ const UserAdd = () => {
 
                             <div>
                                 <label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</label>
-                                <Field type="text" name="name" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="text" name="name" className="p-2 w-full rounded-md border-gray-300 shadow-sm border-2" />
                                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                             </div>
 
                             <div>
                                 <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                <Field type="tel" name="phoneNumber" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                <Field type="tel" name="phoneNumber" className="border-2 p-2 w-full rounded-md border-gray-300" maxLength={10} />
                                 <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                             </div>
 
                             <div>
                                 <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
-                                <Field type="text" name="email" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="text" name="email" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                                <Field type="text" name="password" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="text" name="password" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>

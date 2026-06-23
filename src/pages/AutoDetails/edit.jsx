@@ -1,14 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import { Button, Card, Alert, CardBody, Typography, Input, List, ListItem } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CAB_SCHEMA } from '@/utils/validations';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
     const [isFocused, setIsFocused] = useState(false);
+
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -39,12 +54,21 @@ const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
+                                form.setFieldValue(field.name, getSuggestionText(suggestion));
                                 setIsFocused(false);
                             }}
                             className="hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -52,6 +76,17 @@ const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
         </div>
     );
 };
+
+const validationSchema = Yup.object({
+    modelYear: Yup.string()
+        .required('Year of Model is required')
+        .matches(/^\d{4}$/, 'Model Year must be a 4-digit year')
+        .test('is-valid-year', 'Model Year cannot be in the future', (value) => {
+            if (!value) return true;
+            const currentYear = new Date().getFullYear();
+            return parseInt(value, 10) <= currentYear;
+        }),
+});
 
 const EditAuto = () => {
     const [cabVal, setCabVal] = useState({});
@@ -282,7 +317,7 @@ const EditAuto = () => {
             <h2 className="text-2xl font-bold mb-4">Update Auto</h2>
             <Formik
                 initialValues={initialValues}
-                // validationSchema={CAB_SCHEMA}
+                validationSchema={validationSchema}
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >

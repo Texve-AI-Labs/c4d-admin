@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback} from 'react';
+import React, { useEffect, useState, useCallback, useRef} from 'react';
 import {
   Card,
   CardHeader,
@@ -41,6 +41,7 @@ export function VehiclesList({ id = 0 }) {
     itemsPerPage: 15,
     search:'',
   });
+  const prevSearchRef = useRef('');
   const [statusCheckedDriverIds, setStatusCheckedDriverIds] = useState([]);
   const navigate = useNavigate();
 
@@ -91,19 +92,19 @@ export function VehiclesList({ id = 0 }) {
         currentPage:1,
         search:searchQuery,
       }))
-      fetchCabList(1,searchQuery,true);
     },1000),
-    [pagination.itemsPerPage]
+    []
   )
 
   useEffect(() => {
-    fetchCabList(pagination.currentPage,pagination.search, true);
-  }, [id, pagination.currentPage, pagination.itemsPerPage]);
+    const searchChanged = prevSearchRef.current !== (pagination.search || '');
+    prevSearchRef.current = pagination.search || '';
+    fetchCabList(pagination.currentPage,pagination.search, !searchChanged);
+  }, [id, pagination.currentPage, pagination.itemsPerPage, pagination.search]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
       setPagination((prev) => ({ ...prev, currentPage: page }));
-      fetchCabList(page,pagination.search, true)
     }
   };
 
@@ -242,7 +243,7 @@ export function VehiclesList({ id = 0 }) {
           <>
             <CardHeader variant="gradient" className="mb-8 p-6 flex justify-between items-center bg-primary">
               <Typography variant="h6" color="white">All Cab List</Typography>
-              <Typography variant="h6" color="white">{pagination.totalItems} vehicle{pagination.totalItems !== 1 ? 's' : ''} found</Typography>
+              <Typography variant="h6" color="white">{pagination.totalItems} Cab{pagination.totalItems !== 1 ? 's' : ''} found</Typography>
             </CardHeader>
             <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
               <table className="w-full min-w-[640px] table-auto">

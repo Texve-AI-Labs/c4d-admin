@@ -6,22 +6,64 @@ import * as Yup from 'yup';
 import moment from 'moment';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES } from '@/utils/constants';
+import { API_ROUTES, BOOKING_FEATURES } from '@/utils/constants';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
+import { buildAdminDiscountPayload, isAdminDiscountEffective, sanitizeAdminDiscountValue } from './utils/adminDiscount';
+import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
+
+const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+};
+
+const getSuggestionPlaceId = (suggestion) => {
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.placeId || suggestion.place_id || suggestion.id || '';
+};
+
+const makeAddressPayload = (name, placeId) => ({
+    name,
+    ...(placeId ? { placeId } : {}),
+});
+
+const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+        const [firstPart] = suggestion.split(',');
+        return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+};
+
+const normalizeQuoteRef = (value) => {
+    const parsed = String(value ?? '').trim();
+    if (!parsed) return '';
+    const lowered = parsed.toLowerCase();
+    if (lowered === 'null' || lowered === 'undefined') return '';
+    return parsed;
+};
+
+const getAdminDiscountUpdatedTs = (item = {}) =>
+    new Date(item?.updatedAt || item?.updated_at || item?.approvedAt || item?.approved_at || item?.createdAt || item?.created_at || 0).getTime();
 
 const EditBooking = (props) => {
     const [loading, setLoading] = useState(true);
     const [bookingData, setBookingData] = useState(null);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [mapCenter, setMapCenter] = useState({ lat: 12.906374, lng: 80.226452 });
     const [mapZoom, setMapZoom] = useState(10);
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
+    const [pickupPlaceId, setPickupPlaceId] = useState('');
+    const [dropPlaceId, setDropPlaceId] = useState('');
     const mapRef = useRef(null);
     const [quoteDetails, setQuoteDetails] = useState(null);
+    const [quoteMeta, setQuoteMeta] = useState(null);
     const [customerData, setCustomerData] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [customerNumber, setCustomerNumber] = useState('');
@@ -44,6 +86,222 @@ const EditBooking = (props) => {
     const [driverEndAddress, setDriverEndAddress] = useState('');
     const [driverEndSuggestions, setDriverEndSuggestions] = useState([]);
     const [quotationLogs, setQuotationLogs] = useState([]);
+    const approvedStatusSyncTimerRef = useRef(null);
+    const approvedHistoryRefreshKeyRef = useRef('');
+    const adminStatusSyncInFlightRef = useRef(false);
+    const lastAdminStatusSyncAtRef = useRef(0);
+    const adminStatusSyncKeyRef = useRef('');
+    const adminStatusAppliedTsRef = useRef(0);
+
+    const existingAdminDiscount =
+        bookingData?.currentAdminDiscount ||
+        bookingData?.paymentDetails?.adminDiscount ||
+        bookingData?.adminDiscount ||
+        null;
+    const existingAdminDiscountStatus = String(existingAdminDiscount?.status || '').toUpperCase();
+    const isExistingAdminDiscountLocked = isAdminDiscountEffective(existingAdminDiscountStatus);
+    const shouldSendAdminDiscountRequest = !isExistingAdminDiscountLocked;
+    const effectiveAdminDiscount = quoteDetails?.adminDiscount || existingAdminDiscount || null;
+
+    const cancelChargeApplicable = quoteDetails?.cancelCharge?.cancelChargeApplicable === true;
+    const cancelChargeAmount = cancelChargeApplicable ? Number(quoteDetails?.cancelCharge?.cancelCharge || 0) : 0;
+    const quoteEstimatedPrice = Number(quoteDetails?.value?.estimatedPrice || quoteDetails?.amount?.estimatedPrice || 0);
+    const systemDiscountAmount = Number(quoteDetails?.discount?.amount || 0);
+    const systemDiscountPercentage = Number(quoteDetails?.discount?.percentage || 0);
+    const useSystemAmountDiscount = systemDiscountAmount > 0;
+    const useSystemPercentDiscount = !useSystemAmountDiscount && systemDiscountPercentage > 0;
+    const totalEstimatedFareAfterSystemDiscount =
+        useSystemAmountDiscount
+            ? quoteEstimatedPrice - systemDiscountAmount
+            : useSystemPercentDiscount
+                ? quoteEstimatedPrice - (quoteEstimatedPrice * (systemDiscountPercentage / 100))
+                : quoteEstimatedPrice;
+    const adminDiscountType = String(effectiveAdminDiscount?.discountType || '').toUpperCase();
+    const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(effectiveAdminDiscount?.status || '').toUpperCase());
+    const adminDiscountAmountOnTotal =
+        adminDiscountType === 'PERCENTAGE'
+            ? totalEstimatedFareAfterSystemDiscount * (Number(effectiveAdminDiscount?.discountValue || 0) / 100)
+            : Number(effectiveAdminDiscount?.discountAmount || 0);
+    const finalEstimatedFareAfterAdminDiscount = totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnTotal;
+    const adminDiscountValueDisplay =
+        adminDiscountType === 'PERCENTAGE'
+            ? `${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))} %`
+            : `₹ ${Math.round(Number(effectiveAdminDiscount?.discountValue || 0))}`;
+    const isQuoteAdminDiscountPending = String(effectiveAdminDiscount?.status || '').toUpperCase() === 'PENDING';
+    const isAdminDiscountPresent = Number(effectiveAdminDiscount?.discountValue || 0) > 0;
+    const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
+    const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
+    const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+        ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge)" : "Final Total (After Discounts)")
+        : (cancelChargeApplicable ? "Final Total (After Cancel Charge)" : "Final Total");
+    const finalTotalAfterDiscounts =
+        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
+            ? finalEstimatedFareAfterAdminDiscount
+            : totalEstimatedFareAfterSystemDiscount;
+    const finalTotalAfterDiscountsWithCancelCharge =
+        finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
+    const hasEstimatedPrice = Boolean(quoteDetails);
+    const isPeakHour = quoteDetails?.amount?.fareBreakdown?.isPeakHour === true;
+    const priceDetailsCardClass = isPeakHour
+        ? "border rounded-xl bg-amber-50 p-4"
+        : "border rounded-xl bg-gray-200 p-4";
+
+    const syncAdminDiscountStatus = useCallback(async (quoteRefValue) => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const quoteRef = normalizeQuoteRef(quoteRefValue || quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || '');
+        if (!quoteRef) return;
+
+        const now = Date.now();
+        if (adminStatusSyncInFlightRef.current) return;
+        if (now - lastAdminStatusSyncAtRef.current < 500) return;
+        adminStatusSyncInFlightRef.current = true;
+        lastAdminStatusSyncAtRef.current = now;
+
+        try {
+            const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_DISCOUNT_STATUS, { quoteRef });
+            const latest = response?.data && typeof response.data === 'object' ? response.data : null;
+            if (!latest) return;
+
+            const latestStatus = String(latest?.status || '').toUpperCase();
+            if (!latestStatus) return;
+            const latestTs = getAdminDiscountUpdatedTs(latest);
+            if (latestTs && latestTs <= adminStatusAppliedTsRef.current) return;
+
+            const latestKey = `${quoteRef}:${latestStatus}:${latest?.id || latest?.discountId || ''}`;
+            if (adminStatusSyncKeyRef.current === latestKey) return;
+            adminStatusSyncKeyRef.current = latestKey;
+            if (latestTs) adminStatusAppliedTsRef.current = latestTs;
+
+            setQuoteMeta((prev) => ({
+                ...(prev || {}),
+                quoteRef: quoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    ...latest,
+                    status: latestStatus,
+                },
+            }));
+
+            setQuoteDetails((prev) => ({
+                ...(prev || {}),
+                quoteRef: quoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    ...latest,
+                    status: latestStatus,
+                },
+            }));
+        } catch (error) {
+            console.error('Failed to sync admin discount status in edit booking:', error);
+        } finally {
+            adminStatusSyncInFlightRef.current = false;
+        }
+    }, [quoteMeta?.quoteRef]);
+
+    useAdminDiscountNotifier({
+        quoteMeta,
+        setQuoteMeta,
+        setQuoteDetails,
+        enabled: BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW,
+        pendingToastTitle: 'Admin Discount Request Sent',
+        pendingToastTextBuilder: ({ quoteRef }) => `Quote: ${quoteRef}. Request sent for SUPER_USER approval.`,
+        onApprovedStatus: ({ quoteRef, status }) => {
+            const normalizedQuoteRef = normalizeQuoteRef(quoteRef || '');
+            if (!normalizedQuoteRef) return;
+            const normalizedStatus = String(status || '').toUpperCase();
+
+            // Optimistic update for immediate fare recalculation in edit screen.
+            setQuoteMeta((prev) => ({
+                ...(prev || {}),
+                quoteRef: normalizedQuoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    status: normalizedStatus,
+                },
+            }));
+            setQuoteDetails((prev) => ({
+                ...(prev || {}),
+                quoteRef: normalizedQuoteRef || prev?.quoteRef || '',
+                adminDiscount: {
+                    ...(prev?.adminDiscount || {}),
+                    status: normalizedStatus,
+                },
+            }));
+
+            const approvedKey = `${normalizedQuoteRef}:${normalizedStatus}`;
+            if (approvedHistoryRefreshKeyRef.current === approvedKey) return;
+            approvedHistoryRefreshKeyRef.current = approvedKey;
+            if (approvedStatusSyncTimerRef.current) {
+                clearTimeout(approvedStatusSyncTimerRef.current);
+            }
+            approvedStatusSyncTimerRef.current = setTimeout(() => {
+                syncAdminDiscountStatus(normalizedQuoteRef);
+            }, 1500);
+        },
+    });
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const quoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || '');
+        if (!quoteRef) return;
+
+        const currentStatus = String(quoteMeta?.adminDiscount?.status || quoteDetails?.adminDiscount?.status || '').toUpperCase();
+        if (currentStatus && currentStatus !== 'PENDING') return;
+
+        syncAdminDiscountStatus(quoteRef);
+    }, [
+        bookingData?.quoteRef,
+        quoteDetails?.quoteRef,
+        quoteDetails?.adminDiscount?.status,
+        quoteMeta?.quoteRef,
+        quoteMeta?.adminDiscount?.status,
+        syncAdminDiscountStatus,
+    ]);
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const onFocusSync = () => {
+            const quoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || '');
+            const currentStatus = String(quoteMeta?.adminDiscount?.status || quoteDetails?.adminDiscount?.status || '').toUpperCase();
+            if (currentStatus && currentStatus !== 'PENDING') return;
+            if (quoteRef) syncAdminDiscountStatus(quoteRef);
+        };
+        window.addEventListener('focus', onFocusSync);
+        return () => window.removeEventListener('focus', onFocusSync);
+    }, [
+        bookingData?.quoteRef,
+        quoteDetails?.quoteRef,
+        quoteDetails?.adminDiscount?.status,
+        quoteMeta?.quoteRef,
+        quoteMeta?.adminDiscount?.status,
+        syncAdminDiscountStatus,
+    ]);
+
+    useEffect(() => {
+        if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
+        const onAdminDiscountStatus = (event) => {
+            const detail = event?.detail || {};
+            const status = String(detail?.status || '').toUpperCase();
+            if (status !== 'APPROVED' && status !== 'AUTO_APPROVED' && status !== 'REJECTED') return;
+
+            const eventQuoteRef = normalizeQuoteRef(detail?.quoteRef || '');
+            const currentQuoteRef = normalizeQuoteRef(quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || '');
+            if (eventQuoteRef && currentQuoteRef && eventQuoteRef !== currentQuoteRef) return;
+
+            const targetQuoteRef = eventQuoteRef || currentQuoteRef;
+            if (!targetQuoteRef) return;
+            syncAdminDiscountStatus(targetQuoteRef);
+        };
+
+        window.addEventListener('admin-discount-status', onAdminDiscountStatus);
+        return () => window.removeEventListener('admin-discount-status', onAdminDiscountStatus);
+    }, [bookingData?.quoteRef, quoteDetails?.quoteRef, quoteMeta?.quoteRef, syncAdminDiscountStatus]);
+
+    useEffect(() => () => {
+        if (approvedStatusSyncTimerRef.current) {
+            clearTimeout(approvedStatusSyncTimerRef.current);
+        }
+    }, []);
 
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser') || "{}");
     const loggedInUserId = loggedInUser.id || 0;
@@ -85,6 +343,9 @@ const EditBooking = (props) => {
 
     const sendQuotationLogs = async (bookingId, userId) => {
         try {
+            if (!Array.isArray(quotationLogs) || quotationLogs.length === 0) {
+                return;
+            }
             const updatedLogs = quotationLogs.map(log => ({
                 ...log,
                 bookingId: bookingId || 0,
@@ -159,17 +420,22 @@ const EditBooking = (props) => {
         }
     }, [bookingData, customerData]);
 
-    useEffect(() => {
-        if (props.bookingData) {
-            getBookingDetailsById(props.bookingData.id, props.bookingData.customerId);
-        }
-    }, [props.bookingData]);
-
     const getBookingDetailsById = async(bookingId, customerId) =>{
         try{
             const data = await ApiRequestUtils.get(API_ROUTES.GET_CONFIRMATION_BOOKING_BY_ID + "/" + bookingId, customerId);
         if(data.success){
                 setBookingData(data?.data);
+                if (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) {
+                    const adminDiscountFromBooking =
+                        data?.data?.currentAdminDiscount ||
+                        data?.data?.paymentDetails?.adminDiscount ||
+                        data?.data?.adminDiscount ||
+                        null;
+                    setQuoteMeta({
+                        quoteRef: data?.data?.quoteRef || '',
+                        adminDiscount: adminDiscountFromBooking,
+                    });
+                }
                 // console.log("dtaaa", data?.data)
             }
         }
@@ -193,12 +459,14 @@ const EditBooking = (props) => {
             // AUTO bookings don't use package-based pricing; skip without logging an error
             if (mappedServiceType === 'AUTO') {
                 setPackageTypeSelectedData([]);
+                setLuggageCapacityMap({});
                 return;
             }
 
             if (!['DRIVER', 'RENTAL', 'RIDES'].includes(mappedServiceType)) {
                 console.error('Invalid serviceType:', mappedServiceType);
                 setPackageTypeSelectedData([]);
+                setLuggageCapacityMap({});
                 return;
             }
 
@@ -209,13 +477,16 @@ const EditBooking = (props) => {
 
             if (data?.success && Array.isArray(data?.data)) {
                 setPackageTypeSelectedData(data?.data);
+                setLuggageCapacityMap(data?.luggageCapacity || {});
             } else {
                 console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
                 setPackageTypeSelectedData([]);
+                setLuggageCapacityMap({});
             }
         } catch (error) {
             console.error('Error fetching package list:', error.message || error);
             setPackageTypeSelectedData([]);
+            setLuggageCapacityMap({});
         } finally {
             setPackagesLoading(false);
         }
@@ -286,11 +557,23 @@ const getQuoteOutstationDetails = async (values) => {
         else if (values?.serviceType === 'DRIVER') {
         quoteData.serviceFor = 'DRIVER';
     }
+    const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
+        ? (
+            buildAdminDiscountPayload(values)
+        )
+        : null;
+    if (adminDiscountPayload) {
+        quoteData.adminDiscount = adminDiscountPayload;
+    }
     const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
         // console.log("QOYTEE DATA", data);
     if (data.success) {
         setQuoteDetails(data?.data);
         setDiscountDetails(data?.data);
+        setQuoteMeta({
+            quoteRef: data?.data?.quoteRef || '',
+            adminDiscount: data?.data?.adminDiscount || null,
+        });
         addQuotationLog(values, data?.data);
     }
 };
@@ -303,7 +586,9 @@ const getQuoteOutstationDetails = async (values) => {
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
         carType: bookingData?.carType ? bookingData?.carType : '',
         pickupAddress: bookingData?.pickupAddress?.name || '',
+        pickupPlaceId: bookingData?.pickupAddress?.placeId || '',
         dropAddress: bookingData?.dropAddress?.name || '',
+        dropPlaceId: bookingData?.dropAddress?.placeId || '',
         rideDate: bookingData?.fromDate ? moment(bookingData.fromDate).format('YYYY-MM-DD') : '',
         rideTime: bookingData?.fromDate ? moment(bookingData.fromDate).format('HH:mm') : '',
         toDate: bookingData?.toDate ? moment(bookingData.toDate).format('YYYY-MM-DD') : '',
@@ -311,11 +596,13 @@ const getQuoteOutstationDetails = async (values) => {
         acType: bookingData?.acType?.toUpperCase(),
         zone: bookingData?.zone || '',
         driverPickUpAddress: bookingData?.driverStartAddress?.name || '',
+        driverPickUpPlaceId: bookingData?.driverStartAddress?.placeId || '',
         driverPickUpLocation: bookingData?.driverStartLat && bookingData?.driverStartLong ? {
             lat: bookingData.driverStartLat,
             lng: bookingData.driverStartLong
         } : null,
         driverEndAddress: bookingData?.driverEndAddress?.name || '',
+        driverEndPlaceId: bookingData?.driverEndAddress?.placeId || '',
         driverEndLocation: bookingData?.driverEndLat && bookingData?.driverEndLong
             ? { lat: bookingData.driverEndLat, lng: bookingData.driverEndLong }
             : null,
@@ -326,6 +613,13 @@ const getQuoteOutstationDetails = async (values) => {
             otherSourceType: bookingData?.otherSourceType?.trim() || null
         }),
         isPremiumService : bookingData?.isPremiumService || false,
+        adminDiscountType: existingAdminDiscount?.discountType || '',
+        adminDiscountValue:
+            existingAdminDiscount?.discountValue !== undefined &&
+            existingAdminDiscount?.discountValue !== null
+                ? String(existingAdminDiscount.discountValue)
+                : '',
+        adminDiscountRemarks: existingAdminDiscount?.remarks || '',
     };
 
 
@@ -407,10 +701,22 @@ const getQuoteOutstationDetails = async (values) => {
             if (!isHourlyPackageSelection && values?.serviceType !== 'AUTO' && values?.serviceType !== 'RIDES') {
                 quoteDate.bookingType = values?.tripType ? values.tripType.toUpperCase() : '';
             }
+            const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
+                ? (
+                    buildAdminDiscountPayload(values)
+                )
+                : null;
+            if (adminDiscountPayload) {
+                quoteDate.adminDiscount = adminDiscountPayload;
+            }
             const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteDate);
             if (data?.success) {
                 setQuoteDetails(data?.data);
                 setDiscountDetails(data?.data);
+                setQuoteMeta({
+                    quoteRef: data?.data?.quoteRef || '',
+                    adminDiscount: data?.data?.adminDiscount || null,
+                });
                 addQuotationLog(values, data?.data);
             }
     };
@@ -530,13 +836,20 @@ const getQuoteOutstationDetails = async (values) => {
         }
     };
 
-    const handleSelectLocation = async (address, isPickup, type, setFieldValue, values) => {
-        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address });
+    const handleSelectLocation = async (address, isPickup, placeId, typeOrSetFieldValue, maybeSetFieldValue, maybeValues) => {
+        const hasExplicitType = typeof typeOrSetFieldValue === 'string';
+        const type = hasExplicitType ? typeOrSetFieldValue : undefined;
+        const setFieldValue = hasExplicitType ? maybeSetFieldValue : typeOrSetFieldValue;
+        const values = hasExplicitType ? maybeValues : maybeSetFieldValue;
+        const safeSetFieldValue = typeof setFieldValue === 'function' ? setFieldValue : null;
+
+        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_LATLONG, { address,placeId });
         if (data?.success) {
             const location = { lat: data.data.lat, lng: data.data.lng };
             if (isPickup) {
-                setFieldValue("pickupAddress", address);
-                setFieldValue("pickupLocation", location);
+                safeSetFieldValue?.("pickupAddress", address);
+                safeSetFieldValue?.("pickupPlaceId", placeId || "");
+                safeSetFieldValue?.("pickupLocation", location);
                 setPickupLocation(location);
                 setPickupSuggestions([]);
 
@@ -550,7 +863,7 @@ const getQuoteOutstationDetails = async (values) => {
                         const newArea = serviceAreas.find(area => area.name === zoneData.serviceArea.name);
                         if (newArea && newArea.id !== parseInt(selectedAreaId)) {
                             setSelectedAreaId(newArea.id);
-                            setFieldValue("serviceTypeArea", newArea.id);
+                            safeSetFieldValue?.("serviceTypeArea", newArea.id);
                             getPackageListDetails(currentServiceType, newArea.name);
                         }
                     } else {
@@ -559,27 +872,31 @@ const getQuoteOutstationDetails = async (values) => {
                             text: zoneData.error || 'Service not available in this area.',
                             title: zoneData.title || 'Oops!'
                         });
-                        setFieldValue("pickupAddress", "");
-                        setFieldValue("pickupLocation", null);
+                        safeSetFieldValue?.("pickupAddress", "");
+                        safeSetFieldValue?.("pickupLocation", null);
+                        safeSetFieldValue?.("pickupPlaceId", "");
                         setPickupLocation(null);
                     }
                 }
             }
             else if (type === 'driver') {
-                setFieldValue("driverPickUpAddress", address);
-                setFieldValue("driverPickUpLocation", location);
+                safeSetFieldValue?.("driverPickUpAddress", address);
+                safeSetFieldValue?.("driverPickUpPlaceId", placeId || "");
+                safeSetFieldValue?.("driverPickUpLocation", location);
                 setDriverPickUpLocation(location);
                 setDriverSuggestions([]);
             }
             else if (type === 'driverEnd') {
-                setFieldValue("driverEndAddress", address);
-                setFieldValue("driverEndLocation", location);
+                safeSetFieldValue?.("driverEndAddress", address);
+                safeSetFieldValue?.("driverEndPlaceId", placeId || "");
+                safeSetFieldValue?.("driverEndLocation", location);
                 setDriverEndLocation(location);
                 setDriverEndSuggestions([]);
             }
             else {
-                setFieldValue("dropAddress", address);
-                setFieldValue("dropLocation", location);
+                safeSetFieldValue?.("dropAddress", address);
+                safeSetFieldValue?.("dropPlaceId", placeId || "");
+                safeSetFieldValue?.("dropLocation", location);
                 setDropLocation(location);
                 setDropSuggestions([]);
             }
@@ -637,22 +954,32 @@ const getQuoteOutstationDetails = async (values) => {
     // Luggage and seater capacity logic based on car type
     const useLuggageAndSeaterLogic = (carType, setFieldValue) => {
         useEffect(() => {
+            const normalizedCarType = String(carType || '').toLowerCase();
+            const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
+            const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
+
             if (carType === 'Mini' || carType === 'Sedan') {
-                setFieldValue('luggage', 1);
+                setFieldValue('luggage', luggageValue);
                 setFieldValue('seaterCapacity', '5');
             } else if (carType === 'SUV' || carType === 'MUV') {
-                setFieldValue('luggage', 2);
+                setFieldValue('luggage', luggageValue);
                 setFieldValue('seaterCapacity', '7');
             } else {
                 setFieldValue('luggage', '');
                 setFieldValue('seaterCapacity', '');
             }
-        }, [carType, setFieldValue]);
+        }, [carType, setFieldValue, luggageCapacityMap]);
     };
 
     const editSubmit = async (values) => {
         let data;
         let editBookingData;
+        const updateQuoteRef = quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || undefined;
+        const updateAdminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
+            ? (
+                buildAdminDiscountPayload(values)
+            )
+            : null;
             if (values.submitType == "default") {
                 const selectedPackage = packageTypeSelectedData.find(
                     (pkg) => pkg.id === Number(values?.packageSelected)
@@ -677,19 +1004,20 @@ const getQuoteOutstationDetails = async (values) => {
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
-                    pickupAddress: {
-                        name: values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name
-                    },
+                    pickupAddress: makeAddressPayload(
+                        values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name,
+                        values?.pickupPlaceId || bookingData?.pickupAddress?.placeId || ''
+                    ),
                     driverStartLat: values.driverPickUpLocation?.lat || bookingData?.driverStartLat || null,
                     driverStartLong: values.driverPickUpLocation?.lng || bookingData?.driverStartLong || null,
                     driverStartAddress: values.driverPickUpAddress
-                        ? { name: values.driverPickUpAddress }
+                        ? makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId || bookingData?.driverStartAddress?.placeId || '')
                         : bookingData?.driverStartAddress
-                            ? { name: bookingData.driverStartAddress.name }
+                            ? makeAddressPayload(bookingData.driverStartAddress.name, bookingData.driverStartAddress.placeId || '')
                             : null,
                driverEndLat : values.driverEndLocation?.lat || null,
                 driverEndLong : values.driverEndLocation?.lng || null,
-                driverEndAddress : values.driverEndAddress ? { name: values.driverEndAddress } : null,
+                driverEndAddress : values.driverEndAddress ? makeAddressPayload(values.driverEndAddress, values.driverEndPlaceId || '') : null,
                     dropLat: null,
                     dropLong: null,
                     dropAddress: null,
@@ -711,13 +1039,20 @@ const getQuoteOutstationDetails = async (values) => {
                 if (!isLocalDropOnly && !isHourlyPackageSelection) {
                     data.dropLat = values?.dropLocation?.lat ? values?.dropLocation?.lat : bookingData?.dropLat
                     data.dropLong = values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong
-                    data.dropAddress = values?.dropLocation ? { name: values?.dropAddress } : bookingData?.dropAddress ? {
-                        name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name
+                    data.dropAddress = values?.dropLocation ? makeAddressPayload(values?.dropAddress, values.dropPlaceId) : bookingData?.dropAddress ? {
+                        name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name,
+                        placeId: values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
                     } : null
                 } else if (isHourlyPackageSelection) {
                     delete data.dropLat;
                     delete data.dropLong;
                     delete data.dropAddress;
+                }
+                if (updateAdminDiscountPayload) {
+                    data.adminDiscount = updateAdminDiscountPayload;
+                }
+                if (updateQuoteRef) {
+                    data.quoteRef = updateQuoteRef;
                 }
                 editBookingData = await ApiRequestUtils.update(API_ROUTES.UPDATE_BOOKING, data);
             } else if (values.submitType == 'rides') {
@@ -726,14 +1061,13 @@ const getQuoteOutstationDetails = async (values) => {
                     bookingId: bookingData?.id,
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
-                    pickupAddress: {
-                        name: values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name
-                    },
+                    pickupAddress: makeAddressPayload(
+                        values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name,
+                        values?.pickupPlaceId || bookingData?.pickupAddress?.placeId || ''
+                    ),
                     driverStartLat: values.driverPickUpLocation?.lat,
                     driverStartLong: values.driverPickUpLocation?.lng,
-                    driverStartAddress: {
-                        name: values.driverPickUpAddress,
-                    },
+                    driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId || ''),
                     carType: values?.carType,
                     sourceType: values?.sourceType,
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {
@@ -747,8 +1081,15 @@ const getQuoteOutstationDetails = async (values) => {
             // console.log("DADADAD", data)
                 data.dropLat = values?.dropLocation?.lat ? values?.dropLocation?.lat : bookingData?.dropLat
                 data.dropLong = values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong
-                data.dropAddress = {
-                    name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name
+                data.dropAddress = makeAddressPayload(
+                    values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name,
+                    values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
+                )
+                if (updateAdminDiscountPayload) {
+                    data.adminDiscount = updateAdminDiscountPayload;
+                }
+                if (updateQuoteRef) {
+                    data.quoteRef = updateQuoteRef;
                 }
 
                 editBookingData = await ApiRequestUtils.update(API_ROUTES.UPDATE_RIDES_BOOKING, data);
@@ -758,14 +1099,16 @@ const getQuoteOutstationDetails = async (values) => {
                     bookingId: bookingData?.id,
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
-                    pickupAddress: {
-                        name: values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name
-                    },
+                    pickupAddress: makeAddressPayload(
+                        values?.pickupAddress ? values?.pickupAddress : bookingData?.pickupAddress?.name,
+                        values?.pickupPlaceId || bookingData?.pickupAddress?.placeId || ''
+                    ),
                     dropLat: values?.dropLocation?.lat ? values?.dropLocation?.lat : bookingData?.dropLat,
                     dropLong: values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong,
-                    dropAddress: {
-                        name: values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name
-                    },
+                    dropAddress: makeAddressPayload(
+                        values?.dropAddress ? values?.dropAddress : bookingData?.dropAddress?.name,
+                        values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
+                    ),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                 isPremiumService : values?.isPremiumService ? true : false,
                     car_Type: values?.carType || '',
@@ -773,6 +1116,12 @@ const getQuoteOutstationDetails = async (values) => {
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {
                         otherSourceType: values?.otherSourceType?.trim() || null
                     }),
+                }
+                if (updateAdminDiscountPayload) {
+                    data.adminDiscount = updateAdminDiscountPayload;
+                }
+                if (updateQuoteRef) {
+                    data.quoteRef = updateQuoteRef;
                 }
                 editBookingData = await ApiRequestUtils.update(API_ROUTES.UPDATE_RIDES_BOOKING, data);
             }
@@ -815,7 +1164,7 @@ const getQuoteOutstationDetails = async (values) => {
                                 }
                                 return premiumServicesMap[values?.serviceType] || [];
                             };
-                            useLuggageAndSeaterLogic(values.carType, setFieldValue);
+                            useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                     return(
                                 <> {customerData && (
                                     <div className="p-2 flex mb-4 pointer-events-none">
@@ -877,6 +1226,65 @@ const getQuoteOutstationDetails = async (values) => {
                                             </Field>
                                             <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
                                         </div>
+                                        {quoteMeta?.quoteRef && (
+                                            <div className="mt-3 p-3 rounded-xl border border-gray-200 bg-white">
+                                                <Typography className="text-sm text-gray-800">
+                                                    Quote Ref: <span className="font-semibold">{quoteMeta.quoteRef}</span>
+                                                </Typography>
+                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && quoteMeta?.adminDiscount?.status && (
+                                                    <Typography className="text-sm text-gray-800 mt-1">
+                                                        Admin Discount Status: <span className="font-semibold">{quoteMeta.adminDiscount.status}</span>
+                                                    </Typography>
+                                                )}
+                                            </div>
+                                        )}
+                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && values.serviceType && (
+                                            <div className="mt-4 p-3 border border-gray-300 rounded-xl bg-white">
+                                                <Typography variant="h6" className="mb-2">Admin Discount (Optional)</Typography>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-black-700">Discount Type</label>
+                                                        <Field
+                                                            as="select"
+                                                            name="adminDiscountType"
+                                                            disabled={isExistingAdminDiscountLocked}
+                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                        >
+                                                            <option value="">Select type</option>
+                                                            <option value="PERCENTAGE">PERCENTAGE</option>
+                                                        </Field>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-black-700">Discount Value <span className="text-red-500">value min 0.01 max 5</span></label>
+                                                        <Field
+                                                            type="number"
+                                                            name="adminDiscountValue"
+                                                            disabled={isExistingAdminDiscountLocked}
+                                                            min="0"
+                                                            step="0.01"
+                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                            placeholder="Enter value"
+                                                            onChange={(e) => setFieldValue('adminDiscountValue', sanitizeAdminDiscountValue(e.target.value))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-black-700">Remarks</label>
+                                                        <Field
+                                                            type="text"
+                                                            name="adminDiscountRemarks"
+                                                            disabled={isExistingAdminDiscountLocked}
+                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                            placeholder="Optional remarks"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                {isExistingAdminDiscountLocked && (
+                                                    <Typography className="text-xs text-gray-600 mt-2">
+                                                        Admin discount is already approved and locked for editing.
+                                                    </Typography>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     {bookingData?.serviceType !== "RIDES" && bookingData?.serviceType !== "AUTO" && <>
                                         <div className='space-y-3 my-3'>
@@ -1045,8 +1453,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                     </Button>
 
                                                     <Button
-                                                        color={values.acType === 'N0N AC' ? 'blue' : 'gray'}
-                                                        disabled
+                                                        color={values.acType === 'N0N AC' ? 'blue' : 'gray'} 
+                                                        disabled                                                       
                                                         onClick={() => setFieldValue('acType', 'NON AC')}
                                                         variant={values?.acType === 'NON AC' ? 'filled' : 'outlined'}
                                                     >
@@ -1216,10 +1624,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
-                                                                    handleSelectLocation(suggestion, true, null, setFieldValue, values);
+                                                                    handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                 }}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1245,10 +1658,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
-                                                                    handleSelectLocation(suggestion, false, null, setFieldValue, values);
+                                                                    handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                 }}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1277,9 +1695,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(suggestion, false, 'driver', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driver', setFieldValue, values)}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1307,9 +1730,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(suggestion, false, 'driverEnd', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driverEnd', setFieldValue, values)}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1389,8 +1817,15 @@ const getQuoteOutstationDetails = async (values) => {
                                         {values.packageSelected && values.packageTypeSelected == 'Local' && (values.serviceType == 'DRIVER' || values.serviceType == 'RENTAL')
                                             &&
                                             (quoteDetails&& <Card className="my-6">
-                                                <div className="border rounded-xl bg-gray-200 p-4">
-                                                    <h2 className="text-2xl font-bold text-center">Estimated Price Details</h2>
+                                                <div className={priceDetailsCardClass}>
+                                                    <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+                                                        <span>Estimated Price Details</span>
+                                                        {isPeakHour && (
+                                                            <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                                                Peak Hrs
+                                                            </span>
+                                                        )}
+                                                    </h2>
                                                     <hr className="my-2 border border-black" />
                                                     <div className="mt-4">
                                                         <div className="flex justify-between">
@@ -1444,14 +1879,53 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     ) : 'N/A'}
                                                                 </Typography>
                                                             </div>
+                                                {quoteDetails?.walletApplicable === true  && (
+                                                        <>
+                                                            <div className="flex justify-between">
+                                                                <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                <Typography>
+                                                                    ₹ {Math.round(
+                                                                        quoteDetails?.walletAmount ||
+                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                        quoteDetails?.value?.walletAmount ||
+                                                                        0
+                                                                    )}
+                                                                </Typography>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                <Typography>
+                                                                    ₹ {Math.max(
+                                                                        0,
+                                                                        Math.round(
+                                                                            Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                            Number(
+                                                                                quoteDetails?.walletAmount ||
+                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                                quoteDetails?.value?.walletAmount ||
+                                                                                0
+                                                                            )
+                                                                        )
+                                                                    )}
+                                                                </Typography>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                         </>
                                                     </div>
                                                 </div>
                                             </Card>)}
                                         {quoteDetails &&  !(values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Local' )&&!(values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Local' )&&
                                             <Card className="my-6">
-                                                <div className="border rounded-xl bg-gray-200 p-4">
-                                                    <h2 className="text-2xl font-bold text-center">Estimated Price Details</h2>
+                                                <div className={priceDetailsCardClass}>
+                                                    <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+                                                        <span>Estimated Price Details</span>
+                                                        {isPeakHour && (
+                                                            <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                                                Peak Hrs
+                                                            </span>
+                                                        )}
+                                                    </h2>
                                                     <hr className="my-2 border border-black" />
                                                     <div className="mt-4">
                                                         <>
@@ -1554,8 +2028,40 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.amount?.estimatedPrice)}
                                                                 </Typography>
+                                                                {quoteDetails?.walletApplicable === true  && (
+                                                                        <>
+                                                                            <div className="flex justify-between items-start gap-3">
+                                                                                <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {Math.round(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )}
+                                                                                </Typography>
+                                                                            </div>
+                                                                            <div className="flex justify-between items-start gap-3">
+                                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {Math.max(
+                                                                                        0,
+                                                                                        Math.round(
+                                                                                            Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                                            Number(
+                                                                                                quoteDetails?.walletAmount ||
+                                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                                                quoteDetails?.value?.walletAmount ||
+                                                                                                0
+                                                                                            )
+                                                                                        )
+                                                                                    )}
+                                                                                </Typography>
+                                                                            </div>
+                                                                        </>
+                                                                    )}
                                                                  </>)}
-                                                                {quoteDetails.discount?.percentage > 0 && <>
+                                                                {useSystemPercentDiscount && <>
 
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                     <Typography>
@@ -1564,11 +2070,11 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                     <Typography className='font-roboto-medium text-lg text-gray-900'>
                                                                         {/* {quoteDetails.discount?.percentage} % - ₹ {quoteDetails.amount?.estimatedPrice} */}
-                                                                        ₹ {Math.round(quoteDetails.amount?.estimatedPrice) - (quoteDetails.amount?.estimatedPrice * quoteDetails.discount?.percentage / 100)}
+                                                                        ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                     </Typography>
 
                                                                 </>}
-                                                                {quoteDetails.discount?.amount > 0 && <>
+                                                                {useSystemAmountDiscount && <>
 
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                     <Typography>
@@ -1576,10 +2082,36 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     </Typography>
                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                     <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                        ₹ {Math.round(quoteDetails.amount?.estimatedPrice) - Math.round(quoteDetails.discount?.amount)}
+                                                                        ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                     </Typography>
 
                                                                 </>}
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
+                                                                        <Typography>{adminDiscountValueDisplay}</Typography>
+                                                                        <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
+                                                                        <Typography className='font-roboto-medium text-lg text-gray-900'>
+                                                                            ₹ {Math.max(0, Math.round(finalEstimatedFareAfterAdminDiscount))}
+                                                                        </Typography>
+                                                                    </>
+                                                                )}
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Admin Discount Requested:</Typography>
+                                                                        <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
+                                                                    </>
+                                                                )}
+                                                                {cancelChargeApplicable && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                        <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                    </>
+                                                                )}
+                                                                <>
+                                                                    <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                    <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                </>
                                                             </div>
 
                                                         </>
@@ -1623,10 +2155,10 @@ const getQuoteOutstationDetails = async (values) => {
                                                     setFieldValue("submitType", "default");
                                         handleSubmit()
                                                 }}
-                                    disabled={!dirty || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
+                                    disabled={!hasEstimatedPrice || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
                                                 className='my-6 mx-2'
                                             >
-                                    Confirm Booking
+                                    Continue
                                             </Button>
                                         </div>
                                     </>}
@@ -1786,8 +2318,9 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("pickupAddress", e.target.value);
                                                             setFieldValue("pickupLocation", null);
+                                                            setFieldValue("pickupPlaceId", "");
                                                             searchLocations(e.target.value, true);
-                                                        }}
+                                                    }}
                                                     />
                                                     {pickupSuggestions.length > 0 && (
                                                         <ul className="border rounded-lg bg-white mt-2">
@@ -1796,10 +2329,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, true, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -1815,6 +2353,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("dropAddress", e.target.value);
                                                             setFieldValue("dropLocation", null);
+                                                            setFieldValue("dropPlaceId", "");
                                                             searchLocations(e.target.value, false);
                                                         }}
                                                     />
@@ -1825,10 +2364,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, false, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -1847,6 +2391,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     onChange={(e) => {
                                                         setFieldValue("driverPickUpAddress", e.target.value);
                                                         setFieldValue("driverPickUpLocation", null);
+                                                        setFieldValue("driverPickUpPlaceId", "");
                                                         searchLocations(e.target.value, false, 'driver');
                                                     }}
                                                 />
@@ -1856,9 +2401,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             <li
                                                                 key={index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
-                                                                onClick={() => handleSelectLocation(suggestion, false, 'driver', setFieldValue, values)}
+                                                                onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driver', setFieldValue, values)}
                                                             >
-                                                                {suggestion}
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                    {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                        <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                    )}
+                                                                </div>
                                                             </li>
                                                         ))}
                                                     </ul>
@@ -1867,8 +2417,15 @@ const getQuoteOutstationDetails = async (values) => {
                                             {/* Quote details for RIDES */}
                                             {quoteDetails &&
                                                 <Card className="my-6">
-                                                    <div className="border rounded-xl bg-gray-200 p-4">
-                                                        <h2 className="text-2xl font-bold text-center">Estimated Price Details</h2>
+                                                    <div className={priceDetailsCardClass}>
+                                                        <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+                                                            <span>Estimated Price Details</span>
+                                                            {isPeakHour && (
+                                                                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                                                    Peak Hrs
+                                                                </span>
+                                                            )}
+                                                        </h2>
                                                         <hr className="my-2 border border-black" />
                                                         <div className="mt-4">
                                                             <div className="grid grid-cols-2 justify-between">
@@ -1931,13 +2488,42 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <Typography>
                                                                         ₹ {Math.round(quoteDetails.amount?.gst_amount)}
                                                                     </Typography>
-                                                                
+                                                                </>)}
                                                                 <Typography color="gray" variant="h6">Final Estimated Fare</Typography>
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice)}
                                                                 </Typography>
-                                                                </>)}
-                                                                {quoteDetails.discount?.percentage > 0 && (
+                                                                {(quoteDetails?.walletApplicable === true ||
+                                                                    quoteDetails?.amount?.walletApplicable === true ||
+                                                                    quoteDetails?.value?.walletApplicable === true) && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.round(
+                                                                                quoteDetails?.walletAmount ||
+                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                                quoteDetails?.value?.walletAmount ||
+                                                                                0
+                                                                            )}
+                                                                        </Typography>
+                                                                        <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.max(
+                                                                                0,
+                                                                                Math.round(
+                                                                                    Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                                    Number(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )
+                                                                                )
+                                                                            )}
+                                                                        </Typography>
+                                                                    </>
+                                                                )}
+                                                                {useSystemPercentDiscount && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                         <Typography>
@@ -1945,20 +2531,46 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </Typography>
                                                                         <Typography color="gray" variant="h6">Total Estimated Fare</Typography>
                                                                         <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                            ₹ {Math.round((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) - ((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) * quoteDetails.discount?.percentage / 100))}
+                                                                            ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                         </Typography>
                                                                     </>
                                                                 )}
-                                                                {quoteDetails.discount?.amount > 0 && <>
+                                                                {useSystemAmountDiscount && <>
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                     <Typography>
                                                                         ₹ {Math.round(quoteDetails.discount?.amount)}
                                                                     </Typography>
                                                                     <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                                     <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                        ₹ {Math.round((quoteDetails.amount?.estimatedPrice) - (quoteDetails.discount?.amount))}
+                                                                        ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                     </Typography>
                                                                 </>}
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
+                                                                        <Typography>{adminDiscountValueDisplay}</Typography>
+                                                                        <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
+                                                                        <Typography className='font-roboto-medium text-lg text-gray-900'>
+                                                                            ₹ {Math.max(0, Math.round(finalEstimatedFareAfterAdminDiscount))}
+                                                                        </Typography>
+                                                                    </>
+                                                                )}
+                                                                {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Admin Discount Requested:</Typography>
+                                                                        <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
+                                                                    </>
+                                                                )}
+                                                                {cancelChargeApplicable && (
+                                                                    <>
+                                                                        <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                        <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                    </>
+                                                                )}
+                                                                <>
+                                                                    <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                    <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                                </>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1984,10 +2596,10 @@ const getQuoteOutstationDetails = async (values) => {
                                                         setFieldValue("submitType", "rides");
                                                         handleSubmit()
                                                     }}
-                                                    disabled={!(values.pickupAddress && values.dropAddress) || isButtonDisabled}
+                                                    disabled={!(values.pickupAddress && values.dropAddress) || isButtonDisabled || !hasEstimatedPrice}
                                                     className='my-6 mx-2'
                                                 >
-                                        Confirm Booking
+                                        Continue
                                                 </Button>
                                             </div>
                                         </>
@@ -2115,6 +2727,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("pickupAddress", e.target.value);
                                                             setFieldValue("pickupLocation", null);
+                                                            setFieldValue("pickupPlaceId", "");
                                                             searchLocations(e.target.value, true);
                                                         }}
                                                     />
@@ -2125,10 +2738,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, true, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -2146,6 +2764,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         onChange={(e) => {
                                                             setFieldValue("dropAddress", e.target.value);
                                                             setFieldValue("dropLocation", null);
+                                                            setFieldValue("dropPlaceId", "");
                                                             searchLocations(e.target.value, false);
                                                         }}
                                                     />
@@ -2156,10 +2775,15 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     key={index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
-                                                                        handleSelectLocation(suggestion, false, null, setFieldValue, values);
+                                                                        handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
                                                                     }}
                                                                 >
-                                                                    {suggestion}
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                                                                        {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                                                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                                                                        )}
+                                                                    </div>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -2170,8 +2794,15 @@ const getQuoteOutstationDetails = async (values) => {
                                     )}
                                     {values.serviceType === 'AUTO' && quoteDetails &&
                                         <Card className="my-6">
-                                            <div className="border rounded-xl bg-gray-200 p-4">
-                                                <h2 className="text-2xl font-bold text-center">Estimated Price Details</h2>
+                                            <div className={priceDetailsCardClass}>
+                                                <h2 className="flex items-center justify-center gap-2 text-2xl font-bold text-center">
+                                                    <span>Estimated Price Details</span>
+                                                    {isPeakHour && (
+                                                        <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                                            Peak Hrs
+                                                        </span>
+                                                    )}
+                                                </h2>
                                                 <hr className="my-2 border border-black" />
                                                 <div className="mt-4">
                                                     <div className="grid grid-cols-2 justify-between">
@@ -2214,6 +2845,38 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <Typography>
                                                             ₹ {Math.round(quoteDetails.amount?.fare_before_gst)}
                                                         </Typography>
+                                                        {quoteDetails?.walletApplicable === true && (
+                                                            <>
+                                                                    
+                                                                        <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.round(
+                                                                                quoteDetails?.walletAmount ||
+                                                                                quoteDetails?.amount?.walletAmount ||
+                                                                        quoteDetails?.value?.walletAmount ||
+                                                                        0
+                                                                    )} </Typography>
+                                                                
+                                                                
+                                                                    
+                                                                        <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
+                                                                        <Typography>
+                                                                            ₹ {Math.max(
+                                                                                0,
+                                                                                Math.round(
+                                                                                    Number(quoteDetails?.amount?.estimatedPrice || quoteDetails?.value?.estimatedPrice || 0) -
+                                                                                    Number(
+                                                                                        quoteDetails?.walletAmount ||
+                                                                                        quoteDetails?.amount?.walletAmount ||
+                                                                                        quoteDetails?.value?.walletAmount ||
+                                                                                        0
+                                                                                    )
+                                                                                )
+                                                                            )}
+                                                                        </Typography>
+                                                                    
+                                                            </>
+                                                        )}
                                                         {quoteDetails.amount?.gst_amount > 0 && (<>
                                                             <Typography color="gray" variant="h6">TAX Amount</Typography>
                                                             <Typography>
@@ -2225,7 +2888,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             ₹ {Math.round(quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice)}
                                                         </Typography>
                                                         </>)}
-                                                        {quoteDetails.discount?.percentage > 0 && (
+                                                        {useSystemPercentDiscount && (
                                                             <>
                                                                 <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                                 <Typography>
@@ -2233,11 +2896,11 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 </Typography>
                                                                 <Typography color="gray" variant="h6">Total Estimated Fare</Typography>
                                                                 <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                    ₹ {Math.round((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) - ((quoteDetails.value?.estimatedPrice || quoteDetails.amount?.estimatedPrice) * quoteDetails.discount?.percentage / 100))}
+                                                                    ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                                 </Typography>
                                                             </>
                                                         )}
-                                                        {quoteDetails.discount?.amount > 0 && <>
+                                                        {useSystemAmountDiscount && <>
 
                                                             <Typography color="gray" variant="h6">Discount Applied</Typography>
                                                             <Typography>
@@ -2245,10 +2908,36 @@ const getQuoteOutstationDetails = async (values) => {
                                                             </Typography>
                                                             <Typography color="gray" variant="h6">Total estimated Fare</Typography>
                                                             <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                ₹ {Math.round((quoteDetails.amount?.estimatedPrice) - (quoteDetails.discount?.amount))}
+                                                                ₹ {Math.max(0, Math.round(totalEstimatedFareAfterSystemDiscount))}
                                                             </Typography>
 
                                                         </>}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
+                                                            <>
+                                                                <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
+                                                                <Typography>{adminDiscountValueDisplay}</Typography>
+                                                                <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
+                                                                <Typography className='font-roboto-medium text-lg text-gray-900'>
+                                                                    ₹ {Math.max(0, Math.round(finalEstimatedFareAfterAdminDiscount))}
+                                                                </Typography>
+                                                            </>
+                                                        )}
+                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && !isQuoteAdminDiscountEffective && isQuoteAdminDiscountPending && Number(effectiveAdminDiscount?.discountValue || 0) > 0 && (
+                                                            <>
+                                                                <Typography color="gray" variant="h6">Admin Discount Requested:</Typography>
+                                                                <Typography>{adminDiscountValueDisplay} (Awaiting approval)</Typography>
+                                                            </>
+                                                        )}
+                                                        {cancelChargeApplicable && (
+                                                            <>
+                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                            </>
+                                                        )}
+                                                        <>
+                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
+                                                        </>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2273,10 +2962,10 @@ const getQuoteOutstationDetails = async (values) => {
                                                 setFieldValue("submitType", "auto");
                                                 handleSubmit()
                                             }}
-                                    disabled={!dirty || !isValid || (!values.pickupAddress && !values.dropAddress)}
+                                    disabled={!hasEstimatedPrice || !isValid || (!values.pickupAddress && !values.dropAddress)}
                                             className='my-6 mx-2'
                                         >
-                                    Confirm Booking
+                                    Continue
                                         </Button>
                                     </div>}
                                 </>

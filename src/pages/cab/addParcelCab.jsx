@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Input, List, ListItem, Typography } from '@material-tailwind/react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 import Select from 'react-select';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -8,6 +9,21 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 
 const LocationInput = ({ field, form, suggestions, onSearch, onSelect, type }) => {
   const [isFocused, setIsFocused] = useState(false);
+
+  const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+  };
+
+  const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+      const [firstPart] = suggestion.split(',');
+      return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+  };
 
   useEffect(() => {
     form.validateField(field.name);
@@ -38,14 +54,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect, type }) =
             <ListItem
               key={index}
               onClick={() => {
-                form.setFieldValue(field.name, suggestion);
-                if (onSelect) onSelect(suggestion);
+                const selectedText = getSuggestionText(suggestion);
+                form.setFieldValue(field.name, selectedText);
+                if (onSelect) onSelect(selectedText, suggestion);
                 setIsFocused(false);
                 form.validateField(field.name);
               }}
               className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
             >
-              <Typography variant="small">{suggestion}</Typography>
+              <div className="flex flex-col">
+                <Typography variant="small" className="font-bold text-black">
+                  {getSuggestionTitle(suggestion)}
+                </Typography>
+                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                  <Typography variant="small" className="text-xs text-gray-600">
+                    {getSuggestionText(suggestion)}
+                  </Typography>
+                )}
+              </div>
             </ListItem>
           ))}
         </List>
@@ -54,16 +80,16 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect, type }) =
   );
 };
 
-// const validationSchema = Yup.object({
-//   name: Yup.string().required('Vehicle Name is required'),
-//   ownerName: Yup.string().required('Owner Name is required'),
-//   autoNumber: Yup.string().required('Auto Number is required'),
-//   address: Yup.string().required('Address is required'),
-//   insurance: Yup.string().required('Insurance Expiry Date is required'),
-//   autoType: Yup.string().required('Auto Type is required'),
-//   seater: Yup.string().required('Seater is required'),
-//   modelYear: Yup.string().required('Year of Model is required'),
-// });
+const validationSchema = Yup.object({
+  modelYear: Yup.string()
+    .required('Year of Model is required')
+    .matches(/^\d{4}$/, 'Model Year must be a 4-digit year')
+    .test('is-valid-year', 'Model Year cannot be in the future', (value) => {
+      if (!value) return true;
+      const currentYear = new Date().getFullYear();
+      return parseInt(value, 10) <= currentYear;
+    }),
+});
 
 const ParcelCabAdd = () => {
   const navigate = useNavigate();
@@ -155,14 +181,14 @@ const ParcelCabAdd = () => {
           vehicleNumber: '',
           address: '',
           insurance: '',
-          autoType: '',
+          autoType: 'BIKE',
           seater: '3',
           modelYear: '',
           serviceArea: '',
           zoneDescription: '',
           subZoneId: '',
         }}
-        // validationSchema={validationSchema}
+        validationSchema={validationSchema}
         onSubmit={async (values, { setSubmitting }) => {
           try {
             if (!values.serviceArea) {
@@ -183,7 +209,7 @@ const ParcelCabAdd = () => {
               vehicleNumber: values.vehicleNumber,
               curAddress: values.address,
               insurance: values.insurance,
-              vehicleType: values.autoType,
+              vehicleType: 'BIKE',
               seater: values.seater,
               modelYear: values.modelYear,
               serviceArea: values.serviceArea,
@@ -270,7 +296,7 @@ const ParcelCabAdd = () => {
                 />
                 <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
               </div>
-              <div>
+              <div className='hidden'>
                 <label className="text-sm font-medium text-gray-700">Bike Type</label>
                 <div className="space-x-4 mt-1">
                   {['BIKE'].map((type) => (

@@ -14,19 +14,42 @@ const DiscountAdd = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null);
   const [premiumServicesMap, setPremiumServicesMap] = useState({});
+  const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
+    DRIVER: [
+      { value: 'DRIVER', label: 'DRIVER' },
+    ],
+    CAB: [
+      { value: 'RIDES', label: 'RIDES' },
+      { value: 'RENTAL_HOURLY_PACKAGE', label: 'HOURLY PACKAGE' },
+      { value: 'RENTAL_DROP_TAXI', label: 'DROP TAXI' },
+      { value: 'RENTAL', label: 'OUTSTATION' },
+      { value: 'ALL', label: 'ALL' },
+    ],
+    AUTO: [
+      { value: 'AUTO', label: 'AUTO' },
+    ],
+    PARCEL: [
+      { value: 'PARCEL', label: 'PARCEL' },
+    ],
+  };
 
   const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
   };
+  const getServiceTypeOptions = (entity) => SERVICE_TYPE_OPTIONS_BY_ENTITY[entity] || [];
 
   const initialValues = {
+    entity:'',
     serviceType: '',
     title: '',
     couponCode: '',
     description: '',
     offerType: '',
+    targetMode: '',
+    minCompletedTrips: '',
+    maxCompletedTrips: '',
     discountType: '',
     percentage: '',
     amount: '',
@@ -165,9 +188,19 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
       }
 
       const formData = new FormData();
+      const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
+      formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
+      if (values.offerType === 'CUSTOM') {
+        formData.append('targetMode', values.targetMode || '');
+        formData.append('allowedCount', '1');
+        formData.append('minCompletedTrips', values.minCompletedTrips === '' || values.minCompletedTrips === null || values.minCompletedTrips === undefined ? 0 : Number(values.minCompletedTrips));
+        formData.append('maxCompletedTrips', values.maxCompletedTrips === '' || values.maxCompletedTrips === null || values.maxCompletedTrips === undefined ? 0 : Number(values.maxCompletedTrips));
+      }
+      if (!isCustomSegment) {
       formData.append('couponCode', values.couponCode);
+      }
       formData.append('discountType', discountType);
       if ((discountType || '').toLowerCase() === 'percentage') {
         formData.append('percentage', values.percentage || '');
@@ -203,19 +236,22 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
 if (values.removeDashboardOfferImg) {
   formData.append('dashboardImageUrl', '');  
 }
-      const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
-      if (isGeneralParcel) {
+      const isParcelService = values.serviceType === 'PARCEL';
+      const isGeneralParcel = values.offerType === 'GENERAL' && isParcelService;
+      if (isParcelService) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
-        formData.append('isPremium', false);
-        formData.append('cabType', '');
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
+      } else if (values.serviceType === 'DRIVER') {
+        formData.append('cabType', values.cabType || null);
+      } else if (values.serviceType === 'AUTO') {
+        formData.append('isPremium', values.isPremium);
       } else {
         const finalCabType = values.isPremium ? values.premiumCabType : values.cabType;
-      formData.append('cabType', finalCabType);
-      formData.append('isPremium', values.isPremium);
+        formData.append('cabType', finalCabType);
+        formData.append('isPremium', values.isPremium);
       }
       // console.log('Submitting form with values:', values);
       const res = await ApiRequestUtils.postDocs(API_ROUTES.POST_DISCOUNT, formData);
@@ -225,9 +261,18 @@ if (values.removeDashboardOfferImg) {
         return;
       }
       const newDiscountId = res?.data?.discountId || res?.data?.id || res?.discountId || res?.id || null;
-      if (values.offerType === 'CUSTOM') {
+      if (values.offerType === 'CUSTOM' && values.targetMode === 'TARGETED') {
         navigate('/dashboard/finance/custom-discount/add', {
-          state: { discountId: newDiscountId },
+          state: {
+            discountId: newDiscountId,
+            targetMode:'TARGETED',
+          },
+        });
+      } else if (values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT') {
+        navigate('/dashboard/finance/discountModuleList', {
+          state: {
+            targetMode:'SEGMENT',
+          },
         });
       } else {
       navigate('/dashboard/finance/discountModuleList');
@@ -249,7 +294,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
 };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-4xl">
       <h2 className="text-2xl font-bold mb-4">Add Discount</h2>
       <Formik
         initialValues={initialValues}
@@ -257,6 +302,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, setFieldValue, values }) => {
+          const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
           const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
           const selectedParcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
           const subZoneOptions = getSubZoneOptions(values.serviceArea);
@@ -266,6 +312,32 @@ const getCurrentPremiumOptions = (currentServiceType) => {
             <div className="grid grid-cols-2 gap-4">
                 <Field type="hidden" name="removeImage" />
                 <Field type="hidden" name="removeDashboardOfferImg" />
+                <div>
+                <label className="text-sm font-medium text-gray-700">entity Type</label>
+                <Field
+                  as="select"
+                  name="entity"
+                    onChange={(e) => {
+                      const nextEntity = e.target.value;
+                      setFieldValue('entity', nextEntity);
+                      setFieldValue('serviceType', '');
+                      setFieldValue('parcelVehicleType', 'BIKE');
+                      setFieldValue('subZoneId', '');
+                      setFieldValue('isPremium', false);
+                      setFieldValue('cabType', '');
+                      setFieldValue('premiumCabType', '');
+                    }}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                >
+                  <option value="">Select Entity Type</option>
+                  <option value="DRIVER">Driver</option>
+                  <option value="CAB">Cab</option>
+                  <option value="AUTO">Auto</option>
+                  <option value="PARCEL">Parcel</option>
+                  
+                </Field>
+                <ErrorMessage name="entity" className="text-red-500 text-sm" component="div" />
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">Offer Type</label>
                 <Field
@@ -288,6 +360,53 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 </Field>
                 <ErrorMessage name="offerType" className="text-red-500 text-sm" component="div" />
               </div>
+              {values.offerType === 'CUSTOM' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Target Mode</label>
+                  <Field
+                    as="select"
+                    name="targetMode"
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    onChange={(e) => {
+                      const nextMode = e.target.value;
+                      setFieldValue('targetMode', nextMode);
+                      if (nextMode === 'SEGMENT') {
+                        setFieldValue('couponCode', '');
+                        setFieldValue('cabType', '');
+                        setFieldValue('premiumCabType', '');
+                        setFieldValue('isPremium', false);
+                      }
+                    }}
+                  >
+                    <option value="">Select Target Mode</option>
+                    <option value="TARGETED">TARGETED</option>
+                    <option value="SEGMENT">SEGMENT</option>
+                  </Field>
+                  <ErrorMessage name="targetMode" className="text-red-500 text-sm" component="div" />
+                </div>
+              )}
+              {values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT' && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Min Completed Trips</label>
+                    <Field
+                      type="number"
+                      name="minCompletedTrips"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="minCompletedTrips" className="text-red-500 text-sm" component="div" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Max Completed Trips</label>
+                    <Field
+                      type="number"
+                      name="maxCompletedTrips"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="maxCompletedTrips" className="text-red-500 text-sm" component="div" />
+                  </div>
+                </>
+              )}
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>
                 <Field
@@ -297,26 +416,23 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                       const nextServiceType = e.target.value;
                       setFieldValue('serviceType', nextServiceType);
                       setFieldValue('serviceArea', []);
-                      if (nextServiceType !== 'PARCEL') {
-                        setFieldValue('parcelVehicleType', 'BIKE');
-                        setFieldValue('subZoneId', '');
-                      } else if (values.offerType === 'GENERAL') {
+                      if (nextServiceType === 'PARCEL') {
                         setFieldValue('isPremium', false);
                         setFieldValue('cabType', '');
                         setFieldValue('premiumCabType', '');
+                      } else {
+                        setFieldValue('parcelVehicleType', 'BIKE');
+                        setFieldValue('subZoneId', '');
                       }
                     }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
                   <option value="">Select Service Type</option>
-                  <option value="DRIVER">DRIVER</option>
-                  <option value="RIDES">RIDES</option>
-                  <option value="RENTAL_HOURLY_PACKAGE">HOURLY PACKAGE</option>
-                  <option value="RENTAL_DROP_TAXI">DROP TAXI</option>
-                  <option value="RENTAL">OUTSTATION</option>
-                  <option value="AUTO">AUTO</option>
-                    <option value="PARCEL">PARCEL</option>
-                  <option value="ALL">ALL</option>
+                  {getServiceTypeOptions(values.entity).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </Field>
                 <ErrorMessage name="serviceType" className="text-red-500 text-sm" component="div" />
               </div>
@@ -390,7 +506,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
   <ErrorMessage name="dashboardOfferImg" component="div" className="text-red-500 text-sm" />
 </div>
 
-                {!isGeneralParcel && (
+                {!isGeneralParcel && values.serviceType !== 'PARCEL' && (
               <div className="mt-3 flex gap-3">
                 <div className="w-full col-span-2">
                   <label className="flex items-center space-x-2 cursor-pointer select-none">
@@ -442,7 +558,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
               </div>
                 )}
 
-              {!isGeneralParcel && values.serviceType !== 'AUTO' && values.isPremium === false && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && values.serviceType !== 'AUTO' && values.isPremium === false && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field
@@ -464,6 +580,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 <Field type="text" name="title" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="title" className="text-red-500 text-sm" component="div" />
               </div>
+            {!(values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT') && (
               <div>
                 <label htmlFor="couponCode" className="text-sm font-medium text-gray-700">Coupon Code</label>
                 <Field
@@ -473,6 +590,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 />
                 <ErrorMessage name="couponCode" className="text-red-500 text-sm" component="div" />
               </div>
+            )}
               <div>
                 <label className="text-sm font-medium text-gray-700">Discount Type</label>
                 <select

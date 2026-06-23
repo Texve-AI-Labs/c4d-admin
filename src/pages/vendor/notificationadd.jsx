@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Formik, Field, ErrorMessage, Form } from 'formik';
+import React, { useEffect, useRef, useState } from 'react';
+import { Formik, Field, ErrorMessage, Form, useFormikContext } from 'formik';
 import { Button } from '@material-tailwind/react';
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import * as Yup from 'yup';
+import Swal from 'sweetalert2';
 
 const validationSchema = Yup.object({
   title: Yup.string().required('Title is required'),
@@ -13,6 +14,18 @@ const validationSchema = Yup.object({
   type: Yup.string().required('Type is required'),
   app: Yup.string().required('App is required'),
   timing: Yup.string().required('Timing is required'),
+  deliverySchedule: Yup.string().required('Delivery Schedule is required'),
+  scheduledAtUtc: Yup.string().when('deliverySchedule', {
+    is: 'SCHEDULE_LATER',
+    then: (schema) =>
+      schema
+        .required('Scheduled date and time is required')
+        .test('valid-datetime', 'Invalid date-time format', (value) => {
+          if (!value) return false;
+          return !Number.isNaN(new Date(value).getTime());
+        }),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   city: Yup.string()
     .required('City is required')
     .test('all-with-others', 'Cannot select "All" with other cities', (value) => {
@@ -23,30 +36,163 @@ const validationSchema = Yup.object({
     }),
 });
 
+const toUtcIso = (dateLikeValue) => {
+  if (!dateLikeValue) return '';
+  const dt = new Date(dateLikeValue);
+  return Number.isNaN(dt.getTime()) ? '' : dt.toISOString();
+};
+
+const normalizeDeliverySchedule = (value) => String(value || '').trim().toUpperCase();
+
+const buildNotificationSchedulePayload = (values) => {
+  const deliverySchedule = normalizeDeliverySchedule(values.deliverySchedule);
+  const isScheduledLater = deliverySchedule === 'SCHEDULE_LATER';
+
+  return {
+    deliverySchedule,
+    scheduledAtUtc: isScheduledLater ? toUtcIso(values.scheduledAtUtc) : '',
+  };
+};
+
+const NotificationTimeValidationWatcher = ({ validateNotificationTime }) => {
+  const { values } = useFormikContext();
+  const debounceRef = useRef(null);
+  const isFirstRunRef = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRunRef.current) {
+      isFirstRunRef.current = false;
+      return () => {
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+        }
+      };
+    }
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      validateNotificationTime(values);
+    }, 400);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [values.deliverySchedule, values.scheduledAtUtc, validateNotificationTime, values]);
+
+  return null;
+};
+
 const NotificationListApp = () => {
+  const showBadRequestAlert = (message) =>
+    Swal.fire({
+      icon: 'error',
+      title: 'Alert',
+      text: message || 'Bad request',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#2563eb',
+      buttonsStyling: false,
+      didOpen: () => {
+        const confirmButton = Swal.getConfirmButton();
+        if (confirmButton) {
+          confirmButton.style.backgroundColor = '#2563eb';
+          // confirmButton.style.border = '1px solid #2563eb';
+          confirmButton.style.color = '#ffffff';
+          confirmButton.style.padding = '8px 16px';
+        }
+      },
+    });
+
   const initialValues = {
     title: '',
     message: '',
     type: '',
     app: '',
     timing: '',
+    deliverySchedule: '',
+    scheduledAtUtc: '',
     city:'',
+    scheduleType:'ANY_TIME',
   };
 
   const [serviceAreas, setServiceAreas] = useState([]);
+  const lastValidatedScheduleRef = useRef('');
   const navigate = useNavigate();
+
+  const validateNotificationTime = async (nextValues) => {
+    const { deliverySchedule, scheduledAtUtc } = buildNotificationSchedulePayload(nextValues);
+
+    if (deliverySchedule !== 'SCHEDULE_LATER' || !scheduledAtUtc) {
+      lastValidatedScheduleRef.current = '';
+      return true;
+    }
+
+    const validationKey = `${deliverySchedule}|${scheduledAtUtc}`;
+    if (lastValidatedScheduleRef.current === validationKey) {
+      return true;
+    }
+
+    const validationPayload = {
+      deliverySchedule,
+      scheduledAtUtc,
+    };
+    // console.log('VALIDATE_NOTIFICATION_TIME payload:', validationPayload);
+
+    const validationResponse = await ApiRequestUtils.post(
+      API_ROUTES.VALIDATE_NOTIFICATION_TIME,
+      validationPayload,
+      0,
+      { suppressAlert: true }
+    );
+
+    if (validationResponse?.code === 400 || validationResponse?.success === false) {
+      lastValidatedScheduleRef.current = '';
+      await showBadRequestAlert(validationResponse?.message);
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      const data = await ApiRequestUtils.post(API_ROUTES.POST_NOTIFICATION_ADD, values);
-      console.log('Submitted successfully:', data);
+      const { deliverySchedule, scheduledAtUtc } = buildNotificationSchedulePayload(values);
+
+      const payload = {
+        title: values.title,
+        message: values.message,
+        type: values.type,
+        app: values.app,
+        timing: values.timing,
+        deliverySchedule: values.deliverySchedule,
+        city: values.city,
+        scheduleType: values.scheduleType || 'ANY_TIME',
+        scheduledAtUtc:
+          values.deliverySchedule === 'SCHEDULE_LATER'
+            ? toUtcIso(values.scheduledAtUtc)
+            : '',
+      };
+      // console.log('Submitting payload:', payload);
+
+      const data = await ApiRequestUtils.post(API_ROUTES.POST_NOTIFICATION_ADD, payload, 0, { suppressAlert: true });
+      // console.log('Submitted successfully:', data);
       // resetForm();
+      if (data?.code === 400) {
+        await showBadRequestAlert(data?.message);
+        return;
+      }
       if(data?.success)
       {
         navigate('/dashboard/vendors/notificationList')
       }
     } catch (error) {
       console.error('Submission error:', error);
+      if (error?.response?.status === 400) {
+        await showBadRequestAlert(error?.response?.data?.message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -58,7 +204,7 @@ const NotificationListApp = () => {
         const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {
           type: 'Service Area',
         });
-        console.log('GEO MARKINGS RESPONSE:', response);
+        // console.log('GEO MARKINGS RESPONSE:', response);
         setServiceAreas(response?.data || []);
       } catch (error) {
         console.error('Error fetching GEO_MARKINGS_LIST:', error);
@@ -76,7 +222,7 @@ const NotificationListApp = () => {
   ];
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add New</h2>
       <Formik
         initialValues={initialValues}
@@ -85,6 +231,7 @@ const NotificationListApp = () => {
       >
         {({ isSubmitting, setFieldValue, values }) => (
           <Form className="space-y-4">
+            <NotificationTimeValidationWatcher validateNotificationTime={validateNotificationTime} />
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -128,6 +275,30 @@ const NotificationListApp = () => {
                       </Field>
                   <ErrorMessage name="timing" component="div" className="text-red-500 text-sm my-1" />
                 </div>
+                <div>
+                  <label htmlFor="deliverySchedule" className="text-sm font-medium text-gray-700">Delivery Schedule</label>
+                  <Field
+                    as="select"
+                    name="deliverySchedule"
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                  >
+                    <option value="">Select Delivery Schedule</option>
+                    <option value="SEND_NOW">Send Now</option>
+                    <option value="SCHEDULE_LATER">Schedule Later</option>
+                  </Field>
+                  <ErrorMessage name="deliverySchedule" component="div" className="text-red-500 text-sm my-1" />
+                </div>
+                {values.deliverySchedule === 'SCHEDULE_LATER' && (
+                  <div>
+                    <label htmlFor="scheduledAtUtc" className="text-sm font-medium text-gray-700">Scheduled At</label>
+                    <Field
+                      type="datetime-local"
+                      name="scheduledAtUtc"
+                      className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                    />
+                    <ErrorMessage name="scheduledAtUtc" component="div" className="text-red-500 text-sm my-1" />
+                  </div>
+                )}
                 <div>
                   <label htmlFor="city" className="text-sm font-medium text-gray-700">Select City</label>
                   <Select name="city" options={ZONE_OPTIONS} isMulti

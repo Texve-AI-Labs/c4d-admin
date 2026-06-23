@@ -4,15 +4,18 @@ import { Button } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { Typography } from '@material-tailwind/react';
 import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import PremiumPriceDetails from '@/components/PremiumPriceDetails';
+import DemandPriceTable from './DemandPrice';
 
 const RentalsPriceMasterDetails = () => {
     const [initialValues, setInitialValues] = useState(null);
     const { id } = useParams();
     const navigate = useNavigate();
     const [premiumConfig ,setPremiumConfig] = useState({});
+    const [demandRules, setDemandRules] = useState([]);
 
     useEffect(() => {
         fetchPriceDetails();
@@ -71,6 +74,8 @@ const RentalsPriceMasterDetails = () => {
                     additionalMinChargeSedan:data?.data?.additionalMinChargeSedan,
                     cancelMins: Utils.convertTimeFormatToMinutes(data?.data?.cancelMins),
                     cancelCharge: data?.data?.cancelCharge,
+                    waitingMins: Utils.convertTimeFormatToMinutes(data?.data?.waitingMins),
+                    waitingCharge: data?.data?.waitingCharge,
 
                     acKilometerPrice: data?.data?.acKilometerPrice || 0,
                     acKilometerPriceMVP: data?.data?.acKilometerPriceMVP || 0,
@@ -92,8 +97,13 @@ const RentalsPriceMasterDetails = () => {
                     acExtraKilometerRoundPriceSuv: data?.data?.acExtraKilometerRoundPriceSuv || 0,
                     acExtraKilometerRoundPriceSedan: data?.data?.acExtraKilometerRoundPriceSedan || 0,
                     freeExtraMinutes: data?.data?.freeExtraMinutes || 0,
+
+                    driverCancelMins:Utils.convertTimeFormatToMinutes(data?.data?.driverCancelMins || 0),
+                    driverFreeCancellationsPerDay:data?.data?.driverFreeCancellationsPerDay || 0,
+                    driverCancellationCharge:data?.data?.driverCancellationCharge || 0,
                 });
                 setPremiumConfig(data.data.premiumConfig);
+                setDemandRules(data.data.demandRules|| []);
             }
         } catch (error) {
             console.error("Error fetching price details:", error);
@@ -128,17 +138,19 @@ const RentalsPriceMasterDetails = () => {
                                 <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>
                             {initialValues?.type !== 'Outstation' && <div> 
-                                <label className="text-sm font-medium text-gray-700">KM</label>
+                                <label className="text-sm font-medium text-gray-700">Package KM</label>
                                 <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
                                 <Field type="string" name="status" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>
+                            {initialValues?.type !== 'Outstation' && 
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Additional KM Rate</label>
                                 <Field type="number" name="extraKmPrice" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>
+      }
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
@@ -180,6 +192,14 @@ const RentalsPriceMasterDetails = () => {
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
                                 <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
@@ -621,10 +641,51 @@ const RentalsPriceMasterDetails = () => {
       </tbody>
     </table>
   </div>
+    <div className='overflow-x-auto m-2'>
+      <Typography className='font-semibold'>Driver Cancellation</Typography>
+      <table className="w-full border border-collapse text-sm text-center">
+        <thead>
+          <tr className="bg-primary  text-white">
+            <th>Driver Cancel Mins</th>
+            <th>Driver Free Cancellations Per Day</th>
+            <th>Driver Cancellation Charge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="border p-2">
+              <Field
+                type="number"
+                name="driverCancelMins"
+                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                disabled
+              />
+            </td>
+            <td className="border p-2">
+              <Field
+                type="number"
+                name="driverFreeCancellationsPerDay"
+                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                disabled
+              />
+            </td>
+            <td className="border p-2">
+              <Field
+                type="number"
+                name="driverCancellationCharge"
+                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                disabled
+              />
+            </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
               {initialValues?.type === 'Outstation' &&
                 <PremiumPriceDetails premiumData={premiumConfig} />
               }
+              <DemandPriceTable demandRules={demandRules}/>
 
 
                         <div className="flex flex-row">

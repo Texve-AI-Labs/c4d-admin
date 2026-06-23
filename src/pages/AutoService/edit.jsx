@@ -1,14 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles, DISTRICT_LIST, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@/utils/constants';
+import { API_ROUTES, ColorStyles, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@/utils/constants';
 import { Alert, Button, Input, List, ListItem, Dialog, DialogHeader, DialogBody, Typography, Card, CardBody, Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ACCOUNT_EDIT_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -40,14 +56,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
-                                onSelect(suggestion);
+                                const selectedText = getSuggestionText(suggestion);
+                                form.setFieldValue(field.name, selectedText);
+                                if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
                             }}
                             className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -98,7 +124,7 @@ const DocumentUpload = ({ label, value, name, onChange, setModalData, fullDocVal
                         name={name}
                         onChange={onChange}
                         className="hidden"
-                        multiple={name !== "livePhoto" && name !== "bankStatement"}
+                        multiple={name !== "livePhoto" && name !== "bankStatement" && name !== "insurranceImage" && name !== "permitImage"}
                     />
                 </div>
             </td>
@@ -108,7 +134,7 @@ const DocumentUpload = ({ label, value, name, onChange, setModalData, fullDocVal
                         variant="small"
                         className="font-semibold underline cursor-pointer text-blue-900"
                         onClick={() => {
-                            if (label === 'Live Photo' || label === 'Bank Statement') {
+                            if (label === 'Live Photo' || label === 'Bank Statement' || label === 'Insurance Image' || label === 'Permit Image') {
                                 setModalData({
                                     image: fullDocVal?.image1
                                 })
@@ -146,22 +172,40 @@ const AutoEdit = () => {
     const [stateSearchText, setStateSearchText] = useState("");
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [serviceAreas, setServiceAreas] = useState([]);
     const [blockedReason, setBlockedReason] = useState(accountVal?.result?.blockedReason || '');
     const [imagePreviews, setImagePreviews] = useState({
         aadhaarImage: null,
         policeClearance: null,
         livePhoto: null,
         drivingLicenseImage: null,
+        vehiclePhotoImage: null,
         consentForm: null,
         panImage: null,
         rcImage: null,
         bankStatementImage: null,
         insurranceImage: null,
+        permitImage: null,
     });
 
     useEffect(() => {
         fetchItem(id);
     }, [id]);
+
+    useEffect(() => {
+        const fetchGeoData = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+                    type: 'Service Area',
+                });
+                setServiceAreas(response?.data || []);
+            } catch (error) {
+                console.error('Error fetching service areas:', error);
+            }
+        };
+
+        fetchGeoData();
+    }, []);
 
 
     const getDocumentByType = (value, type) => {
@@ -187,7 +231,9 @@ const AutoEdit = () => {
             bankStatementImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.BANK_STATEMENT),
             panImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.BANK_STATEMENT),
             rcImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.RC_COPY),
+            vehiclePhotoImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.VEHICLE_PHOTO),
             insurranceImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.INSURANCE),
+            permitImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.PERMIT),
         });
     };
 
@@ -266,11 +312,13 @@ const AutoEdit = () => {
             const type = label === 'aadhaarImage' ? KYC_PROCESS.AADHAAR :
                 label === 'rcImage' ? KYC_PROCESS.RC_COPY :
                     label === 'drivingLicenseImage' ? KYC_PROCESS.DRIVING_LICENSE :
-                        label === 'panImage' ? KYC_PROCESS.PAN : '';
+                        label === 'vehiclePhotoImage' ? KYC_PROCESS.VEHICLE_PHOTO :
+                        label === 'panImage' ? KYC_PROCESS.PAN : label === 'insurranceImage' ? KYC_PROCESS.INSURANCE : label === 'permitImage' ? KYC_PROCESS.PERMIT : '';
 
             const formData = new FormData();
             formData.append('type', type);
             formData.append('accountId', accountVal?.id);
+            const isSingleFileDoc = label === "insurranceImage" || label === "permitImage";
 
             if (files[0]) {
                 formData.append('image1', files[0]);
@@ -278,7 +326,7 @@ const AutoEdit = () => {
                 formData.append('fileTypeImage1', files[0].type);
             }
 
-            if (files[1]) {
+            if (files[1] && !isSingleFileDoc) {
                 formData.append('image2', files[1]);
                 formData.append('extImage2', files[1].name.split('.').pop());
                 formData.append('fileTypeImage2', files[1].type);
@@ -404,16 +452,22 @@ const AutoEdit = () => {
             setTimeout(() => setAlert(null), 5000);
         }
     }
-    const handleGoogleAddressSelect = (place) => {
-        if (!place || !place.formatted_address) {
+    const handleGoogleAddressSelect = (addressText, place) => {
+        const resolvedAddress =
+            addressText ||
+            place?.formatted_address ||
+            place?.fullText ||
+            place?.title ||
+            '';
+
+        if (!resolvedAddress) {
             console.error("Google Address selection is invalid", place);
             return;
         }
 
-        const parsedAddress = parseAddress(place.formatted_address);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(resolvedAddress, place?.address_components);
 
-        setFieldValue("address", place.formatted_address);
+        setFieldValue("address", resolvedAddress);
 
         if (isSameAddress) {
             setFieldValue("street", parsedAddress.street);
@@ -472,38 +526,24 @@ const AutoEdit = () => {
         setSubmitting(false);
     };
 
-    const districtOptions = DISTRICT_LIST.map(district => ({
-        id: district.value,
-        name: district.label
+    const districtOptions = [...new Set(
+        serviceAreas
+            .map((area) => area?.district || area?.name)
+            .filter(Boolean)
+    )].map((district) => ({
+        id: district,
+        name: district
     }));
 
     const filteredDistricts = districtOptions.filter(district =>
         district.name.toLowerCase().includes(districtSearchText.toLowerCase())
     );
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     const thalukOptions = THALUK_LIST.map(thaluk => ({
         id: thaluk.value,
@@ -811,6 +851,30 @@ const AutoEdit = () => {
                                                 onChange={(e) => handleImageUpload(e, setFieldValue, "rcImage", imagePreviews?.rcImage?.id)}
                                                 setModalData={setModalData}
                                                 fullDocVal={imagePreviews.rcImage}
+                                            />
+                                            <DocumentUpload
+                                                label="Vehicle Photo"
+                                                value={imagePreviews?.vehiclePhotoImage?.image1}
+                                                name="vehiclePhotoImage"
+                                                onChange={(e) => handleImageUpload(e, setFieldValue, "vehiclePhotoImage", imagePreviews?.vehiclePhotoImage?.id)}
+                                                setModalData={setModalData}
+                                                fullDocVal={imagePreviews.vehiclePhotoImage}
+                                            />
+                                            <DocumentUpload
+                                                label="Insurance Image"
+                                                value={imagePreviews?.insurranceImage?.image1}
+                                                name="insurranceImage"
+                                                onChange={(e) => handleImageUpload(e, setFieldValue, "insurranceImage", imagePreviews?.insurranceImage?.id)}
+                                                setModalData={setModalData}
+                                                fullDocVal={imagePreviews.insurranceImage}
+                                            />
+                                            <DocumentUpload
+                                                label="Permit Image"
+                                                value={imagePreviews?.permitImage?.image1}
+                                                name="permitImage"
+                                                onChange={(e) => handleImageUpload(e, setFieldValue, "permitImage", imagePreviews?.permitImage?.id)}
+                                                setModalData={setModalData}
+                                                fullDocVal={imagePreviews.permitImage}
                                             />
                                            
 

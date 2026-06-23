@@ -8,7 +8,7 @@ import {
 } from "./driverIncentiveApi";
 import { fetchZoneOptions } from "./zoneOptions";
 import DriverIncentiveComponentEditor from "./DriverIncentiveComponentEditor";
-import { createDefaultRule, createEditableRule, getTargetComponent } from "./edit.utils";
+import { createDefaultRule, createEditableRule, getServiceConditionDetails, getTargetComponent } from "./edit.utils";
 
 const toTypeCode = (code = "") =>
   code === "ONLINE_HOURS_BONUS"
@@ -203,25 +203,29 @@ function DriverIncentiveEdit() {
 
     if (nextComponent.code === "ONLINE_HOURS_BONUS" || nextComponent.code === "SERVICE_TRIP_BONUS") {
       nextComponent.payoutFrequency = form.payoutFrequency || "WEEKLY";
-      nextComponent.rules = componentRules.map((rule) => ({
-        amount: Number(rule.amount || 0),
-        condition: {
-          metric: rule.metric || (nextComponent.code === "ONLINE_HOURS_BONUS" ? "onlineHours" : "tripCount"),
-          period: form.payoutFrequency || rule.period || "WEEKLY",
-          serviceType:
-            rule.serviceType ||
-            (isAutoPartnerType(form.partnerType)
-              ? "AUTO"
-              : nextComponent.code === "ONLINE_HOURS_BONUS"
-                ? "ANY"
-                : "RIDES"),
-          op: rule.op || ">=",
-          value: Number(rule.value || 0),
-          bookingType: null,
-          packageType: null,
-          isMandatory: true,
-        },
-      }));
+      nextComponent.rules = componentRules.map((rule) => {
+        const selectedServiceType =
+          rule.serviceType ||
+          (isAutoPartnerType(form.partnerType)
+            ? "AUTO"
+            : nextComponent.code === "ONLINE_HOURS_BONUS"
+              ? "ANY"
+              : "RIDES");
+        const serviceDetails = getServiceConditionDetails(selectedServiceType);
+
+        return {
+          amount: Number(rule.amount || 0),
+          condition: {
+            metric: rule.metric || (nextComponent.code === "ONLINE_HOURS_BONUS" ? "onlineHours" : "tripCount"),
+            period: form.payoutFrequency || rule.period || "WEEKLY",
+            serviceType: selectedServiceType,
+            ...serviceDetails,
+            op: rule.op || ">=",
+            value: Number(rule.value || 0),
+            isMandatory: true,
+          },
+        };
+      });
     }
 
     setSaving(true);

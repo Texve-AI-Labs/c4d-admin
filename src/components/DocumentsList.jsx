@@ -21,9 +21,10 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
     const navigate = useNavigate();
     const [isDeclining, setIsDeclining] = useState(false);
     const [declineReason, setDeclineReason] = useState("");
-    const cabs = cabsList || [];
-    const autos = autoList || [];
-    const parcels = parcelsList || [];
+    const cabs = Array.isArray(cabsList) ? cabsList : cabsList ? [cabsList] : [];
+    const autos = Array.isArray(autoList) ? autoList : autoList ? [autoList] : [];
+    const parcels = Array.isArray(parcelsList) ? parcelsList : parcelsList ? [parcelsList] : [];
+    const hasVehicleRecords = cabs.length > 0 || autos.length > 0 || parcels.length > 0;
 
     const getVehicleLabel = () => {
         const normalizedService = (serviceType || "").toLowerCase();
@@ -34,6 +35,7 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
     };
 
     const fetchData = async () => {
+        if (!id || !type) return;
         const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_DOCUMENT_DETAILS, {
             "id": id,
             "user": type.toLowerCase()
@@ -46,7 +48,13 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
 
     useEffect(() => {
         fetchData();
-    }, [modalData, id, type]);
+    }, [id, type]);
+
+    const handleCloseModal = () => {
+        setModalData(null);
+        setDeclineReason("");
+        setIsDeclining(false);
+    };
 
     const getStatusColor = (status) => {
         switch (status.toLowerCase()) {
@@ -77,7 +85,7 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
         // console.log("DATAAA",data)
         if (data?.success) {
             setDeclineReason("");
-            setIsDeclining("");
+            setIsDeclining(false);
             setModalData(null)
             Swal.fire({
                 position: "center",
@@ -93,7 +101,7 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
             // })
         } else {
             setDeclineReason("");
-            setIsDeclining("");
+            setIsDeclining(false);
             setModalData(null)
             Swal.fire({
                 position: "center",
@@ -174,7 +182,7 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                                                                         className="font-semibold underline cursor-pointer text-primary-900"
                                                                         onClick={() => {
                                                                             setDeclineReason("");
-                                                                            setIsDeclining("");
+                                                                            setIsDeclining(false);
                                                                             setModalData({
                                                                                 id,
                                                                                 image: image1,
@@ -223,18 +231,13 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                 )
                 }
             </Card>
-            {modalData && (
-                <Dialog open={Boolean(modalData)} handler={() => setModalData(null)} size="md" className="max-h-[90vh] overflow-y-auto">
+            <Dialog open={Boolean(modalData)} handler={handleCloseModal} size="md" className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <div className="flex justify-between items-center w-full">
                             <Typography variant="h6">Document Details</Typography>
                             <button
                                 className="text-gray-600 hover:text-gray-900"
-                                onClick={() => {
-                                    setModalData(null);
-                                    setDeclineReason("");
-                                    setIsDeclining("");
-                                }}
+                                onClick={handleCloseModal}
                             >
                                 X
                             </button>
@@ -242,32 +245,32 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                     </DialogHeader>
                     <DialogBody divider>
                         <div className="flex flex-col items-center space-y-3">
-                            <div className={`flex ${modalData.image2 ? "flex-row space-x-6" : "flex-col"} justify-center`}>
-                                {modalData.image.toLowerCase().endsWith(".pdf") ? (
+                            <div className={`flex ${modalData?.image2 ? "flex-row space-x-6" : "flex-col"} justify-center`}>
+                                {modalData?.image?.toLowerCase?.()?.endsWith(".pdf") ? (
                                     <iframe
-                                        src={modalData.image}
+                                        src={modalData?.image}
                                         className="w-full rounded-lg shadow-md"
                                         style={{ height: "45vh" }}
                                     />
                                 ) : (
                                     <img
-                                        src={modalData.image}
+                                        src={modalData?.image}
                                         alt="Document"
                                         className="rounded-lg shadow-md"
                                         style={{ width: "45%", height: "45vh", objectFit: "contain" }}
                                     />
                                 )
                                 }
-                                {modalData.image2 && (
-                                    modalData.image2.toLowerCase().endsWith(".pdf") ? (
+                                {modalData?.image2 && (
+                                    modalData?.image2?.toLowerCase?.()?.endsWith(".pdf") ? (
                                         <iframe
-                                            src={modalData.image2}
+                                            src={modalData?.image2}
                                             className="rounded-lg shadow-md"
                                             style={{ height: "45vh", width: "45%" }}
                                         />
                                     ) : (
                                         <img
-                                            src={modalData.image2}
+                                            src={modalData?.image2}
                                             alt="Document"
                                             className="rounded-lg shadow-md"
                                             style={{ height: "45vh", width: "45%", objectFit: "contain" }}
@@ -278,16 +281,16 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
 
                             <div className="flex justify-center mt-4">
                                 <a
-                                    href={modalData.image}
+                                    href={modalData?.image}
                                     download
                                     target="_blank"
                                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
                                 >
                                     Download Image 1
                                 </a>
-                                {modalData.image2 && (
+                                {modalData?.image2 && (
                                     <a
-                                        href={modalData.image2}
+                                        href={modalData?.image2}
                                         download
                                         target="_blank"
                                         className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
@@ -297,10 +300,10 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                                 )}
                             </div>
                             <Typography variant="body1" className="text-gray-600">
-                                Document Status: <span className={getStatusColor(modalData.status)}>{modalData.status}</span>
+                                Document Status: <span className={getStatusColor(modalData?.status || "")}>{modalData?.status}</span>
                             </Typography>
-                            {modalData.status !== 'PENDING' && <Typography variant="body1" className="text-gray-600">
-                                Verified By : {modalData.User ? modalData?.User?.name : ''}
+                            {modalData?.status !== 'PENDING' && <Typography variant="body1" className="text-gray-600">
+                                Verified By : {modalData?.User ? modalData?.User?.name : ''}
                             </Typography>}
                         </div>
                         {isDeclining && (
@@ -317,18 +320,16 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                             </div>
                         )}
                     </DialogBody>
-                    {/* {modalData.status !== "APPROVED" && noApprove && ( */}
+                    {modalData?.status !== "APPROVED" && !noApprove && (
                         <DialogFooter className="flex flex-col items-center">
                             {!isDeclining ? (
                                 <div className="flex space-x-5">
                                     <Button
                                         onClick={() => {
-                                            if (type !== 'driver' && (modalData.type == "RC_COPY" || modalData.type == "LICENSE") ? (cabs.length > 0) || (autos.length > 0) || (parcels.length > 0) : true) {
-                                                handleStatusChange(modalData.id, "APPROVED", "")
+                                            if (type !== "driver" && ["RC_COPY", "LICENSE"].includes(modalData?.type) ? hasVehicleRecords : true) {
+                                                handleStatusChange(modalData?.id, "APPROVED", "")
                                             } else {
-                                                setModalData(null);
-                                                setDeclineReason("");
-                                                setIsDeclining("");
+                                                handleCloseModal();
                                                 Swal.fire({
                                                     position: "center",
                                                     icon: "error",
@@ -351,30 +352,30 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                                       {/* {["PENDING"].includes(modalData.status) && ( */}
                                     <>
                                         <Button
-                                        onClick={() => handleStatusChange(modalData.id, "NOT_INTERESTED", "")}
+                                        onClick={() => handleStatusChange(modalData?.id, "NOT_INTERESTED", "")}
                                         className="text-xs font-semibold text-white bg-orange-500 px-4 py-2"
                                         >
                                         Not Interested
                                         </Button>
 
                                         <Button
-                                        onClick={() => handleStatusChange(modalData.id, "NO_RESPONSE", "")}
+                                        onClick={() => handleStatusChange(modalData?.id, "NO_RESPONSE", "")}
                                         className="text-xs font-semibold text-white bg-gray-500 px-4 py-2"
                                         >
                                         No Response
                                         </Button>
 
                                         <Button
-                                        onClick={() => handleStatusChange(modalData.id, "INVALID", "")}
+                                        onClick={() => handleStatusChange(modalData?.id, "INVALID", "")}
                                         className="text-xs font-semibold text-white bg-red-600 px-4 py-2"
                                         >
                                         Invalid
                                         </Button>
                                     </>
                                     {/* )} */}
-                                  {["NOT_INTERESTED", "INVALID", "NO_RESPONSE"].includes(modalData.status) && (
+                                  {["NOT_INTERESTED", "INVALID", "NO_RESPONSE"].includes(modalData?.status) && (
                                     <Button
-                                        onClick={() => handleStatusChange(modalData.id, "PENDING", "")}
+                                        onClick={() => handleStatusChange(modalData?.id, "PENDING", "")}
                                         className="text-xs font-semibold text-white bg-blue-500 px-4 py-2"
                                     >
                                         Pending
@@ -393,7 +394,7 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                                     </Button>
                                     <Button
                                         onClick={() => {
-                                            handleStatusChange(modalData.id, "DECLINED", declineReason);
+                                            handleStatusChange(modalData?.id, "DECLINED", declineReason);
                                             setIsDeclining(false);
                                         }}
                                         className="bg-primary-400 hover:bg-primary-500 text-white px-4 py-2"
@@ -404,9 +405,8 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                                 </div>
                             )}
                         </DialogFooter>
-                    {/* )} */}
+                    )}
                 </Dialog>
-            )}
         </>
     )
 };

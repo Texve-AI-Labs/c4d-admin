@@ -1,15 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, DISTRICT_LIST, THALUK_LIST, STATE_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, THALUK_LIST, STATE_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
 import { Alert, Button, Card, CardBody, Typography, Input, List, ListItem, Dialog, DialogHeader, DialogBody,Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import { DRIVER_ADD_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -41,14 +57,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
-                                onSelect(suggestion);
+                                const selectedText = getSuggestionText(suggestion);
+                                form.setFieldValue(field.name, selectedText);
+                                if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
                             }}
                             className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -66,6 +92,7 @@ const DriverAdd = () => {
     const [thalukSearchText, setThalukSearchText] = useState("");
     const [stateSearchText, setStateSearchText] = useState("");
     const [owner, setOwners] = useState([]);
+    const [serviceAreas, setServiceAreas] = useState([]);
     const [isEditable, setIsEditable] = useState(true);
     const [loading, setLoading] = useState(false);
     const [imagePreviews, setImagePreviews] = useState({
@@ -130,6 +157,21 @@ const DriverAdd = () => {
     useEffect(() => {
         // getPackageListDetails();
         getOwnersList();
+    }, []);
+
+    useEffect(() => {
+        const fetchGeoData = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+                    type: 'Service Area',
+                });
+                setServiceAreas(response?.data || []);
+            } catch (error) {
+                console.error('Error fetching service areas:', error);
+            }
+        };
+
+        fetchGeoData();
     }, []);
 
     const initialValues = {
@@ -315,9 +357,13 @@ const DriverAdd = () => {
         setSubmitting(false);
     };
 
-    const districtOptions = DISTRICT_LIST.map(district => ({
-        id: district.value,
-        name: district.label
+    const districtOptions = [...new Set(
+        serviceAreas
+            .map((area) => area?.district || area?.name)
+            .filter(Boolean)
+    )].map((district) => ({
+        id: district,
+        name: district
     }));
 
     const filteredDistricts = districtOptions.filter(district =>
@@ -563,29 +609,11 @@ const DriverAdd = () => {
         }
     };
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     const extractPincode = (addressComponents) => {
         const pincodeObj = addressComponents.find((comp) =>
@@ -594,16 +622,22 @@ const DriverAdd = () => {
         return pincodeObj ? pincodeObj.long_name : "";
     };
 
-    const handleGoogleAddressSelect = (place) => {
-        if (!place || !place.formatted_address) {
+    const handleGoogleAddressSelect = (addressText, place) => {
+        const resolvedAddress =
+            addressText ||
+            place?.formatted_address ||
+            place?.fullText ||
+            place?.title ||
+            '';
+
+        if (!resolvedAddress) {
             console.error("Google Address selection is invalid", place);
             return;
         }
 
-        const parsedAddress = parseAddress(place.formatted_address);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(resolvedAddress, place?.address_components);
 
-        setFieldValue("address", place.formatted_address);
+        setFieldValue("address", resolvedAddress);
 
         if (isSameAddress) {
             setFieldValue("streetName", parsedAddress.street);

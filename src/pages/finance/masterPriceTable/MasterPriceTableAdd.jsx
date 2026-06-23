@@ -7,6 +7,7 @@ import Select from 'react-select';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
+import { Typography } from "@material-tailwind/react";
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -26,13 +27,15 @@ const PRICE_SCHEMA = Yup.object().shape({
     baseKm: Yup.number().required('Base Km is required'),
     baseFare: Yup.number().required('Base Fare is required'),
     ratePerKm: Yup.number().required('Rate Per Km is required'),
-    ratePerMin: Yup.number().required('Rate Per Min is required'),
+    // ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min is required'),
     rateParameter: Yup.string().required('Rate Parameter is required'),
     surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
     cancellationMins: Yup.number().required('Cancellation Mins is required'),
     cancellationCharge: Yup.number().required('Cancellation Charge is required'),
+    waitingMins: Yup.number().required('Waiting Mins is required'),
+    waitingCharge: Yup.number().required('Waiting Charge is required'),
     status: Yup.string().required('Status is required'),
     zone: Yup.string().required('Zone is required'),
 });
@@ -72,7 +75,9 @@ const PriceAdd = () => {
         ratePerKmSuv:'',
         ratePerKmSedan:'',
         ratePerKmMVP: '',
-        ratePerMin: '',
+        waitingMins:'',
+        waitingCharge:'',
+        // ratePerMin: '',
         additionalMin: '',
         rateParameter: '',
         surchargePercentage: '',
@@ -83,7 +88,10 @@ const PriceAdd = () => {
         cancellationCharge: '',
         status: 'ACTIVE',
         zone: '',
-        freeExtraMinutes:''
+        freeExtraMinutes:'',
+        driverCancelMins:'',
+        driverFreeCancellationsPerDay:'',
+        driverCancellationCharge:''
     };
 
     const onSubmit = async (values, { setSubmitting }) => {
@@ -99,7 +107,9 @@ const PriceAdd = () => {
                 'kilometerPriceSuv':values.ratePerKmSuv,
                 'kilometerPriceSedan':values.ratePerKmSedan,
                 'kilometerPriceMVP': values.ratePerKmMVP,
-                'minCharge': values.ratePerMin,
+                'waitingMins': Utils.convertMinutesToTimeFormat(values.waitingMins),
+                'waitingCharge': values.waitingCharge,
+                // 'minCharge': values.ratePerMin,
                 'rateParameter': values.rateParameter,
                 'additionalMinCharge': values.additionalMin,
                 'freeExtraMinutes':values.freeExtraMinutes,
@@ -114,6 +124,10 @@ const PriceAdd = () => {
                 'period': 'Rides',
                 'status': values.status == "ACTIVE" ? 1 : 0,
                 'zone': values.zone,
+
+                'driverCancelMins': Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                'driverFreeCancellationsPerDay': values.driverFreeCancellationsPerDay,
+                'driverCancellationCharge': values.driverCancellationCharge
             }
             const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
             if (data?.success) {
@@ -210,6 +224,16 @@ const PriceAdd = () => {
                                 <ErrorMessage name="freeExtraMinutes" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
                                 <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="nightCharge" component="div" className="text-red-500 text-sm" />
@@ -235,7 +259,7 @@ const PriceAdd = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Car Type</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th>
+                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                         </tr>
                                     </thead>
@@ -250,9 +274,9 @@ const PriceAdd = () => {
                                                 <Field type="number" name="ratePerKm" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -265,9 +289,9 @@ const PriceAdd = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmSedan" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -280,9 +304,9 @@ const PriceAdd = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmSuv" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -295,9 +319,9 @@ const PriceAdd = () => {
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerKmMVP" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
-                                            <td className="px-6 py-1">
+                                            {/* <td className="px-6 py-1">
                                                 <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                             </td>
@@ -305,6 +329,44 @@ const PriceAdd = () => {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <div className='overflow-x-auto m-2'>
+                            <Typography className='font-semibold'>Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary  text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancelMins"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverFreeCancellationsPerDay"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                            />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field
+                                                type="number"
+                                                name="driverCancellationCharge"
+                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                            />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">

@@ -24,6 +24,21 @@ const AddBanner = () => {
   const [dropSuggestions, setDropSuggestions] = useState([]);
   const [dropLocation, setDropLocation] = useState(null); 
 
+  const getSuggestionText = (suggestion) => {
+    if (typeof suggestion === 'string') return suggestion;
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+  };
+
+  const getSuggestionTitle = (suggestion) => {
+    if (typeof suggestion === 'string') {
+      const [firstPart] = suggestion.split(',');
+      return (firstPart || suggestion).trim();
+    }
+    if (!suggestion || typeof suggestion !== 'object') return '';
+    return suggestion.title || suggestion.fullText || '';
+  };
+
   const initialValues = {
     fromDate: '',
     toDate: '',
@@ -35,6 +50,9 @@ const AddBanner = () => {
     dropAddress: '',        
     dropLocation: null,     
     navigateTo: '',         
+    driverType: '',
+    startTime: '',
+    endTime: '',
   };
 
   const fetchGeoData = async () => {
@@ -62,23 +80,52 @@ const AddBanner = () => {
     })),
   ];
 
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
+  const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
+
   const validationSchema = Yup.object().shape({
-    // status: Yup.boolean().required('Status is required'),
     type: Yup.string().required('Type is required'),
     image: Yup.mixed()
       .required('Image is required')
-      .test('fileType', 'Only JPEG or PNG files are allowed', (value) =>
-        value ? ['image/jpeg', 'image/png','image/gif'].includes(value.type) : false
+      .test('fileType', 'Only JPEG or PNG or GIF or AVIF or WEBP files are allowed', (value) =>
+        value ? ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'].includes(value.type) : false
       ),
-      // fromDate: Yup.string().required('Start Date is required'),
-      // toDate: Yup.string().required('End Date is required'),
-      zone: Yup.string().required('Zone is required')
+    fromDate: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('Start Date is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    toDate: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('End Date is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    zone: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('Zone is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    startTime: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('Start Time is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    endTime: Yup.string().when('type', {
+      is: requiresStandardFields,
+      then: (schema) => schema.required('End Time is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    driverType: Yup.string().when('type', {
+      is: (type) => type === 'INTRO_SLIDES_DRIVER' || type === 'TRAINING_VIDEO_DRIVER',
+      then: (schema) => schema.required('Driver Type is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
 
   const handleImageUpload = (file, setFieldValue) => {
-    const validTypes = ['image/jpeg', 'image/png','image/gif'];
+    const validTypes = ['image/jpeg', 'image/png','image/gif','image/avif','image/webp',];
     if (!file || !validTypes.includes(file.type)) {
-      alert('Only JPEG and PNG images are allowed.');
+      alert('Only JPEG, PNG, GIF, and AVIF, WEBP images are allowed.');
       return;
     }
 
@@ -130,23 +177,33 @@ const AddBanner = () => {
       // console.log('Sending image:', values.image?.name, values.image?.type);
 
       const formData = new FormData();
-      formData.append('fromDate', values.fromDate);
-      formData.append('toDate', values.toDate);
-      formData.append('redirectUrl', values.redirectUrl.trim());
+      const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
+      const isNewCustomer = values.type === "NEW_CUSTOMER";
+      if (!isNewCustomer && !isIntroType) {
+        // const fromDateIso = values.fromDate ? new Date(values.fromDate).toISOString() : '';
+        // const toDateIso = values.toDate ? new Date(values.toDate).toISOString() : '';
+        formData.append('fromDate', values.fromDate);
+        formData.append('startTime', values.startTime || '');
+        formData.append('endTime', values.endTime || '');
+        formData.append('toDate', values.toDate);
+        formData.append('redirectUrl', values.redirectUrl.trim());
+        formData.append('dropAddress', values.dropAddress || '');
+        formData.append('dropLat', values.dropLocation?.lat || '');
+        formData.append('dropLong', values.dropLocation?.lng || '');
+        formData.append('navigateTo', values.navigateTo.trim());
+      }
+      if (values.type === 'TRAINING_VIDEO_DRIVER') {
+        formData.append('redirectUrl', values.redirectUrl.trim());
+      }
+      if (values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER') {
+        formData.append('driverType', values.driverType);
+      }
       formData.append('status', values.status === 'true' || values.status === true);
       formData.append('type', values.type.trim());
-      formData.append('zone', values.zone);
+      formData.append('zone', isNewCustomer || isIntroType ? 'All' : values.zone);
       formData.append('image', values.image, values.image.name);
       formData.append('fileTypeImage', values.image?.type || '');
       formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
-
-      // Append Drop Location
-      formData.append('dropAddress', values.dropAddress||'');
-      formData.append('dropLat', values.dropLocation?.lat || '');
-      formData.append('dropLong', values.dropLocation?.lng || '');
-
-      // NEW FIELD: Append Navigate To
-      formData.append('navigateTo', values.navigateTo.trim());
 
       const response = await ApiRequestUtils.postDocs(API_ROUTES.POST_BANNER, formData);
 
@@ -154,7 +211,7 @@ const AddBanner = () => {
         navigate('/dashboard/user/bannerimgView');
       } else {
         setError(response?.error || 'Banner upload failed.');
-      }
+      } 
     } catch (err) {
       console.error('Upload error:', err);
       setError('Something went wrong. Try again.');
@@ -164,7 +221,7 @@ const AddBanner = () => {
   };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add Banner</h2>
       {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
 
@@ -173,20 +230,100 @@ const AddBanner = () => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ isSubmitting, values,setFieldValue }) => (
+        {({ isSubmitting, values,setFieldValue }) => {
+          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
+          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType;
+          return (
           <Form className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700">Type</label>
+                <Field
+                  as="select"
+                  name="type"
+                  className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                  onChange={(e) => {
+                    const selectedType = e.target.value;
+                    setFieldValue('type', selectedType);
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER') {
+                      setFieldValue('zone', 'All');
+                    }
+                    if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
+                      setFieldValue('driverType', '');
+                    }
+                  }}
+                >
+                  <option value="">select the Type</option>
+                  {/* <option value="TOP">Top</option> */}
+                  {/* <option value="BOTTOM">Bottom</option> */}
+                  {/* <option value="YOUTUBE">YouTube</option> */}
+                  {/* <option value="BACKGROUND">Background</option> */}
+                  <option value="BANNER">Banner</option>
+                  {/* <option value="STATS">Stats</option> */}
+                  <option value="TOP_NEW">Top New</option>
+                  {/* <option value="MIDCAROUSEL">MidCarousel</option> */}
+                  {/* <option value="PROMOTION">Promotion</option> */}
+                  {/* <option value="BOTTOM_NEW">Bottom New</option> */}
+                  <option value="NEW_CUSTOMER">New Customer</option>
+                  <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
+                  <option value="INTRO_SLIDES_DRIVER">Intro Slides (Driver)</option>         
+                  <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>         
+                </Field>
+                <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
+              </div>
+              {(values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER') && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Driver Type</label>
+                  <Field
+                    as="select"
+                    name="driverType"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                  >
+                    <option value="">Select Driver Type</option>
+                    <option value="ACTING_DRIVER">ACTING_DRIVER</option>
+                    <option value="CAB">CAB</option>
+                    <option value="AUTO">AUTO</option>
+                    <option value="PARCEL">PARCEL</option>
+                    <option value="ALL">ALL</option>
+                  </Field>
+                  <ErrorMessage name="driverType" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
+              {values.type === 'TRAINING_VIDEO_DRIVER' && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Redirect URL</label>
+                    <Field
+                      name="redirectUrl"
+                      type="text"
+                      className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                    />
+                    <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
+                  </div>
+                </>
+              )}
+              {!hideStandardFields && (
+                <>
               <div>
                 <label className="text-sm font-medium text-gray-700">From Date</label>
                 <Field name="fromDate" type="date" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="fromDate" component="div" className="text-red-500 text-sm" />
               </div>
-
+                 <div>
+                <label className="text-sm font-medium text-gray-700">Start Time</label>
+                <Field name="startTime" type="time" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                <ErrorMessage name="startTime" component="div" className="text-red-500 text-sm" />
+              </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">To Date</label>
                 <Field name="toDate" type="date" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="toDate" component="div" className="text-red-500 text-sm" />
+              </div>
+                 <div>
+                <label className="text-sm font-medium text-gray-700">End Time</label>
+                <Field name="endTime" type="time" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                <ErrorMessage name="endTime" component="div" className="text-red-500 text-sm" />
               </div>
 
               <div>
@@ -194,25 +331,7 @@ const AddBanner = () => {
                 <Field name="redirectUrl" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
               </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-700">Type</label>
-                <Field as="select" name="type" className="p-2 w-full rounded-md border border-gray-300 shadow-sm">
-                  <option value="">select the Type</option>
-                  <option value="TOP">Top</option>
-                  <option value="BOTTOM">Bottom</option>
-                  <option value="YOUTUBE">YouTube</option>
-                  <option value="BACKGROUND">Background</option>
-                  <option value="BANNER">Banner</option>
-                  <option value="STATS">Stats</option>
-                  <option value="TOP_NEW">Top_new</option>
-                  <option value="MIDCAROUSEL">MidCarousel</option>
-                  <option value="PROMOTION">Promotion</option>
-                   <option value="BOTTOM_NEW">Bottom_new</option>
-                </Field>
-                <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
-              </div>
-
+              </>)}
               <div>
                 <label className="text-sm font-medium text-gray-700">Status</label>
                 <Field as="select" name="status" className="p-2 w-full rounded-md border border-gray-300 shadow-sm">
@@ -222,20 +341,24 @@ const AddBanner = () => {
                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
               </div>
 
-              <div>
+              <div  className={`${hideStandardFields ? 'hidden' : ''}`}>
                 <label htmlFor="zone" className="text-sm font-medium text-gray-700">
                   Zone
                 </label>
                 <Select
                   options={ZONE_OPTIONS}
-                  onChange={(opt) => setFieldValue('zone', opt.value)}
+                  value={ZONE_OPTIONS.find((opt) => opt.value === values.zone) || null}
+                  onChange={(opt) => setFieldValue('zone', opt?.value || '')}
                   placeholder="Select Zone"
+                  isDisabled={hideStandardFields}
                   className="w-full"
                   name="zone" />
                 <ErrorMessage name="zone" component="div" className="text-red-500 text-sm" />
               </div>
 
               {/* Drop Location (New Field) */}
+              {!hideStandardFields && (
+                <>              
               <div>
                 <label className="text-sm font-medium text-gray-700">Drop Location </label>
                 <Field
@@ -256,9 +379,14 @@ const AddBanner = () => {
                       <li
                         key={idx}
                         className="p-2 cursor-pointer hover:bg-gray-100"
-                        onClick={() => handleSelectLocation(suggestion, setFieldValue)}
+                        onClick={() => handleSelectLocation(getSuggestionText(suggestion), setFieldValue)}
                       >
-                        {suggestion}
+                        <div className="flex flex-col">
+                          <span className="font-bold text-black">{getSuggestionTitle(suggestion)}</span>
+                          {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                            <span className="text-xs text-gray-600">{getSuggestionText(suggestion)}</span>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -292,8 +420,11 @@ const AddBanner = () => {
                   ))}
                 </Field>
               </div>
+              </>)}
 
               {/* Image Upload */}
+
+              
               <div>
                 <label htmlFor="image" className="text-sm font-medium text-gray-700">
                   Image
@@ -310,6 +441,7 @@ const AddBanner = () => {
                 />
                 <ErrorMessage name="image" component="div" className="text-red-500 text-sm" />
               </div>
+              
             </div>
 
             <div className="flex flex-row">
@@ -332,7 +464,8 @@ const AddBanner = () => {
               </Button>
             </div>
           </Form>
-        )}
+          );
+        }}
       </Formik>
     </div>
   );

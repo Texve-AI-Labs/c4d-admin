@@ -27,13 +27,22 @@ const GstAdd = () => {
     try {
       const payload = {
         serviceType: values.serviceType,
+        type: "GST",
         name: values.name,
         totalGst: parseFloat(values.totalGst),
         hsnCode: values.hsnCode,
         serviceCategory: values.serviceCategory,
+        description: values.serviceDescription,
         serviceDescription: values.serviceDescription,
         gstNo: values.gstNo,
-        isActive: values.isActive,
+        isActive: values.isActive === true || values.isActive === "true",
+        // config: {
+        //   totalGst: parseFloat(values.totalGst),
+        //   hsnCode: values.hsnCode,
+        //   serviceCategory: values.serviceCategory,
+        //   serviceDescription: values.serviceDescription,
+        //   gstNo: values.gstNo,
+        // },
       };
 
       await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);
@@ -49,7 +58,7 @@ const GstAdd = () => {
   };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add GST</h2>
 
       <Formik initialValues={initialValues} validationSchema={GST_ADD_SCHEMA} onSubmit={handleSubmit}>

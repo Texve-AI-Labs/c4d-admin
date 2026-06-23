@@ -169,6 +169,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
             }}
             placeholder="Select description"
             isClearable={false}
+            isSearchable={false}
             menuPortalTarget={document.body}
             styles={{
               menuPortal: (base) => ({ ...base, zIndex: 9999 }),
@@ -194,6 +195,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
         </div>
 
         {/* Surcharge Configuration Section */}
+        {formData.description !== 'Zone' && (<>
         <div className="mt-4">
           <Typography variant="h6" color="blue-gray" className="mb-4">
             Surcharge Configuration
@@ -276,6 +278,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
             </div>
           </div>
         </div>
+        </>)}
 
         <Button 
           type="submit" 

@@ -1,4 +1,5 @@
 import {
+  buildWeightLabel,
   buildWeightCode,
   createInitialParcelForm,
   defaultNightSurcharge,
@@ -7,6 +8,7 @@ import {
   normalizeParcelVehicleType,
   toNum,
 } from "./defaults";
+import { Utils } from "@/utils/utils";
 
 export const mapApiToParcelForm = (data) => {
   const form = createInitialParcelForm();
@@ -15,6 +17,10 @@ export const mapApiToParcelForm = (data) => {
     : (Array.isArray(data?.peakHour) ? data.peakHour : []);
   const ppRaw = data?.parcelPricing;
   const pp = Array.isArray(ppRaw) ? (ppRaw[0] || {}) : (ppRaw || {});
+  const sourceWeightRows = Array.isArray(pp.weightSurcharge) && pp.weightSurcharge.length
+    ? pp.weightSurcharge
+    : form.parcelPricing.weightSurcharge;
+  const firstWeightRow = sourceWeightRows[0] || form.parcelPricing.weightSurcharge[0];
   const parcelVehicleType = normalizeParcelVehicleType(data?.parcelVehicleType, "BIKE");
 
   return {
@@ -25,6 +31,11 @@ export const mapApiToParcelForm = (data) => {
     baseFare: data?.baseFare ?? "",
     baseKm: data?.baseKm ?? "",
     kilometerPrice: data?.kilometerPrice ?? "",
+    cancelMins: Utils.convertTimeFormatToMinutes(data?.cancelMins) ?? "",
+    cancelCharge: data?.cancelCharge ?? "",
+    driverCancelMins: Utils.convertTimeFormatToMinutes(data?.driverCancelMins) ?? "",
+    driverFreeCancellationsPerDay: data?.driverFreeCancellationsPerDay ?? "",
+    driverCancellationCharge: data?.driverCancellationCharge ?? "",
     peakHourEnabled: peakHour.length > 0,
     peakHour: peakHour.length
       ? peakHour.map((row) => ({
@@ -34,14 +45,13 @@ export const mapApiToParcelForm = (data) => {
         }))
       : form.peakHour,
     parcelPricing: {
-      weightSurcharge: Array.isArray(pp.weightSurcharge) && pp.weightSurcharge.length
-        ? pp.weightSurcharge.map((row) => ({
-            code: row?.code || "",
-            minKg: row?.minKg ?? 0,
-            maxKg: row?.maxKg === null ? null : (row?.maxKg ?? ""),
-            amount: row?.amount ?? 0,
-          }))
-        : form.parcelPricing.weightSurcharge,
+      weightSurcharge: [{
+        code: firstWeightRow?.code || "",
+        minKg: firstWeightRow?.minKg ?? 0,
+        maxKg: firstWeightRow?.maxKg === null ? null : (firstWeightRow?.maxKg ?? ""),
+        label: firstWeightRow?.label || buildWeightLabel(firstWeightRow?.minKg ?? 0, firstWeightRow?.maxKg ?? ""),
+        amount: firstWeightRow?.amount ?? 0,
+      }],
       weatherSurcharge: {
         ...defaultSimpleSurcharge(),
         ...(pp.weatherSurcharge || {}),
@@ -87,6 +97,9 @@ export const mapApiToParcelForm = (data) => {
 
 export const buildParcelPayload = (form) => {
   const vehicleType = normalizeParcelVehicleType(form.parcelVehicleType, "BIKE");
+  const weightRows = Array.isArray(form.parcelPricing?.weightSurcharge) && form.parcelPricing.weightSurcharge.length
+    ? [form.parcelPricing.weightSurcharge[0]]
+    : [];
   return ({
   serviceType: 'PARCEL',
   type: 'Parcel',
@@ -97,6 +110,11 @@ export const buildParcelPayload = (form) => {
   baseFare: toNum(form.baseFare),
   baseKm: toNum(form.baseKm),
   kilometerPrice: toNum(form.kilometerPrice),
+  cancelMins: Utils.convertMinutesToTimeFormat(toNum(form.cancelMins)),
+  cancelCharge: toNum(form.cancelCharge),
+  driverCancelMins: Utils.convertMinutesToTimeFormat(toNum(form.driverCancelMins)),
+  driverFreeCancellationsPerDay: toNum(form.driverFreeCancellationsPerDay),
+  driverCancellationCharge: toNum(form.driverCancellationCharge),
   peakHours: form.peakHourEnabled
     ? form.peakHour.map((row) => ({
         start: row.start,
@@ -106,10 +124,11 @@ export const buildParcelPayload = (form) => {
     : [],
   parcelPricing: [
     {
-      weightSurcharge: (form.parcelPricing.weightSurcharge || []).map((row) => ({
+      weightSurcharge: weightRows.map((row) => ({
         code: buildWeightCode(row.minKg, row.maxKg),
         minKg: toNum(row.minKg),
         maxKg: row.maxKg === "" || row.maxKg === null ? null : toNum(row.maxKg),
+        label: row?.label || buildWeightLabel(row.minKg, row.maxKg),
         amount: toNum(row.amount),
       })),
       weatherSurcharge: {

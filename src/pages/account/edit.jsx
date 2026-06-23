@@ -1,14 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles, DISTRICT_LIST, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@/utils/constants';
+import { API_ROUTES, ColorStyles, KYC_PROCESS, STATE_LIST, THALUK_LIST } from '@/utils/constants';
 import { Alert, Button, Input, List, ListItem, Dialog, DialogHeader, DialogBody, Typography, Card, CardBody, Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ACCOUNT_EDIT_SCHEMA } from '@/utils/validations';
+import { parseAddressParts } from '@/utils/addressUtils';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const getPrimaryLabel = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (suggestion && typeof suggestion === 'object') {
+            return suggestion.title || suggestion.name || suggestion.label || '';
+        }
+        return '';
+    };
+    const getSuggestionLabel = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (suggestion && typeof suggestion === 'object') {
+            return (
+                suggestion.fullText ||
+                suggestion.name ||
+                suggestion.address ||
+                suggestion.label ||
+                suggestion.title ||
+                suggestion.subtitle ||
+                suggestion.formatted_address ||
+                suggestion.description ||
+                suggestion.display_name ||
+                ''
+            );
+        }
+        return '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -40,14 +66,24 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
+                                const selectedValue = getSuggestionLabel(suggestion);
+                                form.setFieldValue(field.name, selectedValue);
                                 onSelect(suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
                             }}
                             className="py-2 px-4 hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-semibold text-gray-900">
+                                    {getPrimaryLabel(suggestion) || getSuggestionLabel(suggestion)}
+                                </Typography>
+                                {typeof suggestion === 'object' && suggestion?.fullText ? (
+                                    <Typography variant="small" className="text-gray-600 text-xs">
+                                        {suggestion.fullText}
+                                    </Typography>
+                                ) : null}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -98,7 +134,7 @@ const DocumentUpload = ({ label, value, name, onChange, setModalData, fullDocVal
                         name={name}
                         onChange={onChange}
                         className="hidden"
-                        multiple={name !== "livePhoto" && name !== "bankStatement"}
+                        multiple={name !== "livePhoto" && name !== "bankStatement" && name !== "insurranceImage" && name !== "permitImage"}
                     />
                 </div>
             </td>
@@ -108,7 +144,7 @@ const DocumentUpload = ({ label, value, name, onChange, setModalData, fullDocVal
                         variant="small"
                         className="font-semibold underline cursor-pointer text-primary-900"
                         onClick={() => {
-                            if (label === 'Live Photo' || label === 'Bank Statement') {
+                            if (label === 'Live Photo' || label === 'Bank Statement' || label === 'Insurance Image' || label === 'Permit Image') {
                                 setModalData({
                                     image: fullDocVal?.image1
                                 })
@@ -146,22 +182,40 @@ const AccountEdit = () => {
     const [stateSearchText, setStateSearchText] = useState("");
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [serviceAreas, setServiceAreas] = useState([]);
     const [blockedReason, setBlockedReason] = useState(accountVal?.result?.blockedReason || '');
     const [imagePreviews, setImagePreviews] = useState({
         aadhaarImage: null,
         policeClearance: null,
         livePhoto: null,
         drivingLicenseImage: null,
+        vehiclePhotoImage: null,
         consentForm: null,
         panImage: null,
         rcImage: null,
         bankStatementImage: null,
         insurranceImage: null,
+        permitImage: null,
     });
 
     useEffect(() => {
         fetchItem(id);
     }, [id]);
+
+    useEffect(() => {
+        const fetchGeoData = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+                    type: 'Service Area',
+                });
+                setServiceAreas(response?.data || []);
+            } catch (error) {
+                console.error('Error fetching service areas:', error);
+            }
+        };
+
+        fetchGeoData();
+    }, []);
 
 
     const getDocumentByType = (value, type) => {
@@ -187,7 +241,9 @@ const AccountEdit = () => {
             bankStatementImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.BANK_STATEMENT),
             panImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.BANK_STATEMENT),
             rcImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.RC_COPY),
+            vehiclePhotoImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.VEHICLE_PHOTO),
             insurranceImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.INSURANCE),
+            permitImage: getDocumentByType(data?.data?.data?.Proofs, KYC_PROCESS.PERMIT),
         });
     };
 
@@ -265,11 +321,13 @@ const AccountEdit = () => {
             const type = label === 'aadhaarImage' ? KYC_PROCESS.AADHAAR :
                 label === 'rcImage' ? KYC_PROCESS.RC_COPY :
                     label === 'drivingLicenseImage' ? KYC_PROCESS.DRIVING_LICENSE :
-                        label === 'panImage' ? KYC_PROCESS.PAN : '';
+                        label === 'vehiclePhotoImage' ? KYC_PROCESS.VEHICLE_PHOTO :
+                        label === 'panImage' ? KYC_PROCESS.PAN : label === 'insurranceImage' ? KYC_PROCESS.INSURANCE : label === 'permitImage' ? KYC_PROCESS.PERMIT : '';
 
             const formData = new FormData();
             formData.append('type', type);
             formData.append('accountId', accountVal?.id);
+            const isSingleFileDoc = label === "insurranceImage" || label === "permitImage";
 
             if (files[0]) {
                 formData.append('image1', files[0]);
@@ -277,7 +335,7 @@ const AccountEdit = () => {
                 formData.append('fileTypeImage1', files[0].type);
             }
 
-            if (files[1]) {
+            if (files[1] && !isSingleFileDoc) {
                 formData.append('image2', files[1]);
                 formData.append('extImage2', files[1].name.split('.').pop());
                 formData.append('fileTypeImage2', files[1].type);
@@ -409,8 +467,7 @@ const AccountEdit = () => {
             return;
         }
 
-        const parsedAddress = parseAddress(place.formatted_address);
-        parsedAddress.pincode = extractPincode(place.address_components);
+        const parsedAddress = parseAddress(place.formatted_address, place.address_components);
 
         setFieldValue("address", place.formatted_address);
 
@@ -471,38 +528,24 @@ const AccountEdit = () => {
         setSubmitting(false);
     };
 
-    const districtOptions = DISTRICT_LIST.map(district => ({
-        id: district.value,
-        name: district.label
+    const districtOptions = [...new Set(
+        serviceAreas
+            .map((area) => area?.district || area?.name)
+            .filter(Boolean)
+    )].map((district) => ({
+        id: district,
+        name: district
     }));
 
     const filteredDistricts = districtOptions.filter(district =>
         district.name.toLowerCase().includes(districtSearchText.toLowerCase())
     );
 
-    const parseAddress = (address) => {
-        if (!address || typeof address !== "string") {
-            console.error("parseAddress received an undefined or invalid address");
-            return {
-                street: "",
-                taluk: "",
-                district: "",
-                state: "",
-                country: "",
-                pincode: "",
-            };
-        }
+    const parseAddress = (address, addressComponents = []) => parseAddressParts({
+        addressText: address,
+        addressComponents,
+    });
 
-        const parts = address.split(", ").reverse();
-        return {
-            street: parts[4] || "",
-            taluk: parts[3] || "",
-            district: parts[2] || "",
-            state: parts[1] || "",
-            country: parts[0] || "",
-            pincode: "",
-        };
-    };
 
     const thalukOptions = THALUK_LIST.map(thaluk => ({
         id: thaluk.value,
@@ -819,7 +862,14 @@ const AccountEdit = () => {
                                                 setModalData={setModalData}
                                                 fullDocVal={imagePreviews.rcImage}
                                             />
-                                            {values.type !== "Company" && values.type !== "Individual" && <>
+                                            <DocumentUpload
+                                                label="Vehicle Photo"
+                                                value={imagePreviews?.vehiclePhotoImage?.image1}
+                                                name="vehiclePhotoImage"
+                                                onChange={(e) => handleImageUpload(e, setFieldValue, "vehiclePhotoImage", imagePreviews?.vehiclePhotoImage?.id)}
+                                                setModalData={setModalData}
+                                                fullDocVal={imagePreviews.vehiclePhotoImage}
+                                            />
                                                 <DocumentUpload
                                                     label="Insurance Image"
                                                     value={imagePreviews?.insurranceImage?.image1}
@@ -829,6 +879,15 @@ const AccountEdit = () => {
                                                     fullDocVal={imagePreviews.insurranceImage}
                                                 />
                                                 <DocumentUpload
+                                                    label="Permit Image"
+                                                    value={imagePreviews?.permitImage?.image1}
+                                                    name="permitImage"
+                                                    onChange={(e) => handleImageUpload(e, setFieldValue, "permitImage", imagePreviews?.permitImage?.id)}
+                                                    setModalData={setModalData}
+                                                    fullDocVal={imagePreviews.permitImage}
+                                                />
+                                                {values.type !== "Company" && values.type !== "Individual" && (
+                                                <DocumentUpload
                                                     label="Bank Statement"
                                                     value={imagePreviews.bankStatementImage?.image1}
                                                     name="bankStatement"
@@ -836,7 +895,7 @@ const AccountEdit = () => {
                                                     setModalData={setModalData}
                                                     fullDocVal={imagePreviews.bankStatementImage}
                                                 />
-                                            </>}
+                                            )}
 
                                         </tbody>
                                     </table>

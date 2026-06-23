@@ -13,8 +13,13 @@ const AutoSearch = ({ onSearch, initialValue = '', hideAddNewButton=false }) => 
   }, [initialValue]);
 
   useEffect(() => {
-    onSearch(searchQuery.trim());
-  }, [searchQuery]);
+    const trimmed = searchQuery.trim();
+    const debounceTimer = setTimeout(() => {
+      onSearch(trimmed);
+    }, 600);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, onSearch]);
   return (
     <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
       <div className="flex items-center justify-between">
@@ -22,7 +27,7 @@ const AutoSearch = ({ onSearch, initialValue = '', hideAddNewButton=false }) => 
           <input
             type="text"
             className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Search Driver"
+            placeholder="Search Auto Owner"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -32,7 +37,7 @@ const AutoSearch = ({ onSearch, initialValue = '', hideAddNewButton=false }) => 
         </div>  
         {!hideAddNewButton && ( 
         <button 
-          onClick={() => navigate(`/dashboard/vendors/account/autoView/add`)}
+          onClick={() => navigate('/dashboard/vendors/account/owner-onboarding-auto/add')}
           className={`ml-4 px-4 py-2 rounded-xl hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
             ColorStyles.addButtonColor
           }`}

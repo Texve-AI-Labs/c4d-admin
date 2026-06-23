@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Card,
   CardHeader,
@@ -31,9 +31,9 @@ const isBrowser = () => typeof window !== 'undefined';
 const getItemSafe = (key) => {
   if (!isBrowser()) return null;
   try {
-    return localStorage.getItem(key);
+    return sessionStorage.getItem(key);
   } catch (err) {
-    console.error(`Error reading localStorage key "${key}":`, err);
+    console.error(`Error reading sessionStorage key "${key}":`, err);
     return null;
   }
 };
@@ -41,20 +41,11 @@ const getItemSafe = (key) => {
 const setItemSafe = (key, value) => {
   if (!isBrowser()) return;
   try {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   } catch (err) {
-    console.error(`Error writing localStorage key "${key}":`, err);
+    console.error(`Error writing sessionStorage key "${key}":`, err);
   }
 };
- 
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
-
 export function AccountView() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
@@ -71,6 +62,7 @@ export function AccountView() {
   const [zoneFilter, setZoneFilter] = useState(['All']);
   const [zoneOptions, setZoneOptions] = useState([]);
   const [kycStatusCounts, setKycStatusCounts] = useState(EMPTY_KYC_STATUS_COUNTS);
+  const prevSearchRef = useRef('');
  
   const [pagination, setPagination] = useState(() => {
     const stored = getItemSafe(ACCOUNT_VIEW_FILTERS_KEY);
@@ -213,7 +205,9 @@ export function AccountView() {
 
   useEffect(() => {
     if (!filtersLoaded) return;
-    fetchAccounts(pagination.currentPage, pagination.search, true);
+    const searchChanged = prevSearchRef.current !== (pagination.search || '');
+    prevSearchRef.current = pagination.search || '';
+    fetchAccounts(pagination.currentPage, pagination.search, !searchChanged);
   }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, sourceFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, zoneFilter]);
  
   useEffect(() => {
@@ -231,7 +225,7 @@ export function AccountView() {
   }, [location, navigate]);
  
   const handleRefresh = () => {
-    localStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
+    sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
     setPagination({
       currentPage: 1,
       totalPages: 1,
@@ -289,8 +283,7 @@ export function AccountView() {
         console.error("Failed to load zones for filter:", err);
     }
 };
-  const getAccounts = useCallback(
-    debounce((searchQuery) => {
+  const getAccounts = useCallback((searchQuery) => {
       setPagination((prev) => {
       if (prev.search === searchQuery) return prev;
  
@@ -300,9 +293,7 @@ export function AccountView() {
         search: searchQuery,
       };
     });
-    }, 1000),
-  []
-  );
+  }, []);
   function formatPhoneNumber(phoneNumber) {
     if(phoneNumber){if (phoneNumber.startsWith("+91")) {
       return phoneNumber;

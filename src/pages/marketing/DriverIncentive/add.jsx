@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { createDriverIncentiveRule } from "./driverIncentiveApi";
 import { fetchZoneOptions } from "./zoneOptions";
 import DriverIncentiveComponentEditor from "./DriverIncentiveComponentEditor";
-import { createDefaultRule } from "./edit.utils";
+import { createDefaultRule, getServiceConditionDetails } from "./edit.utils";
 
 const TYPE_OPTIONS = [
   { value: "ONLINE_HOURS_RULES", label: "Online Hours Rules" },
@@ -127,21 +127,24 @@ function DriverIncentiveAdd() {
         payoutFrequency: form.payoutFrequency || "WEEKLY",
         validFrom: toUtcIsoStringOrNull(form.validFrom),
         validTo: toUtcIsoStringOrNull(form.validTo),
-        rules: componentRules.map((rule) => ({
+        rules: componentRules.map((rule) => {
+          const selectedServiceType =
+            rule.serviceType || (isAutoPartnerType(form.partnerType) ? "AUTO" : isOnlineHoursType(form.code) ? "ANY" : "RIDES");
+          const serviceDetails = getServiceConditionDetails(selectedServiceType);
+
+          return {
             amount: Number(rule.amount || 0),
             condition: {
               metric: rule.metric || (isOnlineHoursType(form.code) ? "onlineHours" : "tripCount"),
               period: form.payoutFrequency || rule.period || "WEEKLY",
-              serviceType:
-                rule.serviceType ||
-                (isAutoPartnerType(form.partnerType) ? "AUTO" : isOnlineHoursType(form.code) ? "ANY" : "RIDES"),
+              serviceType: selectedServiceType,
+              ...serviceDetails,
               op: rule.op || ">=",
               value: Number(rule.value || 0),
-              bookingType: null,
-              packageType: null,
               isMandatory: true,
             },
-          })),
+          };
+        }),
       };
 
       const payload = {

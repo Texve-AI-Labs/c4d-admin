@@ -6,15 +6,13 @@ import {
   Typography,
   Button,
   Alert,
-  Spinner,
-  Chip
+  Spinner
 } from "@material-tailwind/react";
 import CustomerSearch from "@/components/CustomerSearch";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDownIcon, ChevronUpIcon, StarIcon } from '@heroicons/react/24/solid';
-import { saveAs } from 'file-saver';
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -27,10 +25,11 @@ const debounce = (func, delay) => {
 export function CustomerView() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState([]);
-  const [allCustomers, setAllCustomers] = useState([]);
   const [alert, setAlert] = useState(false);
   const [sortOrder, setSortOrder] = useState('asc');
   const [loading, setLoading] = useState(false);
+  const [zoneFilter, setZoneFilter] = useState('All');
+  const [serviceAreas, setServiceAreas] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -42,24 +41,42 @@ export function CustomerView() {
 
   const location = useLocation();
 
+  useEffect(() => {
+    const fetchGeoData = async () => {
+      try {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+          type: 'Service Area',
+        });
+        setServiceAreas(response?.data || []);
+      } catch (error) {
+        console.error('Error fetching service areas:', error);
+      }
+    };
+
+    fetchGeoData();
+  }, []);
+
   const fetchCustomers = async (page = 1, searchQuery = '', showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
+      const normalizedSearch = searchQuery.trim();
+      const isSearchMode = Boolean(normalizedSearch);
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ALL_CUSTOMERS,{
         page: page,
         limit: pagination.itemsPerPage,
-        search: searchQuery.trim(),
-        forSearch:false
+        search: normalizedSearch,
+        zone: zoneFilter === 'All' ? undefined : zoneFilter,
+        forSearch: isSearchMode
       });
       if (data?.success) {
         setCustomers(data?.data || []);
         setPagination({
           currentPage: page,
-          totalPages:searchQuery.trim() ? 1 : data?.pagination?.totalPages || 1,
+          totalPages: data?.pagination?.totalPages || 1,
           totalItems: data?.pagination?.totalItems || 0,
           itemsPerPage: data?.pagination?.itemsPerPage || 10,
-          search: searchQuery.trim(),
-          forSearch:false
+          search: normalizedSearch,
+          forSearch: isSearchMode,
         });
       }
     } catch (error) {
@@ -99,14 +116,15 @@ export function CustomerView() {
         currentPage: 1,
         search: searchQuery
       }));
-      fetchCustomers(1, searchQuery, false); 
     }, 1000),
     [pagination.itemsPerPage] 
   );
 
   useEffect(() => {
-    fetchCustomers(pagination.currentPage, pagination.search, true); // Show loader for initial load and pagination
-    
+    fetchCustomers(pagination.currentPage, pagination.search, true);
+  }, [pagination.currentPage, pagination.search, zoneFilter]);
+
+  useEffect(() => {
     if (location.state?.customerAdded || location.state?.customerUpdated) {
       const action = location.state.customerAdded ? 'added' : 'updated';
       setAlert({
@@ -117,13 +135,21 @@ export function CustomerView() {
       }, 5000);
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigate, pagination.currentPage, pagination.search]);
+  }, [location.state, location.pathname, navigate]);
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
       setPagination((prev) => ({ ...prev, currentPage: page }));
-      fetchCustomers(page, pagination.search, true); // Show loader for pagination
     }
+  };
+
+  const handleZoneFilterChange = (event) => {
+    const nextZone = event.target.value;
+    setZoneFilter(nextZone);
+    setPagination((prev) => ({
+      ...prev,
+      currentPage: 1
+    }));
   };
 
   const generatePageButtons = () => {
@@ -171,6 +197,24 @@ export function CustomerView() {
         </Alert>
       </div>)}
       <CustomerSearch onSearch={getCustomers} />
+      <div className="flex justify-end">
+        <div className="w-full sm:w-72">
+          <label htmlFor="zoneFilter" className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
+          <select
+            id="zoneFilter"
+            value={zoneFilter}
+            onChange={handleZoneFilterChange}
+            className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-200"
+          >
+            <option value="All">All</option>
+            {serviceAreas.map((area) => (
+              <option key={area?.id || area?.name} value={area?.name || ''}>
+                {area?.name || ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
       <Card>
         {customers.length > 0 ? (
           <>
@@ -193,7 +237,7 @@ export function CustomerView() {
               <table className="w-full min-w-[640px] table-auto">
                 <thead>
                   <tr>
-                    {["ID","Name", "Phone Number","Rating", ""].map((el) => (
+                    {["ID","Name", "Phone Number","Rating","Zone", ""].map((el) => (
                       <th
                         key={el}
                         className="border-b border-blue-gray-50 py-3 px-5 text-left cursor-pointer"
@@ -239,7 +283,7 @@ export function CustomerView() {
                     </tr>
                   ) : (
                     customers.map(
-                    ({ id, firstName, lastName, phoneNumber, rating }, key) => {
+                    ({ id, firstName, lastName, phoneNumber, rating,zone }, key) => {
                       const className = `py-3 px-5 ${key === customers.length - 1
                         ? ""
                         : "border-b border-blue-gray-50"
@@ -276,6 +320,11 @@ export function CustomerView() {
                               <div className='flex'>
                                 {rating}<StarIcon className="w-5 h-5 text-yellow-500" />                  
                               </div> 
+                              </Typography>
+                          </td>
+                           <td className={className}>
+                            <Typography className="text-xs font-semibold text-black"> 
+                              {zone}
                               </Typography>
                           </td>
                           {/* <td className={className}>

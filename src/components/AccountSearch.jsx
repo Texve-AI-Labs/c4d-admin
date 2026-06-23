@@ -12,8 +12,13 @@ const AccountSearch = ({ onSearch, initialValue = '' }) => {
   }, [initialValue]);
 
   useEffect(() => {
-    onSearch(searchQuery.trim());
-  }, [searchQuery]);
+    const trimmed = searchQuery.trim();
+    const debounceTimer = setTimeout(() => {
+      onSearch(trimmed);
+    }, 600);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, onSearch]);
   
   return (
     <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
@@ -31,7 +36,7 @@ const AccountSearch = ({ onSearch, initialValue = '' }) => {
           </div>
         </div>
         <button 
-          onClick={() => navigate(`/dashboard/vendors/account/add`)}
+          onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-cab/add`)}
           className={`ml-4 px-4 py-2  rounded-2xl hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
             ColorStyles.addButtonColor
           }`}

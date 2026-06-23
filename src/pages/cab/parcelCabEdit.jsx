@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import { Button, Alert, Input, List, ListItem, Typography } from '@material-tailwind/react';
@@ -8,6 +9,21 @@ import Select from 'react-select';
 
 const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
     const [isFocused, setIsFocused] = useState(false);
+
+    const getSuggestionText = (suggestion) => {
+        if (typeof suggestion === 'string') return suggestion;
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.fullText || suggestion.title || suggestion.subtitle || '';
+    };
+
+    const getSuggestionTitle = (suggestion) => {
+        if (typeof suggestion === 'string') {
+            const [firstPart] = suggestion.split(',');
+            return (firstPart || suggestion).trim();
+        }
+        if (!suggestion || typeof suggestion !== 'object') return '';
+        return suggestion.title || suggestion.fullText || '';
+    };
 
     useEffect(() => {
         form.validateField(field.name);
@@ -38,12 +54,21 @@ const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
                         <ListItem
                             key={index}
                             onClick={() => {
-                                form.setFieldValue(field.name, suggestion);
+                                form.setFieldValue(field.name, getSuggestionText(suggestion));
                                 setIsFocused(false);
                             }}
                             className="hover:bg-gray-100 cursor-pointer"
                         >
-                            <Typography variant="small">{suggestion}</Typography>
+                            <div className="flex flex-col">
+                                <Typography variant="small" className="font-bold text-black">
+                                    {getSuggestionTitle(suggestion)}
+                                </Typography>
+                                {getSuggestionText(suggestion) !== getSuggestionTitle(suggestion) && (
+                                    <Typography variant="small" className="text-xs text-gray-600">
+                                        {getSuggestionText(suggestion)}
+                                    </Typography>
+                                )}
+                            </div>
                         </ListItem>
                     ))}
                 </List>
@@ -51,6 +76,17 @@ const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
         </div>
     );
 };
+
+const validationSchema = Yup.object({
+    modelYear: Yup.string()
+        .required('Year of Model is required')
+        .matches(/^\d{4}$/, 'Model Year must be a 4-digit year')
+        .test('is-valid-year', 'Model Year cannot be in the future', (value) => {
+            if (!value) return true;
+            const currentYear = new Date().getFullYear();
+            return parseInt(value, 10) <= currentYear;
+        }),
+});
 
 const ParcelCabEdit = () => {
     const [parcelCabVal, setParcelCabVal] = useState({});
@@ -135,7 +171,7 @@ const ParcelCabEdit = () => {
         vehicleNumber: parcelCabVal?.result?.vehicleNumber || '',
         address: parcelCabVal?.result?.curAddress || '',
         insurance: parcelCabVal?.result?.insurance || '',
-        autoType: parcelCabVal?.result?.vehicleType || '',
+        autoType: 'BIKE',
         seater: parcelCabVal?.result?.seater || '3',
         modelYear: parcelCabVal?.result?.modelYear || '',
         serviceArea: parcelCabVal?.result?.serviceArea || parcelCabVal?.result?.subZone?.parent?.name || '',
@@ -181,7 +217,7 @@ const ParcelCabEdit = () => {
                 vehicleNumber: values.vehicleNumber,
                 curAddress: values.address,
                 insurance: values.insurance,
-                vehicleType: values.autoType,
+                vehicleType: 'BIKE',
                 seater: values.seater,
                 modelYear: values.modelYear,
                 serviceArea: values.serviceArea,
@@ -224,7 +260,7 @@ const ParcelCabEdit = () => {
             <h2 className="text-2xl font-bold mb-4">Update Parcel Bike</h2>
             <Formik
                 initialValues={initialValues}
-                // validationSchema={PARCEL_CAB_SCHEMA}
+                validationSchema={validationSchema}
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
@@ -300,7 +336,7 @@ const ParcelCabEdit = () => {
                                 />
                                 <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
                             </div>
-                            <div>
+                            <div className='hidden'>
                                 <label className="text-sm font-medium text-gray-700">Bike Type</label>
                                 <div className="space-x-4 mt-1">
                                     {['BIKE'].map((type) => (

@@ -157,7 +157,7 @@ const ParcelDetails = ({ btnShow = false, noApprove = false }) => {
                 </Formik>
             </div>
             {accountVal && !btnShow && <ParcelCabList parcelsList={accountVal?.Parcels || accountVal?.ParcelVehicles} id={accountVal?.id} ownerName={accountVal?.name} type={accountVal?.type} />}
-            {accountVal && accountVal?.id && (<DocumentsList id={accountVal?.id} type={'account'} noApprove={noApprove} cabsList={accountVal?.Cabs} autoList={accountVal?.Autos} parcelsList={accountVal?.Parcels} serviceType={accountVal?.type} />)}
+            {accountVal && accountVal?.id && (<DocumentsList id={accountVal?.id} type={'account'} noApprove={noApprove} parcelsList={accountVal?.Parcels || accountVal?.ParcelVehicles} serviceType={accountVal?.type} /> )}
             {/* {accountVal && accountVal?.subscriptionLog && <SubscriptionLog subscriptionlog={accountVal?.subscriptionLog} />} */}
             {accountVal && accountVal?.documentLog && <DocumentLogs documentlogs={accountVal?.documentLog} />}
             {!btnShow &&

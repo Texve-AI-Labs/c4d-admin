@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 const CustomerAdd = (props) => {
     const [customerVal, setCustomerVal] = useState({});
+    const [zones, setZones] = useState([]);
     const [alert, setAlert] = useState(false);
     const { id } = useParams();
     const isEditMode = !!id;
@@ -25,6 +26,7 @@ const CustomerAdd = (props) => {
         salutation: customerVal?.salutation || '',
         firstName: customerVal?.firstName || '',
         phoneNumber: props.customerNumber || '', //customerVal?.phoneNumber ? customerVal?.phoneNumber.replace(/^(\+91)/, ''): "",
+        zone: customerVal?.zone || '',
         carNumber: '',
         nickName: '',
         carType: '',
@@ -34,15 +36,32 @@ const CustomerAdd = (props) => {
         // sourceType: customerVal?.sourceType || 'App', // New field with default value
     };
 
+    useEffect(() => {
+        const fetchGeoData = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS, {
+                    type: 'Service Area',
+                });
+                setZones(response?.data || []);
+            } catch (error) {
+                console.error('Error fetching zones:', error);
+            }
+        };
+
+        fetchGeoData();
+    }, []);
+
     const validationSchema = Yup.object({
         salutation: Yup.string().required('Salutation is required'),
         firstName: Yup.string().required('Name is required').matches(/^[a-zA-Z\s]+$/, 'Only letters are allowed'),
         source: Yup.string().required('source is required'),
+        zone: Yup.string().required('Zone is required'),
         // sourceType: Yup.string().required('Source type is required'), // New validation
         ...(isEditMode
             ? {}
             : {
                 phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
+                zone: Yup.string().required('Zone is required')
                 // carNumber: Yup.string().required('Car number is required'),
                 // nickName: Yup.string().required('Car name is required'),
                 // carType: Yup.string().required('Car type is required'),
@@ -57,6 +76,7 @@ const CustomerAdd = (props) => {
                 salutation: values.salutation,
                 firstName: values.firstName,
                 source: values.source,
+                zone: values.zone,
                 // sourceType: values.sourceType, // Include new field
             };
             let data;
@@ -121,7 +141,7 @@ const CustomerAdd = (props) => {
     };
 
     return (
-        <div className="p-4">
+        <div className="p-4 bg-white rounded-lg shadow-md">
             {alert && (
                 <div className='mb-2'>
                     <Alert
@@ -132,7 +152,7 @@ const CustomerAdd = (props) => {
                     </Alert>
                 </div>
             )}
-            <h2 className="text-2xl font-bold mb-4">New Customer</h2>
+            <h2 className="text-2xl font-bold mb-4">{isEditMode ? 'Edit Customer' : 'New Customer'}</h2>
             <Formik
                 initialValues={initialValues}
                 validationSchema={validationSchema}
@@ -189,21 +209,18 @@ const CustomerAdd = (props) => {
                                 </Field>
                                 <ErrorMessage name="source" component="div" className="text-red-500 text-sm" />
                             </div>
-                             {/* <div>
-                                <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
-                                <Field as="select" name="sourceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
-                                    <option value="">Select Source Type</option>
-                                    <option value="Facebook">Facebook</option>
-                                    <option value="Instagram">Instagram</option>
-                                    <option value="Influencer Reels">Influencer Reels</option>
-                                    <option value="WhatsApp">WhatsApp</option>
-                                    <option value="Google">Google</option>
-                                    <option value="YouTube">YouTube</option>
-                                    <option value="Justdial">Justdial</option>
-                                    <option value="Paper Notice">Paper Notice</option>
-                                    <option value="On Field">YouTube</option>		
+                            <div>
+                                <label htmlFor="zone" className="text-sm font-medium text-gray-700">Zone</label>
+                                <Field as="select" name="zone" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                                    <option value="">Select Zone</option>
+                                    {zones.map((zone) => (
+                                        <option key={zone?.id || zone?.name} value={zone?.name || ''}>
+                                            {zone?.name || ''}
+                                        </option>
+                                    ))}
                                 </Field>
-                            </div> */}
+                                <ErrorMessage name="zone" component="div" className="text-red-500 text-sm" />
+                            </div>
                         </div>
 
                         <div className='flex flex-row'>
