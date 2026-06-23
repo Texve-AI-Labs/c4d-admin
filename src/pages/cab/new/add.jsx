@@ -242,6 +242,8 @@ const CabAddNew = () => {
         });
     };
 
+    const isActivePackage = (option) => option?.status === "1";
+
     const getAccountRelatedDrivers = async (accountId) => {
         const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ACCOUNT_RELATED_DRIVERS, {
             accountId: accountId
@@ -273,10 +275,11 @@ const CabAddNew = () => {
             // Log only Vellore packages
             // console.log("Vellore Packages:", packageData.filter(val => val.zone === 'Vellore'));
 
-            const intercityPackage = orderPackages(packageData.filter(val => val.zone === 'Vellore' && val.type === 'Local'), 'Local');
-            const outstationPackage = packageData.filter(val => val.zone === 'Vellore' && val.type === 'Outstation' && val.period === '1 d');
-            const carWashPackage = orderPackages(packageData.filter(val => val.zone === 'Vellore' && val.type === 'CarWash'), 'CarWash');
-            const ridesPackagePrices = packageData.filter(val => val.zone === 'Vellore' && val.type === 'Rides');
+            const activePackageData = packageData.filter(isActivePackage);
+            const intercityPackage = orderPackages(activePackageData.filter(val => val.zone === 'Vellore' && val.type === 'Local'), 'Local');
+            const outstationPackage = activePackageData.filter(val => val.zone === 'Vellore' && val.type === 'Outstation' && val.period === '1 d');
+            const carWashPackage = orderPackages(activePackageData.filter(val => val.zone === 'Vellore' && val.type === 'CarWash'), 'CarWash');
+            const ridesPackagePrices = activePackageData.filter(val => val.zone === 'Vellore' && val.type === 'Rides');
 
             setPackageDetails([
                 ...intercityPackage,

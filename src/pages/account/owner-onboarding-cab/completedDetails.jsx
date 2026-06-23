@@ -49,6 +49,10 @@ const getStatusChipColor = (status) => {
   return "blue-gray";
 };
 
+const isActivePackage = (option) => {
+  return option?.status === "1";
+};
+
 const formatDate = (value) => {
   if (!value) return "-";
   const date = moment(value);
@@ -136,6 +140,9 @@ const CompletedOnboardingDetails = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [cabs, setCabs] = useState([]);
   const [carTypeOptions, setCarTypeOptions] = useState([]);
+  const [packageOptions, setPackageOptions] = useState([]);
+  const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
+  const [luggageCapacityError, setLuggageCapacityError] = useState("");
   const [cabFetchError, setCabFetchError] = useState("");
   const [cabRequestIds, setCabRequestIds] = useState([]);
   const [ownerStatus, setOwnerStatus] = useState("InActive");
@@ -195,6 +202,59 @@ const CompletedOnboardingDetails = () => {
   }, []);
 
   useEffect(() => {
+    const orderPackages = (packages, type) => {
+      return [...packages].sort((a, b) => {
+        if (type === "Local") return parseInt(a.period) - parseInt(b.period);
+        if (type === "CarWash") {
+          const numberA = parseInt(String(a.period || "").match(/\d+/)?.[0] || "0");
+          const numberB = parseInt(String(b.period || "").match(/\d+/)?.[0] || "0");
+          return numberA - numberB;
+        }
+        return 0;
+      });
+    };
+
+    const fetchPackageOptions = async () => {
+      try {
+        const data = await ApiRequestUtils.get(API_ROUTES.PACKAGE_CABS_LIST);
+        if (!data?.success || !Array.isArray(data?.data)) {
+          setPackageOptions([]);
+          return;
+        }
+        const packageData = data.data.map((option) => {
+          const suffix = option.zone === "Vellore"
+            ? option.type === "Local"
+              ? "hr"
+              : option.type === "Outstation"
+                ? "d"
+                : option.type === "Rides"
+                  ? "Rides"
+                  : ""
+            : "";
+          const period = `${option.zone === "Vellore" && option.type !== "Rides" ? option.period : ""} ${suffix}`.trim();
+          return {
+            ...option,
+            period,
+            label: period || option.type || "-",
+          };
+        });
+        const activePackageData = packageData.filter(isActivePackage);
+        console.log("activePackageData", activePackageData, "zone", "Vellore");
+        const intercityPackage = orderPackages(activePackageData.filter((item) => item.zone === "Vellore" && item.type === "Local"), "Local");
+        const outstationPackage = activePackageData.filter((item) => item.zone === "Vellore" && item.type === "Outstation" && item.period === "1 d");
+        const carWashPackage = orderPackages(activePackageData.filter((item) => item.zone === "Vellore" && item.type === "CarWash"), "CarWash");
+        const ridesPackage = activePackageData.filter((item) => item.zone === "Vellore" && item.type === "Rides");
+        setPackageOptions([...intercityPackage, ...outstationPackage, ...carWashPackage, ...ridesPackage]);
+      } catch (error) {
+        console.error("Error fetching package options:", error);
+        setPackageOptions([]);
+      }
+    };
+
+    fetchPackageOptions();
+  }, []);
+
+  useEffect(() => {
     const fetchServiceAreas = async () => {
       try {
         const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" });
@@ -205,6 +265,13 @@ const CompletedOnboardingDetails = () => {
     };
     fetchServiceAreas();
   }, []);
+
+  const getLuggageForCarType = (carTypeValue) => {
+    const normalized = String(carTypeValue || "").toLowerCase();
+    const apiValue = Number(luggageCapacityMap?.[normalized]);
+    if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
+    return "";
+  };
 
   const fetchOnboardingDetails = async () => {
     try {
@@ -268,6 +335,31 @@ const CompletedOnboardingDetails = () => {
     if (onboardingData?.id) return onboardingData;
     return {};
   }, [onboardingData]);
+
+  useEffect(() => {
+    const fetchLuggageCapacityDetails = async () => {
+      try {
+        const zone = account?.district || "Vellore";
+        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+          serviceType: "RIDES",
+          zone,
+        });
+        if (data?.success) {
+          setLuggageCapacityMap(data?.luggageCapacity || {});
+          setLuggageCapacityError("");
+        } else {
+          setLuggageCapacityMap({});
+          setLuggageCapacityError("Unable to load luggage capacity for this zone.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch luggage capacity:", error);
+        setLuggageCapacityMap({});
+        setLuggageCapacityError("Unable to load luggage capacity for this zone.");
+      }
+    };
+
+    fetchLuggageCapacityDetails();
+  }, [account?.district]);
 
   useEffect(() => {
     setOwnerStatus(account?.ownerStatus || "InActive");
@@ -415,6 +507,17 @@ const CompletedOnboardingDetails = () => {
         { label: "Model Year", value: String(cabResult?.modelYear || "-").trim() },
         { label: "Seater", value: cabResult?.seater || "-" },
         { label: "Luggage", value: cabResult?.luggage || "-" },
+        { label: "Address", value: cabResult?.curAddress || "-" },
+        {
+          label: "Insurance Expiry Date",
+          value: cabResult?.insurance ? String(cabResult.insurance).slice(0, 10) : "-",
+        },
+        {
+          label: "Packages",
+          value: (Array.isArray(cabResult?.packages) ? cabResult.packages : [])
+            .map((packageId) => packageOptions.find((option) => String(option.id) === String(packageId))?.label || packageId)
+            .join(", ") || "-",
+        },
         { label: "Status", value: toDisplayCase(cabResult?.status || "-") },
         { label: "Subscription Status", value: toDisplayCase(cabResult?.subscriptionStatus || "-") },
         { label: "Subscription Start Date", value: formatDate(latestCredit?.Subscription?.startDate) },
@@ -470,10 +573,11 @@ const CompletedOnboardingDetails = () => {
         creditLogRows,
         rawValues: {
           carType: cabResult?.carType || "",
+          packages: Array.isArray(cabResult?.packages) ? cabResult.packages : [],
         },
       };
     });
-  }, [account?.type, cabs]);
+  }, [account?.type, cabs, packageOptions]);
 
   const accountDisplayColumns = useMemo(() => {
     const preferredLeftOrder = [
@@ -781,7 +885,7 @@ const CompletedOnboardingDetails = () => {
           isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver License Number"] || "")
             : (cabResult?.driverLicense || ""),
-        packages: cabResult?.packages || [],
+        packages: Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []),
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         driverId:
           isTravelsAccount && mappedWithDriver === "Yes"
@@ -794,8 +898,9 @@ const CompletedOnboardingDetails = () => {
         blockedReason: cabResult?.blockedReason || "",
       };
 
+      const selectedPackages = Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []);
       const prices = Array.isArray(cabPayload?.price)
-        ? cabPayload.price.filter((el) => (cabResult?.packages || []).includes(el.packageId))
+        ? cabPayload.price.filter((el) => selectedPackages.map(String).includes(String(el.packageId)))
         : [];
 
       const res = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, {
@@ -1168,6 +1273,8 @@ const CompletedOnboardingDetails = () => {
             vehicleSections={vehicleSections}
             getStatusChipColor={getStatusChipColor}
             carTypeOptions={carTypeOptions}
+            packageOptions={packageOptions}
+            getLuggageForCarType={getLuggageForCarType}
             isTravels={String(account?.type || "").toLowerCase() === "company"}
             accountRelatedDrivers={accountRelatedDrivers}
             getVehicleAddressSuggestionsBySection={(sectionId) =>

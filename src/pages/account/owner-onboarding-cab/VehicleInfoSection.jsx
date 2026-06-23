@@ -24,10 +24,16 @@ const getSuggestionText = (suggestion) => {
 
 const getDriverSuggestionKey = (sectionId) => `driver-${sectionId}`;
 
+const isActivePackage = (option) => {
+  return option?.status === "1";
+};
+
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
   carTypeOptions = [],
+  packageOptions = [],
+  getLuggageForCarType,
   isTravels = false,
   accountRelatedDrivers = [],
   getVehicleAddressSuggestionsBySection,
@@ -48,10 +54,9 @@ const VehicleInfoSection = ({
   const [activeVehicleSectionId, setActiveVehicleSectionId] = useState(null);
 
   const editableLabels = useMemo(() => {
-    const labels = ["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"];
-    if (isTravels) {
-      labels.push("Owner Name", "Address", "Insurance Expiry Date", "Assigned To", "With Driver");
-    }
+    const labels = ["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
+    labels.push("Address", "Insurance Expiry Date");
+    if (isTravels) labels.push("Owner Name", "Assigned To", "With Driver");
     return new Set(labels);
   }, [isTravels]);
 
@@ -69,10 +74,11 @@ const VehicleInfoSection = ({
             ? "Sedan"
             : rawCarType;
     }
+    map["Insurance Expiry Date"] = section?.rawValues?.insurance
+      ? String(section.rawValues.insurance).slice(0, 10)
+      : (map["Insurance Expiry Date"] || "");
+    map["Address"] = section?.rawValues?.curAddress || map["Address"] || "";
     if (isTravels) {
-      map["Insurance Expiry Date"] = section?.rawValues?.insurance
-        ? String(section.rawValues.insurance).slice(0, 10)
-        : (map["Insurance Expiry Date"] || "");
       const rawAssigned = String(section?.rawValues?.assigned || "").trim();
       map["Assigned To"] =
         rawAssigned.toLowerCase() === "individual"
@@ -86,6 +92,7 @@ const VehicleInfoSection = ({
       map["Driver Address"] = section?.rawValues?.driverAddress || "";
       map["Driver License Number"] = section?.rawValues?.driverLicense || "";
     }
+    map.Packages = Array.isArray(section?.rawValues?.packages) ? section.rawValues.packages : [];
     return map;
   };
 
@@ -135,11 +142,10 @@ const VehicleInfoSection = ({
   };
 
   const leftDisplayOrder = useMemo(() => {
-    const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage"];
-    if (isTravels) {
-      return [...base, "Owner Name", "Address", "Insurance Expiry Date", "Assigned To", "With Driver"];
-    }
-    return base;
+    const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
+    return isTravels
+      ? [...base, "Address", "Insurance Expiry Date", "Owner Name", "Assigned To", "With Driver"]
+      : [...base, "Address", "Insurance Expiry Date"];
   }, [isTravels]);
 
   const rightDisplayOrder = useMemo(
@@ -293,7 +299,14 @@ const VehicleInfoSection = ({
                           row.label === "Car Type" ? (
                             <select
                               value={draftValues[row.label] || ""}
-                              onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
+                              onChange={(e) => {
+                                const nextCarType = e.target.value;
+                                setDraftValues((prev) => ({
+                                  ...prev,
+                                  [row.label]: nextCarType,
+                                  Luggage: getLuggageForCarType?.(nextCarType.toUpperCase()) || prev.Luggage || "",
+                                }));
+                              }}
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
@@ -327,6 +340,37 @@ const VehicleInfoSection = ({
                                 </select>
                               );
                             })()
+                          ) : row.label === "Packages" ? (
+                            <div className="w-full max-w-[320px] rounded-md border border-gray-300 bg-white p-2">
+                              <div className="max-h-40 overflow-y-auto space-y-1">
+                                {packageOptions.filter(isActivePackage).length === 0 ? (
+                                  <Typography className="text-xs text-blue-gray-500">No packages found</Typography>
+                                ) : (
+                                  packageOptions.filter(isActivePackage).map((option) => {
+                                    const selectedPackages = Array.isArray(draftValues.Packages) ? draftValues.Packages : [];
+                                    const isChecked = selectedPackages.map(String).includes(String(option.id));
+                                    return (
+                                      <label key={option.id} className="flex items-center gap-2 text-sm text-blue-gray-700">
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={(e) => {
+                                            setDraftValues((prev) => {
+                                              const current = Array.isArray(prev.Packages) ? prev.Packages : [];
+                                              const next = e.target.checked
+                                                ? [...current, option.id]
+                                                : current.filter((item) => String(item) !== String(option.id));
+                                              return { ...prev, Packages: next };
+                                            });
+                                          }}
+                                        />
+                                        <span>{option.label}</span>
+                                      </label>
+                                    );
+                                  })
+                                )}
+                              </div>
+                            </div>
                           ) : row.label === "Assigned To" ? (
                             <select
                               value={draftValues[row.label] || ""}
