@@ -751,35 +751,44 @@ const handleSaveDriverEndLocation = async () => {
                 );
             }
         }
-        return Number(bookingDetails?.value?.estimatedPrice || 0);
+        return Number(bookingDetails?.paymentDetails?.details?.amountBeforeGst || 0);
     })();
     const systemDiscountAmount = Number(bookingDetails?.discount?.amount || 0) > 0
         ? Number(bookingDetails?.discount?.amount || 0)
         : quoteEstimatedPrice * (Number(bookingDetails?.discount?.percentage || 0) / 100);
+    const systemDiscountType = String(bookingDetails?.discount?.discountType || "").toUpperCase() ||
+        (Number(bookingDetails?.discount?.amount || 0) > 0 ? "AMOUNT" : "PERCENTAGE");
+    const systemDiscountValue = Number(bookingDetails?.discount?.amount || 0) > 0
+        ? Number(bookingDetails?.discount?.amount || 0)
+        : Number(bookingDetails?.discount?.percentage || 0);
     const totalEstimatedFareAfterSystemDiscount = quoteEstimatedPrice - systemDiscountAmount;
     const visibleAdminDiscountType = String(visibleAdminDiscount?.discountType || "").toUpperCase();
     const visibleAdminDiscountValue = Number(visibleAdminDiscount?.discountValue || 0);
+    const visibleAdminDiscountAmount = Number(visibleAdminDiscount?.discountAmount || 0);
     const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountType === "PERCENTAGE"
-        ? totalEstimatedFareAfterSystemDiscount * (visibleAdminDiscountValue / 100)
+        ? (visibleAdminDiscountAmount > 0
+            ? visibleAdminDiscountAmount
+            : totalEstimatedFareAfterSystemDiscount * (visibleAdminDiscountValue / 100))
         : Number(visibleAdminDiscount?.discountAmount || 0);
-    const finalEstimatedFareAfterAdminDiscount =
-        totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal;
-    const quoteCancelChargeAmount = Number(
-        bookingDetails?.cancelCharge ??
-        bookingDetails?.paymentDetails?.details?.cancelCharge ??
-        0
+    const finalEstimatedFareAfterAdminDiscount = Math.max(
+        0,
+        totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal
     );
+    const finalEstimatedFareDisplay = Number.isFinite(finalEstimatedFareAfterAdminDiscount)
+        ? finalEstimatedFareAfterAdminDiscount
+        : totalEstimatedFareAfterSystemDiscount;
+    const quoteCancelChargeAmount = Number(bookingDetails?.cancelCharge ?? bookingDetails?.paymentDetails?.details?.cancelCharge ?? 0);
     const quoteCancelChargePaid = bookingDetails?.cancelChargePaid === true;
     const quoteCancelChargeApplicable = quoteCancelChargeAmount > 0;
     // Keep existing discount math intact; apply cancel charge only as the final step.
     const hasNormalDiscount = systemDiscountAmount > 0;
     const hasEffectiveAdminDiscount =
-        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && adminDiscountEffective && visibleAdminDiscountValue > 0;
+        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && adminDiscountEffective && (visibleAdminDiscountValue > 0 || visibleAdminDiscountAmount > 0);
     const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
         ? (quoteCancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
         : (quoteCancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
     const finalEstimatedFareAfterDiscounts =
-        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && adminDiscountEffective && visibleAdminDiscountValue > 0
+        BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && adminDiscountEffective && (visibleAdminDiscountValue > 0 || visibleAdminDiscountAmount > 0)
             ? finalEstimatedFareAfterAdminDiscount
             : totalEstimatedFareAfterSystemDiscount;
     const finalEstimatedFareAfterDiscountsWithCancelCharge =
@@ -2141,18 +2150,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         <span className="text-gray-500 font-semibold">Discount Applied:</span>
                                         <span className="text-gray-900 font-medium">{bookingDetails?.paymentDetails?.details?.discountPercentage} %</span>
                                 </div>
-                                )} 
-                                {bookingDetails?.paymentDetails?.details?.discountAmount > 0  && bookingDetails?.serviceType !== 'AUTO' &&(
-                                    <div className="flex flex-col-2 gap-2">
-                                        <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                        <span className="text-gray-900 font-medium">  ₹ {bookingDetails?.paymentDetails?.details?.discountAmount} </span>
-                                </div>
-                                )}
-                                                               
-                            <div className="flex flex-col-2 gap-2">
-                                    <span className="text-gray-500 font-semibold">Total{inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-semibold">₹ {Number(amount?.total || 0).toFixed(2)}</span>
-                                </div>
+                                )}                                                                                                                         
                         </>)}
                          {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' && shouldShowQuotePricing(bookingDetails) &&(
                                              <div  className="flex flex-col-2 gap-2">                                                                       
@@ -2201,25 +2199,39 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex flex-col-2 gap-2">
-                                                    <span className="text-gray-500 font-semibold">Admin Discount Applied:</span>
+                                                    <span className="text-gray-500 font-semibold">Admin Discount Applied</span>
                                                     <span className="text-gray-900 font-medium">
-                                                        {visibleAdminDiscountType === "PERCENTAGE"
-                                                            ? `${visibleAdminDiscountValue.toFixed(2)} %`
-                                                            : `₹ ${visibleAdminDiscountValue.toFixed(2)}`}
+                                                        ({visibleAdminDiscountType === "PERCENTAGE"
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                            : `₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                        })
                                                     </span>
                                                 </div>
-                                                <div className="flex flex-col-2 gap-2">
-                                                    <span className="text-gray-500 font-semibold">Admin Discount Amount:</span>
-                                                    <span className="text-gray-900 font-medium">₹ {Math.round(Number(adminDiscountAmountOnQuoteTotal || 0))}</span>
-                                                </div>
-                                                <div className="flex flex-col-2 gap-2">
-                                                    <span className="text-gray-500 font-semibold">Final Estimated Fare:</span>
-                                                    <span className="text-gray-900 font-medium">
-                                                        ₹ {Math.max(0, Math.round(Number(finalEstimatedFareAfterAdminDiscount || 0)))}
-                                                    </span>
-                                                </div>
+                                                {Number(systemDiscountAmount || 0) > 0 && (
+                                                    <>
+                                                        <div className="flex flex-col-2 gap-2">
+                                                            <span className="text-gray-500 font-semibold">System Discount Applied:</span>
+                                                            <span className="text-gray-900 font-medium">
+                                                                {systemDiscountType === "PERCENTAGE"
+                                                                    ? `${systemDiscountValue.toFixed(2)} %`
+                                                                    : `₹ ${Math.round(systemDiscountValue)}`
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-col-2 gap-2">
+                                                            <span className="text-gray-500 font-semibold">System Discount Amount:</span>
+                                                            <span className="text-gray-900 font-medium">₹ {Number(systemDiscountAmount || 0).toFixed(2)}</span>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </>
                                         )}
+                                          {bookingDetails?.paymentDetails?.details?.discountAmount > 0  && bookingDetails?.serviceType !== 'AUTO' &&(
+                                    <div className="flex flex-col-2 gap-2">
+                                        <span className="text-gray-500 font-semibold">Total Discount Applied:</span>
+                                        <span className="text-gray-900 font-medium">  ₹ {bookingDetails?.paymentDetails?.details?.discountAmount} </span>
+                                </div>
+                                )}
                                         {quoteCancelChargeApplicable && shouldShowQuotePricing(bookingDetails) && (
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Cancel Charge Added:</span>
@@ -2228,6 +2240,10 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </span>
                                             </div>
                                         )}
+                                         <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Total Collected Amount {inclTaxLabel}:</span>
+                                    <span className="text-gray-900 font-semibold">₹ {Number(amount?.total || 0).toFixed(2)}</span>
+                                </div>
                                         {/* {shouldShowQuotePricing(bookingDetails) && (
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">{finalTotalLabel}</span>
@@ -2665,24 +2681,6 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <Typography className="text-sm text-black font-medium">₹ {(Number(bookingDetails?.estimatedFareBreakdown?.primeLocation?.charge)).toFixed(2)}</Typography>
                                 </div>
                                 }
-                                {bookingDetails?.totalPrice > 0 &&
-                                    <div className="flex justify-between  my-1">
-                                        <Typography color="gray" variant="sm" className=" text-gray-500 text-sm font-semibold">Final Trip Fare:</Typography>
-                                        <Typography className="text-sm text-black font-medium">₹ {Number(bookingDetails?.totalPrice || 0).toFixed(2)}</Typography>
-                                    </div>
-                                }
-                                {bookingDetails?.paymentDetails?.details?.discountAmount !== 0 && bookingDetails?.paymentDetails?.details?.discountAmount &&
-                                    <div className="flex justify-between  my-1">
-                                        <Typography color="red" variant="sm" className="text-sm text-gray-500 font-semibold">Discount Applied:</Typography>
-                                        <Typography color="red" variant="sm" className="text-sm text-black font-medium"> - ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.discountAmount || 0))}</Typography>
-                                    </div>
-                                }
-                                {bookingDetails?.paymentDetails?.details?.walletAmountUsed !== 0 && bookingDetails?.paymentDetails?.details?.walletAmountUsed &&
-                                    <div className="flex justify-between  my-1">
-                                        <Typography variant="sm" className="text-sm  text-red-400 font-semibold">Wallet Points Used:</Typography>
-                                        <Typography variant="sm" className="text-sm  text-red-400">- ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0))}</Typography>
-                                    </div>
-                                }
                                 {(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW || quoteCancelChargeApplicable) && (
                                     <>
                                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountValue > 0 && (
@@ -2691,14 +2689,28 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Percentage:</Typography>
                                                     <Typography className="text-sm text-black font-medium">
                                                         {visibleAdminDiscountType === "PERCENTAGE"
-                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} %`
-                                                            : "0.00 %"}
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                            : `₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                        }
                                                     </Typography>
                                                 </div>
-                                                <div className="flex justify-between my-1">
-                                                    <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Amount:</Typography>
-                                                    <Typography className="text-sm text-black font-medium">₹ {Math.round(Number(adminDiscountAmountOnQuoteTotal || 0))}</Typography>
-                                                </div>
+                                                {Number(systemDiscountAmount || 0) > 0 && (
+                                                    <>
+                                                        <div className="flex justify-between my-1">
+                                                            <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">System Discount Applied:</Typography>
+                                                            <Typography className="text-sm text-black font-medium">
+                                                                {systemDiscountType === "PERCENTAGE"
+                                                                    ? `${Number(systemDiscountValue || 0).toFixed(2)} %`
+                                                                    : `₹ ${Math.round(Number(systemDiscountValue || 0))}`
+                                                                }
+                                                            </Typography>
+                                                        </div>
+                                                        <div className="flex justify-between my-1">
+                                                            <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">System Discount Amount:</Typography>
+                                                            <Typography className="text-sm text-black font-medium">₹ {Number(systemDiscountAmount || 0).toFixed(2)}</Typography>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </>
                                         )}
                                         {quoteCancelChargeApplicable && (
@@ -2709,14 +2721,27 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </Typography>
                                             </div>
                                         )}
-                                        {/* <div className="flex justify-between my-1">
-                                            <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">{finalTotalLabel}</Typography>
-                                            <Typography className="text-sm text-black font-medium">
-                                                ₹ {Math.max(0, Number(finalEstimatedFareAfterDiscountsWithCancelCharge || 0)).toFixed(2)}
-                                            </Typography>
-                                        </div> */}
                                     </>
                                 )}
+                                {bookingDetails?.totalPrice > 0 &&
+                                    <div className="flex justify-between  my-1">
+                                        <Typography color="gray" variant="sm" className=" text-gray-500 text-sm font-semibold">Final Trip Fare:</Typography>
+                                        <Typography className="text-sm text-black font-medium">₹ {Number(bookingDetails?.totalPrice || 0).toFixed(2)}</Typography>
+                                    </div>
+                                }
+                                {bookingDetails?.paymentDetails?.details?.discountAmount !== 0 && bookingDetails?.paymentDetails?.details?.discountAmount &&
+                                    <div className="flex justify-between  my-1">
+                                        <Typography color="red" variant="sm" className="text-sm text-gray-500 font-semibold">Total Discount Applied:</Typography>
+                                        <Typography color="red" variant="sm" className="text-sm text-black font-medium"> - ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.discountAmount || 0))}</Typography>
+                                    </div>
+                                }
+                                {bookingDetails?.paymentDetails?.details?.walletAmountUsed !== 0 && bookingDetails?.paymentDetails?.details?.walletAmountUsed &&
+                                    <div className="flex justify-between  my-1">
+                                        <Typography variant="sm" className="text-sm  text-red-400 font-semibold">Wallet Points Used:</Typography>
+                                        <Typography variant="sm" className="text-sm  text-red-400">- ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0))}</Typography>
+                                    </div>
+                                }
+                                {/* moved above Total */}
                                 {/* Amount After Gst:  */}
                                 {bookingDetails?.paymentDetails?.details?.gstAmount > 0 && (
                                 <div className="flex justify-between  my-1">
