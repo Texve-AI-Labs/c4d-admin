@@ -136,6 +136,7 @@ const AccountOnboardingDetails = () => {
   const [previewZoom, setPreviewZoom] = useState({});
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [isSameAddress, setIsSameAddress] = useState(false);
+  const [addressSaved, setAddressSaved] = useState(false);
   const [addressForm, setAddressForm] = useState({
     address: "",
     street: "",
@@ -203,6 +204,14 @@ const AccountOnboardingDetails = () => {
       pincode: account?.pincode || "",
     });
     setIsSameAddress(Boolean(account?.address && account?.street && account?.district));
+    setAddressSaved(Boolean(
+      account?.address &&
+      account?.street &&
+      account?.thaluk &&
+      account?.district &&
+      account?.state &&
+      account?.pincode
+    ));
   }, [
     account?.ownerStatus,
     account?.blockedReason,
@@ -308,7 +317,7 @@ const AccountOnboardingDetails = () => {
 
     return missing;
   }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.state, addressForm.pincode]);
-  const canContinue = shouldShowPreviewAndAddress && isAddressFormComplete;
+  const canContinue = shouldShowPreviewAndAddress && isAddressFormComplete && addressSaved;
   const missingAccountDocuments = useMemo(() => {
     return rows
       .filter((row) => !["VERIFIED", "APPROVED"].includes(String(row.status || "").toUpperCase()))
@@ -316,6 +325,9 @@ const AccountOnboardingDetails = () => {
       .filter(Boolean);
   }, [rows]);
   const canContinueMessageParts = [];
+  if (shouldShowPreviewAndAddress && !addressSaved) {
+    canContinueMessageParts.push("Save the address details to continue.");
+  }
   if (missingAddressFields.length > 0) {
     canContinueMessageParts.push(`Fill these address fields: ${missingAddressFields.join(", ")}.`);
   }
@@ -329,6 +341,7 @@ const AccountOnboardingDetails = () => {
   const handleAddressInputChange = (key, value) => {
     setAddressForm((prev) => ({ ...prev, [key]: value }));
     setAddressErrors((prev) => ({ ...prev, [key]: "" }));
+    setAddressSaved(false);
   };
 
   const parseAddress = (address, addressComponents = []) => parseAddressParts({
@@ -351,6 +364,7 @@ const AccountOnboardingDetails = () => {
 
   const handleAddressSelect = (place) => {
     if (!place?.formatted_address) return;
+    setAddressSaved(false);
     handleAddressInputChange("address", place.formatted_address);
     if (!isSameAddress) return;
     const parsed = parseAddress(place.formatted_address, place.address_components);
@@ -419,6 +433,7 @@ const AccountOnboardingDetails = () => {
         window.alert(response?.message || "Failed to save address details.");
         return false;
       }
+      setAddressSaved(true);
       await fetchOnboardingDetails();
       return true;
     } catch (error) {
@@ -431,6 +446,11 @@ const AccountOnboardingDetails = () => {
   };
 
   const handleContinue = () => {
+    if (shouldShowPreviewAndAddress && !addressSaved) {
+      const addressSection = document.getElementById("account-address-details");
+      if (addressSection) addressSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (shouldShowPreviewAndAddress && !validateAddressForm()) {
       const addressSection = document.getElementById("account-address-details");
       if (addressSection) addressSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -787,6 +807,7 @@ const AccountOnboardingDetails = () => {
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setIsSameAddress(checked);
+                      setAddressSaved(false);
                       if (!checked) return;
                       const parsed = parseAddress(addressForm.address);
                       setAddressForm((prev) => ({
