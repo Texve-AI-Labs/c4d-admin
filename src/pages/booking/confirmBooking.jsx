@@ -2240,10 +2240,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </span>
                                             </div>
                                         )}
-                                         <div className="flex flex-col-2 gap-2">
+                                    {Number(amount?.total || 0) > 0 && (
+                                <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total Collected Amount {inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-semibold">₹ {Number(amount?.total || 0).toFixed(2)}</span>
                                 </div>
+                                    )}
                                         {/* {shouldShowQuotePricing(bookingDetails) && (
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">{finalTotalLabel}</span>
@@ -2751,12 +2753,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 )}
 
                                 <hr className="my-2" />
-                                {bookingDetails?.paymentDetails?.details?.amountAfterGst !== 0 && bookingDetails?.paymentDetails?.details?.amountAfterGst &&
+                                {Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0) > 0 && (
                                     <div className="flex justify-between  my-1">
                                         <span className="text-gray-500 font-semibold">Total:</span>
                                         <span className="text-gray-900 font-medium">₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0))}</span>
                                     </div>
-                                }
+                                )}
                                  {/* <hr className="my-2" /> */}
                                 {bookingDetails?.serviceType === 'PARCEL' && (
                                     <>
