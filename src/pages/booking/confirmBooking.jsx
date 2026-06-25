@@ -2600,12 +2600,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         <Typography className="text-sm text-black font-medium">₹ {Number(bookingDetails?.extraKMPrice || 0).toFixed(2)}</Typography>
                                     </div>
                                 }
-                                {bookingDetails?.extraNightChargePrice > 0 &&
+                                {/* {bookingDetails?.extraNightChargePrice > 0 &&
                                     <div className="flex justify-between  my-1">
                                         <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Extra KM Price:</Typography>
                                         <Typography className="text-sm text-black font-medium">₹ {Number(bookingDetails?.extraNightChargePrice || 0).toFixed(2)}</Typography>
                                     </div>
-                                }
+                                } */}
                                 {hasExtraHours &&
                                     <div className="flex justify-between  my-1">
                                         <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Extra hrs price (After first 15 mins):</Typography>
