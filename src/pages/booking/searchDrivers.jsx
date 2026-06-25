@@ -39,7 +39,15 @@ export function SearchDrivers(props) {
     const showParcelSubZone = props?.bookingData?.serviceType === "PARCEL" && parcelVehicleType === "BIKE";
     const parcelVehicleLabel = isParcelAuto ? "Auto" : "Bike";
     const parcelVehiclePlural = isParcelAuto ? "Autos" : "Bikes";
-    const isBookingAccepted = props?.bookingData?.status === "BOOKING_ACCEPTED";
+    const bookingStatus = String(
+        props?.bookingData?.status ||
+        props?.bookingData?.fullData?.status ||
+        drivers?.[0]?.fullData?.status ||
+        ''
+    ).toUpperCase();
+    const isBookingAccepted = bookingStatus === "BOOKING_ACCEPTED" || (
+        props?.bookingData?.requestType === "REQUEST_ALL" && drivers.length > 0
+    );
     const laterButtonLabel = isBookingAccepted
         ? "Go To List"
         : props?.bookingData?.serviceType !== "DRIVER"
@@ -848,7 +856,7 @@ export function SearchDrivers(props) {
                                             {drivers[0] && (
                                                 <div className="bg-green-50 border border-green-200 rounded-xl p-5">
                                                     <Typography variant="lead" className="font-bold text-green-800">
-                                                        {drivers[0].driverName || drivers[0].name || 'Driver'}
+                                                        {(drivers[0].driverName || drivers[0].name || 'Driver')}
                                                     </Typography>
                                                 </div>
                                             )}
@@ -1090,12 +1098,7 @@ export function SearchDrivers(props) {
                             onClick={() => { props?.onNext() }}
                             className='text-white border-2 bg-primary rounded-xl'
                         >
-                            {props?.bookingData?.serviceType === "AUTO"
-                                ? "Assign Auto Later"
-                                : props?.bookingData?.serviceType === "PARCEL"
-                                    ? `Assign ${parcelVehicleLabel} Later`
-                                    : "Assign Cab Later"
-                            }
+                            {laterButtonLabel}
                         </Button>
                     </div>
                 </div >
