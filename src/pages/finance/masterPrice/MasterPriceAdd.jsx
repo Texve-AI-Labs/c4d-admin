@@ -56,7 +56,7 @@ export function MasterPriceAdd() {
                 priceMVP: values.priceMVP || 0,
                 dropPrice: values.dropPrice,
                 nightCharge: values.nightCharge,
-                cancelCharge: values.cancelCharge ||0,
+                cancelCharge: Number(values.cancelCharge || 0),
                 cancelMins: Utils.convertMinutesToTimeFormat(values.cancelMins || '00:00:00') ,
                 waitingMins: Utils.convertMinutesToTimeFormat(values.waitingMins ||'00:00:00') ,
                 waitingCharge: values.waitingCharge || 0,
@@ -196,7 +196,7 @@ export function MasterPriceAdd() {
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Free Waiting (mins)</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting (mins)</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting Charge</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Night Charge</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Mins</th>
@@ -260,6 +260,10 @@ export function MasterPriceAdd() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra hour charge</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting (mins)</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting Charge</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Mins</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Charge</th>
                                    
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Night Charges</th>
@@ -285,6 +289,18 @@ export function MasterPriceAdd() {
                                         
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="waitingMins" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="waitingCharge" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="cancelMins" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="cancelCharge" className="w-full text-center border rounded p-2" />
                                         </td>
 
                                         {/* <td className="px-2 py-3 border">
