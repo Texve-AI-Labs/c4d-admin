@@ -38,7 +38,7 @@ function AllRecordsSubmenu({ miniSidenav }) {
     { label: "Return Trips Records", path: "/dashboard/booking/list/returntrips", icon: "/img/rides.png" },
     ...(pathname.startsWith("/dashboard/booking/list/returntrips") ||
     pathname.startsWith("/dashboard/vendors/driver-return-trips")
-      ? [{ label: "Return Trip Driver Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" }]
+      ? [{ label: "Return Trip Created Details", path: "/dashboard/vendors/driver-return-trips", icon: "/img/driver.png" }]
       : []),
   ];
 

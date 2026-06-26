@@ -243,7 +243,7 @@ export function DriverReturnTripsList() {
           ${ColorStyles.bgColor}`}>
           <div className='flex items-center justify-between w-full'>
             <Typography variant="h6" color="white">
-              Return Trip Driver Details
+              Return Trip Created Details
             </Typography>
           </div>
         </CardHeader>

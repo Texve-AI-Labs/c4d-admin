@@ -877,7 +877,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Return Trip Driver Details",
+        name: "Return Trip Created Details",
         path: "/vendors/driver-return-trips",
         element: <DriverReturnTripsList />,
         display: true,
