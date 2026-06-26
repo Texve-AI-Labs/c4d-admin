@@ -7,6 +7,8 @@ export const validateParcelForm = (form) => {
   if (toNum(form.baseFare) <= 0) return "Base Fare must be greater than 0";
   if (toNum(form.baseKm) < 0) return "Base Km cannot be negative";
   if (toNum(form.kilometerPrice) <= 0) return "Kilometer Price must be greater than 0";
+  if (toNum(form.waitingMins) < 0) return "Waiting Mins cannot be negative";
+  if (toNum(form.waitingCharge) < 0) return "Waiting Charge cannot be negative";
   if (toNum(form.cancelMins) < 0) return "Cancellation Mins cannot be negative";
   if (toNum(form.cancelCharge) < 0) return "Cancellation Charge cannot be negative";
   if (toNum(form.driverCancelMins) < 0) return "Driver Cancel Mins cannot be negative";
