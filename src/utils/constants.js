@@ -1024,6 +1024,7 @@ export const API_ROUTES = {
     'GET_SKIP_EVENTS': '/admin/telemetry/skip-events',
     'VALIDATE_NOTIFICATION_TIME': '/validate-notification-time',
     'MASTER_SUB_PLAN_GROUP':'/admin/plan-group/logs',
+    'SUPPORT_END_LOACTION':'/booking/end-location-reason'
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
