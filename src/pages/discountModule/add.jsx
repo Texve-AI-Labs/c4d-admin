@@ -53,6 +53,7 @@ const DiscountAdd = () => {
     discountType: '',
     percentage: '',
     amount: '',
+    driverWalletApplicable: false,
     startDate: '',
     endDate: '',
     isActive: 'true',
@@ -192,6 +193,7 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
       formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
+      formData.append('driverWalletApplicable', String(Boolean(values.driverWalletApplicable)));
       if (values.offerType === 'CUSTOM') {
         formData.append('targetMode', values.targetMode || '');
         formData.append('allowedCount', '1');
@@ -360,6 +362,15 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 </Field>
                 <ErrorMessage name="offerType" className="text-red-500 text-sm" component="div" />
               </div>
+              <div className="flex items-center gap-3 pt-6">
+                <Field
+                  type="checkbox"
+                  name="driverWalletApplicable"
+                  className="h-5 w-5 rounded border-gray-300 text-blue-600"
+                />
+                <label className="text-sm font-medium text-gray-700">Driver Wallet Applicable</label>                
+              </div>
+              
               {values.offerType === 'CUSTOM' && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Target Mode</label>

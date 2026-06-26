@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { Button } from "@material-tailwind/react";
+import { Button, Switch } from "@material-tailwind/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
@@ -33,6 +33,7 @@ const initialValuesTemplate = {
   effectiveTo: "",
   isDefault: false,
   primaryPlanId: null,
+  primaryPlanStatus: "ACTIVE",
   packagePrice: "",
   price: 0,
   name: "",
@@ -40,6 +41,7 @@ const initialValuesTemplate = {
   priority: "",
   totalPrice: 0,
   type: "",
+  status: "ACTIVE",
   // validityDays: 0,
   earningStrategy: "",
   earningWindowDays: "",
@@ -48,6 +50,8 @@ const initialValuesTemplate = {
 };
 
 function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty, isValid, geoData, navigate }) {
+  const prevGroupStatusRef = useRef(values.status || "ACTIVE");
+
   useEffect(() => {
     setFieldValue("totalPrice", (Number(values.price) || 0) + (Number(values.bonusPrice) || 0));
   }, [values.price, values.bonusPrice, setFieldValue]);
@@ -62,14 +66,29 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
     });
   }, [values.plans, setFieldValue]);
 
+  useEffect(() => {
+    if (!Array.isArray(values.plans)) return;
+    const normalizedStatus = values.status || "ACTIVE";
+    if (prevGroupStatusRef.current === normalizedStatus) return;
+    prevGroupStatusRef.current = normalizedStatus;
+    if (values.primaryPlanStatus !== normalizedStatus) {
+      setFieldValue("primaryPlanStatus", normalizedStatus);
+    }
+    values.plans.forEach((plan, index) => {
+      if (plan.status !== normalizedStatus) {
+        setFieldValue(`plans[${index}].status`, normalizedStatus);
+      }
+    });
+  }, [values.status, values.primaryPlanStatus, values.plans, setFieldValue]);
+
   return (
     <Form>
-      <div className="p-4 bg-blue-gray-100 grid grid-cols-1 gap-4">
-        <div className="p-4 bg-blue-gray-50 rounded-lg">
+      <div className="p-4 border-2 grid grid-cols-1 gap-4">
+        <div className="p-4 rounded-lg">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="assignmentType" className="text-sm font-medium text-gray-700">Assignment Type</label>
-              <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
+              <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100"  disabled>
                 <option value="">Select Assignment Type</option>
                 <option value="TIER">Tier</option>
                 <option value="DRIVER_ID">Driver ID</option>
@@ -94,7 +113,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </div>
             <div>
               <label htmlFor="priority" className="mb-1 block text-sm">Priority</label>
-              <Field as="select" name="priority" className="w-full rounded-md border border-gray-300 p-2">
+              <Field as="select" name="priority" className="w-full rounded-md border-2 border-gray-300 p-2">
                 <option value="">Select Priority</option>
                 {PRIORITY_OPTIONS.map((priority) => (
                   <option key={priority.label} value={priority.value}>
@@ -114,12 +133,12 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </div>
             <div>
               <label htmlFor="groupName" className="text-sm font-medium text-gray-700">Name</label>
-              <Field type="text" name="groupName" className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm" placeholder="Eg. New Year Group" />
+              <Field type="text" name="groupName" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder="Eg. New Year Group" />
               <ErrorMessage name="groupName" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div>
               <label htmlFor="serviceType" className="text-sm font-medium text-gray-700">Service Type</label>
-              <Field as="select" name="serviceType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
+              <Field as="select" name="serviceType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100" disabled>
                 <option value="">Select Service Type</option>
                 <option value="ACTING_DRIVER">Driver</option>
                 <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
@@ -150,15 +169,15 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </div>
             <div>
               <label htmlFor="effectiveFrom" className="text-sm font-medium text-gray-700">Effective From</label>
-              <Field type="datetime-local" name="effectiveFrom" className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm" />
+              <Field type="datetime-local" name="effectiveFrom" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
             </div>
             <div>
               <label htmlFor="effectiveTo" className="text-sm font-medium text-gray-700">Effective To</label>
-              <Field type="datetime-local" name="effectiveTo" className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm" />
+              <Field type="datetime-local" name="effectiveTo" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
             </div>
             <div className="col-span-2">
               <label htmlFor="description" className="text-sm font-medium text-gray-700">Description</label>
-              <Field as="textarea" name="description" rows="3" className="mt-1 p-2 w-full rounded-md border-gray-300 shadow-sm" placeholder="Description for this plan group" />
+              <Field as="textarea" name="description" rows="3" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder="Description for this plan group" />
             </div>
             <div className="flex items-center">
               <Field type="checkbox" name="isDefault" className="mr-2 h-4 w-4 text-primary-600 border-gray-300 rounded" />
@@ -167,7 +186,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-blue-gray-50 rounded-lg">
+        <div className="mt-6 p-4 border-2 border-gray-300 rounded-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Plan</h3>
             <Button
@@ -182,6 +201,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     serviceType: values.serviceType || "",
                     name: "",
                     type: "",
+                    status: values.status || "ACTIVE",
                     packagePrice: "",
                     price: "",
                     bonusPrice: "",
@@ -197,7 +217,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </Button>
           </div>
 
-          <div className="grid grid-cols-8 gap-2">
+          <div className="grid grid-cols-9 gap-2">
             <div className="hidden">
               <label htmlFor="serviceType" className="text-sm font-medium text-gray-700">Service Type</label>
               <Field as="select" name="serviceType" disabled className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100">
@@ -209,7 +229,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </div>
             <div>
               <label htmlFor="name" className="text-sm font-medium text-gray-700">Plan Name</label>
-              <Field as="select" name="name" className="p-2 w-full rounded-md border-gray-300 shadow-sm">
+              <Field as="select" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
                 <option value="">Select Plan Name</option>
                 <option value="Premium">Premium</option>
                 <option value="Standard">Standard</option>
@@ -228,22 +248,22 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </div>
             <div>
               <label htmlFor="packagePrice" className="text-sm font-medium text-gray-700">Price</label>
-              <Field type="number" name="packagePrice" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+              <Field type="number" name="packagePrice" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
               <ErrorMessage name="packagePrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div>
               <label htmlFor="price" className="text-sm font-medium text-gray-700">Base Credits</label>
-              <Field type="number" name="price" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+              <Field type="number" name="price" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
               <ErrorMessage name="price" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div>
               <label htmlFor="bonusPrice" className="text-sm font-medium text-gray-700">Bonus Credits</label>
-              <Field type="number" name="bonusPrice" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+              <Field type="number" name="bonusPrice" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
               <ErrorMessage name="bonusPrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div>
               <label htmlFor="totalPrice" className="text-sm font-medium text-gray-700">Total Credits</label>
-              <Field type="number" name="totalPrice" readOnly className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-100" />
+              <Field type="number" name="totalPrice" readOnly className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100" />
               <ErrorMessage name="totalPrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
             {/* {values.type !== "PAID" && (
@@ -265,18 +285,28 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
            
                 <div>
                   <label className="text-sm font-medium text-gray-700">Earning Window Days</label>
-                  <Field type="number" name="earningWindowDays" className="p-2 w-full rounded-md border-gray-300 shadow-sm"  placeholder="Enter days" />
+                  <Field type="number" name="earningWindowDays" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"  placeholder="Enter days" />
+                </div>
+                <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700">Plan Status</div>
+                    <div className="text-xs text-gray-500">{values.primaryPlanStatus === "ACTIVE" ? "Active" : "Inactive"}</div>
+                  </div>
+                  <Switch
+                    checked={(values.primaryPlanStatus || "ACTIVE") === "ACTIVE"}
+                    onChange={(e) => setFieldValue("primaryPlanStatus", e.target.checked ? "ACTIVE" : "INACTIVE")}
+                  />
                 </div>
              
           </div>
 
           {values.plans && values.plans.length > 0 && (
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-4 overflow-x-auto">
               {values.plans.map((plan, index) => (
-                <div key={index} className="grid grid-cols-8 gap-2 border border-gray-200 rounded-lg p-3 bg-blue-gray-50">
+                <div key={index} className="grid grid-cols-9 gap-2 rounded-lg p-3">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Plan Name</label>
-                    <Field as="select" name={`plans[${index}].name`} className="p-2 w-full rounded-md border-gray-300 shadow-sm">
+                    <Field as="select" name={`plans[${index}].name`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
                       <option value="">Select Plan Name</option>
                       <option value="Premium">Premium</option>
                       <option value="Standard">Standard</option>
@@ -285,7 +315,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Type</label>
-                    <Field as="select" name={`plans[${index}].type`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                    <Field as="select" name={`plans[${index}].type`} className="p-2 w-full rounded-md  border-2 border-gray-300 shadow-sm">
                       <option value="">Select Type</option>
                       <option value="FREE">Free</option>
                       <option value="PAID">Paid</option>
@@ -293,19 +323,19 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Price</label>
-                    <Field type="number" name={`plans[${index}].packagePrice`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                    <Field type="number" name={`plans[${index}].packagePrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Base Credits</label>
-                    <Field type="number" name={`plans[${index}].price`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                    <Field type="number" name={`plans[${index}].price`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Bonus Credits</label>
-                    <Field type="number" name={`plans[${index}].bonusPrice`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                    <Field type="number" name={`plans[${index}].bonusPrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Total Credits</label>
-                    <Field type="number" name={`plans[${index}].totalPrice`} readOnly className="p-2 w-full rounded-md border-gray-300 bg-gray-100 shadow-sm" />
+                    <Field type="number" name={`plans[${index}].totalPrice`} readOnly className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" />
                   </div>
                   {/* {plan.type !== "PAID" && (
                     <div>
@@ -313,8 +343,8 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                       <Field type="number" name={`plans[${index}].validityDays`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                     </div>
                   )} */}
-                  {plan.type === "PAID" && (
-                    <>
+                  
+                    
                       <div>
                         <label className="text-sm font-medium text-gray-700">Earning Strategy</label>
                         <Field as="select" name={`plans[${index}].earningStrategy`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -325,10 +355,19 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-700">Earning Window Days</label>
-                        <Field type="number" name={`plans[${index}].earningWindowDays`} className="p-2 w-full rounded-md border-gray-300 shadow-sm"  placeholder="Enter days" />
+                        <Field type="number" name={`plans[${index}].earningWindowDays`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"  placeholder="Enter days" />
                       </div>
-                    </>
-                  )}
+                  
+                  <div className="min-w-0 flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
+                    <div>
+                      <div className="block max-w-[96px] whitespace-normal text-sm font-medium leading-tight text-gray-700 break-words">Status</div>
+                      <div className="text-xs text-gray-500">{plan.status === "ACTIVE" ? "Active" : "Inactive"}</div>
+                    </div>
+                    <Switch
+                      checked={(plan.status || "ACTIVE") === "ACTIVE"}
+                      onChange={(e) => setFieldValue(`plans[${index}].status`, e.target.checked ? "ACTIVE" : "INACTIVE")}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -399,6 +438,7 @@ const MasterSubscriptionEdit = () => {
           const primaryPlan = plans[0] || {};
           const extraPlans = plans.slice(1);
           const assignments = Array.isArray(group.assignments) ? group.assignments : [];
+          const normalizedStatus = group.status || primaryPlan.status || "ACTIVE";
 
           setInitialValues({
             groupName: group.name || "",
@@ -408,11 +448,12 @@ const MasterSubscriptionEdit = () => {
             assignmentValue: group.assignments?.[0]?.assignmentValue || "",
             priority: group.priority ?? "",
             zone: group.zone || group.metadata?.zone || "",
-            status: group.status || "",
+            status: normalizedStatus,
             effectiveFrom: toInputDateTime(group.effectiveFrom),
             effectiveTo: toInputDateTime(group.effectiveTo),
             isDefault: Boolean(group.metadata?.isDefault),
             primaryPlanId: primaryPlan.id ?? null,
+            primaryPlanStatus: primaryPlan.status || normalizedStatus,
             packagePrice: primaryPlan.packagePrice || 0,
             price: primaryPlan.price || 0,
             name: primaryPlan.name || "",
@@ -431,6 +472,7 @@ const MasterSubscriptionEdit = () => {
               price: p.price || 0,
               bonusPrice: p.bonusPrice || 0,
               totalPrice: p.totalPrice || 0,
+              status: p.status || "ACTIVE",
               // validityDays: p.type === "PAID" ? "" : p.validityDays ?? "",
               earningStrategy: p.earningStrategy ,
               earningWindowDays: p.earningWindowDays 
@@ -460,6 +502,7 @@ const MasterSubscriptionEdit = () => {
         bonusPrice: Number(values.bonusPrice) || 0,
         totalPrice: Number(values.totalPrice) || 0,
         // validityDays: values.type === "PAID" ? null : Number(values.validityDays || 0),
+        status: values.primaryPlanStatus || "ACTIVE",
         type: values.type,
         earningStrategy:  values.earningStrategy || null,
         earningWindowDays: Number(values.earningWindowDays || 0)
@@ -488,6 +531,7 @@ const MasterSubscriptionEdit = () => {
             bonusPrice: Number(plan.bonusPrice || 0),
             totalPrice: Number(plan.totalPrice || 0),
             // validityDays: plan.type === "PAID" ? null : Number(plan.validityDays || 0),
+            status: plan.status || "ACTIVE",
             type: plan.type || "",
             earningStrategy: plan.earningStrategy || null,
             earningWindowDays:  Number(plan.earningWindowDays || 0)
@@ -531,7 +575,7 @@ const MasterSubscriptionEdit = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 bg-white">
       <h2 className="text-2xl font-bold mb-4">Master Subscription Edit</h2>
       <Formik
         initialValues={initialValues}
