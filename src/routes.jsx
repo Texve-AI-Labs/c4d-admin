@@ -990,7 +990,7 @@ export const routes = [
         },
         {
         icon: <UserIcon {...icon} />,
-        name: "Return Trips Records",
+        name: "Return Trips Booking Records",
         path: "/booking/list/returntrips",
         element: <AllBookingsLists type={BOOKING_SERVICE_TYPE.RETURN_TRIPS} />,
         display: false,
