@@ -175,6 +175,7 @@ const DiscountEdit = () => {
             couponCode: discountFromState.couponCode || '',
             description: discountFromState.description || '',
             offerType: discountFromState.offerType || '',
+            driverWalletApplicable: discountFromState.driverWalletApplicable ?? false,
             targetMode: discountFromState.targetMode || 'TARGETED',
             minCompletedTrips: discountFromState.minCompletedTrips ?? null,
             maxCompletedTrips: discountFromState.maxCompletedTrips ?? null,
@@ -225,6 +226,7 @@ const DiscountEdit = () => {
             title: data.title || '',
             description: data.description || '',
             offerType: data.offerType || '',
+            driverWalletApplicable: data.driverWalletApplicable ?? false,
             targetMode: data.targetMode || 'TARGETED',
             minCompletedTrips: data.minCompletedTrips ?? null,
             maxCompletedTrips: data.maxCompletedTrips ?? null,
@@ -293,11 +295,12 @@ const DiscountEdit = () => {
       formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
+      formData.append('driverWalletApplicable', String(Boolean(values.driverWalletApplicable)));
       if (values.offerType === 'CUSTOM') {
         formData.append('allowedCount', '1');
         formData.append('minCompletedTrips', values.minCompletedTrips === '' || values.minCompletedTrips === null || values.minCompletedTrips === undefined ? 0 : Number(values.minCompletedTrips));
         formData.append('maxCompletedTrips', values.maxCompletedTrips === '' || values.maxCompletedTrips === null || values.maxCompletedTrips === undefined ? 0 : Number(values.maxCompletedTrips));
-              formData.append('targetMode', values.targetMode || '');
+        formData.append('targetMode', values.targetMode || '');
       }
       if (!isCustomSegment) {
       formData.append('couponCode', values.couponCode);
@@ -460,6 +463,14 @@ const DiscountEdit = () => {
                   <option value="CUSTOM">CUSTOM</option>
                 </Field>
                 <ErrorMessage name="offerType" component="div" className="text-red-500 text-sm" />
+              </div>
+              <div className="flex items-center gap-3 pt-6">
+                <Field
+                  type="checkbox"
+                  name="driverWalletApplicable"
+                  className="h-5 w-5 rounded border-gray-300 text-blue-600"
+                />
+                <label className="text-sm font-medium text-gray-700">Driver Wallet Applicable</label>
               </div>
               {values.offerType === 'CUSTOM' && (
                 <div>
