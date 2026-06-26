@@ -46,7 +46,7 @@ function VendorsSubmenu({ miniSidenav }) {
         return pathname.startsWith("/dashboard/doc-verification");
       case "All Pending Documents":
         return pathname.startsWith("/dashboard/doc-verification/pending");
-      case "Return Trip Driver Details":
+      case "Return Trip Created Details":
       default:
         return pathname.startsWith(target);
     }
