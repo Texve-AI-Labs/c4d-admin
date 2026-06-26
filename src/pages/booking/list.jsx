@@ -1505,7 +1505,7 @@ if (!statusFilter.includes('All')) {
                                                         </div>
                                                         <div>
                                                             <Typography className="text-sm font-semibold mb-2">
-                                                                Other Reason Details
+                                                                Different Drop Location Reason
                                                             </Typography>
                                                             <textarea
                                                                 value={supportApprovalReasonDetails}
@@ -1571,7 +1571,7 @@ if (!statusFilter.includes('All')) {
                                                         ? "mb-4"
                                                         : "border-b border-blue-gray-50"} ${
                                                         data?.isSosCalled == true ? 'bg-red-500 text-white'
-                                                        : data?.requiresSupportApproval ? 'bg-orange-50'
+                                                        : data?.requiresSupportApproval ? 'bg-orange-300'
                                                         : isSelected ? 'bg-primary-50'
                                                         : "hover:bg-gray-50"
                                                     } transition-colors duration-200`;
