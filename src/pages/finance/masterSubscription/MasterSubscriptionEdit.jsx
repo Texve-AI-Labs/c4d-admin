@@ -100,7 +100,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             <div>
               <label htmlFor="assignmentValue" className="text-sm font-medium text-gray-700">Assignment Value</label>
               {values.assignmentType === "TIER" ? (
-                <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
                   <option value="">Select Tier</option>
                   <option value="SILVER">Silver</option>
                   <option value="GOLD">Gold</option>

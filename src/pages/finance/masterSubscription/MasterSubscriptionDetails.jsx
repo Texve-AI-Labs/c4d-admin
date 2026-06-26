@@ -4,10 +4,24 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import { Button, Switch } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
+import { isSuperUserRole } from "@/utils/roleUtils";
+import { MasterSubscriptionLogTable } from "./MasterSubscriptionLogTable";
 
 const MasterSubscriptionDetails = () => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const canViewLogs = isSuperUserRole();
+    const [activeTab, setActiveTab] = useState("details");
+    const [logRows, setLogRows] = useState([]);
+    const [logLoading, setLogLoading] = useState(false);
+    const [logError, setLogError] = useState("");
+    const [expandedLogRows, setExpandedLogRows] = useState({});
+    const [logPagination, setLogPagination] = useState({
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+    });
     const normalizeApplicableEntity = (value) => {
         if (Array.isArray(value)) return value[0] || "";
         return value || "";
@@ -83,6 +97,75 @@ const MasterSubscriptionDetails = () => {
         }
     }, [id]);
 
+    const fetchLogData = async () => {
+        if (!id) return;
+        setLogLoading(true);
+        setLogError("");
+        try {
+            const Log = `${API_ROUTES.MASTER_SUB_PLAN_GROUP}/${id}`;
+            const response = await ApiRequestUtils.getWithQueryParam(Log, {
+                page: logPagination.page,
+                limit: logPagination.limit,
+            });
+            const payload = response?.result ?? response?.data ?? response;
+            const rows = Array.isArray(payload)
+                ? payload
+                : Array.isArray(payload?.data)
+                    ? payload.data
+                    : Array.isArray(payload?.rows)
+                        ? payload.rows
+                        : Array.isArray(payload?.items)
+                            ? payload.items
+                            : Array.isArray(payload?.logs)
+                                ? payload.logs
+                                : payload
+                                    ? [payload]
+                                    : [];
+            const pagination = response?.pagination || payload?.pagination || {};
+            const resolvedPage = Number(pagination.page || pagination.currentPage || logPagination.page || 1);
+            const resolvedLimit = Number(pagination.limit || pagination.itemsPerPage || logPagination.limit || 20);
+            const resolvedTotal = Number(pagination.total || pagination.totalItems || rows.length || 0);
+            const resolvedTotalPages = Number(
+                pagination.totalPages ||
+                payload?.totalPages ||
+                Math.ceil(resolvedTotal / resolvedLimit) ||
+                0
+            );
+
+            setLogRows(rows);
+            setExpandedLogRows({});
+            setLogPagination({
+                page: resolvedPage,
+                limit: resolvedLimit,
+                total: resolvedTotal,
+                totalPages: resolvedTotalPages,
+            });
+        } catch (error) {
+            console.error("Error fetching subscription log:", error);
+            setLogError("Unable to load log data.");
+        } finally {
+            setLogLoading(false);
+        }
+    };
+
+    const handleLogPageChange = (page) => {
+        if (logPagination.totalPages < 1 || page < 1 || page > logPagination.totalPages || logLoading) return;
+        setLogPagination((prev) => ({ ...prev, page }));
+    };
+
+    const toggleLogRow = (rowKey) => {
+        setExpandedLogRows((prev) => ({
+            ...prev,
+            [rowKey]: !prev[rowKey],
+        }));
+    };
+
+    useEffect(() => {
+        if (canViewLogs && activeTab === "log") {
+            fetchLogData();
+        }
+    }, [activeTab, logPagination.page, logPagination.limit, canViewLogs]);
+
     return (
         <div className="p-4 bg-white">
             <h2 className="text-2xl font-bold mb-4">Master Subscription Details</h2>
@@ -92,6 +175,29 @@ const MasterSubscriptionDetails = () => {
             >
                 {({ values }) => (
                     <Form>
+                        <div className="mb-6 flex gap-3 border-b border-gray-200">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab("details")}
+                                className={`px-4 py-2 text-sm font-semibold border-b-2 ${activeTab === "details" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500"}`}
+                            >
+                                Details
+                            </button>
+                            {canViewLogs && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setActiveTab("log");
+                                    }}
+                                    className={`px-4 py-2 text-sm font-semibold border-b-2 ${activeTab === "log" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500"}`}
+                                >
+                                    Log
+                                </button>
+                            )}
+                        </div>
+
+                        {activeTab === "details" && (
+                            <>
                         {/* Plan Group (same fields as Add page) */}
                         <div className="p-4 border-2 rounded-lg mb-6">
                             {/* <h3 className="text-lg font-semibold mb-4">Plan Group</h3> */}
@@ -269,6 +375,19 @@ const MasterSubscriptionDetails = () => {
                                 Edit
                             </Button>
                         </div>
+                            </>
+                        )}
+                        {canViewLogs && activeTab === "log" && (
+                            <MasterSubscriptionLogTable
+                                rows={logRows}
+                                loading={logLoading}
+                                error={logError}
+                                pagination={logPagination}
+                                expandedRows={expandedLogRows}
+                                onToggleRow={toggleLogRow}
+                                onPageChange={handleLogPageChange}
+                            />
+                        )}
                     </Form>
                 )}
             </Formik>

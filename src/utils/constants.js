@@ -1022,7 +1022,8 @@ export const API_ROUTES = {
     'GET_ADMIN_BOOKINGS_EVENTS': '/admin/bookings/events',
     'GET_DRIVER_CANCELLATION_LOGS': '/admin/driver-cancellation-logs',
     'GET_SKIP_EVENTS': '/admin/telemetry/skip-events',
-    'VALIDATE_NOTIFICATION_TIME': '/validate-notification-time'
+    'VALIDATE_NOTIFICATION_TIME': '/validate-notification-time',
+    'MASTER_SUB_PLAN_GROUP':'/admin/plan-group/logs',
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
