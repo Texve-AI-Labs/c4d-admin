@@ -155,6 +155,10 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [userId, setUserId] = useState(null);  
     const [showReassignModal, setShowReassignModal] = useState(false);
     const [selectedBookingForReassign, setSelectedBookingForReassign] = useState(null);
+    const [showSupportApprovalModal, setShowSupportApprovalModal] = useState(false);
+    const [selectedBookingForSupportApproval, setSelectedBookingForSupportApproval] = useState(null);
+    const [supportApprovalDecision, setSupportApprovalDecision] = useState('END_TRIP');
+    const [supportApprovalReasonDetails, setSupportApprovalReasonDetails] = useState('');
     const [counts, setCounts] = useState({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0"});
     const [dateFilter, setDateFilter] = useState('All');
     const [customDateFrom, setCustomDateFrom] = useState('');
@@ -745,6 +749,42 @@ if (!statusFilter.includes('All')) {
         setIsOpen(true)
     };
 
+    const onSupportApprovalHandler = (data) => {
+        setSelectedBookingForSupportApproval(data);
+        setSupportApprovalDecision('END_TRIP');
+        setSupportApprovalReasonDetails('');
+        setShowSupportApprovalModal(true);
+    };
+
+    const submitSupportApproval = async () => {
+        if (!selectedBookingForSupportApproval?.id) return;
+
+        const payload = {
+            bookingId: selectedBookingForSupportApproval.id,
+            reasonKey: 'OTHER',
+            otherReasonDetails: supportApprovalReasonDetails?.trim() || 'Support confirmed manually',
+            decision: supportApprovalDecision,
+        };
+
+        try {
+            setLoading(true);
+            const response = await ApiRequestUtils.post(API_ROUTES.SUPPORT_END_LOACTION, payload);
+            if (response?.success) {
+                setShowSupportApprovalModal(false);
+                setSelectedBookingForSupportApproval(null);
+                setSupportApprovalDecision('END_TRIP');
+                setSupportApprovalReasonDetails('');
+                await getBookingsList(pagination.currentPage);
+            } else {
+                console.error('Support approval update failed:', response?.message);
+            }
+        } catch (error) {
+            console.error('Error submitting support approval:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleBookingSelect = (data, event) => {
         setSelectedBookingId(data.id);
         if (onSelectBooking) {
@@ -801,7 +841,7 @@ if (!statusFilter.includes('All')) {
         type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" : "All Bookings";
     const tableHeaders = isReturnTripsList
         ? ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
-        : ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Assign Captain"];
+        : ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
 
     const tabs = useMemo(
         () =>
@@ -1445,6 +1485,74 @@ if (!statusFilter.includes('All')) {
                                         </div>
                                         
                                         )}
+                                        {showSupportApprovalModal && (
+                                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                                <div className="bg-white/95 p-6 rounded-lg max-w-lg w-full">
+                                                    <Typography className="text-2xl font-extrabold text-center mb-4">
+                                                        Support Approval
+                                                    </Typography>
+                                                    <div className="space-y-4">
+                                                        <div className='hidden'>
+                                                            <Typography className="text-sm font-semibold mb-2">
+                                                                Reason Key
+                                                            </Typography>
+                                                            <input
+                                                                type="text"
+                                                                value="OTHER"
+                                                                readOnly
+                                                                className="border border-gray-300 px-4 py-2 rounded-md w-full bg-gray-100"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Typography className="text-sm font-semibold mb-2">
+                                                                Different Drop Location Reason
+                                                            </Typography>
+                                                            <textarea
+                                                                value={supportApprovalReasonDetails}
+                                                                onChange={(e) => setSupportApprovalReasonDetails(e.target.value)}
+                                                                placeholder="Enter support reason details"
+                                                                className="border border-gray-300 px-4 py-2 rounded-md w-full min-h-[110px]"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <Typography className="text-sm font-semibold mb-2">
+                                                                Decision
+                                                            </Typography>
+                                                            <select
+                                                                value={supportApprovalDecision}
+                                                                onChange={(e) => setSupportApprovalDecision(e.target.value)}
+                                                                className="border border-gray-300 px-4 py-2 rounded-md w-full"
+                                                            >
+                                                                <option value="END_TRIP">END TRIP</option>
+                                                                <option value="CONTINUE_TRIP">CONTINUE TRIP</option>
+                                                                {/* <option value="SUPPORT_END_LOACTION">SUPPORT_END_LOACTION</option> */}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-center gap-3 mt-6">
+                                                        <Button
+                                                            className={`${ColorStyles.bgStatusColor} text-white w-32`}
+                                                            onClick={submitSupportApproval}
+                                                            disabled={!supportApprovalReasonDetails?.trim()}
+                                                        >
+                                                            Submit
+                                                        </Button>
+                                                        <Button
+                                                            variant="outlined"
+                                                            className="text-white w-32 bg-black"
+                                                            onClick={() => {
+                                                                setShowSupportApprovalModal(false);
+                                                                setSelectedBookingForSupportApproval(null);
+                                                                setSupportApprovalReasonDetails('');
+                                                                setSupportApprovalDecision('END_TRIP');
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         {bookingsList
                                             .filter(booking =>
                                                 (statusFilter.includes('All') ||
@@ -1463,6 +1571,7 @@ if (!statusFilter.includes('All')) {
                                                         ? "mb-4"
                                                         : "border-b border-blue-gray-50"} ${
                                                         data?.isSosCalled == true ? 'bg-red-500 text-white'
+                                                        : data?.requiresSupportApproval ? 'bg-orange-300'
                                                         : isSelected ? 'bg-primary-50'
                                                         : "hover:bg-gray-50"
                                                     } transition-colors duration-200`;
@@ -1653,8 +1762,25 @@ if (!statusFilter.includes('All')) {
                                                                 ) : (
                                                                     <FaPhone className="w-6 h-6 rotate-90" />
                                                                 )} */}
-                                                                {getFollowup(data?.followup || 'NONE')}
+                                                        {getFollowup(data?.followup || 'NONE')}
                                                             </button>
+                                                            </td>
+                                                        )}
+                                                        {!isReturnTripsList && (
+                                                            <td className={className}>
+                                                                {data?.requiresSupportApproval ? (
+                                                                    <Button
+                                                                        fullWidth
+                                                                        onClick={() => onSupportApprovalHandler(data)}
+                                                                        className="text-xs font-semibold text-white flex-wrap bg-orange-600 hover:bg-orange-700"
+                                                                    >
+                                                                        Support Approval
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Typography className="text-xs font-semibold text-blue-gray-500 text-center">
+                                                                        -
+                                                                    </Typography>
+                                                                )}
                                                             </td>
                                                         )}
                                                         

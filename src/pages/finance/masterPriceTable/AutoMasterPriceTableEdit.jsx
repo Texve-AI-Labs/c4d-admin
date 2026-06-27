@@ -27,6 +27,8 @@ const PRICE_SCHEMA = Yup.object().shape({
   additionalMin: Yup.number().min(0, 'Must be positive').required('Additional min charge is required'),
   surchargePercentage: Yup.number().min(0).required('Surcharge percentage is required'),
   nightCharge: Yup.number().min(0).required('Night charge is required'),
+  waitingMins: Yup.number().min(0).required('Waiting minutes required'),
+  waitingCharge: Yup.number().min(0).required('Waiting charge required'),
   cancellationMins: Yup.number().min(0).integer().required('Cancellation minutes required'),
   cancellationCharge: Yup.number().min(0).required('Cancellation charge required'),
   nightHoursFrom: Yup.string().required('Night start time is required'),
@@ -66,6 +68,8 @@ const AutoMasterPriceEdit = () => {
           nightHoursFrom: convertToTimeFormat(priceData.nightHoursFrom),
           nightHoursTo: convertToTimeFormat(priceData.nightHoursTo),
           nightCharge: priceData.nightCharge || 0,
+          waitingMins: Utils.convertTimeFormatToMinutes(priceData.waitingMins) || 0,
+          waitingCharge: priceData.waitingCharge || 0,
           cancellationMins: Utils.convertTimeFormatToMinutes(priceData.cancelMins) || 0,
           cancellationCharge: priceData.cancelCharge || 0,
           status: Number(priceData.status) === 1 ? 'ACTIVE' : 'INACTIVE',
@@ -112,6 +116,8 @@ const AutoMasterPriceEdit = () => {
         nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
         nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
         nightCharge: Number(values.nightCharge),
+        waitingMins: Utils.convertMinutesToTimeFormat(values.waitingMins),
+        waitingCharge: Number(values.waitingCharge),
         cancelMins: Utils.convertMinutesToTimeFormat(values.cancellationMins),
         cancelCharge: Number(values.cancellationCharge),
         status: values.status === 'ACTIVE' ? 1 : 0,
@@ -178,6 +184,14 @@ const AutoMasterPriceEdit = () => {
                 <div>
                     <label className="text-sm font-medium text-gray-700">Night Charge</label>
                     <Field type="number" name="nightCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
+                    <Field type="number" name="waitingMins"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                    <Field type="number" name="waitingCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
