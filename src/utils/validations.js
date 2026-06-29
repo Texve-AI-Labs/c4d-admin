@@ -821,6 +821,7 @@ export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
 export const VERSION_CONTROL_EDIT=Yup.object({
     name: Yup.string().required('Name is required'),
     applicationFor: Yup.string().required('Application type is required'),
+    type: Yup.string().oneOf(['IOS', 'ANDROID'], 'Type must be IOS or ANDROID').required('Type is required'),
   latestVersion: Yup.string().required('Version is required'),
 });
    
