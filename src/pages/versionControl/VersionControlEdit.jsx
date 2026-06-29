@@ -68,6 +68,7 @@ const VersionControlEdit = () => {
                     name="applicationFor"
                     as="select"
                     className="p-2 w-full rounded-md border border-gray-300"
+                    disabled
                   >
                     <option value="">-- Select --</option>
                     <option value="DRIVER">DRIVER</option>
