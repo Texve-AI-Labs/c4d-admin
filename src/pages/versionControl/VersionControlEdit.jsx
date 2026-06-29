@@ -82,6 +82,7 @@ const VersionControlEdit = () => {
                     name="type"
                     as="select"
                     className="p-2 w-full rounded-md border border-gray-300"
+                    disabled
                   >
                     <option value="">-- Select --</option>
                     <option value="IOS">IOS</option>
