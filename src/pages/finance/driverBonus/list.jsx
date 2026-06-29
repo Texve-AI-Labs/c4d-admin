@@ -17,6 +17,7 @@ const DriverBonusList = () => {
   const [serviceTypeFilter, setServiceTypeFilter] = useState("ALL");
   const [zoneFilter, setZoneFilter] = useState("");
   const [rateTypeFilter, setRateTypeFilter] = useState("ALL");
+    const [labelFilter, setLabelFilter] = useState("ALL");
   const [isActiveFilter, setIsActiveFilter] = useState("true");
   const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
 
@@ -103,38 +104,94 @@ const DriverBonusList = () => {
   const rows = useMemo(() => {
     return items
       .map((item) => ({ ...item, _ruleId: getRuleId(item) }))
+      .filter((item) => {
+        if (labelFilter === "ALL") return true;
+        return getPriorityLabel(item?.priority).toUpperCase() === labelFilter;
+      })
       .sort((a, b) => Number(a?.priority ?? 999999) - Number(b?.priority ?? 999999));
-  }, [items]);
+  }, [items, labelFilter]);
 
   return (
     <div className="mb-8 mt-8 flex flex-col gap-6">
-      <div className="mb-2 flex items-center justify-end">
-        <div className="mr-auto flex flex-wrap items-center gap-3">
-          <select className="rounded-md border border-gray-300 p-2 text-sm" value={serviceTypeFilter} onChange={(e) => setServiceTypeFilter(e.target.value)}>
+      <div className="rounded-2xl border border-blue-gray-50 bg-white p-4 shadow-sm mb-2">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
+            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
+              Service Type
+              <select
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
+                value={serviceTypeFilter}
+                onChange={(e) => setServiceTypeFilter(e.target.value)}
+              >
             {SERVICE_TYPES.map((type) => (
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
-          <select className="rounded-md border border-gray-300 p-2 text-sm" value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)}>
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
+              Zone
+              <select
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
+                value={zoneFilter}
+                onChange={(e) => setZoneFilter(e.target.value)}
+              >
             {zoneOptions.map((zone) => (
               <option key={zone.label} value={zone.value}>{zone.label}</option>
             ))}
           </select>
-          <select className="rounded-md border border-gray-300 p-2 text-sm" value={rateTypeFilter} onChange={(e) => setRateTypeFilter(e.target.value)}>
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
+              Rate Type
+              <select
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
+                value={rateTypeFilter}
+                onChange={(e) => setRateTypeFilter(e.target.value)}
+              >
             <option value="ALL">ALL</option>
             {RATE_TYPES.map((type) => (
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
-          <div className="inline-flex overflow-hidden rounded-md border border-gray-300">
-            <button type="button" className={`px-3 py-2 text-sm ${isActiveFilter === "true" ? "bg-primary text-white" : "bg-white text-gray-700"}`} onClick={() => setIsActiveFilter("true")}>Active</button>
-            <button type="button" className={`border-l border-gray-300 px-3 py-2 text-sm ${isActiveFilter === "false" ? "bg-primary text-white" : "bg-white text-gray-700"}`} onClick={() => setIsActiveFilter("false")}>Inactive</button>
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
+              Label
+              <select
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
+                value={labelFilter}
+                onChange={(e) => setLabelFilter(e.target.value)}
+              >
+                <option value="ALL">ALL</option>
+                {["High", "Medium", "Low", "Custom"].map((label) => (
+                  <option key={label} value={label.toUpperCase()}>{label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
+              Status
+              <div className="inline-flex overflow-hidden rounded-lg border border-gray-300 bg-white">
+                <button
+                  type="button"
+                  className={`px-4 py-2 text-sm font-semibold transition-colors ${isActiveFilter === "true" ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+                  onClick={() => setIsActiveFilter("true")}
+                >
+                  Active
+                </button>
+                <button
+                  type="button"
+                  className={`border-l border-gray-300 px-4 py-2 text-sm font-semibold transition-colors ${isActiveFilter === "false" ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+                  onClick={() => setIsActiveFilter("false")}
+                >
+                  Inactive
+                </button>
+              </div>
+            </div>
+            <Button size="sm" className={`rounded-xl px-5 py-3 ${ColorStyles.continueButtonColor}`} onClick={() => navigate("/dashboard/finance/driver-bonus/add")}>
+              Add Rule
+            </Button>
           </div>
         </div>
-
-        <Button size="sm" className={`rounded-xl p-4 ${ColorStyles.continueButtonColor}`} onClick={() => navigate("/dashboard/finance/driver-bonus/add")}>
-          Add Rule
-        </Button>
       </div>
 
       <Card>
