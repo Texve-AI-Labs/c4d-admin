@@ -34,10 +34,21 @@ const DiscountEdit = () => {
     PARCEL: [{ value: 'PARCEL', label: 'PARCEL' }],
   };
   const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
+  const CAB_TYPE_OPTIONS = ['Mini', 'Sedan', 'SUV', 'MUV'];
 
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
+  };
+  const getCabTypeOptions = (serviceType, currentValue = '') => {
+    const baseOptions =
+      String(serviceType || '').toUpperCase() === 'RIDES'
+        ? ['Mini', 'Sedan']
+        : CAB_TYPE_OPTIONS;
+    if (currentValue && !baseOptions.includes(currentValue)) {
+      return [currentValue, ...baseOptions];
+    }
+    return baseOptions;
   };
   const getEntityFromServiceType = (serviceType) => {
     const normalized = String(serviceType || '').trim().toUpperCase();
@@ -429,10 +440,13 @@ const DiscountEdit = () => {
                     const nextEntity = e.target.value;
                     const nextServiceTypeOptions = getServiceTypeOptions(nextEntity);
                     const currentServiceType = String(values.serviceType || '').toUpperCase();
+                    const nextServiceType = ['DRIVER', 'AUTO','PARCEL'].includes(nextEntity) ? nextEntity : '';
                     setFieldValue('entity', nextEntity);
                     setFieldValue(
                       'serviceType',
-                      nextServiceTypeOptions.some((option) => option.value === currentServiceType) ? values.serviceType : ''
+                      ['DRIVER', 'AUTO'].includes(nextEntity)
+                        ? nextServiceType
+                        : (nextServiceTypeOptions.some((option) => option.value === currentServiceType) ? values.serviceType : '')
                     );
                     setFieldValue('parcelVehicleType', 'BIKE');
                     setFieldValue('subZoneId', '');
@@ -696,10 +710,9 @@ const DiscountEdit = () => {
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
                   <option value="">Select Car Type</option>
-                  <option value="Mini">Mini</option>
-                  <option value="Sedan">Sedan</option>
-                  <option value="SUV">Suv</option>
-                  <option value="MUV">Muv</option>
+                  {getCabTypeOptions(values.serviceType, values.cabType).map((carType) => (
+                    <option key={carType} value={carType}>{carType}</option>
+                  ))}
                 </Field>
                 <ErrorMessage name="cabType" component="div" className="text-red-500 text-sm" />
               </div>
