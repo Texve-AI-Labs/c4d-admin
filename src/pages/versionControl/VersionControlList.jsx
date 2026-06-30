@@ -47,6 +47,7 @@ const VersionControlList = () => {
               <tr>
                 <th className="border-b py-3 px-5 text-left">Name</th>
                 <th className="border-b py-3 px-5 text-left">Application For</th>
+                <th className="border-b py-3 px-5 text-left">Type</th>
                 <th className="border-b py-3 px-5 text-left">Latest Version</th>
                 <th className="border-b py-3 px-5 text-left">Current Version</th>
                 <th className="border-b py-3 px-5 text-left">Action</th>
@@ -55,7 +56,7 @@ const VersionControlList = () => {
             <tbody>
               {versionList.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-3 px-5 text-center">
+                  <td colSpan="6" className="py-3 px-5 text-center">
                     No Version Records Found
                   </td>
                 </tr>
@@ -64,6 +65,7 @@ const VersionControlList = () => {
                   <tr key={item.id || `${item.name}-${item.applicationFor}`} className="border-b">
                     <td className="py-3 px-5">{item.name}</td>
                     <td className="py-3 px-5">{item.applicationFor}</td>
+                    <td className="py-3 px-5">{item.type || '-'}</td>
                     <td className="py-3 px-5">{item.latestVersion}</td>
                     <td className="py-3 px-5">
                       {item.currentVersion === true ? "Active" : "Inactive"}

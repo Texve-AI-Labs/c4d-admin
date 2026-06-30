@@ -13,26 +13,24 @@ const VersionControlEdit = () => {
   const initialValues = {
     name: state?.name || '',
     applicationFor: state?.applicationFor || '',
+    type: state?.type ? state.type.toUpperCase() : '',
     latestVersion: state?.latestVersion || '',
     isMandatory: state?.isMandatory || false,
   };
-
-  
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const requestBody = {
         name: values.name,
         applicationFor: values.applicationFor,
+        type: values.type.toUpperCase(),
         latestVersion: values.latestVersion,
         isMandatory: values.isMandatory,
       };
 
-      // console.log('Sending POST request:', requestBody);
 
       await ApiRequestUtils.update(API_ROUTES.PUT_VERSIONCONTROL, requestBody);
 
-      // console.log('Update successful');
       navigate('/dashboard/user/versionControlList');
     } catch (error) {
       console.error('POST update failed:', error);
@@ -70,6 +68,7 @@ const VersionControlEdit = () => {
                     name="applicationFor"
                     as="select"
                     className="p-2 w-full rounded-md border border-gray-300"
+                    disabled
                   >
                     <option value="">-- Select --</option>
                     <option value="DRIVER">DRIVER</option>
@@ -77,6 +76,22 @@ const VersionControlEdit = () => {
                   </Field>
                   <ErrorMessage name="applicationFor" component="div" className="text-red-500 text-sm mt-1" />
                 </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Type</label>
+                  <Field
+                    name="type"
+                    as="select"
+                    className="p-2 w-full rounded-md border border-gray-300"
+                    disabled
+                  >
+                    <option value="">-- Select --</option>
+                    <option value="IOS">IOS</option>
+                    <option value="ANDROID">ANDROID</option>
+                  </Field>
+                  <ErrorMessage name="type" component="div" className="text-red-500 text-sm mt-1" />
+                </div>
+
                 <div className="mt-4">
                   <label className="text-sm font-medium text-gray-700 flex items-center">Mandatory</label>
                   <div className="flex gap-2 pt-2">
