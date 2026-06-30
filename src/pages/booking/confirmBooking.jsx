@@ -1799,7 +1799,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             )} */}
                             {(bookingDetails?.serviceType === 'RENTAL' && bookingDetails?.packageType =='Local') && 
                             <div className="flex flex-col-2 gap-2">
-                            <span className="text-gray-500 font-semibold">KM:</span>
+                            <span className="text-gray-500 font-semibold">Package KM:</span>
                             <span className="text-gray-900 font-medium">
                             {bookingDetails?.packageType === 'Local' ? `${bookingDetails?.Package?.kilometer} Km` : ''}
                             </span>
