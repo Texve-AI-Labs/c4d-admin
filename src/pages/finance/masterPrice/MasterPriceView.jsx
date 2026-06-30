@@ -818,7 +818,7 @@ export function MasterPriceView() {
                                         "Additional Mins",
                                         "Additional KM Rate",
                                         "Night Charge",
-                                        "Toll Charge",
+                                        // "Toll Charge",
                                         "Driver Charge",
                                         "Cancellation Mins",
                                         "Cancel Charge",
@@ -853,7 +853,7 @@ export function MasterPriceView() {
                                     additionalMinCharge,
                                     nightCharge,
                                     driverCharge,
-                                    tollCharge,
+                                    // tollCharge,
                                     period,
                                     extraKmPrice,
                                     cancelMins,
@@ -947,11 +947,11 @@ export function MasterPriceView() {
                                                     {nightCharge}
                                                 </Typography>
                                             </td>
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {tollCharge}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {driverCharge}

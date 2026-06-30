@@ -74,7 +74,7 @@ useEffect(() => {
         period: '',
         baseKm: '',
         kilometer: '',
-        tollCharge: '',
+        // tollCharge: '',
         driverCharge: '',
         cancelMins: Utils.convertMinutesToTimeFormat || 0,
         cancelCharge: '',
@@ -204,7 +204,7 @@ useEffect(() => {
 
                 'additionalMinCharge': Number(values.additionalMinCharge),
                 'freeExtraMinutes': Number(values.freeExtraMinutes),
-                'tollCharge': values?.type === 'Outstation' ? values.tollCharge : 0,
+                // 'tollCharge': values?.type === 'Outstation' ? values.tollCharge : 0,
                 'driverCharge': values?.type === 'Outstation' ? values.driverCharge : 0,
                 'nightCharge': Number(values.nightCharge),
                 'nightHoursFrom': Utils.formatTimeWithSeconds(values.nightHoursFrom),
@@ -328,11 +328,11 @@ useEffect(() => {
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {values?.type === 'Outstation' && <div>
+                            {/* {values?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Toll Charge</label>
                                 <Field type="number" name="tollCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="tollCharge" component="div" className="text-red-500 text-sm" />
-                            </div>}
+                            </div>} */}
                             {values?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Driver Charge</label>
                                 <Field type="number" name="driverCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
