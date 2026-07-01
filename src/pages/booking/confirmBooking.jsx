@@ -1940,7 +1940,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 </span>
                             </div>
                             }
-                             {!(bookingDetails?.status === BOOKING_STATUS.ENDED || bookingDetails?.status === BOOKING_STATUS.END_OTP) && (bookingDetails?.serviceType === 'AUTO' || bookingDetails?.serviceType === 'RIDES') && shouldShowQuotePricing(bookingDetails) && (
+                             {!(bookingDetails?.status === BOOKING_STATUS.ENDED || bookingDetails?.status === BOOKING_STATUS.END_OTP) && (bookingDetails?.serviceType === 'AUTO' || bookingDetails?.serviceType === 'RIDES') && (
                                     
                              <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
