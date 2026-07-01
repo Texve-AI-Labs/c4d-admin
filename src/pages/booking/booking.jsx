@@ -492,6 +492,7 @@ useEffect(() => {
     );
 
 const addQuotationLog = (values, quoteDetails, bookingId = null) => {
+    const adminDiscount = quoteDetails?.adminDiscount || {};
     const newLog = {
         userId: loggedInUserId,
         bookingId: bookingId || 0,
@@ -515,6 +516,14 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             : (quoteDetails?.amount?.estimatedPrice || 0),
         discount: quoteDetails?.discount?.percentage || 0,   
         discountAmount: (quoteDetails.amount?.estimatedPrice) - ( quoteDetails.amount?.estimatedPrice * quoteDetails.discount?.percentage/100) || 0,
+        adminDiscount: adminDiscount ? {
+            status: adminDiscount?.status || '',
+            discountType: adminDiscount?.discountType || '',
+            discountValue: adminDiscount?.discountValue ?? 0,
+            discountAmount: adminDiscount?.discountAmount ?? 0,
+            remarks: adminDiscount?.remarks || '',
+            quoteRef: adminDiscount?.quoteRef || quoteDetails?.quoteRef || '',
+        } : {},
         ...((values?.serviceType != 'RIDES') && {
                startDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString() || '',
            }),
@@ -525,12 +534,13 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
 
          serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'DROP TAXI': values?.serviceType === "RENTAL_HOURLY_PACKAGE"? "HOURLY PACKAGE" : values?.serviceType === "RENTAL"? "OUTSTATION": values?.serviceType || '',
         cabType: values?.carType || '', 
-        	
+        ...((values?.serviceType ==="PARCEL")) && {
 	    parcelVehicleType: values?.parcelVehicleType || '',
         subZoneId: values?.subZoneId || 0,
         // weightRange: values?.weightRange || '',
         orderType: values?.orderType || '',
         orderTypeOther: values?.orderTypeOther || ''
+        }        	    
     };
     setQuotationLogs((prevLogs) => [...prevLogs, newLog]);
 };
@@ -2040,7 +2050,7 @@ const priceDetailsCardClass = isPeakHour
                                                 setShowQuickCreateCustomer(false);
                                             }
                                         }
-                                        className="rounded-3xl  p-2 bg-surface-muted"
+                                        className="h-8 w-8 rounded-full bg-red-600 text-white shadow-lg flex items-center justify-center border border-red-700 hover:bg-red-700 transition-colors"
                                     >
                                         X
                                     </button>
@@ -4048,8 +4058,10 @@ const priceDetailsCardClass = isPeakHour
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Toll, parking, permit charges, and state taxes are excluded.
                                                             </Typography>
-                                                            <Typography className=" text-sm text-gray-700">
-                                                                • For every additional 15 minutes after <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours, ₹{(() => {
+                                                                        <Typography className=" text-sm text-gray-700">
+                                                                • The first additional <span className="font-bold text-black">
+                                                                    {quoteDetails.expectedPackageDetails?.freeExtraMinutes}
+                                                                                </span> minutes over customer <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours </span>, trip time are free. After that, customer will be charged <span className="font-bold text-black">₹{(() => {
                                                                     const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
                                                                     return selectedPackage ? (
                                                                         values.carType === 'Mini' ? selectedPackage.additionalMinCharge :
@@ -4057,7 +4069,7 @@ const priceDetailsCardClass = isPeakHour
                                                                                 values.carType === 'SUV' ? selectedPackage.additionalMinChargeSuv :
                                                                                     selectedPackage.additionalMinChargeMVP
                                                                     ) : '';
-                                                                })()}</span> will be charged.
+                                                                })()}</span> per minute.
                                                             </Typography>
                                                             {quoteDetails?.amount?.fareBreakdown?.gst_percentage > 0 && (
                                                                 <>
@@ -4079,6 +4091,9 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Night charge of <span className="font-bold text-black">₹ {packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.nightCharge || ''}</span> will be charged after {convertTimeFormat(packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.nightHoursFrom || '')}.
+                                                            </Typography>
+                                                            <Typography className=" text-sm text-gray-700">
+                                                                • Hourly Packages are available only for Local services.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
@@ -4112,7 +4127,8 @@ const priceDetailsCardClass = isPeakHour
                                                                 • For Every extra kilometer <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraKmPrice || '')}</span> will be charged.
                                                             </Typography> 
                                                              <Typography className="text-sm text-gray-700">
-                                                                • For every additional 15 minutes <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> will be charged.
+                                                                • The first additional <span className="font-bold text-black">
+                                                                                {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
                                                             <Typography className="text-sm text-gray-700">
                                                                 • A Driver starting  Points <span className="font-bold text-black">{Number(quoteDetails.amount?.driverWithin).toFixed(2) || ''}</span> Kms.
@@ -4187,7 +4203,8 @@ const priceDetailsCardClass = isPeakHour
                                                                 • For every extra kilometer <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraKmPrice || '')}</span> will be charged.  
                                                             </Typography>
                                                                <Typography className="text-sm text-gray-700">
-                                                                • For every additional 15 minutes <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> will be charged.
+                                                                The first additional <span className="font-bold text-black">
+                                                                                {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • A Driver starting  Points <span className="font-bold text-black">{Number(quoteDetails.amount?.driverWithin).toFixed(2)|| '2'}</span> Kms.

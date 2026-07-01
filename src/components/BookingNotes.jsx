@@ -385,6 +385,16 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
                 </>
               )}
               <span className="font-bold">Estimate Price:</span> ₹{log?.amount || 'N/A'} |{' '}
+              {log?.adminDiscount && (
+                <>
+                  <span className="font-bold">Admin Discount Status:</span> {log?.adminDiscount?.status || 'N/A'} |{' '}
+                  <span className="font-bold">Admin Discount Type:</span> {log?.adminDiscount?.discountType || 'N/A'} |{' '}
+                  <span className="font-bold">Admin Discount Value:</span> {log?.adminDiscount?.discountValue ?? 'N/A'} |{' '}
+                  <span className="font-bold">Admin Discount Amount:</span> ₹{log?.adminDiscount?.discountAmount ?? 'N/A'} |{' '}
+                  <span className="font-bold">Admin Discount Remarks:</span> {log?.adminDiscount?.remarks || 'N/A'} |{' '}
+                  <span className="font-bold">Admin Discount Quote Ref:</span> {log?.adminDiscount?.quoteRef || 'N/A'} |{' '}
+                </>
+              )}
               {log?.discount > 0 && (
                 <>
                   <span className="font-bold">Discount Applied:</span> {log?.discount || 'N/A'}% |{' '}
