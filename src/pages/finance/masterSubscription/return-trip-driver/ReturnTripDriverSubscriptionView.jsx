@@ -16,6 +16,15 @@ const getStatusBadgeClass = (status) => {
   }
 };
 
+const normalizePlanName = (value) => {
+  if (!value) return "";
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "premium") return "Premium";
+  if (normalized === "standard") return "Standard";
+  if (normalized === "regular") return "Regular";
+  return value;
+};
+
 const formatEligible = (value) => (value ? "Yes" : "No");
 
 export default function ReturnTripDriverSubscriptionView() {
@@ -92,7 +101,7 @@ export default function ReturnTripDriverSubscriptionView() {
             <tbody>
               {filteredRows.map((row) => (
                 <tr key={row.id} className="text-sm">
-                  <td className="border-b border-blue-gray-50 py-3 px-5">{row.planName || "-"}</td>
+                  <td className="border-b border-blue-gray-50 py-3 px-5">{normalizePlanName(row.planName)}</td>
                   <td className="border-b border-blue-gray-50 py-3 px-5">
                     <span
                       className="cursor-pointer text-blue-600 underline decoration-blue-600 underline-offset-2"

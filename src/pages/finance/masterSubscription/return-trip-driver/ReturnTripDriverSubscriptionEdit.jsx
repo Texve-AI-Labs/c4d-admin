@@ -93,9 +93,9 @@ export default function ReturnTripDriverSubscriptionEdit() {
                 </Field>
                 <ErrorMessage name="planName" component="div" className="mt-1 text-sm text-red-600" />
               </div>
-              <div className="hidden">
+              <div>
                 <label className="block text-sm font-medium">Service Type</label>
-                <Field as="select" name="serviceType" className="mt-1 w-full rounded-md border p-2">
+                <Field as="select" name="serviceType" disabled className="mt-1 w-full rounded-md border bg-gray-100 p-2 text-gray-700">
                   <option value="RIDES_RENTAL_CABS">RIDES_RENTAL_CABS</option>
                   <option value="ACTING_DRIVER">ACTING_DRIVER</option>
                   <option value="AUTO">AUTO</option>
