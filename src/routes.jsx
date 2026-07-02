@@ -179,6 +179,11 @@ import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboardin
 import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
 import DriverCancellationHistoryList from "./pages/user/CancelltionHistory/list";
 import AdminDiscountHistory from "./pages/support/adminDiscountHistory";
+import ReturnTripDriverSubscriptionView from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionView";
+import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionAdd";
+import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
+import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
+
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -913,6 +918,38 @@ export const routes = [
         name: "subscription",
         path: "/subscription/add",
         element: <SubscriptionAdd />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "return Trips Driver Subscription",
+        path: "/finance/master-subscription/return-trip-driver",
+        element: <ReturnTripDriverSubscriptionView />,
+        display: true,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "return Trips Driver Subscription Add",
+        path: "/finance/master-subscription/return-trip-driver/add",
+        element: <ReturnTripDriverSubscriptionAdd />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "return Trips Driver Subscription Edit",
+        path: "/finance/master-subscription/return-trip-driver/edit/:id",
+        element: <ReturnTripDriverSubscriptionEdit />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "return Trips Driver Subscription Details",
+        path: "/finance/master-subscription/return-trip-driver/details/:id",
+        element: <ReturnTripDriverSubscriptionDetails />,
         display: false,
         permission: "Finance",
       },
