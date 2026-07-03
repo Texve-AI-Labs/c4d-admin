@@ -19,6 +19,7 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Booking Receipt", path: "/dashboard/finance/receipt" },
     { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
     { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
+    { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
     { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
     { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
@@ -58,6 +59,12 @@ function FinanceSubmenu({ permissions = [] }) {
     if(label === "Parcel Commission") {
       return pathname.startsWith("/dashboard/finance/parcel-commission");
     }
+    if (label === "Master Subscription Table") {
+      return pathname === "/dashboard/finance/master-subscription";
+    }
+    if (label === "Return Trip Driver Master Subscription Table") {
+      return pathname.startsWith("/dashboard/finance/master-subscription/return-trip-driver");
+    }
 
     return pathname.startsWith(path.toLowerCase());
   };
@@ -65,7 +72,7 @@ function FinanceSubmenu({ permissions = [] }) {
   const renderItems = (menuItems) =>
     menuItems.map(({ label, path }) => (
         <li key={label}>
-          <NavLink to={path} end={false}>
+          <NavLink to={path} end={label === "Master Subscription Table"}>
             {({ isActive }) => (
               <Button
                 variant="text"

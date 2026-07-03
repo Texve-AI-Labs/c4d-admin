@@ -65,7 +65,7 @@ const RentalsMasterPriceEdit = () => {
                     kilometer: data?.data?.kilometer || 0,
                     kilometerPrice: data?.data?.kilometerPrice || 0,
                     additionalMinCharge: data?.data?.additionalMinCharge || 0,
-                    tollCharge: data?.data?.tollCharge || 0,
+                    // tollCharge: data?.data?.tollCharge || 0,
                     driverCharge: data?.data?.driverCharge || 0,
                     extraKmPrice: data?.data?.extraKmPrice || 0,
                     nightHoursFrom: convertToTimeFormat(data?.data?.nightHoursFrom),
@@ -169,7 +169,7 @@ const RentalsMasterPriceEdit = () => {
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
                 nightCharge: Number(values.nightCharge),
-                tollCharge: Number(values.tollCharge),
+                // tollCharge: Number(values.tollCharge),
                 driverCharge: Number(values.driverCharge),
                 extraKmPrice: Number(values.extraKmPrice),
                 cancelMins: Utils.convertMinutesToTimeFormat(values.cancelMins),
@@ -302,11 +302,11 @@ const RentalsMasterPriceEdit = () => {
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {initialValues?.type === 'Outstation' && <div>
+                            {/* {initialValues?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Toll Charge</label>
                                 <Field type="number" name="tollCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="tollCharge" component="div" className="text-red-500 text-sm" />
-                            </div>}
+                            </div>} */}
                             {initialValues?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Driver Charge</label>
                                 <Field type="number" name="driverCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />

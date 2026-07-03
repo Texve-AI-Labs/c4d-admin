@@ -34,10 +34,13 @@ const DiscountAdd = () => {
   };
 
   const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
+  const CAB_TYPE_OPTIONS = ['Mini', 'Sedan', 'SUV', 'MUV'];
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
   };
+  const getCabTypeOptions = (serviceType) =>
+    String(serviceType || '').toUpperCase() === 'RIDES' ? ['Mini', 'Sedan'] : CAB_TYPE_OPTIONS;
   const getServiceTypeOptions = (entity) => SERVICE_TYPE_OPTIONS_BY_ENTITY[entity] || [];
 
   const initialValues = {
@@ -53,7 +56,7 @@ const DiscountAdd = () => {
     discountType: '',
     percentage: '',
     amount: '',
-    driverWalletApplicable: false,
+    driverWalletApplicable: true,
     startDate: '',
     endDate: '',
     isActive: 'true',
@@ -315,14 +318,14 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 <Field type="hidden" name="removeImage" />
                 <Field type="hidden" name="removeDashboardOfferImg" />
                 <div>
-                <label className="text-sm font-medium text-gray-700">entity Type</label>
+                <label className="text-sm font-medium text-gray-700">Entity Type</label>
                 <Field
                   as="select"
                   name="entity"
                     onChange={(e) => {
                       const nextEntity = e.target.value;
                       setFieldValue('entity', nextEntity);
-                      setFieldValue('serviceType', '');
+                      setFieldValue('serviceType', ['DRIVER', 'AUTO','PARCEL'].includes(nextEntity) ? nextEntity : '');
                       setFieldValue('parcelVehicleType', 'BIKE');
                       setFieldValue('subZoneId', '');
                       setFieldValue('isPremium', false);
@@ -578,10 +581,9 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
                   <option value="">Select Car Type</option>
-                  <option value="Mini">Mini</option>
-                  <option value="Sedan">Sedan</option>
-                  <option value="SUV">Suv</option>
-                  <option value="MUV">Muv</option>
+                  {getCabTypeOptions(values.serviceType).map((carType) => (
+                    <option key={carType} value={carType}>{carType}</option>
+                  ))}
                   </Field>
                 <ErrorMessage name="cabType" className="text-red-500 text-sm" component="div" />
               </div>
@@ -652,17 +654,16 @@ const getCurrentPremiumOptions = (currentServiceType) => {
               <div>
                 <label className="text-sm font-medium text-gray-700">Start Date & Time</label>
                 <Field
-                  type="datetime-local"
+                  type="date"
                   name="startDate"
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 />
                 <ErrorMessage name="startDate" className="text-red-500 text-sm" component="div" />
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700">End Date & Time</label>
                 <Field
-                  type="datetime-local"
+                  type="date"
                   name="endDate"
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 />

@@ -30,6 +30,7 @@ export function Topnav({ permissions = [] }) {
   const isSupportSection =
     path.startsWith("/dashboard/rental-rate-card") ||
     path.startsWith("/dashboard/leads") ||
+    path.startsWith("/dashboard/support") ||
     (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && path.startsWith("/dashboard/support/admin-discount-history"));
 
   const isVendorsSection =

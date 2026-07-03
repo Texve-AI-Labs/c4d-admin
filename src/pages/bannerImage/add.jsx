@@ -80,7 +80,7 @@ const AddBanner = () => {
     })),
   ];
 
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER', 'ONTRIP_BANNER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
 
   const validationSchema = Yup.object().shape({
@@ -179,7 +179,8 @@ const AddBanner = () => {
       const formData = new FormData();
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
-      if (!isNewCustomer && !isIntroType) {
+      const isOnTripBanner = values.type === "ONTRIP_BANNER";
+      if (!isNewCustomer && !isIntroType && !isOnTripBanner) {
         // const fromDateIso = values.fromDate ? new Date(values.fromDate).toISOString() : '';
         // const toDateIso = values.toDate ? new Date(values.toDate).toISOString() : '';
         formData.append('fromDate', values.fromDate);
@@ -200,7 +201,7 @@ const AddBanner = () => {
       }
       formData.append('status', values.status === 'true' || values.status === true);
       formData.append('type', values.type.trim());
-      formData.append('zone', isNewCustomer || isIntroType ? 'All' : values.zone);
+      formData.append('zone', isNewCustomer || isIntroType || isOnTripBanner ? 'All' : values.zone);
       formData.append('image', values.image, values.image.name);
       formData.append('fileTypeImage', values.image?.type || '');
       formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
@@ -231,7 +232,7 @@ const AddBanner = () => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, values,setFieldValue }) => {
-          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
+          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER' || values.type === 'ONTRIP_BANNER';
           const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType;
           return (
           <Form className="space-y-4">
@@ -246,7 +247,7 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'ONTRIP_BANNER') {
                       setFieldValue('zone', 'All');
                     }
                     if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
@@ -259,7 +260,9 @@ const AddBanner = () => {
                   {/* <option value="BOTTOM">Bottom</option> */}
                   {/* <option value="YOUTUBE">YouTube</option> */}
                   {/* <option value="BACKGROUND">Background</option> */}
-                  <option value="BANNER">Banner</option>
+                  <option value="BANNER">Customer Banner</option>
+                  <option value="BANNER_DRIVER">Banner Driver</option>
+                  <option value="ONTRIP_BANNER">On Trip Banner</option>
                   {/* <option value="STATS">Stats</option> */}
                   <option value="TOP_NEW">Top New</option>
                   {/* <option value="MIDCAROUSEL">MidCarousel</option> */}

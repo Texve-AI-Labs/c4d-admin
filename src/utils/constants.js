@@ -1023,7 +1023,14 @@ export const API_ROUTES = {
     'GET_SKIP_EVENTS': '/admin/telemetry/skip-events',
     'VALIDATE_NOTIFICATION_TIME': '/validate-notification-time',
     'MASTER_SUB_PLAN_GROUP':'/admin/plan-group/logs',
-    'SUPPORT_END_LOACTION':'/booking/end-location-reason'
+    'SUPPORT_END_LOACTION':'/booking/end-location-reason',
+    'GET_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
+    'ADD_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
+    'UPDATE_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
+    'SUPPORT_TICKETS': '/admin/support-tickets',
+    'SUPPORT_TICKET_BY_ID': '/admin/support-tickets/:id',
+    'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status'
+
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [

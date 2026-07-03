@@ -35,7 +35,7 @@ const RentalsPriceMasterDetails = () => {
                     kilometer: data?.data?.kilometer,
                     kilometerPrice: data?.data?.kilometerPrice,
                     additionalMinCharge: data?.data?.additionalMinCharge,
-                    tollCharge: data?.data?.tollCharge,
+                    // tollCharge: data?.data?.tollCharge,
                     driverCharge: data?.data?.driverCharge,
                     kilometerRoundPrice: data?.data?.kilometerRoundPrice,
                     kilometerRoundPriceMVP: data?.data?.kilometerRoundPriceMVP,
@@ -155,10 +155,10 @@ const RentalsPriceMasterDetails = () => {
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
                             </div>
-                            {initialValues?.type === 'Outstation' && <div>
+                            {/* {initialValues?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Toll Charge</label>
                                 <Field type="number" name="tollCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
-                            </div>}
+                            </div>} */}
                             {initialValues?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Driver Charge</label>
                                 <Field type="number" name="driverCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
