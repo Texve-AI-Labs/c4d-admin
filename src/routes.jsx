@@ -183,6 +183,7 @@ import ReturnTripDriverSubscriptionView from "./pages/finance/masterSubscription
 import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionAdd";
 import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
+import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -1571,6 +1572,14 @@ export const routes = [
         element: <RentalTariffRateCard />,
         display: true,
         permission: "Support"
+      },
+            {
+        icon: <UserIcon {...icon} />,
+        name: "Support Review & Reward Management",
+        path: "/support/review-reward-management",
+        element: <SupportReviewRewardManagement />,
+        display: true,
+        permission: "Users"
       },
       {
         icon: <UserIcon {...icon} />,
