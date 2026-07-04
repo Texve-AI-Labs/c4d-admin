@@ -2270,7 +2270,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         <div className="grid sm:grid-cols-2 gap-4 text-sm">
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Pickup:</span>
-                                <span className="text-gray-900 font-medium">{bookingDetails?.pickupAddress?.name}</span>
+                                <span className="text-gray-900 font-medium">{bookingDetails?.pickupAddress?.name || bookingDetails?.pickupGeocodeAddress?.name || bookingDetails?.pickupFormatAddress?.name || "Not Added"}</span>
                             </div>
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Drop-off:</span>
