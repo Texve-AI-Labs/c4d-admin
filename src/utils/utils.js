@@ -288,6 +288,12 @@ export const Utils = {
     },
 
     generateWhatsAppMessage: (bookingDetails) => {
+        const pickupName =
+            bookingDetails?.pickupAddress?.name?.trim() ||
+            bookingDetails?.pickupGeocodeAddress?.name?.trim() ||
+            bookingDetails?.pickupFormatAddress?.name?.trim() ||
+            'Not specified';
+
         let text = '';
 
 
@@ -307,7 +313,7 @@ export const Utils = {
                 WHATSAPP_FARE_QUOTATION_TEMPLATE
                     .replace('${bookingNumber}', bookingDetails.bookingNumber)
                     .replace('${customerName}', bookingDetails.Customer.firstName)
-                    .replace('${pickup}', bookingDetails.pickupAddress?.name || 'Not specified')
+                    .replace('${pickup}', pickupName)
                     .replace('${drop}', bookingDetails.dropAddress?.name || 'Not specified')
                     .replace('${startDate}', startDate)
                     .replace('${startTime}', startTime)
@@ -345,7 +351,7 @@ export const Utils = {
                 WHATSAPP_BOOKING_CONFIRMED_TEMPLATE
                     .replace('${bookingNumber}', bookingDetails.bookingNumber)
                     .replace('${customerName}', bookingDetails.Customer.firstName)
-                    .replace('${pickup}', bookingDetails.pickupAddress?.name || 'Not specified')
+                    .replace('${pickup}', pickupName)
                     .replace('${drop}', bookingDetails.dropAddress?.name || 'Not specified')
                     .replace('${startDate}', startDate)
                     .replace('${startTime}', startTime)
@@ -361,7 +367,7 @@ export const Utils = {
         if (bookingDetails?.status === "STARTED") {
             const driverName = bookingDetails.Driver?.firstName || 'Not assigned';
             const vehicleType = bookingDetails?.Cab?.carType || bookingDetails?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("hh:mm A") : 'Not available';
 
             text = encodeURIComponent(
@@ -377,10 +383,10 @@ export const Utils = {
             );
         }
 
-         if (bookingDetails?.status === "DRIVER_REACHED") {
+        if (bookingDetails?.status === "DRIVER_REACHED") {
             const driverName = bookingDetails.Driver?.firstName || 'Not assigned';
             const vehicleType = bookingDetails?.Cab?.carType || bookingDetails?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("hh:mm A") : 'Not available';
             
 
@@ -400,7 +406,7 @@ export const Utils = {
          if ( bookingDetails?.status === "BOOKING_ACCEPTED") {
             const driverName = bookingDetails.Driver?.firstName || 'Not assigned';
             const vehicleType = bookingDetails?.Cab?.carType || bookingDetails?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("hh:mm A") : 'Not available';
             
 
@@ -422,7 +428,7 @@ export const Utils = {
         if (bookingDetails?.status === "ENDED" && bookingDetails?.paymentStatus === "PAID") {
 
             const carType = bookingDetails.Cab?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const drop = bookingDetails.endAddress?.name || bookingDetails.dropAddress?.name || 'Not specified';
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("DD-MM-YYYY hh:mm A") : 'N/A';
             const endTime = bookingDetails.endedTime ? moment(bookingDetails.endedTime).format("DD-MM-YYYY hh:mm A") : 'N/A';
@@ -451,7 +457,7 @@ export const Utils = {
 
         // BOOKING CANCELLED
         if (bookingDetails?.status === "CUSTOMER_CANCELLED" || bookingDetails?.status === "SUPPORT_CANCELLED") {
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const rawDateTime = bookingDetails.fromDate;
             const isValid = moment(rawDateTime).isValid();
 
@@ -473,7 +479,7 @@ export const Utils = {
         if (text === '') {
             text = encodeURIComponent(
                 (bookingDetails?.Driver ? `Driver Name: ${bookingDetails?.Driver.firstName}\nDriver Number: ${bookingDetails?.Driver.phoneNumber}\n` : '') +
-                `Pickup Address: ${bookingDetails?.pickupAddress?.name}\n` +
+                `Pickup Address: ${pickupName}\n` +
                 (bookingDetails?.dropAddress ? `Drop Address: ${bookingDetails?.dropAddress?.name}\n` : '')
             );
         }
