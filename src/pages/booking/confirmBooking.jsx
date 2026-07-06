@@ -275,7 +275,7 @@ const ConfirmBooking = (props) => {
     //     }
     // };
     const getServiceTypeLabel = () => {
-        if (bookingDetails?.serviceType === 'DRIVER') {return bookingDetails?.bookingType? `ACTING DRIVER - ${bookingDetails.bookingType}` : 'ACTING DRIVER';}
+        if (bookingDetails?.serviceType === 'DRIVER') {return bookingDetails?.bookingType? `ACTING DRIVER` : 'ACTING DRIVER';}
         if (bookingDetails?.serviceType === 'RIDES') return 'Local Rides';
         if (bookingDetails?.packageType === 'Local') return 'Hourly Package';
         if (bookingDetails?.serviceType === 'RENTAL' && bookingDetails?.bookingType === 'DROP ONLY') return 'Drop Taxi';
@@ -1705,7 +1705,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <span className="text-gray-500 font-semibold">Service Type:</span>
                                 <span className="text-gray-900 font-medium">{bookingDetails.serviceType === 'DRIVER' ? 'ACTING DRIVER' : bookingDetails.serviceType == "RIDES" ? 'Local Rides' : bookingDetails?.packageType == "Local" ? 'Hourly Package' : (bookingDetails?.serviceType == "RENTAL" && bookingDetails?.bookingType == "DROP ONLY") ? 'Drop Taxi' : bookingDetails?.serviceType == 'AUTO' ? 'Auto' : bookingDetails?.serviceType == "PARCEL" ? 'Parcel' : 'Outstation'}</span>
                             </div>
-                            {bookingDetails?.serviceType === 'DRIVER' && (
+                            {bookingDetails?.serviceType !== 'DRIVER' && (
                                 <>
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Trip Type:</span>
@@ -1717,7 +1717,15 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             {bookingDetails?.serviceType ==='DRIVER' && bookingDetails?.packageType === 'Outstation' && (
                                       <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Period:</span>
-                                        <span className="text-gray-900 font-medium">{(bookingDetails?.Package?.extraCabType === '0' && bookingDetails?.Package?.period === '1')  ? "Custom Date" : bookingDetails?.Package?.period + ' Hrs'}</span>
+                                        <span className="text-gray-900 font-medium">
+                                            {(bookingDetails?.Package?.extraCabType === '0' && bookingDetails?.Package?.period === '1')
+                                                ? "Custom Date"
+                                                : Number(bookingDetails?.Package?.period) === 24
+                                                    ? "1 Day"
+                                                    : Number(bookingDetails?.Package?.period) === 48
+                                                        ? "2 Days"
+                                                        : `${bookingDetails?.Package?.period} Hrs`}
+                                        </span>
                                     </div>
                             )}
                             {bookingDetails?.serviceType == "PARCEL" &&

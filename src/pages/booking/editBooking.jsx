@@ -582,7 +582,9 @@ const getQuoteOutstationDetails = async (values) => {
     const initialValues = {
         serviceType: bookingData?.serviceType || '',
         packageTypeSelected: bookingData?.packageType || '',
-        tripType: bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || '',
+        tripType: bookingData?.serviceType === 'DRIVER' && bookingData?.packageType === 'Outstation'
+            ? 'Round Trip'
+            : (bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || ''),
         // transmissionType : bookingData?.transmissionType || '',
         packageSelected: bookingData?.packageId ? bookingData?.packageId : '',
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
@@ -1322,7 +1324,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     Outstation
                                                 </Button>
                                             </div>
-                                            <div className={(values.serviceType === 'RENTAL' || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Local')) ? 'hidden' : ''}>
+                                            <div className={(values.serviceType === 'RENTAL' || values.serviceType === 'DRIVER') ? 'hidden' : ''}>
                                                 <Typography className="text-sm font-medium text-black">Trip Type</Typography>
                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                     {(values?.serviceType !== 'RENTAL') && (<Button
@@ -1986,10 +1988,10 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 }
                                                                 {values?.serviceType === 'DRIVER' && (
                                                                     <>
-                                                                     <Typography color="gray" variant="h6">Car Type</Typography>
+                                                                     {/* <Typography color="gray" variant="h6">Car Type</Typography>
                                                                         <Typography>
                                                                            {values.carType || bookingData?.carType || ''}
-                                                                        </Typography>
+                                                                        </Typography> */}
                                                                         <Typography color="gray" variant="h6">Base Fare</Typography>
                                                                         <Typography>
                                                                             ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}

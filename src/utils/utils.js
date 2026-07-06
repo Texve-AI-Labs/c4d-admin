@@ -22,10 +22,10 @@ export const Utils = {
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
                     !!values?.carType &&
-                    !!values?.packageSelected &&
-                    (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
-                    (values?.packageTypeSelected !== 'Outstation' || !!values?.tripType) &&
-                    (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
+                    !!values?.packageSelected
+                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
+                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.tripType) &&
+                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
                 );
             case 'RIDES':
                 return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.carType;
@@ -709,8 +709,8 @@ export const Utils = {
             if (!values.packageTypeSelected) return 'Please select package type.';
             if (values.packageTypeSelected === "Local" && !values.packageSelected) return 'Please choose a package.';
             if (!values.pickupAddress) return 'Please select pickup location.';
-            if (values.packageTypeSelected === "Outstation" && !values.dropAddress) return 'Please select drop location.';
-            if (validationCheckForDriver(values)) return 'Please complete required driver trip fields.';
+            // if (values.packageTypeSelected === "Outstation" && !values.dropAddress) return 'Please select drop location.';
+            // if (validationCheckForDriver(values)) return 'Please complete required driver trip fields.';
             if (!isValid) return 'Please correct form validation errors.';
             if (!dirty) return 'Please update at least one field.';
         } else if (values.serviceType === 'RIDES') {

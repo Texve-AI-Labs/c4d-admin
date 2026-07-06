@@ -1573,6 +1573,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         } else if (newServiceType === 'DRIVER') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
+            setFieldValue('packageTypeSelected', 'Outstation');
+            setFieldValue('tripType', 'Round Trip');
         } else if (newServiceType === 'RENTAL_HOURLY_PACKAGE') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
@@ -1718,13 +1720,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (!val.packageSelected) { return true; } return false;
         }
 
-        if (val.packageTypeSelected === "Local" && val.tripType === "Round Trip") {
+        if (val.packageTypeSelected === "Local" && val.tripType === "Drop Only") {
             if (!val.dropLocation) { return true; } return false;
         }
 
-        if (val.packageTypeSelected === "Outstation" && val.tripType === "Drop Only") {
-            if (!val.dropLocation) { return true; } return false;
-        }
+        // if (val.packageTypeSelected === "Outstation" && val.tripType === "Drop Only") {
+        //     if (!val.dropLocation) { return true; } return false;
+        // }
 
         if (val.packageTypeSelected === "Outstation" && val.tripType === "Round Trip") {
             if (!val.dropLocation || !val.toDate || !val.toTime) { return true; } return false;
@@ -2311,6 +2313,9 @@ const priceDetailsCardClass = isPeakHour
                                                                             setRange({});
                                                                             setFieldValue('fromDate', '');
                                                                             setFieldValue('toDate', '');
+                                                                            if (values.serviceType === 'DRIVER' && values.packageSelected === 'Outstation') {
+                                                                                setFieldValue('tripType', 'Round Trip');
+                                                                            }
                                                                         }
                                                                     }}
                                                                     disabled={bookingStage === 1}
@@ -2320,7 +2325,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Button>}
                                                         </div>
                                                         {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.packageTypeSelected === 'Local') || (values.serviceType === 'RENTAL_DROP_TAXI' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation')) && (
-                                                            <div className={['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
+                                                            <div className={values.serviceType === 'DRIVER' ? 'hidden' : ['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
                                                                 <Typography className="text-sm font-medium text-black-700">Trip Type</Typography>
                                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                                     {(values.serviceType === 'RENTAL_DROP_TAXI' ||
