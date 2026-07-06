@@ -33,7 +33,7 @@ const DiscountEdit = () => {
     AUTO: [{ value: 'AUTO', label: 'AUTO' }],
     PARCEL: [{ value: 'PARCEL', label: 'PARCEL' }],
   };
-  const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
+  const PARCEL_VEHICLE_OPTIONS = ['','BIKE', 'AUTO'];
   const CAB_TYPE_OPTIONS = ['Mini', 'Sedan', 'SUV', 'MUV'];
 
   const normalizeParcelVehicleType = (value) => {
@@ -364,7 +364,7 @@ const DiscountEdit = () => {
           formData.append('subZoneId', Number(values.subZoneId));
         }
       } else if (values.serviceType === 'DRIVER') {
-        formData.append('cabType', values.cabType || null);
+        formData.append('cabType', 'Mini');
       } else if (values.serviceType === 'AUTO') {
         formData.append('isPremium', values.isPremium);
       } else {
@@ -448,10 +448,10 @@ const DiscountEdit = () => {
                         ? nextServiceType
                         : (nextServiceTypeOptions.some((option) => option.value === currentServiceType) ? values.serviceType : '')
                     );
-                    setFieldValue('parcelVehicleType', 'BIKE');
+                    setFieldValue('parcelVehicleType', '');
                     setFieldValue('subZoneId', '');
                     setFieldValue('isPremium', false);
-                    setFieldValue('cabType', '');
+                    setFieldValue('cabType', nextEntity === 'DRIVER' ? 'Mini' : '');
                     setFieldValue('premiumCabType', '');
                   }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
@@ -538,8 +538,10 @@ const DiscountEdit = () => {
                       setFieldValue('isPremium', false);
                       setFieldValue('cabType', '');
                       setFieldValue('premiumCabType', '');
+                    } else if (nextServiceType === 'DRIVER') {
+                      setFieldValue('cabType', 'Mini');
                     } else {
-                      setFieldValue('parcelVehicleType', 'BIKE');
+                      setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');
                     }
                   }}
@@ -569,6 +571,7 @@ const DiscountEdit = () => {
                     }}
                     className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                   >
+                    <option value="">Select Any One</option>
                     <option value="BIKE">BIKE</option>
                     <option value="AUTO">AUTO</option>
                   </Field>
@@ -701,7 +704,7 @@ const DiscountEdit = () => {
                 )}
               </div>
               )}
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && values.serviceType !== 'DRIVER' && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field
