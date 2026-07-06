@@ -1907,8 +1907,9 @@ const adminDiscountAmountOnTotal =
   String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase() === 'PERCENTAGE'
     ? totalestimationfare * (Number(quoteDetails?.adminDiscount?.discountValue || 0) / 100)
     : Number(quoteDetails?.adminDiscount?.discountAmount || 0);
+const walletAmountApplied = Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0);
 
-const finalEstimatedFare = totalestimationfare - adminDiscountAmountOnTotal;
+const finalEstimatedFare = (totalestimationfare - adminDiscountAmountOnTotal) - walletAmountApplied;
 const adminDiscountType = String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase();
 const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
@@ -1917,9 +1918,9 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
 const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
 const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
 const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
-const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
-    ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
-    : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
+// const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+//     ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
+//     : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
 const finalTotalAfterDiscounts =
     BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
         ? finalEstimatedFare
@@ -3592,10 +3593,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                     <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                                 </div>
                                                                             )}
-                                                                            <div className='flex justify-between'>
-                                                                                <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            {/* <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">{finalTotalLabel} check</Typography>
                                                                                 <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                            </div>
+                                                                            </div> */}
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3751,10 +3752,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </div>
                                                                         )}
-                                                                        <div className='flex justify-between'>
+                                                                        {/* <div className='flex justify-between'>
                                                                             <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
                                                                             <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </div>
+                                                                        </div> */}
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
@@ -3942,15 +3943,10 @@ const priceDetailsCardClass = isPeakHour
                                                                             <>                                                                                                                                                                    
                                                                                 <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
                                                                                 <Typography>
-                                                                                    ₹ {Math.round(
-                                                                                        quoteDetails?.walletAmount ||
-                                                                                        quoteDetails?.amount?.walletAmount ||
-                                                                                        quoteDetails?.value?.walletAmount ||
-                                                                                        0
-                                                                                    )}
+                                                                                    ₹ {Math.round(walletAmountApplied)}
                                                                                 </Typography>                                                                                                                                                                                                                                    
                                                                                 <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction :</Typography>
-                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - walletAmountApplied))}</Typography>
                                                                             
                                                                             </>)                                                                                
                                                                             }
@@ -4002,10 +3998,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </>
                                                                         )}
-                                                                        <>
+                                                                        {/* <>
                                                                             <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
                                                                             <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </>
+                                                                        </> */}
                                                                         {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
                                                                         <Typography>
                                                                             ₹ {quoteDetails.amount.extraKmPrice}

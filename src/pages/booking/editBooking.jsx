@@ -140,6 +140,8 @@ const EditBooking = (props) => {
             : totalEstimatedFareAfterSystemDiscount;
     const finalTotalAfterDiscountsWithCancelCharge =
         finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
+    const walletAmountApplied = Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0);
+    const finalAfterWalletAndAdminDiscount = Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - walletAmountApplied - (isQuoteAdminDiscountEffective && isAdminDiscountPresent ? adminDiscountAmountOnTotal : 0)));
     const hasEstimatedPrice = Boolean(quoteDetails);
     const isPeakHour = quoteDetails?.amount?.fareBreakdown?.isPeakHour === true;
     const priceDetailsCardClass = isPeakHour
@@ -1992,7 +1994,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         </Typography>
                                                                         <Typography color="gray" variant="h6">KM</Typography>
                                                                         <Typography>
-                                                                            ₹ {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}
+                                                                            {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}
                                                                         </Typography>
                                                                         {quoteDetails.amount?.fareBreakdown?.dropCharge > 0 && <>
                                                                             <Typography color="gray" variant="h6">Drop Charge</Typography>
@@ -2023,7 +2025,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <Typography>
                                                                         ₹ {Math.round(quoteDetails.amount?.gst_amount)}
                                                                     </Typography>
-                                                               
+                                                                </>
+                                                                )}
                                                                 <Typography color="gray" variant="h6">Final Estimated Fare</Typography>
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.amount?.estimatedPrice)}
@@ -2060,7 +2063,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                                             </div>
                                                                         </>
                                                                     )}
-                                                                 </>)}
                                                                 {useSystemPercentDiscount && <>
 
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
@@ -2521,6 +2523,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                                                 )
                                                                             )}
                                                                         </Typography>
+                                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent && (
+                                                                            <>
+                                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet + Admin Discount</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {finalAfterWalletAndAdminDiscount}
+                                                                        </Typography>
+                                                                            </>
+                                                                        )}
                                                                     </>
                                                                 )}
                                                                 {useSystemPercentDiscount && (
