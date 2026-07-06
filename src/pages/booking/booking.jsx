@@ -1341,7 +1341,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             // acType: values?.acType?.toUpperCase(),
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
-            ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
+            // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
             carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
@@ -1558,12 +1558,12 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        // setFieldValue('carType', '');
+        setFieldValue('carType', newServiceType === 'DRIVER' ? 'Mini' : '');
         // setFieldValue('cabType', '');
         // setFieldValue('luggage', '');
         // setFieldValue('seaterCapacity', '');
         setFieldValue('acType', '');
-        setFieldValue('transmissionType', '');
+        // setFieldValue('transmissionType', '');
 
         // Clear package selection
         setFieldValue('packageSelected', '');
@@ -2347,8 +2347,8 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                 <div className='flex mt-2 space-x-3'>
-                                                    {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
-                                                        <div className="flex gap-2">
+                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                    <div className="flex gap-2">
                                                         <div>
                                                             <div className="mt-3 flex gap-3">
                                                                 {(values?.isPremiumService ||
@@ -2407,7 +2407,7 @@ const priceDetailsCardClass = isPeakHour
                                                         {!values?.isPremiumService && ( <>
                                                                 <label className="text-sm font-medium text-black-700">Car Type <span className='text-red-500 text-sm'>*</span></label>
                                                                 <div className='pt-3 grid grid-cols-6 gap-3'>
-                                                                {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
                                                                     ['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
                                                                         <label key={carType} className="flex items-center space-x-2">
                                                                             <Field
@@ -2423,7 +2423,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     )))}
                                                                 </div>
-                                                                {['DRIVER', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
+                                                                {['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
                                                                     <div className="text-red-500 text-sm mt-1">
                                                                         {errors.carType}
                                                                     </div>
@@ -2431,7 +2431,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </>)}
                                                             </div>
                                                             </div>
-                                                            {(values.serviceType === 'DRIVER') && (
+                                                            {/* {(values.serviceType === 'DRIVER') && (
                                                                 <div className='pt-4'>
                                                                     <label className="text-sm font-medium text-black-700">Transmission Type</label>
                                                                     <div className="flex gap-2 pt-3">
@@ -2449,7 +2449,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     </div>
                                                                     <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm mt-1" />
                                                                 </div>
-                                                            )}
+                                                            )} */}
                                                                 </div>
                                                         )}
                                                         </div>
@@ -3452,12 +3452,12 @@ const priceDetailsCardClass = isPeakHour
                                                                     {Number(quoteDetails.amount?.distanceEstimated).toFixed(2) || 0} kms
                                                                 </Typography>
                                                             </div>
-                                                            <div className="flex justify-between">
+                                                            {/* <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                                 <Typography>
                                                                                     {values.carType || quoteDetails.amount?.carType || ''}
                                                                                 </Typography>
-                                                                            </div>
+                                                                            </div> */}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Base Fare:</Typography>
                                                                 <Typography>
@@ -3872,10 +3872,10 @@ const priceDetailsCardClass = isPeakHour
                                                                         </>)}
                                                                     {values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation' && (
                                                                         <>
-                                                                            <Typography color="gray" variant="h6">Car Type:</Typography>
+                                                                            {/* <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                             <Typography>
                                                                                 {values.carType || quoteDetails.amount?.carType || ''}
-                                                                            </Typography>
+                                                                            </Typography> */}
                                                                             <Typography color="gray" variant="h6">Base Fare</Typography>
                                                                             <Typography>
                                                                                 ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}

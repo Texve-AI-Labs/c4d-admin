@@ -583,10 +583,10 @@ const getQuoteOutstationDetails = async (values) => {
         serviceType: bookingData?.serviceType || '',
         packageTypeSelected: bookingData?.packageType || '',
         tripType: bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || '',
-        transmissionType : bookingData?.transmissionType || '',
+        // transmissionType : bookingData?.transmissionType || '',
         packageSelected: bookingData?.packageId ? bookingData?.packageId : '',
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
-        carType: bookingData?.carType ? bookingData?.carType : '',
+        carType: bookingData?.serviceType === 'DRIVER' ? 'Mini' : (bookingData?.carType ? bookingData?.carType : ''),
         pickupAddress: bookingData?.pickupAddress?.name || '',
         pickupPlaceId: bookingData?.pickupAddress?.placeId || '',
         dropAddress: bookingData?.dropAddress?.name || '',
@@ -1001,7 +1001,7 @@ const getQuoteOutstationDetails = async (values) => {
                     ...((!isHourlyPackageSelection && values?.serviceType !== 'AUTO') && {
                         bookingType: values?.tripType?.toUpperCase() || '',
                     }),
-                transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
+                // transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
                     carType: values?.serviceType === 'DRIVER' ? 'Mini' : (values?.carType ? values?.carType : bookingData?.carType),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
@@ -1403,7 +1403,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
 
                                             <div>
-                                    {!values?.isPremiumService && ( <>    
+                                    {!values?.isPremiumService && values?.serviceType !== 'DRIVER' && ( <>    
                                                     <label className="text-sm font-medium text-black-700">Car Type</label>
                                                     <div className="flex gap-4">
                                                         {['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
@@ -1423,7 +1423,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
 
 
-                                            {(values?.serviceType !== 'RENTAL') && (<div>
+                                            {/* {(values?.serviceType !== 'RENTAL') && (<div>
                                                 <label className="text-sm font-medium text-black-700">Transmission Type</label>
                                                 <div className="grid grid-cols-8 mt-2">
                                                     {['Manual', 'Automatic'].map((transType) => (
@@ -1440,7 +1440,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                 </div>
                                                 <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm mt-1" />
                                             </div>
-                                            )}
+                                            )} */}
                                         </div>
                                         {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation')) && (
                                             <div>
@@ -1837,12 +1837,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             </Typography>
                                                         </div>
                                                         <>
+                                                        {values.serviceType !== 'DRIVER' && (
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                 <Typography>
                                                                     {values.carType || bookingData?.carType || ''}
                                                                 </Typography>
                                                             </div>
+                                                            )}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Estimated Fare</Typography>
                                                                 <Typography>
