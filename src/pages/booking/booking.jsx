@@ -1341,7 +1341,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             // acType: values?.acType?.toUpperCase(),
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
-            ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
+            // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
             carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
@@ -1558,12 +1558,12 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        // setFieldValue('carType', '');
+        setFieldValue('carType', newServiceType === 'DRIVER' ? 'Mini' : '');
         // setFieldValue('cabType', '');
         // setFieldValue('luggage', '');
         // setFieldValue('seaterCapacity', '');
         setFieldValue('acType', '');
-        setFieldValue('transmissionType', '');
+        // setFieldValue('transmissionType', '');
 
         // Clear package selection
         setFieldValue('packageSelected', '');
@@ -1573,6 +1573,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         } else if (newServiceType === 'DRIVER') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
+            setFieldValue('packageTypeSelected', 'Outstation');
+            setFieldValue('tripType', 'Round Trip');
         } else if (newServiceType === 'RENTAL_HOURLY_PACKAGE') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
@@ -1718,13 +1720,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (!val.packageSelected) { return true; } return false;
         }
 
-        if (val.packageTypeSelected === "Local" && val.tripType === "Round Trip") {
+        if (val.packageTypeSelected === "Local" && val.tripType === "Drop Only") {
             if (!val.dropLocation) { return true; } return false;
         }
 
-        if (val.packageTypeSelected === "Outstation" && val.tripType === "Drop Only") {
-            if (!val.dropLocation) { return true; } return false;
-        }
+        // if (val.packageTypeSelected === "Outstation" && val.tripType === "Drop Only") {
+        //     if (!val.dropLocation) { return true; } return false;
+        // }
 
         if (val.packageTypeSelected === "Outstation" && val.tripType === "Round Trip") {
             if (!val.dropLocation || !val.toDate || !val.toTime) { return true; } return false;
@@ -1907,8 +1909,9 @@ const adminDiscountAmountOnTotal =
   String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase() === 'PERCENTAGE'
     ? totalestimationfare * (Number(quoteDetails?.adminDiscount?.discountValue || 0) / 100)
     : Number(quoteDetails?.adminDiscount?.discountAmount || 0);
+const walletAmountApplied = Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0);
 
-const finalEstimatedFare = totalestimationfare - adminDiscountAmountOnTotal;
+const finalEstimatedFare = (totalestimationfare - adminDiscountAmountOnTotal) - walletAmountApplied;
 const adminDiscountType = String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase();
 const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
@@ -1917,9 +1920,9 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
 const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
 const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
 const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
-const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
-    ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
-    : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
+// const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+//     ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
+//     : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
 const finalTotalAfterDiscounts =
     BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
         ? finalEstimatedFare
@@ -2310,6 +2313,9 @@ const priceDetailsCardClass = isPeakHour
                                                                             setRange({});
                                                                             setFieldValue('fromDate', '');
                                                                             setFieldValue('toDate', '');
+                                                                            if (values.serviceType === 'DRIVER' && values.packageSelected === 'Outstation') {
+                                                                                setFieldValue('tripType', 'Round Trip');
+                                                                            }
                                                                         }
                                                                     }}
                                                                     disabled={bookingStage === 1}
@@ -2319,7 +2325,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Button>}
                                                         </div>
                                                         {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.packageTypeSelected === 'Local') || (values.serviceType === 'RENTAL_DROP_TAXI' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation')) && (
-                                                            <div className={['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
+                                                            <div className={values.serviceType === 'DRIVER' ? 'hidden' : ['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
                                                                 <Typography className="text-sm font-medium text-black-700">Trip Type</Typography>
                                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                                     {(values.serviceType === 'RENTAL_DROP_TAXI' ||
@@ -2346,8 +2352,8 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                 <div className='flex mt-2 space-x-3'>
-                                                    {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
-                                                        <div className="flex gap-2">
+                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                    <div className="flex gap-2">
                                                         <div>
                                                             <div className="mt-3 flex gap-3">
                                                                 {(values?.isPremiumService ||
@@ -2406,7 +2412,7 @@ const priceDetailsCardClass = isPeakHour
                                                         {!values?.isPremiumService && ( <>
                                                                 <label className="text-sm font-medium text-black-700">Car Type <span className='text-red-500 text-sm'>*</span></label>
                                                                 <div className='pt-3 grid grid-cols-6 gap-3'>
-                                                                {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
                                                                     ['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
                                                                         <label key={carType} className="flex items-center space-x-2">
                                                                             <Field
@@ -2422,7 +2428,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     )))}
                                                                 </div>
-                                                                {['DRIVER', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
+                                                                {['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
                                                                     <div className="text-red-500 text-sm mt-1">
                                                                         {errors.carType}
                                                                     </div>
@@ -2430,7 +2436,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </>)}
                                                             </div>
                                                             </div>
-                                                            {(values.serviceType === 'DRIVER') && (
+                                                            {/* {(values.serviceType === 'DRIVER') && (
                                                                 <div className='pt-4'>
                                                                     <label className="text-sm font-medium text-black-700">Transmission Type</label>
                                                                     <div className="flex gap-2 pt-3">
@@ -2448,7 +2454,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     </div>
                                                                     <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm mt-1" />
                                                                 </div>
-                                                            )}
+                                                            )} */}
                                                                 </div>
                                                         )}
                                                         </div>
@@ -3451,12 +3457,12 @@ const priceDetailsCardClass = isPeakHour
                                                                     {Number(quoteDetails.amount?.distanceEstimated).toFixed(2) || 0} kms
                                                                 </Typography>
                                                             </div>
-                                                            <div className="flex justify-between">
+                                                            {/* <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                                 <Typography>
                                                                                     {values.carType || quoteDetails.amount?.carType || ''}
                                                                                 </Typography>
-                                                                            </div>
+                                                                            </div> */}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Base Fare:</Typography>
                                                                 <Typography>
@@ -3592,10 +3598,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                     <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                                 </div>
                                                                             )}
-                                                                            <div className='flex justify-between'>
-                                                                                <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            {/* <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">{finalTotalLabel} check</Typography>
                                                                                 <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                            </div>
+                                                                            </div> */}
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3751,10 +3757,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </div>
                                                                         )}
-                                                                        <div className='flex justify-between'>
+                                                                        {/* <div className='flex justify-between'>
                                                                             <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
                                                                             <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </div>
+                                                                        </div> */}
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
@@ -3871,10 +3877,10 @@ const priceDetailsCardClass = isPeakHour
                                                                         </>)}
                                                                     {values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation' && (
                                                                         <>
-                                                                            <Typography color="gray" variant="h6">Car Type:</Typography>
+                                                                            {/* <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                             <Typography>
                                                                                 {values.carType || quoteDetails.amount?.carType || ''}
-                                                                            </Typography>
+                                                                            </Typography> */}
                                                                             <Typography color="gray" variant="h6">Base Fare</Typography>
                                                                             <Typography>
                                                                                 ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}
@@ -3942,15 +3948,10 @@ const priceDetailsCardClass = isPeakHour
                                                                             <>                                                                                                                                                                    
                                                                                 <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
                                                                                 <Typography>
-                                                                                    ₹ {Math.round(
-                                                                                        quoteDetails?.walletAmount ||
-                                                                                        quoteDetails?.amount?.walletAmount ||
-                                                                                        quoteDetails?.value?.walletAmount ||
-                                                                                        0
-                                                                                    )}
+                                                                                    ₹ {Math.round(walletAmountApplied)}
                                                                                 </Typography>                                                                                                                                                                                                                                    
                                                                                 <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction :</Typography>
-                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - walletAmountApplied))}</Typography>
                                                                             
                                                                             </>)                                                                                
                                                                             }
@@ -4002,10 +4003,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </>
                                                                         )}
-                                                                        <>
+                                                                        {/* <>
                                                                             <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
                                                                             <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </>
+                                                                        </> */}
                                                                         {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
                                                                         <Typography>
                                                                             ₹ {quoteDetails.amount.extraKmPrice}

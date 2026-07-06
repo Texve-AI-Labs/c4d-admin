@@ -140,6 +140,8 @@ const EditBooking = (props) => {
             : totalEstimatedFareAfterSystemDiscount;
     const finalTotalAfterDiscountsWithCancelCharge =
         finalTotalAfterDiscounts + (cancelChargeApplicable ? cancelChargeAmount : 0);
+    const walletAmountApplied = Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0);
+    const finalAfterWalletAndAdminDiscount = Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - walletAmountApplied - (isQuoteAdminDiscountEffective && isAdminDiscountPresent ? adminDiscountAmountOnTotal : 0)));
     const hasEstimatedPrice = Boolean(quoteDetails);
     const isPeakHour = quoteDetails?.amount?.fareBreakdown?.isPeakHour === true;
     const priceDetailsCardClass = isPeakHour
@@ -580,11 +582,13 @@ const getQuoteOutstationDetails = async (values) => {
     const initialValues = {
         serviceType: bookingData?.serviceType || '',
         packageTypeSelected: bookingData?.packageType || '',
-        tripType: bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || '',
-        transmissionType : bookingData?.transmissionType || '',
+        tripType: bookingData?.serviceType === 'DRIVER' && bookingData?.packageType === 'Outstation'
+            ? 'Round Trip'
+            : (bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || ''),
+        // transmissionType : bookingData?.transmissionType || '',
         packageSelected: bookingData?.packageId ? bookingData?.packageId : '',
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
-        carType: bookingData?.carType ? bookingData?.carType : '',
+        carType: bookingData?.serviceType === 'DRIVER' ? 'Mini' : (bookingData?.carType ? bookingData?.carType : ''),
         pickupAddress: bookingData?.pickupAddress?.name || '',
         pickupPlaceId: bookingData?.pickupAddress?.placeId || '',
         dropAddress: bookingData?.dropAddress?.name || '',
@@ -999,7 +1003,7 @@ const getQuoteOutstationDetails = async (values) => {
                     ...((!isHourlyPackageSelection && values?.serviceType !== 'AUTO') && {
                         bookingType: values?.tripType?.toUpperCase() || '',
                     }),
-                transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
+                // transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
                     carType: values?.serviceType === 'DRIVER' ? 'Mini' : (values?.carType ? values?.carType : bookingData?.carType),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
@@ -1320,7 +1324,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     Outstation
                                                 </Button>
                                             </div>
-                                            <div className={(values.serviceType === 'RENTAL' || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Local')) ? 'hidden' : ''}>
+                                            <div className={(values.serviceType === 'RENTAL' || values.serviceType === 'DRIVER') ? 'hidden' : ''}>
                                                 <Typography className="text-sm font-medium text-black">Trip Type</Typography>
                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                     {(values?.serviceType !== 'RENTAL') && (<Button
@@ -1401,7 +1405,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
 
                                             <div>
-                                    {!values?.isPremiumService && ( <>    
+                                    {!values?.isPremiumService && values?.serviceType !== 'DRIVER' && ( <>    
                                                     <label className="text-sm font-medium text-black-700">Car Type</label>
                                                     <div className="flex gap-4">
                                                         {['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
@@ -1421,7 +1425,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
 
 
-                                            {(values?.serviceType !== 'RENTAL') && (<div>
+                                            {/* {(values?.serviceType !== 'RENTAL') && (<div>
                                                 <label className="text-sm font-medium text-black-700">Transmission Type</label>
                                                 <div className="grid grid-cols-8 mt-2">
                                                     {['Manual', 'Automatic'].map((transType) => (
@@ -1438,7 +1442,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                 </div>
                                                 <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm mt-1" />
                                             </div>
-                                            )}
+                                            )} */}
                                         </div>
                                         {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation')) && (
                                             <div>
@@ -1835,12 +1839,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                             </Typography>
                                                         </div>
                                                         <>
+                                                        {values.serviceType !== 'DRIVER' && (
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                 <Typography>
                                                                     {values.carType || bookingData?.carType || ''}
                                                                 </Typography>
                                                             </div>
+                                                            )}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Estimated Fare</Typography>
                                                                 <Typography>
@@ -1982,17 +1988,17 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 }
                                                                 {values?.serviceType === 'DRIVER' && (
                                                                     <>
-                                                                     <Typography color="gray" variant="h6">Car Type</Typography>
+                                                                     {/* <Typography color="gray" variant="h6">Car Type</Typography>
                                                                         <Typography>
                                                                            {values.carType || bookingData?.carType || ''}
-                                                                        </Typography>
+                                                                        </Typography> */}
                                                                         <Typography color="gray" variant="h6">Base Fare</Typography>
                                                                         <Typography>
                                                                             ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}
                                                                         </Typography>
                                                                         <Typography color="gray" variant="h6">KM</Typography>
                                                                         <Typography>
-                                                                            ₹ {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}
+                                                                            {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}
                                                                         </Typography>
                                                                         {quoteDetails.amount?.fareBreakdown?.dropCharge > 0 && <>
                                                                             <Typography color="gray" variant="h6">Drop Charge</Typography>
@@ -2023,7 +2029,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <Typography>
                                                                         ₹ {Math.round(quoteDetails.amount?.gst_amount)}
                                                                     </Typography>
-                                                               
+                                                                </>
+                                                                )}
                                                                 <Typography color="gray" variant="h6">Final Estimated Fare</Typography>
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.amount?.estimatedPrice)}
@@ -2060,7 +2067,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                                             </div>
                                                                         </>
                                                                     )}
-                                                                 </>)}
                                                                 {useSystemPercentDiscount && <>
 
                                                                     <Typography color="gray" variant="h6">Discount Applied</Typography>
@@ -2521,6 +2527,14 @@ const getQuoteOutstationDetails = async (values) => {
                                                                                 )
                                                                             )}
                                                                         </Typography>
+                                                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent && (
+                                                                            <>
+                                                                                <Typography color="gray" variant="h6">Final Estimated Fare after Wallet + Admin Discount</Typography>
+                                                                                <Typography>
+                                                                                    ₹ {finalAfterWalletAndAdminDiscount}
+                                                                        </Typography>
+                                                                            </>
+                                                                        )}
                                                                     </>
                                                                 )}
                                                                 {useSystemPercentDiscount && (
