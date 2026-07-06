@@ -74,7 +74,7 @@ useEffect(() => {
         period: '',
         baseKm: '',
         kilometer: '',
-        // tollCharge: '',
+        tollCharge: '',
         driverCharge: '',
         cancelMins: Utils.convertMinutesToTimeFormat || 0,
         cancelCharge: '',
@@ -204,7 +204,7 @@ useEffect(() => {
 
                 'additionalMinCharge': Number(values.additionalMinCharge),
                 'freeExtraMinutes': Number(values.freeExtraMinutes),
-                // 'tollCharge': values?.type === 'Outstation' ? values.tollCharge : 0,
+                'tollCharge': values?.type === 'Outstation' ? values.tollCharge : 0,
                 'driverCharge': values?.type === 'Outstation' ? values.driverCharge : 0,
                 'nightCharge': Number(values.nightCharge),
                 'nightHoursFrom': Utils.formatTimeWithSeconds(values.nightHoursFrom),

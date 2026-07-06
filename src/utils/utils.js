@@ -10,6 +10,69 @@ import {
 
 
 export const Utils = {
+    isBookingReadyForEstimation: (values, selectedCustomer) => {
+        const hasPickupDateTime = !!(values?.rideDate && values?.rideTime);
+
+        switch (values?.serviceType) {
+            case 'DRIVER':
+                return (
+                    hasPickupDateTime &&
+                    !!selectedCustomer &&
+                    !!values?.packageTypeSelected &&
+                    !!values?.pickupLocation &&
+                    !!values?.sourceType &&
+                    !!values?.carType &&
+                    !!values?.packageSelected &&
+                    (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
+                    (values?.packageTypeSelected !== 'Outstation' || !!values?.tripType) &&
+                    (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
+                );
+            case 'RIDES':
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.carType;
+            case 'AUTO':
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType;
+            case 'PARCEL':
+                return hasPickupDateTime && !!values?.customerId?.id && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType;
+            case 'RENTAL':
+                return (
+                    hasPickupDateTime &&
+                    !!selectedCustomer &&
+                    !!values?.packageTypeSelected &&
+                    !!values?.pickupLocation &&
+                    !!values?.sourceType &&
+                    !!values?.carType &&
+                    !!values?.packageSelected &&
+                    (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
+                    (values?.packageTypeSelected !== 'Outstation' || !!values?.acType) &&
+                    (values?.packageTypeSelected !== 'Outstation' || values?.tripType !== 'Round Trip' || !!values?.toDate) &&
+                    (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
+                );
+            case 'RENTAL_HOURLY_PACKAGE':
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.sourceType && !!values?.packageSelected && !!values?.carType;
+            case 'RENTAL_DROP_TAXI':
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.acType && !!values?.carType;
+            case 'CAR_WASH':
+                return hasPickupDateTime && !!selectedCustomer && !!values?.packageTypeSelected && !!values?.pickupLocation && !!values?.sourceType && !!values?.carType;
+            default:
+                return false;
+        }
+    },
+
+    isBookingReadyForContinue: (values, selectedCustomer, quoteDetails, validationCheckForDriver, validationCheckForDriverRental) => {
+        if (!Utils.isBookingReadyForEstimation(values, selectedCustomer)) return false;
+        if (!quoteDetails) return false;
+
+        switch (values?.serviceType) {
+            case 'DRIVER':
+            case 'CAR_WASH':
+                return !validationCheckForDriver(values);
+            case 'RENTAL':
+                return !validationCheckForDriverRental(values);
+            default:
+                return true;
+        }
+    },
+
     formatSelectedDate: (date) => {
         const selectedDate = new Date(date);
         //const today = new Date();
@@ -225,6 +288,12 @@ export const Utils = {
     },
 
     generateWhatsAppMessage: (bookingDetails) => {
+        const pickupName =
+            bookingDetails?.pickupAddress?.name?.trim() ||
+            bookingDetails?.pickupGeocodeAddress?.name?.trim() ||
+            bookingDetails?.pickupFormatAddress?.name?.trim() ||
+            'Not specified';
+
         let text = '';
 
 
@@ -244,7 +313,7 @@ export const Utils = {
                 WHATSAPP_FARE_QUOTATION_TEMPLATE
                     .replace('${bookingNumber}', bookingDetails.bookingNumber)
                     .replace('${customerName}', bookingDetails.Customer.firstName)
-                    .replace('${pickup}', bookingDetails.pickupAddress?.name || 'Not specified')
+                    .replace('${pickup}', pickupName)
                     .replace('${drop}', bookingDetails.dropAddress?.name || 'Not specified')
                     .replace('${startDate}', startDate)
                     .replace('${startTime}', startTime)
@@ -282,7 +351,7 @@ export const Utils = {
                 WHATSAPP_BOOKING_CONFIRMED_TEMPLATE
                     .replace('${bookingNumber}', bookingDetails.bookingNumber)
                     .replace('${customerName}', bookingDetails.Customer.firstName)
-                    .replace('${pickup}', bookingDetails.pickupAddress?.name || 'Not specified')
+                    .replace('${pickup}', pickupName)
                     .replace('${drop}', bookingDetails.dropAddress?.name || 'Not specified')
                     .replace('${startDate}', startDate)
                     .replace('${startTime}', startTime)
@@ -298,7 +367,7 @@ export const Utils = {
         if (bookingDetails?.status === "STARTED") {
             const driverName = bookingDetails.Driver?.firstName || 'Not assigned';
             const vehicleType = bookingDetails?.Cab?.carType || bookingDetails?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("hh:mm A") : 'Not available';
 
             text = encodeURIComponent(
@@ -314,10 +383,10 @@ export const Utils = {
             );
         }
 
-         if (bookingDetails?.status === "DRIVER_REACHED") {
+        if (bookingDetails?.status === "DRIVER_REACHED") {
             const driverName = bookingDetails.Driver?.firstName || 'Not assigned';
             const vehicleType = bookingDetails?.Cab?.carType || bookingDetails?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("hh:mm A") : 'Not available';
             
 
@@ -337,7 +406,7 @@ export const Utils = {
          if ( bookingDetails?.status === "BOOKING_ACCEPTED") {
             const driverName = bookingDetails.Driver?.firstName || 'Not assigned';
             const vehicleType = bookingDetails?.Cab?.carType || bookingDetails?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("hh:mm A") : 'Not available';
             
 
@@ -359,7 +428,7 @@ export const Utils = {
         if (bookingDetails?.status === "ENDED" && bookingDetails?.paymentStatus === "PAID") {
 
             const carType = bookingDetails.Cab?.carType || 'Not assigned';
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const drop = bookingDetails.endAddress?.name || bookingDetails.dropAddress?.name || 'Not specified';
             const startTime = bookingDetails.startTime ? moment(bookingDetails.startTime).format("DD-MM-YYYY hh:mm A") : 'N/A';
             const endTime = bookingDetails.endedTime ? moment(bookingDetails.endedTime).format("DD-MM-YYYY hh:mm A") : 'N/A';
@@ -388,7 +457,7 @@ export const Utils = {
 
         // BOOKING CANCELLED
         if (bookingDetails?.status === "CUSTOMER_CANCELLED" || bookingDetails?.status === "SUPPORT_CANCELLED") {
-            const pickup = bookingDetails.pickupAddress?.name || 'Not specified';
+            const pickup = pickupName;
             const rawDateTime = bookingDetails.fromDate;
             const isValid = moment(rawDateTime).isValid();
 
@@ -410,7 +479,7 @@ export const Utils = {
         if (text === '') {
             text = encodeURIComponent(
                 (bookingDetails?.Driver ? `Driver Name: ${bookingDetails?.Driver.firstName}\nDriver Number: ${bookingDetails?.Driver.phoneNumber}\n` : '') +
-                `Pickup Address: ${bookingDetails?.pickupAddress?.name}\n` +
+                `Pickup Address: ${pickupName}\n` +
                 (bookingDetails?.dropAddress ? `Drop Address: ${bookingDetails?.dropAddress?.name}\n` : '')
             );
         }
@@ -599,54 +668,15 @@ export const Utils = {
         validationCheckForDriver,
         validationCheckForDriverRental,
     }) => {
-        const driverContinueDisabled =
-            !dirty ||
-            !isValid ||
-            !values.rideDate ||
-            !values.packageTypeSelected ||
-            !values.pickupAddress ||
-            !values.sourceType ||
-            (values.packageTypeSelected === "Local" && !values.packageSelected) ||
-            (values.packageTypeSelected === "Outstation" && !values.dropAddress) ||
-            (values.packageTypeSelected === "Local" && values.tripType === "Round Trip" && !values.dropAddress) ||
-            validationCheckForDriver(values) ||
-            !quoteDetails;
-        const ridesContinueDisabled =
-            !(values.pickupAddress && values.dropAddress && selectedCustomer && quoteDetails);
-        const autoContinueDisabled =
-            !(values.pickupAddress && values.dropAddress && selectedCustomer && values.sourceType && quoteDetails);
-        const parcelContinueDisabled =
-            !(values.pickupAddress && values.dropAddress && values.sourceType && values.customerId?.id && values.rideTime && quoteDetails);
-        const rentalContinueDisabled =
-            !dirty ||
-            !isValid ||
-            !values.rideDate ||
-            !values.packageTypeSelected ||
-            !values.sourceType ||
-            !values.pickupAddress ||
-            (values.packageTypeSelected === "Local" && !values.packageSelected) ||
-            (values.packageTypeSelected === "Outstation" && !values.dropAddress) ||
-            (values.packageTypeSelected === "Outstation" && !values.acType) ||
-            (values.packageTypeSelected === "Outstation" && values.tripType === "Round Trip" && !values.toDate) ||
-            validationCheckForDriverRental(values) ||
-            !quoteDetails;
-        const hourlyContinueDisabled =
-            !dirty ||
-            !isValid ||
-            !values.rideDate ||
-            !values.sourceType ||
-            !values.packageSelected ||
-            !values.pickupAddress ||
-            !quoteDetails;
-        const dropTaxiContinueDisabled =
-            !dirty ||
-            !isValid ||
-            !values.rideDate ||
-            !values.sourceType ||
-            !values.acType ||
-            !values.pickupAddress ||
-            !values.dropAddress ||
-            !quoteDetails;
+        const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer);
+        const continueBaseDisabled = !dirty || !isValid || !quoteDetails || !estimationReady;
+        const driverContinueDisabled = continueBaseDisabled || validationCheckForDriver(values);
+        const ridesContinueDisabled = continueBaseDisabled;
+        const autoContinueDisabled = continueBaseDisabled;
+        const parcelContinueDisabled = continueBaseDisabled;
+        const rentalContinueDisabled = continueBaseDisabled || validationCheckForDriverRental(values);
+        const hourlyContinueDisabled = continueBaseDisabled;
+        const dropTaxiContinueDisabled = continueBaseDisabled;
 
         return {
             driverContinueDisabled,
@@ -672,12 +702,10 @@ export const Utils = {
     }) => {
         const firstValidationError = Utils.getFirstValidationError(errors);
         if (firstValidationError) return firstValidationError;
-        if (errors?.rideDate) return errors.rideDate;
-        if (errors?.toDate) return errors.toDate;
         if (values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!values.sourceType) return 'Please select Source Type.';
-            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.packageTypeSelected) return 'Please select package type.';
             if (values.packageTypeSelected === "Local" && !values.packageSelected) return 'Please choose a package.';
             if (!values.pickupAddress) return 'Please select pickup location.';
@@ -688,22 +716,24 @@ export const Utils = {
         } else if (values.serviceType === 'RIDES') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!selectedCustomer) return 'Please select customer.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
         } else if (values.serviceType === 'AUTO') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!selectedCustomer) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
         } else if (values.serviceType === 'PARCEL') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!values.customerId?.id) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
-            if (!values.rideTime) return 'Please select pickup date & time.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
         } else if (values.serviceType === 'RENTAL') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!values.sourceType) return 'Please select Source Type.';
-            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.packageTypeSelected) return 'Please select package type.';
             if (values.packageTypeSelected === "Local" && !values.packageSelected) return 'Please choose a package.';
             if (values.packageTypeSelected === "Outstation" && !values.acType) return 'Please select AC type.';
@@ -716,14 +746,14 @@ export const Utils = {
         } else if (values.serviceType === 'RENTAL_HOURLY_PACKAGE') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!values.sourceType) return 'Please select Source Type.';
-            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.packageSelected) return 'Please choose a package.';
             if (!values.pickupAddress) return 'Please select pickup location.';
             if (!isValid) return 'Please correct form validation errors.';
             if (!dirty) return 'Please update at least one field.';
         } else if (values.serviceType === 'RENTAL_DROP_TAXI') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
-            if (!values.rideDate) return 'Please select pickup date & time.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.acType) return 'Please select AC type.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';

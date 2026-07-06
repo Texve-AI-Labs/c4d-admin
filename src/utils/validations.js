@@ -67,16 +67,8 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         then: (schema) => schema.required('Package Type is required'),
         otherwise: (schema) => schema.notRequired(),
     }),
-    rideTime: Yup.string().when('serviceType', {
-        is: (val) => val !== 'RIDES' && val !== 'AUTO',
-        then: (schema) => schema.required('Ride Time is required'),
-        otherwise: (schema) => schema.notRequired(),
-    }),
-    rideDate: Yup.string().when('serviceType', {
-        is: (val) => val !== 'RIDES' && val !== 'AUTO',
-        then: (schema) => schema.required('Ride Date is required'),
-        otherwise: (schema) => schema.notRequired(),
-    }),
+    rideTime: Yup.string().required('Ride Time is required'),
+    rideDate: Yup.string().required('Ride Date is required'),
     customerId: Yup.object().shape({
         id: Yup.string().required('Customer ID is required'),
     }).required('Customer information is required'),

@@ -2270,7 +2270,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         <div className="grid sm:grid-cols-2 gap-4 text-sm">
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Pickup:</span>
-                                <span className="text-gray-900 font-medium">{bookingDetails?.pickupAddress?.name}</span>
+                                <span className="text-gray-900 font-medium">
+                                    {bookingDetails?.pickupAddress?.name?.trim()
+                                        || bookingDetails?.pickupGeocodeAddress?.name?.trim()
+                                        || bookingDetails?.pickupFormatAddress?.name?.trim()
+                                        || "Not Added"}
+                                </span>
                             </div>
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Drop-off:</span>
@@ -3020,8 +3025,17 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
             tripDate: bookingDetails?.fromDate ? moment(bookingDetails.fromDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD'),
             vehicleNumber: bookingDetails?.Cab?.carNumber || bookingDetails?.Parcel?.vehicleNumber || bookingDetails?.Auto?.autoNumber|| null,
             driverName: bookingDetails?.Driver?.firstName || null,
-            startAddress: bookingDetails?.pickupAddress?.name
-                ? makeAddressPayload(bookingDetails.pickupAddress.name, bookingDetails?.pickupAddress?.placeId)
+            startAddress: (
+                bookingDetails?.pickupAddress?.name?.trim()
+                || bookingDetails?.pickupGeocodeAddress?.name?.trim()
+                || bookingDetails?.pickupFormatAddress?.name?.trim()
+            )
+                ? makeAddressPayload(
+                    bookingDetails?.pickupAddress?.name?.trim()
+                    || bookingDetails?.pickupGeocodeAddress?.name?.trim()
+                    || bookingDetails?.pickupFormatAddress?.name?.trim(),
+                    bookingDetails?.pickupAddress?.placeId || bookingDetails?.pickupGeocodeAddress?.placeId || bookingDetails?.pickupFormatAddress?.placeId,
+                )
                 : null,
             endAddress: (bookingDetails?.dropAddress?.name || bookingDetails?.endAddress?.name)
                 ? makeAddressPayload(

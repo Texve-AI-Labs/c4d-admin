@@ -2158,6 +2158,14 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental,
                                             });
+                                            const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer);
+                                            const continueReady = Utils.isBookingReadyForContinue(
+                                                values,
+                                                selectedCustomer,
+                                                quoteDetails,
+                                                validationCheckForDriver,
+                                                validationCheckForDriverRental
+                                            );
                                                     useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
@@ -2193,7 +2201,7 @@ const priceDetailsCardClass = isPeakHour
                                                         options={customerData} 
                                                         onSelect={(val) => {
                                                             setFieldValue('customerId', val);
-                                                            setSelectedCustomer(val.id);
+                                                            setSelectedCustomer(val?.id || 0);
                                                         }}
                                                     />
 
@@ -2253,6 +2261,8 @@ const priceDetailsCardClass = isPeakHour
                                                                     // console.log('Selected service value:', selectedValue);
                                                                     setFieldValue('serviceType', selectedValue, false);
                                                                     setCurrentServiceType(selectedValue);
+                                                                    setQuoteDetails(null);
+                                                                    setQuoteMeta(null);
                                                                     resetPackageValues(setFieldValue, selectedValue);
                                                                     setFieldValue('serviceType', selectedValue, true);
                                                                 }}
@@ -4249,45 +4259,45 @@ const priceDetailsCardClass = isPeakHour
                                                 )}
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
 
-                                                {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') && values.dropLocation && values.pickupLocation && values.driverPickUpLocation && values.driverEndLocation && values.sourceType && values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
+                                                {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                 {(values?.serviceType=="DRIVER" && values.packageTypeSelected == 'Outstation') && values.dropLocation && values.pickupLocation  && values.sourceType && values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
+                                                 {(values?.serviceType=="DRIVER" && values.packageTypeSelected == 'Outstation') &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                 {values.serviceType == 'RENTAL_DROP_TAXI' && values.dropLocation && values.pickupLocation && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
-                                                        Check Estimated Price
-                                                    </Button>
-                                                }
-
-                                                {values.serviceType == 'RIDES' && values.dropLocation && values.pickupLocation && values.carType && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                 {values.serviceType == 'RENTAL_DROP_TAXI' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
 
-                                                {values.serviceType == 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation && values.packageSelected && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                {values.serviceType == 'RIDES' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Local' && values.pickupLocation && values.packageSelected && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+
+                                                {values.serviceType == 'RENTAL_HOURLY_PACKAGE' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                 {values.serviceType == 'AUTO' && values.dropLocation && values.pickupLocation && values.sourceType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Local' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                {values.serviceType == 'PARCEL' && values.dropLocation && values.pickupLocation && values.sourceType && values.customerId?.id && values.rideTime &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteParcel(values, setFieldValue)}>
+                                                 {values.serviceType == 'AUTO' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                        Check Estimated Price
+                                                    </Button>
+                                                }
+                                                {values.serviceType == 'PARCEL' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteParcel(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
@@ -4371,7 +4381,7 @@ const priceDetailsCardClass = isPeakHour
                                                         setFieldValue("submitType", "default");
                                                         handleSubmit();
                                                     }}
-                                                    disabled={driverContinueDisabled}
+                                                    disabled={!continueReady || driverContinueDisabled}
                                                     className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                 >
                                                     Continue
@@ -4384,7 +4394,7 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "rides");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={ridesContinueDisabled}
+                                                        disabled={!continueReady || ridesContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4398,7 +4408,7 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "auto");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={autoContinueDisabled}
+                                                        disabled={!continueReady || autoContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4412,7 +4422,7 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "parcel");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={parcelContinueDisabled}
+                                                        disabled={!continueReady || parcelContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4427,7 +4437,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={rentalContinueDisabled}
+                                                            disabled={!continueReady || rentalContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
@@ -4441,7 +4451,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={hourlyContinueDisabled}
+                                                            disabled={!continueReady || hourlyContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
@@ -4455,7 +4465,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={dropTaxiContinueDisabled}
+                                                            disabled={!continueReady || dropTaxiContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
