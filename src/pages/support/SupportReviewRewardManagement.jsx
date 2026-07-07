@@ -94,6 +94,20 @@ function SupportReviewRewardManagement() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 10,
+  });
+  const [filters, setFilters] = useState({
+    status: "",
+    raisedByType: "",
+    bookingId: "",
+    category: "",
+    fromDate: "",
+    toDate: "",
+  });
   const [selectedId, setSelectedId] = useState("");
   const [status, setStatus] = useState("UNDER_REVIEW");
   const [rewardAmount, setRewardAmount] = useState("");
@@ -113,13 +127,33 @@ function SupportReviewRewardManagement() {
   );
   const selectedTicketKey = selectedRow?.ticketId || selectedRow?.id;
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (page = pagination.currentPage, nextFilters = filters) => {
     setLoading(true);
     setError("");
     try {
-      const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SUPPORT_TICKETS, {});
+      const query = Object.fromEntries(
+        Object.entries(nextFilters || {}).filter(([, value]) => value !== "" && value !== null && value !== undefined)
+      );
+      query.page = page;
+      query.limit = pagination.itemsPerPage;
+      const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SUPPORT_TICKETS, query);
       const ticketRows = normalizeRows(response?.data);
       setRows(ticketRows);
+      const meta = response?.meta || response?.data?.meta || {};
+      const nextPagination = response?.pagination || response?.data?.pagination || {};
+      const totalItems = Number(meta?.count || nextPagination?.totalItems || ticketRows.length || 0);
+      const totalPages = Number(
+        nextPagination?.totalPages ||
+          (totalItems > 0 ? Math.ceil(totalItems / Math.max(pagination.itemsPerPage, 1)) : 1)
+      );
+      const currentPage = Number(nextPagination?.currentPage || page || 1);
+      setPagination((prev) => ({
+        ...prev,
+        currentPage,
+        totalPages,
+        totalItems,
+        itemsPerPage: Number(nextPagination?.itemsPerPage || prev.itemsPerPage || 10),
+      }));
       if (!ticketRows.length) setError("No tickets found.");
     } catch (err) {
       console.error("Failed to fetch support tickets:", err);
@@ -131,7 +165,7 @@ function SupportReviewRewardManagement() {
   };
 
   useEffect(() => {
-    fetchTickets();
+    fetchTickets(1);
   }, []);
 
   useEffect(() => {
@@ -155,7 +189,62 @@ function SupportReviewRewardManagement() {
     setError("");
     setSelectedId("");
     setProofOpen(false);
-    await fetchTickets();
+    await fetchTickets(pagination.currentPage);
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleApplyFilters = async () => {
+    setSelectedId("");
+    setProofOpen(false);
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    await fetchTickets(1, filters);
+  };
+
+  const handleClearFilters = async () => {
+    const resetFilters = {
+      status: "",
+      raisedByType: "",
+      bookingId: "",
+      category: "",
+      fromDate: "",
+      toDate: "",
+    };
+    setFilters(resetFilters);
+    setSelectedId("");
+    setProofOpen(false);
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    await fetchTickets(1, resetFilters);
+  };
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > pagination.totalPages || loading) return;
+    setPagination((prev) => ({ ...prev, currentPage: page }));
+    fetchTickets(page);
+  };
+
+  const renderPageButtons = () => {
+    const maxVisible = 5;
+    const startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisible / 2));
+    const endPage = Math.min(pagination.totalPages, startPage + maxVisible - 1);
+    const pages = [];
+    for (let page = startPage; page <= endPage; page += 1) {
+      pages.push(page);
+    }
+    return pages.map((page) => (
+      <Button
+        key={page}
+        size="sm"
+        variant={page === pagination.currentPage ? "filled" : "outlined"}
+        onClick={() => handlePageChange(page)}
+        disabled={loading}
+        className={`mx-1 ${page === pagination.currentPage ? "bg-blue-500 text-white" : "border-blue-500 text-blue-500"}`}
+      >
+        {page}
+      </Button>
+    ));
   };
 
   const handleOpenProof = () => {
@@ -237,6 +326,79 @@ function SupportReviewRewardManagement() {
                   {loading ? "Refreshing..." : "Refresh"}
                 </span>
               </Button>
+            </div>
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <Typography className="mb-4 text-sm font-semibold text-slate-700">
+                Filter Section
+              </Typography>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <Select
+                  label="Status"
+                  value={filters.status}
+                  onChange={(value) => handleFilterChange("status", value || "")}
+                >
+                  <Option value="">All</Option>
+                  <Option value="OPEN">Open</Option>
+                  <Option value="UNDER_REVIEW">Under Review</Option>
+                  <Option value="APPROVED">Approved</Option>
+                  <Option value="REJECTED">Rejected</Option>
+                  <Option value="RESOLVED">Resolved</Option>
+                </Select>
+
+                <Select
+                  label="Raised By Type"
+                  value={filters.raisedByType}
+                  onChange={(value) => handleFilterChange("raisedByType", value || "")}
+                >
+                  <Option value="">All</Option>
+                  <Option value="CUSTOMER">Customer</Option>
+                  {/* <Option value="DRIVER">Driver</Option> */}
+                </Select>
+
+                <Input
+                  type="number"
+                  label="Booking ID"
+                  value={filters.bookingId}
+                  onChange={(e) => handleFilterChange("bookingId", e.target.value)}
+                />
+
+                <Input
+                  type="text"
+                  label="Category"
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange("category", e.target.value)}
+                />
+
+                <Input
+                  type="date"
+                  label="From Date"
+                  value={filters.fromDate}
+                  onChange={(e) => handleFilterChange("fromDate", e.target.value)}
+                />
+
+                <Input
+                  type="date"
+                  label="To Date"
+                  value={filters.toDate}
+                  onChange={(e) => handleFilterChange("toDate", e.target.value)}
+                />
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button
+                  onClick={handleApplyFilters}
+                  className="rounded-full bg-blue-900 px-5 py-3 text-xs font-semibold text-white shadow-sm hover:shadow-md disabled:opacity-60"
+                >
+                  Apply Filters
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleClearFilters}
+                  className="rounded-full border-slate-300 px-5 py-3 text-xs font-semibold text-slate-700"
+                >
+                  Clear Filters
+                </Button>
+              </div>
             </div>
 
             {loading ? (
@@ -321,6 +483,28 @@ function SupportReviewRewardManagement() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-center">
+                  <Button
+                    size="sm"
+                    variant="outlined"
+                    disabled={pagination.currentPage === 1 || loading}
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    className="mx-1"
+                  >
+                    {"<"}
+                  </Button>
+                  {renderPageButtons()}
+                  <Button
+                    size="sm"
+                    variant="outlined"
+                    disabled={pagination.currentPage === pagination.totalPages || loading}
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    className="mx-1"
+                  >
+                    {">"}
+                  </Button>
               </div>
             </div>
             <div className="mt-2 overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
@@ -435,7 +619,7 @@ function SupportReviewRewardManagement() {
                       disabled={saving}
                       className="w-full rounded-full bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-none disabled:opacity-60"
                     >
-                      {isTerminalTicket ? "Approved" : saving ? "Saving..." : "Update Ticket"}
+                      {saving ? "Saving..." : "Update Status"}
                     </Button>
                   </div>
                 ) : (
