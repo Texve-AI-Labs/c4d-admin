@@ -2248,7 +2248,13 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </span>
                                             </div>
                                         )}
-                                    {Number(amount?.total || 0) > 0 && (
+                                    {(bookingDetails?.paymentDetails?.details?.discountPercentage || 0) > 0 && (
+                                        <div className="flex flex-col-2 gap-2">
+                                            <span className="text-gray-500 font-semibold">Discount Percentage</span>
+                                            <span className="text-gray-900 font-semibold">{Number(bookingDetails?.paymentDetails?.details?.discountPercentage || 0).toFixed(2)}%</span>
+                                        </div>
+                                    )}
+                                    {!(bookingDetails?.status === "END_OTP") && (Number(amount?.total || 0)) > 0 && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total Collected Amount {inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-semibold">₹ {Number(amount?.total || 0).toFixed(2)}</span>
