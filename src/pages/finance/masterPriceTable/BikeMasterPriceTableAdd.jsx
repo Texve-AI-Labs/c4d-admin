@@ -154,7 +154,7 @@ const BikeMasterPriceTableAdd = () => {
                 {({ handleSubmit, setFieldValue, isValid, dirty,errors }) => (
                     <Form className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <p>Form Errors (Debug):</p><p>{JSON.stringify(errors, null, 2)}</p>                         <pre>{JSON.stringify(errors, null, 2)}</pre>
+                            {/* <p>Form Errors (Debug):</p><p>{JSON.stringify(errors, null, 2)}</p>                         <pre>{JSON.stringify(errors, null, 2)}</pre> */}
                             {/* Zone */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">
