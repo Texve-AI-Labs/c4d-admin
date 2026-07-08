@@ -42,6 +42,7 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/account/allvehicles") ||
     path.startsWith("/dashboard/vendors/account/autoview") ||
     path.startsWith("/dashboard/vendors/account/autolist") ||
+    path.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi") ||
     path.startsWith("/dashboard/doc-verification") ||
     path.startsWith("/dashboard/doc-verification/pending");
   
