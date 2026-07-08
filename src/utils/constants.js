@@ -1037,6 +1037,9 @@ export const API_ROUTES = {
     'GET_BIKE_BY_ID':'/bike/',
     // 'GET_BIKE_PACKAGE':'/get-bikes', // doubts 
     'GET_BIKE_LIST':"/admin/bikes", // show the bike taxi lst need to ui.
+    'BIKE_PACKAGE_LIST':'/bike-package-list',
+    'BIKE_MASTERPRICE_TABLE_ADD':'/add-bikes-package',
+    'BIKE_PRICE_EDIT':'/update-bike-package',
 
 };
 

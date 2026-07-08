@@ -21,6 +21,7 @@ export function MasterPriceView() {
     const [localPackageList, setLocalPackageList] = useState([]);
     const [outstationPackageList, setOutstationPackageList] = useState([]);
     const [autoLocalPackageList, setAutoLocalPackageList] = useState([]);
+    const [bikeLocalPackageList, setBikeLocalPackageList] = useState([]);
     const [parcelLocalPackageList, setParcelLocalPackageList] = useState([]);
     const navigate = useNavigate();
     const [serviceType, setServiceType] = useState("");
@@ -121,6 +122,18 @@ export function MasterPriceView() {
                  }
                 //  console.log("DADADADAD",data)
             }
+            else if(selectedServiceType === 'BIKE') {
+                const data = await ApiRequestUtils.get(API_ROUTES.BIKE_PACKAGE_LIST,{
+                    type : "Service area",
+                });
+                 if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;                     
+                     setBikeLocalPackageList(filteredData.filter(item => item.type === "Bike" && item.serviceType === "BIKE"));
+                 }
+                //  console.log("DADADADAD",data)
+            }
 
              else if(selectedServiceType === 'PARCEL') {
                 await fetchParcelPackageList(zone, parcelSubService);
@@ -204,7 +217,9 @@ export function MasterPriceView() {
             navigate('/dashboard/finance/master-price/rentals-add');
         }
         else if (serviceType === 'AUTO') {
-        navigate('/dashboard/finance/master-price/auto-add');     // ← add this block
+        navigate('/dashboard/finance/master-price/auto-add');
+        } else if (serviceType === 'BIKE') {
+        navigate('/dashboard/finance/master-price/bike-add');     // ← add this block
         } else if (serviceType === 'PARCEL') {
             navigate('/dashboard/finance/master-price/parcel-add', {
                 state: {
@@ -1119,6 +1134,98 @@ export function MasterPriceView() {
             </div>
         );
     };
+    const LocalBikeTable = () => {
+        return (
+            <div className='my-6'>
+                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+                <Card>
+                    <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
+                        <table className="w-full min-w-[640px] table-auto">
+                            <thead>
+                                <tr>
+                                    {[
+                                        "zone",
+                                        "Type",
+                                        "Base Fare",
+                                        "base Km",
+                                        "Kilometer Rate",
+                                        "Status",
+                                        "Actions"
+                                    ].map((el, index) => (
+                                        <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
+                                            <Typography
+                                                variant="small"
+                                                className="text-[11px] font-bold uppercase text-white"
+                                            >
+                                                {el}
+                                            </Typography>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {bikeLocalPackageList.map(({
+                                    zone,
+                                    id,
+                                    type,
+                                    baseFare,
+                                    baseKm,
+                                    kilometerPrice,
+                                    status
+                                }, key) => {
+                                    const className = `py-3 px-5 ${key === bikeLocalPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+
+                                    return (
+                                        <tr key={id}>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {zone}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    <Link to={`/dashboard/finance/master-price/bike-edit/${id}`} className="cursor-pointer underline text-blue-600">
+                                                        {type.toUpperCase()}
+                                                    </Link>
+                                                </Typography>
+                                            </td>
+                                            
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {baseFare}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {baseKm}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {kilometerPrice}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {status == 1 ? 'Active' : 'InActive'}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Link to={`/dashboard/finance/master-price/bike-edit/${id}`} className={`px-3 py-1 rounded-lg inline-block ${ColorStyles.editButton}`}>
+                                                    Edit
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                        
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </CardBody>
+                </Card>
+            </div>
+        );
+    };
    
     return (
         <>
@@ -1151,6 +1258,7 @@ export function MasterPriceView() {
                                     <option value="RENTAL">Rental</option>
                                     <option value="AUTO">Auto</option>
                                     <option value="PARCEL">Parcel</option>
+                                    <option value="BIKE">Bike</option>
                                 </select>
                                 {serviceType === "" && <div className="text-red-500 text-sm mt-1">Please select a service type</div>}
                             </div>
@@ -1221,6 +1329,9 @@ export function MasterPriceView() {
             </>)}
             {serviceType === 'AUTO' && autoLocalPackageList && autoLocalPackageList.length > 0 ? (
                 <div>{LocalAutoTable()}</div>
+            ): (<></>)}
+             {serviceType === 'BIKE' && bikeLocalPackageList && bikeLocalPackageList.length > 0 ? (
+                <div>{LocalBikeTable()}</div>
             ): (<></>)}
             {serviceType === 'PARCEL' && parcelLocalPackageList && parcelLocalPackageList.length > 0 ? (
                 <div>{LocalParcelTable()}</div>

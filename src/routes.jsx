@@ -147,6 +147,8 @@ import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
 import AutoMasterPriceTableAdd from "./pages/finance/masterPriceTable/AutoMasterPriceTableAdd";
+import BikeMasterPriceTableAdd from "./pages/finance/masterPriceTable/BikeMasterPriceTableAdd";
+import BikeMasterPriceTableEdit from "./pages/finance/masterPriceTable/BikeMasterPriceTableEdit";
 import ParcelCommissionList from "./pages/finance/parcelCommission/list";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
@@ -1329,6 +1331,22 @@ export const routes = [
         name: "Auto Master Price Add",
         path: "/finance/master-price/auto-add",
         element: <AutoMasterPriceTableAdd />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Bike Master Price Add",
+        path: "/finance/master-price/bike-add",
+        element: <BikeMasterPriceTableAdd />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Bike Master Price Edit",
+        path: "/finance/master-price/bike-edit/:id",
+        element: <BikeMasterPriceTableEdit />,
         display: true,
         permission: "Users"
       },

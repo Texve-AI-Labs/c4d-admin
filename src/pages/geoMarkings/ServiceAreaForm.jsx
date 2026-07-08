@@ -117,6 +117,7 @@ const ServiceAreaForm = ({
     { value: 'RENTAL_HOURLY_PACKAGE', label: 'Hourly Package' },
     { value: 'AUTO', label: 'Auto' },
     { value: 'PARCEL', label: 'Parcel' },
+    { value: 'BIKE', label: 'Bike'},
   ];
   const parcelSubServicesOptions = [
     { value: 'BIKE', label: 'Bike' },
