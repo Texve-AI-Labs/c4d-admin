@@ -184,6 +184,7 @@ import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/
 import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
+import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -1573,11 +1574,19 @@ export const routes = [
         display: true,
         permission: "Support"
       },
-            {
+      {
         icon: <UserIcon {...icon} />,
         name: "Support Review & Reward Management",
         path: "/support/review-reward-management",
         element: <SupportReviewRewardManagement />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Customer Cancellation Charge Logs",
+        path: "/support/customer-cancellation-charge-logs",
+        element: <CustomerCancellationChargeLogs />,
         display: true,
         permission: "Users"
       },
