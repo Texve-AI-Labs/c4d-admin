@@ -107,6 +107,18 @@ const VehicleInfoSection = ({
       }
       map[row.label] = row.value === "-" ? "" : row.value;
     });
+    const rawAddress = section?.rawValues?.curAddress;
+    if (!map.AddressPlaceId && rawAddress && typeof rawAddress === "object") {
+      map.AddressPlaceId =
+        rawAddress.placeId ||
+        rawAddress.place_id ||
+        rawAddress.placeID ||
+        rawAddress.id ||
+        "";
+    }
+    if (!map.Address && rawAddress) {
+      map.Address = typeof rawAddress === "object" ? rawAddress.name || "" : String(rawAddress);
+    }
     return map;
   };
 
@@ -280,7 +292,10 @@ const VehicleInfoSection = ({
                                 value={draftValues[row.label] || ""}
                                 onChange={(e) => {
                                   const value = e.target.value;
-                                  setDraftValues((prev) => ({ ...prev, [row.label]: value }));
+                                  setDraftValues((prev) => ({
+                                    ...prev,
+                                    [row.label]: value,
+                                  }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
@@ -293,7 +308,17 @@ const VehicleInfoSection = ({
                                       type="button"
                                       className="w-full text-left px-2.5 py-2 text-sm hover:bg-blue-gray-50"
                                       onClick={() => {
-                                        setDraftValues((prev) => ({ ...prev, [row.label]: getSuggestionText(suggestion) }));
+                                        setDraftValues((prev) => ({
+                                          ...prev,
+                                          [row.label]: getSuggestionText(suggestion),
+                                          AddressPlaceId:
+                                            suggestion?.placeId ||
+                                            suggestion?.place_id ||
+                                            suggestion?.placeID ||
+                                            suggestion?.id ||
+                                            prev.AddressPlaceId ||
+                                            "",
+                                        }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
                                     >
