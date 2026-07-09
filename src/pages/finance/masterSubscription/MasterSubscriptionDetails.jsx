@@ -210,6 +210,7 @@ const MasterSubscriptionDetails = () => {
                                         <option value="DRIVER_ID">Driver ID</option>
                                         <option value="CAB_ID">Cab ID</option>
                                         <option value="AUTO_ID">Auto ID</option>
+                                        <option value="BIKE_ID">Bike ID</option>
                                     </Field>
                                 </div>
                                 <div>
@@ -245,6 +246,7 @@ const MasterSubscriptionDetails = () => {
                                         <option value="ACTING_DRIVER">Driver</option>
                                         <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
                                         <option value="AUTO">Autos</option>
+                                        <option value="BIKE">Bikes</option>
                                     </Field>
                                 </div>
                                 <div>
@@ -304,6 +306,7 @@ const MasterSubscriptionDetails = () => {
                                                     <option value="ACTING_DRIVER">Driver</option>
                                                     <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
                                                     <option value="AUTO">Autos</option>
+                                                    <option value="BIKE">Bikes</option>
                                                 </Field>
                                             </div>
                                             <div>
