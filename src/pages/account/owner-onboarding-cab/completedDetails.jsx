@@ -81,6 +81,20 @@ const normalizeVehicleStatus = (value) => {
   return "IN_ACTIVE";
 };
 
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
+
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;
   if (suggestion && typeof suggestion === "object") {
@@ -507,7 +521,7 @@ const CompletedOnboardingDetails = () => {
         { label: "Model Year", value: String(cabResult?.modelYear || "-").trim() },
         { label: "Seater", value: cabResult?.seater || "-" },
         { label: "Luggage", value: cabResult?.luggage || "-" },
-        { label: "Address", value: cabResult?.curAddress || "-" },
+        { label: "Address", value: formatAddressValue(cabResult?.curAddress || "-") },
         {
           label: "Insurance Expiry Date",
           value: cabResult?.insurance ? String(cabResult.insurance).slice(0, 10) : "-",
@@ -532,7 +546,7 @@ const CompletedOnboardingDetails = () => {
         ...(isTravelsAccount
           ? [
               { label: "Owner Name", value: cabResult?.ownerName || "-" },
-              { label: "Address", value: cabResult?.curAddress || "-" },
+              { label: "Address", value: formatAddressValue(cabResult?.curAddress || "-") },
               {
                 label: "Insurance Expiry Date",
                 value: cabResult?.insurance ? String(cabResult.insurance).slice(0, 10) : "-",
@@ -573,6 +587,7 @@ const CompletedOnboardingDetails = () => {
         creditLogRows,
         rawValues: {
           carType: cabResult?.carType || "",
+          curAddress: cabResult?.curAddress || null,
           packages: Array.isArray(cabResult?.packages) ? cabResult.packages : [],
         },
       };
@@ -797,7 +812,10 @@ const CompletedOnboardingDetails = () => {
       const cabDetails = {
         name: cabResult?.name || "",
         carNumber: cabResult?.carNumber || "",
-        curAddress: cabResult?.curAddress || "",
+        curAddress: makeAddressPayload(
+          cabResult?.curAddress?.name || cabResult?.curAddress || "",
+          cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+        ),
         insurance: cabResult?.insurance || "",
         carType: cabResult?.carType || "",
         vehicleType: cabResult?.vehicleType || "",
@@ -858,7 +876,10 @@ const CompletedOnboardingDetails = () => {
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
         carNumber: draftValues?.["Vehicle Number"] || cabResult?.carNumber || "",
         ownerName: isTravelsAccount ? (draftValues?.["Owner Name"] || cabResult?.ownerName || "") : (cabResult?.ownerName || ""),
-        curAddress: draftValues?.Address || cabResult?.curAddress || "",
+        curAddress: makeAddressPayload(
+          draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
+          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+        ),
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         carType: mappedCarType || cabResult?.carType || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "",
