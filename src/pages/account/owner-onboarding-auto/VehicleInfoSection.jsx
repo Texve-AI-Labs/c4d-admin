@@ -22,6 +22,36 @@ const getSuggestionText = (suggestion) => {
   return "";
 };
 
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
+
+const formatVehicleTypeValue = (value) => {
+  if (!value) return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const normalized = raw.toUpperCase();
+  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") {
+    return normalized[0] + normalized.slice(1).toLowerCase();
+  }
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+};
+
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
@@ -170,6 +200,8 @@ const VehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
+                              <option value="Petrol">Petrol</option>
+                              <option value="EV">EV</option>
                               <option value="CNG">CNG</option>
                               <option value="LPG">LPG</option>
                               <option value="Diesel">Diesel</option>
@@ -180,7 +212,11 @@ const VehicleInfoSection = ({
                                 value={draftValues[row.label] || ""}
                                 onChange={(e) => {
                                   const value = e.target.value;
-                                  setDraftValues((prev) => ({ ...prev, [row.label]: value }));
+                                  setDraftValues((prev) => ({
+                                    ...prev,
+                                    [row.label]: value,
+                                    AddressPlaceId: "",
+                                  }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
@@ -197,6 +233,12 @@ const VehicleInfoSection = ({
                                           setDraftValues((prev) => ({
                                             ...prev,
                                             [row.label]: getSuggestionText(suggestion),
+                                          AddressPlaceId:
+                                            suggestion?.placeId ||
+                                            suggestion?.place_id ||
+                                            suggestion?.placeID ||
+                                            suggestion?.id ||
+                                            "",
                                           }));
                                           onVehicleAddressSearch?.(section.id, "");
                                         }
@@ -224,6 +266,14 @@ const VehicleInfoSection = ({
                           )
                         ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
                           <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                        ) : row.label === "Address" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {formatAddressValue(row.value)}
+                          </Typography>
+                        ) : row.label === "Vehicle Type" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {formatVehicleTypeValue(row.value)}
+                          </Typography>
                         ) : (
                           <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
                         )}

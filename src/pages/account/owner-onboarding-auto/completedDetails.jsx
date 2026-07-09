@@ -77,6 +77,11 @@ const normalizeVehicleStatus = (value) => {
   return "IN_ACTIVE";
 };
 
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
 const normalizeServiceType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
   return normalized === "auto" ? "Auto" : "Parcel";
@@ -98,6 +103,31 @@ const getSuggestionText = (suggestion) => {
     );
   }
   return "";
+};
+
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
+
+const formatVehicleTypeValue = (value) => {
+  if (!value) return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const normalized = raw.toUpperCase();
+  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") {
+    return normalized[0] + normalized.slice(1).toLowerCase();
+  }
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
 };
 
 const getVehiclesFromAccount = (account) => {
@@ -403,9 +433,9 @@ const CompletedOnboardingDetails = () => {
             "-",
         },
         { label: "Vehicle Name", value: cabResult?.name || "-" },
-        { label: "Address", value: cabResult?.curAddress || "-" },
+        { label: "Address", value: formatAddressValue(cabResult?.curAddress) },
         { label: "Insurance Expiry Date", value: cabResult?.insurance || "-" },
-        { label: "Vehicle Type", value: toDisplayCase(cabResult?.vehicleType || "-") },
+        { label: "Vehicle Type", value: formatVehicleTypeValue(cabResult?.vehicleType || "-") },
         { label: "Model Year", value: String(cabResult?.modelYear || "-").trim() },
         { label: "Seater", value: cabResult?.seater || "-" },
         { label: "Status", value: toDisplayCase(cabResult?.status || "-") },
@@ -651,7 +681,10 @@ const CompletedOnboardingDetails = () => {
         name: cabResult?.name || "",
         company: cabResult?.ownerName || cabResult?.company || account?.name || "",
         autoNumber: cabResult?.autoNumber || cabResult?.carNumber || "",
-        curAddress: cabResult?.curAddress || "",
+        curAddress: makeAddressPayload(
+          cabResult?.curAddress?.name || cabResult?.curAddress || "",
+          cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+        ),
         insurance: cabResult?.insurance || "",
         vehicleType: cabResult?.vehicleType || "",
         seater: cabResult?.seater || "",
@@ -695,7 +728,10 @@ const CompletedOnboardingDetails = () => {
           cabResult?.autoNumber ||
           cabResult?.carNumber ||
           "",
-        curAddress: draftValues?.Address || cabResult?.curAddress || "",
+        curAddress: makeAddressPayload(
+          draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
+          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+        ),
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "",
         seater: draftValues?.Seater || cabResult?.seater || "",
@@ -1020,7 +1056,9 @@ const CompletedOnboardingDetails = () => {
                           className="w-fit"
                         />
                       ) : (
-                        <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {row.label === "Address" ? formatAddressValue(row.value) : row.value}
+                          </Typography>
                       )}
                     </div>
                   ))}
@@ -1037,7 +1075,9 @@ const CompletedOnboardingDetails = () => {
                               className="w-fit"
                             />
                           ) : (
-                            <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                            <Typography className="text-blue-gray-900 font-medium break-words">
+                              {row.label === "Address" ? formatAddressValue(row.value) : row.value}
+                            </Typography>
                           )}
                         </div>
                       ))}
