@@ -688,15 +688,21 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
+      const existingAddress = cabResult?.curAddress || {};
+      const addressPayload = makeAddressPayload(
+        draftValues?.Address || existingAddress?.name || "",
+        draftValues?.AddressPlaceId || existingAddress?.placeId || existingAddress?.place_id || existingAddress?.placeID || ""
+      );
+      if (!addressPayload?.placeId) {
+        window.alert("Please select the address from the suggestions so placeId can be saved.");
+        return;
+      }
       const parcelDetails = {
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
         company: cabResult?.company || cabResult?.Account?.name || account?.name || "",
         vehicleNumber: draftValues?.["Bike Number"] || cabResult?.vehicleNumber || "",
-        curAddress: makeAddressPayload(
-          draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
-          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
-        ),
+        curAddress: addressPayload,
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "BIKE",
         seater: draftValues?.Seater || cabResult?.seater || "",
@@ -1089,7 +1095,7 @@ const CompletedOnboardingDetails = () => {
                 onSaveVehicleDetails={handleVehicleDetailsSave}
                 vehicleDetailsSavingId={vehicleDetailsSavingId}
                 getVehicleAddressSuggestionsBySection={(sectionId) =>
-                  (vehicleAddressSuggestionsById[String(sectionId)] || []).map((item) => getSuggestionText(item)).filter(Boolean)
+                  vehicleAddressSuggestionsById[String(sectionId)] || []
                 }
                 onVehicleAddressSearch={searchVehicleLocations}
                 serviceAreaOptions={serviceAreas}
