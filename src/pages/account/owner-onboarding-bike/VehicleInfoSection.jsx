@@ -2,6 +2,22 @@ import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 
+const formatVehicleTypeValue = (value) => {
+  if (!value) return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const normalized = raw.toUpperCase();
+  if (["BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") {
+    return normalized[0] + normalized.slice(1).toLowerCase();
+  }
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+};
+
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
@@ -83,7 +99,13 @@ const VehicleInfoSection = ({
   const getInitialDraft = (section) => {
     const map = {};
     (section?.vehicleDetailsRows || []).forEach((row) => {
-      if (editableLabels.has(row.label)) map[row.label] = row.value === "-" ? "" : row.value;
+      if (!editableLabels.has(row.label)) return;
+      if (row.label === "Address" && row.value && typeof row.value === "object") {
+        map[row.label] = row.value.name || "";
+        map.AddressPlaceId = row.value.placeId || row.value.place_id || row.value.placeID || row.value.id || "";
+        return;
+      }
+      map[row.label] = row.value === "-" ? "" : row.value;
     });
     return map;
   };
@@ -297,6 +319,14 @@ const VehicleInfoSection = ({
                           )
                         ) : row.label === "Status" || row.label === "Commission Status" ? (
                           <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                        ) : row.label === "Vehicle Type" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {formatVehicleTypeValue(row.value)}
+                          </Typography>
+                        ) : row.label === "Address" && row.value && typeof row.value === "object" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {row.value.name || row.value.address || row.value.fullText || "-"}
+                          </Typography>
                         ) : (
                           <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
                         )}

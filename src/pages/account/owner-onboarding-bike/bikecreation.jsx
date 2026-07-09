@@ -8,6 +8,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import AccountCreationTabs from './AccountCreationTabs';
 
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
 const isPdfFile = (src = "") =>
   String(src).toLowerCase().includes(".pdf") || String(src).toLowerCase().startsWith("data:application/pdf");
 
@@ -163,6 +168,7 @@ const ParcelCabAdd = () => {
   const [previewZoom, setPreviewZoom] = useState({});
 
   const [ownerAddressSuggestions, setOwnerAddressSuggestions] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
   const [serviceAreas, setServiceAreas] = useState([]);
   const [zones, setZones] = useState([]);
   const [serviceAreaFetchError, setServiceAreaFetchError] = useState('');
@@ -211,6 +217,20 @@ const ParcelCabAdd = () => {
       setSelectedVehicleDocType(vehicleDocTypes[0]);
     }
   }, [vehicleDocTypes, selectedVehicleDocType]);
+
+  const handleAddressSelect = (suggestion) => {
+    setSelectedAddress(suggestion || null);
+  };
+
+  const getSelectedAddressPayload = (fallbackAddress) => {
+    const placeId =
+      selectedAddress?.placeId ||
+      selectedAddress?.place_id ||
+      selectedAddress?.placeID ||
+      selectedAddress?.id ||
+      "";
+    return makeAddressPayload(fallbackAddress || "", placeId);
+  };
 
   useEffect(() => {
     const fetchServiceAreas = async () => {
@@ -327,7 +347,7 @@ const ParcelCabAdd = () => {
               name: values.name,
               company: values.ownerName,
               vehicleNumber: values.vehicleNumber,
-              curAddress: values.address,
+              curAddress: getSelectedAddressPayload(values.address),
               insurance: values.insurance,
               vehicleType: 'BIKE',
               seater: values.seater,
@@ -444,6 +464,7 @@ const ParcelCabAdd = () => {
                         form={form}
                         suggestions={ownerAddressSuggestions}
                         onSearch={searchLocations}
+                        onSelect={handleAddressSelect}
                         type="owner"
                       />
                     )}
