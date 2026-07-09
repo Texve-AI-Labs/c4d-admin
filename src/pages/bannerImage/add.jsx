@@ -288,6 +288,7 @@ const AddBanner = () => {
                     <option value="CAB">CAB</option>
                     <option value="AUTO">AUTO</option>
                     <option value="PARCEL">PARCEL</option>
+                    <option value="BIKE">BIKE</option>
                     <option value="ALL">ALL</option>
                   </Field>
                   <ErrorMessage name="driverType" component="div" className="text-red-500 text-sm" />
@@ -410,6 +411,7 @@ const AddBanner = () => {
                     'RENTAL_DROP_TAXI',
                     'RENTAL',
                     'AUTO',
+                    'BIKE',
                     'RIDES',
                     'DRIVER',
                     'PARCEL',
