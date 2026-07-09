@@ -8,6 +8,11 @@ import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import AccountCreationTabs from './AccountCreationTabs';
 import LocationInput from './LocationInput';
 
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
 const isPdfFile = (src = "") =>
   String(src).toLowerCase().includes(".pdf") || String(src).toLowerCase().startsWith("data:application/pdf");
 
@@ -97,6 +102,7 @@ const AutoCreation = () => {
   const location = useLocation();
   const { id } = useParams();
   const [ownerAddressSuggestions, setOwnerAddressSuggestions] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
   const [accountInfo, setAccountInfo] = useState(null);
   const [previewZoom, setPreviewZoom] = useState({});
 
@@ -184,6 +190,20 @@ const validationSchema = Yup.object({
     }
   };
 
+  const handleAddressSelect = (suggestion) => {
+    setSelectedAddress(suggestion || null);
+  };
+
+  const getSelectedAddressPayload = (fallbackAddress) => {
+    const placeId =
+      selectedAddress?.placeId ||
+      selectedAddress?.place_id ||
+      selectedAddress?.placeID ||
+      selectedAddress?.id ||
+      "";
+    return makeAddressPayload(fallbackAddress || "", placeId);
+  };
+
   const currentDate = () => new Date().toISOString().split('T')[0];
 
   return (
@@ -213,13 +233,13 @@ const validationSchema = Yup.object({
               company: values.ownerName,
               autoNumber: values.autoNumber,
               district: accountInfo?.district || '',
-              curAddress: values.address,
+              curAddress: getSelectedAddressPayload(values.address),
               insurance: values.insurance,
               vehicleType: values.autoType,
               seater: values.seater,
               modelYear: values.modelYear,
-              curLatitude: '',
-              curLongitude: '',
+              // curLatitude: '',
+              // curLongitude: '',
             };
             const res = await ApiRequestUtils.post(API_ROUTES.ADD_NEW_AUTO_DETAILS, payload);
             if (res?.success) {
@@ -320,7 +340,7 @@ const validationSchema = Yup.object({
                                 form={form}
                                 suggestions={ownerAddressSuggestions}
                                 onSearch={searchLocations}
-                                onSelect={() => {}}
+                                onSelect={handleAddressSelect}
                               />
                             )}
                           </Field>
