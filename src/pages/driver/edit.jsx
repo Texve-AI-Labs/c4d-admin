@@ -711,7 +711,7 @@ const [blockedReason, setBlockedReason] = useState('');
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-7xl">
             {loading ? (
                 <div className="flex justify-center items-center h-screen">
                     <Spinner className="h-12 w-12" />
@@ -741,7 +741,7 @@ const [blockedReason, setBlockedReason] = useState('');
                             <div className='grid grid-cols-2 gap-7'>
                             <div>
                                 <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation</label>
-                                <Field as="select" name="salutation" className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                                <Field as="select" name="salutation" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                     <option value="">Select salutation</option>
                                     <option value="Mr">Mr</option>
                                     <option value="Mrs">Mrs</option>
@@ -753,13 +753,13 @@ const [blockedReason, setBlockedReason] = useState('');
 
                             <div>
                                 <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name</label>
-                                <Field type="text" name="firstName" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="text" name="firstName" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm my-1" />
                             </div>
 
                             <div>
                                 <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name</label>
-                                <Field type="text" name="fatherName" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="text" name="fatherName" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="fatherName" component="div" className="text-red-500 text-sm my-1" />
                             </div>
 
@@ -789,12 +789,12 @@ const [blockedReason, setBlockedReason] = useState('');
 
                             <div>
                                 <label htmlFor="age" className="text-sm font-medium text-gray-700">Age</label>
-                                <Field type="text" name="age" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                                <Field type="text" name="age" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled />
                                 <ErrorMessage name="age" component="div" className="text-red-500 text-sm my-1" />
                             </div>
                            <div>
                                 <label htmlFor="status" className="text-sm font-medium text-gray-700">Driver Status</label>
-                                <Field as="select" name="status" className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                                <Field as="select" name="status" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
                                  onChange={(e) => {
                                         setFieldValue('status', e.target.value);
                                           if (e.target.value === 'BLOCKED') {
@@ -838,13 +838,13 @@ const [blockedReason, setBlockedReason] = useState('');
                             </div> */}
                             <div>
                                 <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                <Field type="tel" name="phoneNumber" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                <Field type="tel" name="phoneNumber" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                 <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                             </div>
 
                             <div>
                                 <label htmlFor="license" className="text-sm font-medium text-gray-700">License Number</label>
-                                <Field type="text" name="license" className="p-2 w-full rounded-md border-gray-300" maxLength={16} />
+                                <Field type="text" name="license" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={16} />
                                 <ErrorMessage name="license" component="div" className="text-red-500 text-sm" />
                             </div>
 
@@ -989,7 +989,7 @@ const [blockedReason, setBlockedReason] = useState('');
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="streetName" className="text-sm font-medium text-gray-700">Street Name</label>
-                                    <Field type="text" name="streetName" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                    <Field type="text" name="streetName" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                     <ErrorMessage name="streetName" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
                                 <div>
@@ -1001,7 +1001,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                         name="thaluk"
                                         value={values.thaluk}
                                         onChange={(e) => setFieldValue('thaluk', e.target.value)}
-                                        className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select Thaluk</option>
                                         {thalukOptions.map((thaluk) => (
@@ -1021,7 +1021,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                         name="district"
                                         value={values.district}
                                         onChange={(e) => setFieldValue('district', e.target.value)}
-                                        className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select District</option>
                                         {districtOptions.map((district) => (
@@ -1042,7 +1042,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                         name="state"
                                         value={values.state}
                                         onChange={(e) => setFieldValue('state', e.target.value)}
-                                        className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select State</option>
                                         {stateOptions.map((state) => (
@@ -1055,27 +1055,27 @@ const [blockedReason, setBlockedReason] = useState('');
                                 </div>
                                 <div>
                                     <label htmlFor="pinCode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                    <Field type="text" name="pinCode" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                    <Field type="text" name="pinCode" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                     <ErrorMessage name="pinCode" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
                                 <div>
                                     <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>
-                                    <Field type="text" name="reference1" className="p-2 w-full rounded-md border-gray-300" />
+                                    <Field type="text" name="reference1" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                     <ErrorMessage name="reference1" component="div" className="text-red-500 text-sm" />
                                 </div>
                                 <div>
                                     <label htmlFor="phoneNumber1" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                    <Field type="tel" name="phoneNumber1" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                    <Field type="tel" name="phoneNumber1" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                     <ErrorMessage name="phoneNumber1" component="div" className="text-red-500 text-sm" />
                                 </div>
                                 <div>
                                     <label htmlFor="reference2" className="text-sm font-medium text-gray-700">Reference 2</label>
-                                    <Field type="text" name="reference2" className="p-2 w-full rounded-md border-gray-300" />
+                                    <Field type="text" name="reference2" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                     <ErrorMessage name="reference2" component="div" className="text-red-500 text-sm" />
                                 </div>
                                 <div>
                                     <label htmlFor="phoneNumber2" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                    <Field type="tel" name="phoneNumber2" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                    <Field type="tel" name="phoneNumber2" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                     <ErrorMessage name="phoneNumber2" component="div" className="text-red-500 text-sm" />
                                 </div>
 
