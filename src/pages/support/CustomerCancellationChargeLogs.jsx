@@ -16,7 +16,7 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 
 const DEFAULT_PAGE_SIZE = 20;
-const SERVICE_TYPE_OPTIONS = ["", "RIDES", "AUTO", "PARCEL", "DRIVER", "RENTAL"];
+const SERVICE_TYPE_OPTIONS = ["","BIKE","RIDES", "AUTO", "PARCEL", "DRIVER", "RENTAL"];
 
 const normalizeRows = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -27,7 +27,10 @@ const normalizeRows = (payload) => {
   return [];
 };
 
-const getRecord = (row) => row?.booking || row?.Booking || row?.bookingDetails || row?.bookingRelation || row || {};
+const getBookingRelation = (row) => row?.Booking || row?.booking || row?.bookingDetails || row?.bookingRelation || {};
+const getRecord = (row) => getBookingRelation(row) || row || {};
+
+const getPaymentDetails = (row) => row?.paymentDetails?.details || row?.paymentDetails || row?.Booking?.paymentDetails?.details || row?.Booking?.paymentDetails || row?.booking?.paymentDetails?.details || row?.booking?.paymentDetails || {};
 
 const formatValue = (value) => {
   if (value === null || value === undefined || value === "") return "-";
@@ -53,6 +56,50 @@ const resolvePagination = (response, rows, fallbackPage, fallbackLimit) => {
   );
   const currentPage = Number(pagination.currentPage || pagination.page || fallbackPage || 1);
   return { currentPage, totalPages, totalItems, itemsPerPage: limit };
+};
+
+const getPersonName = (person) => person?.fullName || [person?.salutation, person?.firstName, person?.lastName].filter(Boolean).join(" ") || person?.name || person?.customerName || person?.driverName ||
+  "-";
+
+const getPhoneNumber = (person) => person?.phoneNumber || person?.phone || person?.mobileNumber || "-";
+
+const getTripLocation = (booking, kind) => {
+  const candidates =
+    kind === "pickup" ? [ booking?.pickupFormatAddress, booking?.pickupGeocodeAddress, booking?.pickupAddress, booking?.pickupLocation, booking?.pickup, booking?.fromLocation, booking?.fromAddress]
+      : [ booking?.dropFormatAddress, booking?.dropGeocodeAddress, booking?.dropAddress, booking?.dropLocation, booking?.drop, booking?.toLocation, booking?.toAddress];
+
+  const value = candidates.find((item) => item);
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+
+  if (typeof value?.name === "string") return value.name;
+  return (value?.address || value?.formattedAddress || value?.label ||
+    ([value?.latitude, value?.longitude].every((item) => item === null || item === undefined)
+      ? "-"
+      : `${value?.latitude}, ${value?.longitude}`)
+  );
+};
+
+const getVehicleLabel = (booking, driver) => {
+  const sources = [ booking?.Cab, booking?.cab, booking?.Auto, booking?.auto, booking?.Bike, booking?.bike, booking?.Parcel, booking?.parcel, driver?.Cab, driver?.cab, driver?.Auto, driver?.auto, driver?.Bike, driver?.bike, driver?.Parcel, driver?.parcel].filter(Boolean);
+
+  for (const source of sources) {
+    const label = source?.vehicleNumber || source?.registrationNumber || source?.cabNumber || source?.autoNumber || source?.bikeNumber || source?.parcelNumber || source?.name || source?.type || source?.vehicleType;
+    if (label) return label;
+  }
+
+  return "-";
+};
+
+const getServiceTypeChipClass = (value) => {
+  const normalized = String(value || "").toUpperCase();
+  if (normalized === "RIDES") return "bg-blue-100 text-blue-800";
+  if (normalized === "AUTO") return "bg-amber-100 text-amber-800";
+  if (normalized === "BIKE") return "bg-emerald-100 text-emerald-800";
+  if (normalized === "PARCEL") return "bg-purple-100 text-purple-800";
+  if (normalized === "DRIVER") return "bg-red-100 text-red-800";
+  if (normalized === "RENTAL") return "bg-teal-100 text-teal-800";
+  return "bg-gray-100 text-gray-800";
 };
 
 function CustomerCancellationChargeLogs() {
@@ -180,23 +227,9 @@ function CustomerCancellationChargeLogs() {
   const renderPerson = (value) => {
     if (!value) return "-";
     if (typeof value === "object") {
-      return value.fullName || value.name || value.customerName || value.driverName || value.phoneNumber || value.id || "-";
+      return getPersonName(value);
     }
     return String(value);
-  };
-
-  const renderCabDetails = (record) => {
-    const cab = record?.Cab || record?.cab || record?.Auto || record?.auto || record?.Parcel || record?.parcel || {};
-    const label =
-      cab?.vehicleNumber ||
-      cab?.registrationNumber ||
-      cab?.cabNumber ||
-      cab?.autoNumber ||
-      cab?.parcelNumber ||
-      cab?.name ||
-      cab?.id ||
-      "-";
-    return label;
   };
 
   return (
@@ -273,11 +306,17 @@ function CustomerCancellationChargeLogs() {
                     "Booking",
                     "Service Type",
                     "Customer",
+                    "Customer Phone",
                     "Driver",
-                    "Cab / Auto / Parcel",
-                    "Amount",
+                    "Driver Phone",
+                    "Vehicle",
+                    "Pick Up",
+                    "Drop",
+                    "Amount After GST",
+                    "Subscription Deduction",
+                    "Cancel Charge",
+                    "Payment Total",
                     "Created At",
-                    "Action",
                   ].map((label) => (
                     <th key={label} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                       <div className="flex items-center">
@@ -313,59 +352,106 @@ function CustomerCancellationChargeLogs() {
                   </tr>
                 ) : (
                   sortedRows.map((row, index) => {
+                    const bookingRelation = getBookingRelation(row);
                     const record = getRecord(row);
                     const logId = row?.id || row?.logId || record?.id || record?.logId || `${pagination.currentPage}-${index}`;
-                    const booking = record?.Booking || record?.booking || {};
-                    const customer = record?.Customer || record?.customer || booking?.Customer || booking?.customer || {};
-                    const driver = record?.Driver || record?.driver || booking?.Driver || booking?.driver || {};
-                    const amount = row?.amount ?? row?.chargeAmount ?? row?.consumedAmount ?? record?.amount ?? "-";
+                    const booking = bookingRelation?.Booking || bookingRelation?.booking || bookingRelation;
+                    const customer = bookingRelation?.Customer || bookingRelation?.customer || booking?.Customer || booking?.customer || {};
+                    const driver = bookingRelation?.Driver || bookingRelation?.driver || booking?.Driver || booking?.driver || {};
+                    const paymentDetails = getPaymentDetails(row);
+                    const amountAfterGst = paymentDetails?.amountAfterGst ?? paymentDetails?.amount_after_gst ?? row?.amountAfterGst ?? row?.amount_after_gst ?? "-";
+                    const subscriptionDeductionAmount = paymentDetails?.subscriptionDeductionAmount ?? paymentDetails?.subscription_deduction_amount ?? "-";
+                    const cancelChargeAmount = paymentDetails?.cancelChargeAmount ?? paymentDetails?.cancelCharge ?? paymentDetails?.cancel_charge_amount ?? "-";
+                    const totalAfterCashback = paymentDetails?.totalAfterCashback ?? paymentDetails?.amountAfterDiscount ?? paymentDetails?.total_after_cashback ?? "-";
                     const createdAt = row?.created_at || row?.createdAt || record?.created_at || record?.createdAt;
+                    const customerName = getPersonName(customer);
+                    const driverName = getPersonName(driver);
+                    const customerPhone = getPhoneNumber(customer);
+                    const driverPhone = getPhoneNumber(driver);
+                    const vehicleLabel = getVehicleLabel(booking, driver);
 
                     return (
                       <tr key={logId}>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
                             {formatValue(logId)}
                           </Typography>
                         </td>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
                             {booking?.bookingNumber || booking?.id || record?.bookingId || row?.bookingId || "-"}
                           </Typography>
                         </td>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          {(() => {
+                            const serviceType = record?.serviceType || booking?.serviceType || row?.serviceType || "-";
+                            return (
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getServiceTypeChipClass(serviceType)}`}
+                              >
+                                {serviceType}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
-                            {record?.serviceType || booking?.serviceType || row?.serviceType || "-"}
+                            {customerName}
+                          </Typography>
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          <Typography variant="small" className="font-semibold text-black">
+                            {customerPhone}
+                          </Typography>
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          <Typography variant="small" className="font-semibold text-black">
+                            {driverName}
+                          </Typography>
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          <Typography variant="small" className="font-semibold text-black">
+                            {driverPhone}
+                          </Typography>
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          <Typography variant="small" className="font-semibold text-black">
+                            {vehicleLabel}
                           </Typography>
                         </td>
                         <td className="border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
-                            {renderPerson(customer)}
+                            {getTripLocation(booking, "pickup")}
                           </Typography>
                         </td>
                         <td className="border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
-                            {renderPerson(driver)}
+                            {getTripLocation(booking, "drop")}
                           </Typography>
                         </td>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
-                            {renderCabDetails(record) || booking?.cabNumber || booking?.vehicleNumber || "-"}
+                            {amountAfterGst}
                           </Typography>
                         </td>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
-                            {amount}
+                            {subscriptionDeductionAmount}
                           </Typography>
                         </td>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          <Typography variant="small" className="font-semibold text-black">
+                            {cancelChargeAmount}
+                          </Typography>
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
+                          <Typography variant="small" className="font-semibold text-black">
+                            {totalAfterCashback}
+                          </Typography>
+                        </td>
+                        <td className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5">
                           <Typography variant="small" className="font-semibold text-black">
                             {formatDateTime(createdAt)}
-                          </Typography>
-                        </td>
-                        <td className="border-b border-blue-gray-50 py-3 px-5">
-                          <Typography variant="small" className="font-semibold text-black">
-                            {row?.action || row?.type || row?.status || "-"}
                           </Typography>
                         </td>
                       </tr>
