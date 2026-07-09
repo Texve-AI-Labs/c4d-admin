@@ -176,6 +176,8 @@ function TierDetailsEdit() {
             vehicleType:
               (form.partnerType || existingScope.partnerType) === "AUTO"
                 ? "AUTO"
+                : (form.partnerType || existingScope.partnerType) === "BIKE"
+                  ? "BIKE"
                 : existingScope.vehicleType || "ALL",
             zone: form.zone || "ALL",
           },

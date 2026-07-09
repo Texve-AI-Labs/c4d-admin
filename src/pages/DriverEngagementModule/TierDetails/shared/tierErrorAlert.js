@@ -15,6 +15,7 @@ const TOKEN_REPLACEMENTS = {
   RENTAL_HOURLY_PACKAGE: "Hourly Package",
   RIDES: "Local",
   AUTO: "Auto",
+  BIKE: "Bike",
   tripCount:"Trip Count",
   rating:"Rating"
 };

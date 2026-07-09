@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Typography, Button } from "@material-tailwind/react";
 import { mapServiceDetails } from "../shared/ruleMappings";
 import { TIER_KEYS, METRIC_OPTIONS, PERIOD_OPTIONS, SERVICE_TYPE_OPTIONS, OP_OPTIONS } from "../shared/typeConstants";
+import { isBikePartner } from "../shared/componentRuleUtils";
 
 const createCondition = () => ({
   metric: "onlineHours",
@@ -46,9 +47,10 @@ const getUiServiceType = (condition = {}) => {
 };
 
 const LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "All", value: "ANY" }];
-const AUTO_LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "Auto", value: "AUTO" }];
 
 function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "CAB" }) {
+  const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const isBike = isBikePartner(normalizedPartnerType);
   const [evaluation, setEvaluation] = useState({
     weekStart: "MONDAY",
     timezone: "Asia/Kolkata",
@@ -87,8 +89,10 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                 serviceType:
                   (condition?.metric || "onlineHours") === "onlineHours"
                     ? "ANY"
-                    : partnerType === "AUTO"
+                    : normalizedPartnerType === "AUTO"
                       ? "AUTO"
+                      : isBike
+                        ? "BIKE"
                       : getUiServiceType(condition),
                 op: condition?.op || ">=",
                 value: String(condition?.value ?? ""),
@@ -115,8 +119,10 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
               serviceType:
                 nextValue === "onlineHours"
                   ? "ANY"
-                  : partnerType === "AUTO"
+                  : normalizedPartnerType === "AUTO"
                     ? "AUTO"
+                    : isBike
+                      ? "BIKE"
                     : condition.serviceType === "ANY"
                       ? "RIDES"
                       : condition.serviceType,
@@ -137,10 +143,9 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
             tierKey,
             tierRules.map((condition) => {
               if (condition.metric === "onlineHours") return { ...condition, serviceType: "ANY" };
-              if (partnerType === "AUTO") {
-                return { ...condition, serviceType: "AUTO" };
-              }
-              return condition.serviceType === "AUTO"
+              if (normalizedPartnerType === "AUTO") return { ...condition, serviceType: "AUTO" };
+              if (isBike) return { ...condition, serviceType: "BIKE" };
+              return condition.serviceType === "AUTO" || condition.serviceType === "BIKE"
                 ? { ...condition, serviceType: "RIDES" }
                 : condition;
             }),
@@ -256,13 +261,15 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                         value={condition.serviceType}
                         onChange={(e) => onConditionChange(tierKey, index, "serviceType", e.target.value)}
                         className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
-                        disabled={condition.metric === "onlineHours" || partnerType === "AUTO"}
+                        disabled={condition.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
                       >
                         {(condition.metric === "onlineHours"
                           ? LOCKED_SERVICE_TYPE_OPTIONS
-                          : partnerType === "AUTO"
-                            ? AUTO_LOCKED_SERVICE_TYPE_OPTIONS
-                            : SERVICE_TYPE_OPTIONS
+                          : normalizedPartnerType === "AUTO"
+                            ? [{ label: "Auto", value: "AUTO" }]
+                            : isBike
+                              ? [{ label: "Bike", value: "BIKE" }]
+                              : SERVICE_TYPE_OPTIONS
                         ).map((option) => (
                           <option key={getOptionValue(option)} value={getOptionValue(option)}>{getOptionLabel(option)}</option>
                         ))}

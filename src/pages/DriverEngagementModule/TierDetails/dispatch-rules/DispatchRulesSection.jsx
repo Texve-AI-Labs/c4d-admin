@@ -25,7 +25,9 @@ const getSelectedAccessCount = (tierAccess = {}) =>
   Object.values(tierAccess).filter(Boolean).length;
 
 function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone = "", initialConfig = {}, partnerType = "CAB" }) {
-  const isAutoPartner = partnerType === "AUTO";
+  const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const isAutoPartner = normalizedPartnerType === "AUTO";
+  const isBikePartner = normalizedPartnerType === "BIKE";
   const showAllowedZones = selectedZone === "ALL";
   const [dispatchServiceAccess, setDispatchServiceAccess] = useState({
     SILVER: { RIDES: true, RENTAL_DROP_ONLY: false, RENTAL_OUTSTATION: false, RENTAL_HOURLY_PACKAGE: false },
@@ -276,6 +278,24 @@ function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone
         };
       }
 
+      if (isBikePartner) {
+        return {
+          serviceAccess: {
+            SILVER: { BIKE: true },
+            GOLD: { BIKE: true },
+            ELITE: { BIKE: true },
+          },
+          unlockRules: {
+            SILVER: [],
+            GOLD: [],
+            ELITE: [],
+          },
+          enforcement: {
+            strictMode: true,
+          },
+        };
+      }
+
       const buildTierUnlockRules = (tierKey) =>
         Object.entries(dispatchUnlockConditions[tierKey] || {})
           .filter(([serviceKey, conditions]) =>
@@ -315,12 +335,12 @@ function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone
         },
       };
     },
-    [dispatchServiceAccess, dispatchUnlockConditions, dispatchAllowedZones, isAutoPartner]
+    [dispatchServiceAccess, dispatchUnlockConditions, dispatchAllowedZones, isAutoPartner, isBikePartner]
   );
 
   registerBuilder(payloadBuilder);
 
-  if (isAutoPartner) {
+  if (isAutoPartner || isBikePartner) {
     return (
       <div className="space-y-4">
         {TIER_KEYS.map((tierKey) => (
@@ -336,11 +356,11 @@ function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone
                 <label className="inline-flex items-center gap-2">
                   <input type="checkbox" checked disabled className="h-4 w-4 rounded border-blue-gray-300" />
                   <Typography variant="small" color="blue-gray">
-                    Auto
+                    {isAutoPartner ? "Auto" : "Bike"}
                   </Typography>
                 </label>
                 <Typography variant="small" color="gray" className="mt-1 text-xs">
-                  Auto is mandatory for AUTO partner.
+                  {isAutoPartner ? "Auto is mandatory for AUTO partner." : "Bike is mandatory for BIKE partner."}
                 </Typography>
               </div>
             </div>

@@ -2,10 +2,10 @@ import React from "react";
 import { Typography, Button } from "@material-tailwind/react";
 import { METRIC_OPTIONS, PERIOD_OPTIONS, SERVICE_TYPE_OPTIONS, OP_OPTIONS } from "../shared/typeConstants";
 import {
-  AUTO_LOCKED_SERVICE_TYPE_OPTIONS,
   LOCKED_SERVICE_TYPE_OPTIONS,
   getOptionLabel,
   getOptionValue,
+  getLockedServiceTypeOptions,
 } from "./incentiveRules.utils";
 
 function IncentiveRuleGrid({
@@ -15,6 +15,8 @@ function IncentiveRuleGrid({
   removeRule,
   partnerType,
 }) {
+  const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const lockedVehicleOptions = getLockedServiceTypeOptions(partnerType);
   return (
     <div className="space-y-2">
       {rules.map((rule, index) => (
@@ -37,10 +39,12 @@ function IncentiveRuleGrid({
               value={rule.serviceType}
               onChange={(event) => onRuleChange(setRules, index, "serviceType", event.target.value)}
               className="w-full rounded-md border border-blue-gray-200 bg-white px-2 py-2 text-sm"
-              disabled={rule.metric === "onlineHours" || partnerType === "AUTO"}
+              disabled={rule.metric === "onlineHours" || normalizedPartnerType === "AUTO" || normalizedPartnerType === "BIKE"}
             >
-              {(partnerType === "AUTO" ? AUTO_LOCKED_SERVICE_TYPE_OPTIONS : rule.metric === "onlineHours"
+              {(rule.metric === "onlineHours"
                 ? LOCKED_SERVICE_TYPE_OPTIONS
+                : normalizedPartnerType === "AUTO" || normalizedPartnerType === "BIKE"
+                  ? lockedVehicleOptions
                   : SERVICE_TYPE_OPTIONS
               ).map((option) => (
                 <option key={getOptionValue(option)} value={getOptionValue(option)}>{getOptionLabel(option)}</option>

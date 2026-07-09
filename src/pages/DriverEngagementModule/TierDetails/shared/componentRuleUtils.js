@@ -11,6 +11,9 @@ export const COMPONENT_RULE_SERVICE_OPTIONS = [
 
 export const COMPONENT_LOCKED_ANY_SERVICE_OPTIONS = [{ label: "All", value: "ANY" }];
 export const COMPONENT_LOCKED_AUTO_SERVICE_OPTIONS = [{ label: "Auto", value: "AUTO" }];
+export const COMPONENT_LOCKED_BIKE_SERVICE_OPTIONS = [{ label: "Bike", value: "BIKE" }];
+
+export const isBikePartner = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "BIKE";
 
 export const createComponentRuleCondition = ({
   metric = "onlineHours",

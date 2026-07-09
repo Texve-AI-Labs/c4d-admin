@@ -12,6 +12,8 @@ export const mapServiceDetails = (serviceType) => {
       return { serviceType: "RIDES", bookingType: null, packageType: null };
     case "AUTO":
       return { serviceType: "AUTO", bookingType: null, packageType: null };
+    case "BIKE":
+      return { serviceType: "BIKE", bookingType: null, packageType: null };
     default:
       return { serviceType: "RIDES", bookingType: null, packageType: null };
   }

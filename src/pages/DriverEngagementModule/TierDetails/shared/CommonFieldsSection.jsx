@@ -20,6 +20,7 @@ function CommonFieldsSection({ form, onInputChange, serviceAreas = [] }) {
           <select name="partnerType" value={form.partnerType} onChange={onInputChange} className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 outline-none focus:border-blue-500">
             <option value="CAB">Cab</option>
             <option value="AUTO">Auto</option>
+            <option value="BIKE">Bike</option>
           </select>
         </div>
         <div>
