@@ -821,7 +821,7 @@ export const VERSION_CONTROL_EDIT=Yup.object({
 
 export const DISCOUNT_ADD_SCHEMA = Yup.object({
     entity: Yup.string()
-        .oneOf(['DRIVER', 'CAB', 'AUTO', 'PARCEL'], 'Invalid entity type')
+        .oneOf(['DRIVER', 'CAB', 'AUTO', 'BIKE', 'PARCEL'], 'Invalid entity type')
         .required('Entity type is required'),
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
@@ -853,6 +853,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
             isPremium === false &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
+            serviceType !== 'BIKE' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
         otherwise: (schema) => schema.nullable(),
@@ -861,6 +862,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'BIKE' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
@@ -912,7 +914,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
 export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     discountId: Yup.number().required('Discount ID is required'),
     entity: Yup.string()
-        .oneOf(['DRIVER', 'CAB', 'AUTO', 'PARCEL'], 'Invalid entity type')
+        .oneOf(['DRIVER', 'CAB', 'AUTO','BIKE','PARCEL'], 'Invalid entity type')
         .required('Entity type is required'),
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
@@ -943,6 +945,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'BIKE' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
@@ -952,6 +955,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'BIKE' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),

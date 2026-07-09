@@ -28,6 +28,9 @@ const DiscountAdd = () => {
     AUTO: [
       { value: 'AUTO', label: 'AUTO' },
     ],
+    BIKE: [
+      { value: 'BIKE', label: 'BIKE' },
+    ],
     PARCEL: [
       { value: 'PARCEL', label: 'PARCEL' },
     ],
@@ -253,7 +256,9 @@ if (values.removeDashboardOfferImg) {
         formData.append('cabType', 'Mini');
       } else if (values.serviceType === 'AUTO') {
         formData.append('isPremium', values.isPremium);
-      } else {
+      } else if (values.serviceType === 'BIKE') {
+        formData.append('isPremium', values.isPremium);
+      }  else {
         const finalCabType = values.isPremium ? values.premiumCabType : values.cabType;
         formData.append('cabType', finalCabType);
         formData.append('isPremium', values.isPremium);
@@ -325,7 +330,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                     onChange={(e) => {
                       const nextEntity = e.target.value;
                       setFieldValue('entity', nextEntity);
-                      setFieldValue('serviceType', ['DRIVER', 'AUTO','PARCEL'].includes(nextEntity) ? nextEntity : '');
+                      setFieldValue('serviceType', ['DRIVER', 'AUTO','BIKE','PARCEL'].includes(nextEntity) ? nextEntity : '');
                       setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');
                       setFieldValue('isPremium', false);
@@ -339,6 +344,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                   <option value="CAB">Cab</option>
                   <option value="AUTO">Auto</option>
                   <option value="PARCEL">Parcel</option>
+                  <option value="BIKE">Bike</option>
                   
                 </Field>
                 <ErrorMessage name="entity" className="text-red-500 text-sm" component="div" />
@@ -574,7 +580,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
               </div>
                 )}
 
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && values.serviceType !== 'AUTO' && values.serviceType !== 'DRIVER' && values.isPremium === false && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && values.serviceType !== 'AUTO' && values.serviceType !== 'DRIVER' && values.serviceType !== 'BIKE' && values.isPremium === false && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field

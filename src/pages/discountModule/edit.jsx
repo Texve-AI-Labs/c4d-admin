@@ -31,6 +31,7 @@ const DiscountEdit = () => {
       { value: 'ALL', label: 'ALL' },
     ],
     AUTO: [{ value: 'AUTO', label: 'AUTO' }],
+    BIKE: [{ value: 'BIKE', label: 'BIKE' }],
     PARCEL: [{ value: 'PARCEL', label: 'PARCEL' }],
   };
   const PARCEL_VEHICLE_OPTIONS = ['','BIKE', 'AUTO'];
@@ -54,6 +55,7 @@ const DiscountEdit = () => {
     const normalized = String(serviceType || '').trim().toUpperCase();
     if (normalized === 'DRIVER') return 'DRIVER';
     if (normalized === 'AUTO') return 'AUTO';
+    if (normalized === 'BIKE') return 'BIKE';
     if (normalized === 'PARCEL') return 'PARCEL';
     if (['RIDES', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'RENTAL','ALL'].includes(normalized)) return 'CAB';
     return '';
@@ -367,6 +369,8 @@ const DiscountEdit = () => {
         formData.append('cabType', 'Mini');
       } else if (values.serviceType === 'AUTO') {
         formData.append('isPremium', values.isPremium);
+      }  else if (values.serviceType === 'BIKE') {
+        formData.append('isPremium', values.isPremium);
       } else {
       const finalCabType = values.isPremium
         ? (values.premiumCabType || '')
@@ -440,11 +444,11 @@ const DiscountEdit = () => {
                     const nextEntity = e.target.value;
                     const nextServiceTypeOptions = getServiceTypeOptions(nextEntity);
                     const currentServiceType = String(values.serviceType || '').toUpperCase();
-                    const nextServiceType = ['DRIVER', 'AUTO','PARCEL'].includes(nextEntity) ? nextEntity : '';
+                    const nextServiceType = ['DRIVER', 'BIKE', 'AUTO','PARCEL'].includes(nextEntity) ? nextEntity : '';
                     setFieldValue('entity', nextEntity);
                     setFieldValue(
                       'serviceType',
-                      ['DRIVER', 'AUTO'].includes(nextEntity)
+                      ['DRIVER', 'AUTO', 'BIKE'].includes(nextEntity)
                         ? nextServiceType
                         : (nextServiceTypeOptions.some((option) => option.value === currentServiceType) ? values.serviceType : '')
                     );
@@ -460,6 +464,7 @@ const DiscountEdit = () => {
                   <option value="DRIVER">Driver</option>
                   <option value="CAB">Cab</option>
                   <option value="AUTO">Auto</option>
+                  <option value="BIKE">Bike</option>
                   <option value="PARCEL">Parcel</option>
                 </Field>
                 <ErrorMessage name="entity" component="div" className="text-red-500 text-sm" />
@@ -704,7 +709,7 @@ const DiscountEdit = () => {
                 )}
               </div>
               )}
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && values.serviceType !== 'DRIVER' && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && values.serviceType !== 'BIKE' && values.serviceType !== 'DRIVER' && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field
