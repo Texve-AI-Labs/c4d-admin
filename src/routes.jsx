@@ -180,6 +180,7 @@ import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-
 import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
 import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
 import OwnerOnboardingBikeTaxiList from "./pages/account/owner-onboarding-bike-taxi/BikeTaxilist";
+import BikeTaxiLists from "./pages/account/owner-onboarding-bike-taxi/BikeTaxilists";
 import OwnerOnboardingBikeTaxiAdd from "./pages/account/owner-onboarding-bike-taxi/BikeTaxiadd";
 import OwnerOnboardingBikeTaxiDocuments from "./pages/account/owner-onboarding-bike-taxi/BikeTaxidocuments";
 import OwnerOnboardingBikeTaxiVehicleDocuments from "./pages/account/owner-onboarding-bike-taxi/BikeTaxivehicleDocuments";
@@ -850,6 +851,14 @@ export const routes = [
         name: "Owner Onboarding Bike Taxi List",
         path: "/vendors/account/owner-onboarding-bike-taxi",
         element: <OwnerOnboardingBikeTaxiList />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Bike Taxi List",
+        path: "/vendors/account/bikeTaxiList",
+        element: <BikeTaxiLists />,
         display: false,
         permission: "Vendors",
       },

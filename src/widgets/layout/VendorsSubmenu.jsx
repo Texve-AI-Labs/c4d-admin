@@ -46,6 +46,8 @@ function VendorsSubmenu({ miniSidenav }) {
         );
       case "All Bike-Taxi Owner":
         return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi");
+      case "All Bike-Taxi List":
+        return pathname.startsWith("/dashboard/vendors/account/biketaxilist");
       case "All Document Verification":
         return pathname.startsWith("/dashboard/doc-verification");
       case "All Pending Documents":
@@ -66,6 +68,7 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Cab List", path: "/dashboard/vendors/vehicleList", icon: "/img/vehicles.png" },
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
     { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
+    { label: "All Bike-Taxi List", path: "/dashboard/vendors/account/bikeTaxiList", icon: "/img/Parcel_driver.png" },
     ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
       ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
       : []),
