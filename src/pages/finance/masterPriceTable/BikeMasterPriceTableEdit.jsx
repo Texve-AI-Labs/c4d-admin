@@ -61,6 +61,8 @@ const BikeMasterPriceTableEdit = () => {
           zone: priceData.zone || '',
           baseKm: priceData.baseKm || 0,
           baseFare: priceData.baseFare || 0,
+          period: priceData.type || 'Bike',
+          extraKmPrice: priceData.extraKmPrice,
           ratePerKm: priceData.kilometerPrice || 0,
           ratePerMin: priceData.minCharge || 0,
           additionalMin: priceData.additionalMinCharge || 0,
@@ -109,8 +111,10 @@ const BikeMasterPriceTableEdit = () => {
         zone: values.zone.trim() || '',
         baseKm: Number(values.baseKm),
         baseFare: Number(values.baseFare),
+        period: values.type || 'Bike',
         kilometerPrice: Number(values.ratePerKm),
         minCharge: Number(values.ratePerMin),
+        extraKmPrice: Number(values.extraKmPrice),
         additionalMinCharge: Number(values.additionalMin),
         surChargePercentage: Number(values.surchargePercentage),
         nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
@@ -122,7 +126,7 @@ const BikeMasterPriceTableEdit = () => {
         cancelCharge: Number(values.cancellationCharge),
         status: values.status === 'ACTIVE' ? 1 : 0,
         premiumConfig: premiumConfig || [],
-        extraKmPrice: 0,
+        // extraKmPrice: 0,
         freeExtraMinutes: Number(values.freeExtraMinutes) || 0,
         driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
         driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay) || 0,
@@ -200,6 +204,10 @@ const BikeMasterPriceTableEdit = () => {
                 <div>
                     <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
                     <Field type="number" name="cancellationCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                </div>
+                                <div>
+                    <label className="text-sm font-medium text-gray-700">Addtional Km Charge</label>
+                    <Field type="number" name="extraKmPrice"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                 </div>
                 <div className="lg:col-span-2">
                     <label className="text-sm font-medium text-gray-700">Night Hours</label>

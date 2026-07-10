@@ -76,6 +76,7 @@ const BikeMasterPriceTableAdd = () => {
         ratePerMin: '',
         additionalMin: '',
         // rateParameter: null,
+        extraKmPrice:'',
         surchargePercentage: '',
         nightHoursFrom: '',
         nightHoursTo: '',
@@ -95,8 +96,9 @@ const BikeMasterPriceTableAdd = () => {
     const onSubmit = async (values, { setSubmitting }) => {
         try {
             const reqBody = {
-                 type: "Bike",
+                type: "Bike",
                 serviceType: 'BIKE',
+                period:values.type,
                 zone: values.zone,
                 status: values.status === 'ACTIVE' ? 1 : 0,
 
@@ -104,6 +106,8 @@ const BikeMasterPriceTableAdd = () => {
                 baseKm: Number(values.baseKm),
                 kilometerPrice: Number(values.ratePerKm),
                 minCharge: Number(values.ratePerMin),
+
+                extraKmPrice:Number(values.extraKmPrice),
 
                 // rateParameter: values.rateParameter || null,
                 additionalMinCharge: Number(values.additionalMin),
@@ -375,6 +379,21 @@ const BikeMasterPriceTableAdd = () => {
                                     component="div"
                                     className="text-red-500 text-sm"
                                 />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">
+                                    Addtional Km Charge
+                                </label>
+                                <Field
+                                    type="number"
+                                    name="extraKmPrice"
+                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                />
+                                {/* <ErrorMessage
+                                    name="extraKmPrice"
+                                    component="div"
+                                    className="text-red-500 text-sm"
+                                /> */}
                             </div>
                         </div>
 
