@@ -29,7 +29,7 @@ const PRICE_SCHEMA = Yup.object().shape({
     ratePerKm: Yup.number().required('Rate Per Km is required'),
     ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min Charge is required'),
-    rateParameter: Yup.string().required('Rate Parameter is required'),
+    // rateParameter: Yup.string().required('Rate Parameter is required'),
     surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
     nightHoursFrom: Yup.string().required('Night start time is required'),
     nightHoursTo: Yup.string().required('Night end time is required'),
@@ -75,7 +75,8 @@ const AutoMasterPriceTableAdd = () => {
         ratePerKm: '',
         ratePerMin: '',
         additionalMin: '',
-        rateParameter: '',
+        // rateParameter: '',
+        extraKmPrice:'',
         surchargePercentage: '',
         nightHoursFrom: '',
         nightHoursTo: '',
@@ -95,8 +96,9 @@ const AutoMasterPriceTableAdd = () => {
     const onSubmit = async (values, { setSubmitting }) => {
         try {
             const reqBody = {
-                 type: "Auto",
+                type: "Auto",
                 serviceType: 'AUTO',
+                period:values.type,
                 zone: values.zone,
                 status: values.status === 'ACTIVE' ? 1 : 0,
 
@@ -105,7 +107,9 @@ const AutoMasterPriceTableAdd = () => {
                 kilometerPrice: Number(values.ratePerKm),
                 minCharge: Number(values.ratePerMin),
 
-                rateParameter: values.rateParameter,
+                extraKmPrice:Number(values.extraKmPrice),
+
+                // rateParameter: values.rateParameter,
                 additionalMinCharge: Number(values.additionalMin),
 
                 surChargePercentage: Number(values.surchargePercentage),
@@ -190,7 +194,7 @@ const AutoMasterPriceTableAdd = () => {
                             </div>
 
                             {/* Rate Parameter */}
-                            <div>
+                            {/* <div>
                                 <label className="text-sm font-medium text-gray-700">
                                     Rate Parameter
                                 </label>
@@ -210,7 +214,7 @@ const AutoMasterPriceTableAdd = () => {
                                     component="div"
                                     className="text-red-500 text-sm"
                                 />
-                            </div>
+                            </div> */}
 
                             {/* Surcharge */}
                             <div>
@@ -374,6 +378,21 @@ const AutoMasterPriceTableAdd = () => {
                                     component="div"
                                     className="text-red-500 text-sm"
                                 />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">
+                                    Addtional Km Charge
+                                </label>
+                                <Field
+                                    type="number"
+                                    name="extraKmPrice"
+                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                />
+                                {/* <ErrorMessage
+                                    name="extraKmPrice"
+                                    component="div"
+                                    className="text-red-500 text-sm"
+                                /> */}
                             </div>
                         </div>
 
