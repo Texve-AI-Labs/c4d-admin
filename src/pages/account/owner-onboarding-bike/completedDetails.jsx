@@ -77,6 +77,27 @@ const normalizeVehicleStatus = (value) => {
   return "IN_ACTIVE";
 };
 
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
+const formatVehicleTypeValue = (value) => {
+  if (!value) return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const normalized = raw.toUpperCase();
+  if (["BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") {
+    return normalized[0] + normalized.slice(1).toLowerCase();
+  }
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+};
+
 const normalizeServiceType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
   return normalized === "auto" ? "Auto" : "Parcel";
@@ -413,7 +434,7 @@ const CompletedOnboardingDetails = () => {
         { label: "Bike Number", value: cabResult?.vehicleNumber || "-" },
         { label: "Address", value: cabResult?.curAddress || "-" },
         { label: "Insurance Expiry Date", value: cabResult?.insurance || "-" },
-        { label: "Vehicle Type", value: toDisplayCase(cabResult?.vehicleType || "-") },
+        { label: "Vehicle Type", value: formatVehicleTypeValue(cabResult?.vehicleType || "-") },
         { label: "Model Year", value: String(cabResult?.modelYear || "-").trim() },
         { label: "Seater", value: cabResult?.seater || "-" },
         { label: "Service Area Name", value: cabResult?.subZone?.parent?.name || "-" },
@@ -429,6 +450,9 @@ const CompletedOnboardingDetails = () => {
         cabId: cabResult?.id || cabItem.id || "-",
         title: `Bike ${index + 1}${cabResult?.vehicleNumber ? ` - ${cabResult.vehicleNumber}` : ""}`,
         vehicleDetailsRows,
+        rawValues: {
+          curAddress: cabResult?.curAddress || null,
+        },
       };
     });
   }, [cabs]);
@@ -628,7 +652,10 @@ const CompletedOnboardingDetails = () => {
         name: cabResult?.name || "",
         company: cabResult?.company || cabResult?.Account?.name || account?.name || "",
         vehicleNumber: cabResult?.vehicleNumber || "",
-        curAddress: cabResult?.curAddress || "",
+        curAddress: makeAddressPayload(
+          cabResult?.curAddress?.name || cabResult?.curAddress || "",
+          cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+        ),
         insurance: cabResult?.insurance || "",
         vehicleType: cabResult?.vehicleType || "BIKE",
         seater: cabResult?.seater || "",
@@ -661,12 +688,21 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
+      const existingAddress = cabResult?.curAddress || {};
+      const addressPayload = makeAddressPayload(
+        draftValues?.Address || existingAddress?.name || "",
+        draftValues?.AddressPlaceId || existingAddress?.placeId || existingAddress?.place_id || existingAddress?.placeID || ""
+      );
+      if (!addressPayload?.placeId) {
+        window.alert("Please select the address from the suggestions so placeId can be saved.");
+        return;
+      }
       const parcelDetails = {
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
         company: cabResult?.company || cabResult?.Account?.name || account?.name || "",
         vehicleNumber: draftValues?.["Bike Number"] || cabResult?.vehicleNumber || "",
-        curAddress: draftValues?.Address || cabResult?.curAddress || "",
+        curAddress: addressPayload,
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "BIKE",
         seater: draftValues?.Seater || cabResult?.seater || "",
@@ -1059,7 +1095,7 @@ const CompletedOnboardingDetails = () => {
                 onSaveVehicleDetails={handleVehicleDetailsSave}
                 vehicleDetailsSavingId={vehicleDetailsSavingId}
                 getVehicleAddressSuggestionsBySection={(sectionId) =>
-                  (vehicleAddressSuggestionsById[String(sectionId)] || []).map((item) => getSuggestionText(item)).filter(Boolean)
+                  vehicleAddressSuggestionsById[String(sectionId)] || []
                 }
                 onVehicleAddressSearch={searchVehicleLocations}
                 serviceAreaOptions={serviceAreas}

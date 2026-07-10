@@ -1029,7 +1029,8 @@ export const API_ROUTES = {
     'UPDATE_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
     'SUPPORT_TICKETS': '/admin/support-tickets',
     'SUPPORT_TICKET_BY_ID': '/admin/support-tickets/:id',
-    'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status'
+    'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status',
+    'CUSTOMER_CANCELLATION_CHARGE_LOGS': '/admin/customer-cancellation-charge-logs'
 
 };
 
