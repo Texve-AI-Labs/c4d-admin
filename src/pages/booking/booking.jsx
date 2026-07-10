@@ -867,10 +867,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         parcelVehicleType: 'BIKE',
         // weightRange: 'W_0_7',
         receiverName: '',
-        receiverPhone: '+91',
+        receiverPhone: '',
         receiverAddress: '',
         senderName: '',
-        senderPhone: '+91',
+        senderPhone: '',
         senderAddress: '',
         orderType: '',
         orderTypeOther: '',
@@ -1548,10 +1548,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('parcelVehicleType', 'BIKE');
         // setFieldValue('weightRange', 'W_0_7');
         setFieldValue('receiverName', '');
-        setFieldValue('receiverPhone', '+91');
+        setFieldValue('receiverPhone', '');
         setFieldValue('receiverAddress', '');
         setFieldValue('senderName', '');
-        setFieldValue('senderPhone', '+91');
+        setFieldValue('senderPhone', '');
         setFieldValue('senderAddress', '');
         setFieldValue('orderType', '');
         setFieldValue('orderTypeOther', '');
@@ -3199,9 +3199,9 @@ const priceDetailsCardClass = isPeakHour
                                                  {/* Source Type Field for all services */}
                                                 {values.serviceType && (
                                                     <>
-                                                        {/* {values.serviceType === 'PARCEL' && (
-                                                            <div className="p-2 space-y-3  hidden">
-                                                                <label className="text-sm font-medium text-gray-700">
+                                                        {values.serviceType === 'PARCEL' && (
+                                                            <div className="p-2 space-y-3">
+                                                                {/* <label className="text-sm font-medium text-gray-700">
                                                                     Weight Range <span className="text-red-500">*</span>
                                                                 </label>
                                                                 <div className="grid grid-cols-2 gap-3 pt-1">
@@ -3219,11 +3219,11 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     ))}
                                                                 </div>
-                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" />
+                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" /> */}
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Sender Name</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Sender Name <span className="text-red-500">*</span> </label>
                                                                         <Field
                                                                             type="text"
                                                                             name="senderName"
@@ -3232,19 +3232,17 @@ const priceDetailsCardClass = isPeakHour
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Sender Phone</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Sender Phone <span className="text-red-500">*</span></label>
                                                                         <input
                                                                             type="text"
                                                                             name="senderPhone"
                                                                             placeholder="Enter sender phone"
                                                                             className="mt-1 p-2 w-full rounded-md border-2 border-gray-300"
-                                                                            value={values.senderPhone ?? '+91'}
+                                                                            value={values.senderPhone ?? ''}
                                                                             onChange={(e) => {
                                                                                 const raw = String(e.target.value || '');
                                                                                 const digitsOnly = raw.replace(/\D/g, '');
-                                                                                const withoutCountryCode = digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
-                                                                                const localDigits = withoutCountryCode.slice(0, 10);
-                                                                                setFieldValue('senderPhone', `+91${localDigits}`);
+                                                                                setFieldValue('senderPhone', digitsOnly.slice(0, 10));
                                                                             }}
                                                                         />
                                                                     </div>
@@ -3262,7 +3260,7 @@ const priceDetailsCardClass = isPeakHour
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Receiver Name</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Receiver Name <span className="text-red-500">*</span></label>
                                                                         <Field
                                                                             type="text"
                                                                             name="receiverName"
@@ -3271,19 +3269,17 @@ const priceDetailsCardClass = isPeakHour
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Receiver Phone</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Receiver Phone <span className="text-red-500">*</span></label>
                                                                         <input
                                                                             type="text"
                                                                             name="receiverPhone"
                                                                             placeholder="Enter receiver phone"
                                                                             className="mt-1 p-2 w-full rounded-md border-2 border-gray-300"
-                                                                            value={values.receiverPhone ?? '+91'}
+                                                                            value={values.receiverPhone ?? ''}
                                                                             onChange={(e) => {
                                                                                 const raw = String(e.target.value || '');
                                                                                 const digitsOnly = raw.replace(/\D/g, '');
-                                                                                const withoutCountryCode = digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
-                                                                                const localDigits = withoutCountryCode.slice(0, 10);
-                                                                                setFieldValue('receiverPhone', `+91${localDigits}`);
+                                                                                setFieldValue('receiverPhone', digitsOnly.slice(0, 10));
                                                                             }}
                                                                         />
                                                                     </div>
@@ -3340,7 +3336,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     />
                                                                 </div>
                                                             </div>
-                                                        )} */}
+                                                        )}
                                                     <div className="p-2 space-y-2 ">
                                                         <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
                                                         <Field as="select" name="sourceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
