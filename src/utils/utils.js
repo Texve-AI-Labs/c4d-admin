@@ -41,7 +41,7 @@ export const Utils = {
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
                     !!values?.carType &&
-                    !!values?.packageSelected &&
+                    // !!values?.packageSelected &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.acType) &&
                     (values?.packageTypeSelected !== 'Outstation' || values?.tripType !== 'Round Trip' || !!values?.toDate) &&
