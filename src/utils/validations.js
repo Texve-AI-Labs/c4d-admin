@@ -851,6 +851,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
@@ -860,6 +861,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
@@ -942,6 +944,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
@@ -951,6 +954,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),

@@ -160,25 +160,6 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
   setFieldValue('removeDashboardOfferImg', true);
 };
   const handleSubmit = async (values, { setSubmitting, setFieldError }) => {
-//    const payload = {
-//   serviceType: values.serviceType?.trim(),
-//   percentage:
-//     values.percentage !== '' && !isNaN(values.percentage)
-//       ? parseFloat(values.percentage)
-//       : 0,
-//   startDate: values.startDate
-//     ? new Date(values.startDate).toISOString().split('T')[0]
-//     : undefined,
-//   endDate: values.endDate
-//     ? new Date(values.endDate).toISOString().split('T')[0]
-//     : undefined,
-//   isActive: values.isActive,
-//   title: values.title,
-//   description: values.description,
-//   serviceArea: values.serviceArea.includes['All'] ? ['All'] : values.serviceArea,
-//   image: values.image,
-//   cabType: values.cabType
-// };
 
     try {
       const hasAmount = Number(values.amount) > 0;
@@ -250,7 +231,7 @@ if (values.removeDashboardOfferImg) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
       } else if (values.serviceType === 'DRIVER') {
-        formData.append('cabType', 'Mini');
+        formData.append('cabType', null);
       } else if (values.serviceType === 'AUTO') {
         formData.append('isPremium', values.isPremium);
       } else {
@@ -329,7 +310,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                       setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');
                       setFieldValue('isPremium', false);
-                      setFieldValue('cabType', nextEntity === 'DRIVER' ? 'Mini' : '');
+                      setFieldValue('cabType', nextEntity === 'DRIVER' ? null : '');
                       setFieldValue('premiumCabType', '');
                     }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
@@ -435,7 +416,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                         setFieldValue('cabType', '');
                         setFieldValue('premiumCabType', '');
                       } else if (nextServiceType === 'DRIVER') {
-                        setFieldValue('cabType', 'Mini');
+                        setFieldValue('cabType', null);
                       } else {
                         setFieldValue('parcelVehicleType', '');
                         setFieldValue('subZoneId', '');
