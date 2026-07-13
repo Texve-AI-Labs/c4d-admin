@@ -366,7 +366,7 @@ const DiscountEdit = () => {
           formData.append('subZoneId', Number(values.subZoneId));
         }
       } else if (values.serviceType === 'DRIVER') {
-        formData.append('cabType', 'Mini');
+        formData.append('cabType', null);
       } else if (values.serviceType === 'AUTO') {
         formData.append('isPremium', values.isPremium);
       }  else if (values.serviceType === 'BIKE') {
@@ -455,7 +455,7 @@ const DiscountEdit = () => {
                     setFieldValue('parcelVehicleType', '');
                     setFieldValue('subZoneId', '');
                     setFieldValue('isPremium', false);
-                    setFieldValue('cabType', nextEntity === 'DRIVER' ? 'Mini' : '');
+                    setFieldValue('cabType', nextEntity === 'DRIVER' ? null : '');
                     setFieldValue('premiumCabType', '');
                   }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
@@ -544,7 +544,7 @@ const DiscountEdit = () => {
                       setFieldValue('cabType', '');
                       setFieldValue('premiumCabType', '');
                     } else if (nextServiceType === 'DRIVER') {
-                      setFieldValue('cabType', 'Mini');
+                      setFieldValue('cabType', null);
                     } else {
                       setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');

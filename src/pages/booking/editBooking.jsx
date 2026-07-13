@@ -515,7 +515,7 @@ const getQuoteOutstationDetails = async (values) => {
         packageType: 'Outstation',
         fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
-        carType: values?.serviceType === 'DRIVER' ? 'Mini' : values?.carType,
+        ...(values?.serviceType !== 'DRIVER' ? { carType: values?.carType } : {}),
         pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
         pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
             driverStartLat: values?.driverPickUpLocation?.lat,
@@ -588,7 +588,7 @@ const getQuoteOutstationDetails = async (values) => {
         // transmissionType : bookingData?.transmissionType || '',
         packageSelected: bookingData?.packageId ? bookingData?.packageId : '',
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
-        carType: bookingData?.serviceType === 'DRIVER' ? 'Mini' : (bookingData?.carType ? bookingData?.carType : ''),
+        ...(bookingData?.serviceType !== 'DRIVER' ? { carType: bookingData?.carType ? bookingData?.carType : '' } : {}),
         pickupAddress: bookingData?.pickupAddress?.name || '',
         pickupPlaceId: bookingData?.pickupAddress?.placeId || '',
         dropAddress: bookingData?.dropAddress?.name || '',
@@ -681,7 +681,7 @@ const getQuoteOutstationDetails = async (values) => {
                 serviceFor: values.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : values.serviceType,
                 packageType: 'Local',
                 fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-                carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+                ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
                 period: values.serviceType === 'RENTAL'|| values.serviceType === 'DRIVER' ? packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || '' : '',
                 pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                 pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
@@ -1004,7 +1004,7 @@ const getQuoteOutstationDetails = async (values) => {
                         bookingType: values?.tripType?.toUpperCase() || '',
                     }),
                 // transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
-                    carType: values?.serviceType === 'DRIVER' ? 'Mini' : (values?.carType ? values?.carType : bookingData?.carType),
+                    ...(values?.serviceType !== 'DRIVER' ? { carType: values?.carType ? values?.carType : bookingData?.carType } : {}),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
@@ -1115,7 +1115,7 @@ const getQuoteOutstationDetails = async (values) => {
                     ),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                 isPremiumService : values?.isPremiumService ? true : false,
-                    car_Type: values?.carType || '',
+                    ...(values?.serviceType !== 'DRIVER' ? { car_Type: values?.carType || '' } : {}),
                 sourceType: values?.sourceType|| '',
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {
                         otherSourceType: values?.otherSourceType?.trim() || null
@@ -1860,7 +1860,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                                         ? selectedPackage.price
                                                                                         : values.carType?.toUpperCase() === 'MUV'
                                                                                             ? selectedPackage.priceMVP
-                                                                                            : null;
+                                                                                            : selectedPackage?.price;
 
                                                                                 const num = Number(raw);
                                                                                 if (!Number.isFinite(num)) return 'N/A';

@@ -588,7 +588,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             packageType: 'Outstation',
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
-             carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
             pickupLat: values?.pickupLocation?.lat,
             pickupLong: values?.pickupLocation?.lng,
             driverStartLat: values?.driverPickUpLocation?.lat,
@@ -733,7 +733,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             serviceFor: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : val.serviceType,
             packageType:'Local',
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-            carType: val.serviceType === 'DRIVER' ? 'Mini' : val.carType || '',
+            ...(val.serviceType !== 'DRIVER' ? { carType: val.carType || '' } : {}),
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
             driverStartLat: val?.driverPickUpLocation?.lat,
@@ -867,10 +867,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         parcelVehicleType: 'BIKE',
         // weightRange: 'W_0_7',
         receiverName: '',
-        receiverPhone: '+91',
+        receiverPhone: '',
         receiverAddress: '',
         senderName: '',
-        senderPhone: '+91',
+        senderPhone: '',
         senderAddress: '',
         orderType: '',
         orderTypeOther: '',
@@ -1342,7 +1342,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
-            carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
@@ -1548,17 +1548,17 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('parcelVehicleType', 'BIKE');
         // setFieldValue('weightRange', 'W_0_7');
         setFieldValue('receiverName', '');
-        setFieldValue('receiverPhone', '+91');
+        setFieldValue('receiverPhone', '');
         setFieldValue('receiverAddress', '');
         setFieldValue('senderName', '');
-        setFieldValue('senderPhone', '+91');
+        setFieldValue('senderPhone', '');
         setFieldValue('senderAddress', '');
         setFieldValue('orderType', '');
         setFieldValue('orderTypeOther', '');
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        setFieldValue('carType', newServiceType === 'DRIVER' ? 'Mini' : '');
+        setFieldValue('carType', newServiceType === 'DRIVER' ? null : '');
         // setFieldValue('cabType', '');
         // setFieldValue('luggage', '');
         // setFieldValue('seaterCapacity', '');
@@ -2162,6 +2162,24 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriverRental,
                                             });
                                             const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer);
+                                            // console.log('estimation gate debug', {
+                                            //     serviceType: values.serviceType,
+                                            //     packageTypeSelected: values.packageTypeSelected,
+                                            //     tripType: values.tripType,
+                                            //     rideDate: values.rideDate,
+                                            //     rideTime: values.rideTime,
+                                            //     selectedCustomer,
+                                            //     pickupLocation: values.pickupLocation,
+                                            //     dropLocation: values.dropLocation,
+                                            //     sourceType: values.sourceType,
+                                            //     carType: values.carType,
+                                            //     packageSelected: values.packageSelected,
+                                            //     acType: values.acType,
+                                            //     toDate: values.toDate,
+                                            //     driverPickUpLocation: values.driverPickUpLocation,
+                                            //     driverPickUpAddress: values.driverPickUpAddress,
+                                            //     estimationReady,
+                                            // });
                                             const continueReady = Utils.isBookingReadyForContinue(
                                                 values,
                                                 selectedCustomer,
@@ -3199,9 +3217,9 @@ const priceDetailsCardClass = isPeakHour
                                                  {/* Source Type Field for all services */}
                                                 {values.serviceType && (
                                                     <>
-                                                        {/* {values.serviceType === 'PARCEL' && (
-                                                            <div className="p-2 space-y-3  hidden">
-                                                                <label className="text-sm font-medium text-gray-700">
+                                                        {values.serviceType === 'PARCEL' && (
+                                                            <div className="p-2 space-y-3">
+                                                                {/* <label className="text-sm font-medium text-gray-700">
                                                                     Weight Range <span className="text-red-500">*</span>
                                                                 </label>
                                                                 <div className="grid grid-cols-2 gap-3 pt-1">
@@ -3219,11 +3237,11 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     ))}
                                                                 </div>
-                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" />
+                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" /> */}
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Sender Name</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Sender Name <span className="text-red-500">*</span> </label>
                                                                         <Field
                                                                             type="text"
                                                                             name="senderName"
@@ -3232,19 +3250,17 @@ const priceDetailsCardClass = isPeakHour
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Sender Phone</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Sender Phone <span className="text-red-500">*</span></label>
                                                                         <input
                                                                             type="text"
                                                                             name="senderPhone"
                                                                             placeholder="Enter sender phone"
                                                                             className="mt-1 p-2 w-full rounded-md border-2 border-gray-300"
-                                                                            value={values.senderPhone ?? '+91'}
+                                                                            value={values.senderPhone ?? ''}
                                                                             onChange={(e) => {
                                                                                 const raw = String(e.target.value || '');
                                                                                 const digitsOnly = raw.replace(/\D/g, '');
-                                                                                const withoutCountryCode = digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
-                                                                                const localDigits = withoutCountryCode.slice(0, 10);
-                                                                                setFieldValue('senderPhone', `+91${localDigits}`);
+                                                                                setFieldValue('senderPhone', digitsOnly.slice(0, 10));
                                                                             }}
                                                                         />
                                                                     </div>
@@ -3262,7 +3278,7 @@ const priceDetailsCardClass = isPeakHour
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Receiver Name</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Receiver Name <span className="text-red-500">*</span></label>
                                                                         <Field
                                                                             type="text"
                                                                             name="receiverName"
@@ -3271,19 +3287,17 @@ const priceDetailsCardClass = isPeakHour
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Receiver Phone</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Receiver Phone <span className="text-red-500">*</span></label>
                                                                         <input
                                                                             type="text"
                                                                             name="receiverPhone"
                                                                             placeholder="Enter receiver phone"
                                                                             className="mt-1 p-2 w-full rounded-md border-2 border-gray-300"
-                                                                            value={values.receiverPhone ?? '+91'}
+                                                                            value={values.receiverPhone ?? ''}
                                                                             onChange={(e) => {
                                                                                 const raw = String(e.target.value || '');
                                                                                 const digitsOnly = raw.replace(/\D/g, '');
-                                                                                const withoutCountryCode = digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
-                                                                                const localDigits = withoutCountryCode.slice(0, 10);
-                                                                                setFieldValue('receiverPhone', `+91${localDigits}`);
+                                                                                setFieldValue('receiverPhone', digitsOnly.slice(0, 10));
                                                                             }}
                                                                         />
                                                                     </div>
@@ -3340,7 +3354,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     />
                                                                 </div>
                                                             </div>
-                                                        )} */}
+                                                        )}
                                                     <div className="p-2 space-y-2 ">
                                                         <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
                                                         <Field as="select" name="sourceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">

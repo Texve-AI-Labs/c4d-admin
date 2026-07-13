@@ -21,7 +21,7 @@ export const Utils = {
                     !!values?.packageTypeSelected &&
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
-                    !!values?.carType &&
+                    // !!values?.carType &&
                     !!values?.packageSelected
                     // (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
                     // (values?.packageTypeSelected !== 'Outstation' || !!values?.tripType) &&
@@ -41,7 +41,7 @@ export const Utils = {
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
                     !!values?.carType &&
-                    !!values?.packageSelected &&
+                    // !!values?.packageSelected &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.acType) &&
                     (values?.packageTypeSelected !== 'Outstation' || values?.tripType !== 'Round Trip' || !!values?.toDate) &&
@@ -63,9 +63,7 @@ export const Utils = {
         if (!quoteDetails) return false;
 
         switch (values?.serviceType) {
-            case 'DRIVER':
-            case 'CAR_WASH':
-                return !validationCheckForDriver(values);
+           
             case 'RENTAL':
                 return !validationCheckForDriverRental(values);
             default:
