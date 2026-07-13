@@ -87,7 +87,7 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
     carType: Yup.string().when('serviceType', {
         is: (val) =>['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
         then: () => Yup.string().required('Please select a car type'),
-        otherwise: () => Yup.string(),
+        otherwise: () => Yup.string().nullable(),
     }),
     // transmissionType: Yup.string().when('serviceType', {
     //     is: (val) => val === 'DRIVER',
@@ -851,6 +851,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
@@ -860,6 +861,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
@@ -942,6 +944,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
@@ -951,6 +954,7 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
