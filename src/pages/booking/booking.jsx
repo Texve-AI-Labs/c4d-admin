@@ -2162,6 +2162,24 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriverRental,
                                             });
                                             const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer);
+                                            // console.log('estimation gate debug', {
+                                            //     serviceType: values.serviceType,
+                                            //     packageTypeSelected: values.packageTypeSelected,
+                                            //     tripType: values.tripType,
+                                            //     rideDate: values.rideDate,
+                                            //     rideTime: values.rideTime,
+                                            //     selectedCustomer,
+                                            //     pickupLocation: values.pickupLocation,
+                                            //     dropLocation: values.dropLocation,
+                                            //     sourceType: values.sourceType,
+                                            //     carType: values.carType,
+                                            //     packageSelected: values.packageSelected,
+                                            //     acType: values.acType,
+                                            //     toDate: values.toDate,
+                                            //     driverPickUpLocation: values.driverPickUpLocation,
+                                            //     driverPickUpAddress: values.driverPickUpAddress,
+                                            //     estimationReady,
+                                            // });
                                             const continueReady = Utils.isBookingReadyForContinue(
                                                 values,
                                                 selectedCustomer,
