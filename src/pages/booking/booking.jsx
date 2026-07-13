@@ -588,7 +588,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             packageType: 'Outstation',
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
-             carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
             pickupLat: values?.pickupLocation?.lat,
             pickupLong: values?.pickupLocation?.lng,
             driverStartLat: values?.driverPickUpLocation?.lat,
@@ -733,7 +733,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             serviceFor: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : val.serviceType,
             packageType:'Local',
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-            carType: val.serviceType === 'DRIVER' ? 'Mini' : val.carType || '',
+            ...(val.serviceType !== 'DRIVER' ? { carType: val.carType || '' } : {}),
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
             driverStartLat: val?.driverPickUpLocation?.lat,
@@ -1342,7 +1342,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
-            carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
@@ -1558,7 +1558,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        setFieldValue('carType', newServiceType === 'DRIVER' ? 'Mini' : '');
+        setFieldValue('carType', newServiceType === 'DRIVER' ? null : '');
         // setFieldValue('cabType', '');
         // setFieldValue('luggage', '');
         // setFieldValue('seaterCapacity', '');
