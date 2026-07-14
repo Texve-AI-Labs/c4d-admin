@@ -998,11 +998,8 @@ export function MasterPriceView() {
         );
     };
     const LocalParcelTable = () => {
-        const hideSubZoneColumn = parcelPackageRows.length > 0
-            && parcelPackageRows.every((row) => normalizeVehicleType(row.parcelVehicleType) === "AUTO");
-        const parcelTableHeaders = hideSubZoneColumn
-            ? ["Zone", "Base Fare", "Base Km", "Kilometer Price", "Actions"]
-            : ["Zone", "Sub Zone", "Base Fare", "Base Km", "Kilometer Price", "Actions"];
+        const hideSubZoneColumn = false;
+        const parcelTableHeaders = ["Zone", "Sub Zone", "Base Fare", "Base Km", "Kilometer Price", "Actions"];
         return (
             <div className='my-6'>
                 <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>

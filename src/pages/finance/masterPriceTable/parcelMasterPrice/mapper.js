@@ -27,7 +27,7 @@ export const mapApiToParcelForm = (data) => {
     ...form,
     zone: data?.zone || "",
     parcelVehicleType,
-    subZoneId: parcelVehicleType === "AUTO" ? "" : (data?.subZoneId ? String(data.subZoneId) : ""),
+    subZoneId: (data?.subZoneId ? String(data.subZoneId) : ""),
     baseFare: data?.baseFare ?? "",
     baseKm: data?.baseKm ?? "",
     kilometerPrice: data?.kilometerPrice ?? "",
@@ -102,13 +102,13 @@ export const buildParcelPayload = (form) => {
   const weightRows = Array.isArray(form.parcelPricing?.weightSurcharge) && form.parcelPricing.weightSurcharge.length
     ? [form.parcelPricing.weightSurcharge[0]]
     : [];
-  return ({
+  return {
   serviceType: 'PARCEL',
   type: 'Parcel',
   period: 'Parcel',
   parcelVehicleType: vehicleType,
   zone: form.zone,
-  ...(vehicleType !== "AUTO" && form.subZoneId ? { subZoneId: Number(form.subZoneId) } : {}),
+  subZoneId: form.subZoneId,
   baseFare: toNum(form.baseFare),
   baseKm: toNum(form.baseKm),
   kilometerPrice: toNum(form.kilometerPrice),
@@ -170,5 +170,5 @@ export const buildParcelPayload = (form) => {
       },
     },
   ],
-});
+};
 };
