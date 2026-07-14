@@ -22,6 +22,7 @@ export function Topnav({ permissions = [] }) {
   const isAllRecordsSection =
     path.startsWith("/dashboard/booking/list") ||
     path.startsWith("/dashboard/auto") ||
+    path.startsWith("/dashboard/bike-taxi") ||
     path.startsWith("/dashboard/vendors/driver-return-trips");
 
   const isCustomersSection =

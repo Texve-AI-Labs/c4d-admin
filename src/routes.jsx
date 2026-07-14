@@ -1121,6 +1121,14 @@ export const routes = [
       },
         {
           icon: <UserIcon {...icon} />,
+        name: "Bike Taxi Bookings",
+        path: "/bike-taxi",
+        element: <AllBookingsLists type={BOOKING_SERVICE_TYPE.BIKE} />,
+        display: false,
+        permission: "All bookings",
+      },
+      {
+          icon: <UserIcon {...icon} />,
           name: "Parcel Bookings",
           path: "/booking/list/Parcel",
           element: <AllBookingsLists type={BOOKING_SERVICE_TYPE.PARCEL} />,

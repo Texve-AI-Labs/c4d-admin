@@ -93,6 +93,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
     if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
     if (path.startsWith("/dashboard/booking/list/returntrips")) return "RETURN_TRIPS";
     if (path.startsWith("/dashboard/auto")) return "AUTO";
+    if (path.startsWith("/dashboard/bike-taxi")) return "BIKE";
     if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
     return "ALL_CABS";
   };
