@@ -18,6 +18,9 @@ const toBooleanOrNull = (value) => {
   return null;
 };
 
+const hasRenderableComponent = (item) =>
+  item?.mode !== "RULES" || (item?.component && typeof item.component === "object");
+
 function DriverIncentiveList() {
   const navigate = useNavigate();
   const [code, setCode] = useState("ONLINE_HOURS_RULES");
@@ -49,7 +52,7 @@ function DriverIncentiveList() {
           partnerType,
           zone,
           isActive: status === "ALL" ? undefined : status === "ACTIVE",
-          vehicleType: String(partnerType || "").toUpperCase() === "AUTO" ? "AUTO" : "ALL",
+          vehicleType: String(partnerType || "").toUpperCase() === "AUTO" ? "AUTO": String(partnerType || "").toUpperCase() === "BIKE" ? "BIKE" : "ALL",
         });
         const rawRows = Array.isArray(response?.rows)
           ? response.rows
@@ -65,7 +68,7 @@ function DriverIncentiveList() {
                 const activeValue = toBooleanOrNull(item?.isActive);
                 return status === "ACTIVE" ? activeValue === true : activeValue === false;
               });
-        setRows(mapDriverIncentiveRows(filteredRows));
+        setRows(mapDriverIncentiveRows(filteredRows.filter(hasRenderableComponent)));
       } catch (apiError) {
         console.error("Failed to fetch driver incentive list:", apiError);
         setRows([]);

@@ -20,6 +20,12 @@ const toTypeCode = (code = "") =>
 const isAutoPartnerType = (partnerType = "") =>
   String(partnerType || "").trim().toUpperCase() === "AUTO";
 
+const isBikePartnerType = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "BIKE";
+const getPartnerServiceType = (partnerType = "", code = "") => {
+  if (isAutoPartnerType(partnerType)) return "AUTO";
+  if (isBikePartnerType(partnerType)) return "BIKE";
+  return code === "ONLINE_HOURS_BONUS" ? "ANY" : "RIDES";
+};
 const toUtcIsoStringOrNull = (dateTimeLocalValue) => {
   if (!dateTimeLocalValue) {
     return null;
@@ -141,6 +147,8 @@ function DriverIncentiveEdit() {
           vehicleType:
             (scope?.partnerType || "CAB") === "AUTO"
               ? "AUTO"
+              : (scope?.partnerType || "BIKE") === "BIKE"
+                ? "BIKE"
               : scope?.vehicleType || "ALL",
           zone: scope?.zone || "",
           code: component?.code || selectedCode || "",
@@ -153,6 +161,10 @@ function DriverIncentiveEdit() {
           Array.isArray(component?.rules) && component.rules.length > 0
             ? component.rules.map((rule) => ({
               ...createEditableRule(rule, component?.code || selectedCode || "", scope?.partnerType || "CAB"),
+              serviceType:
+                isBikePartnerType(scope?.partnerType) || isBikePartnerType(selectedRow?.scope?.partnerType)
+                  ? "BIKE"
+                  : createEditableRule(rule, component?.code || selectedCode || "", scope?.partnerType || "CAB").serviceType,
               period: resolvedPayoutFrequency,
             }))
             : [{
@@ -204,13 +216,9 @@ function DriverIncentiveEdit() {
     if (nextComponent.code === "ONLINE_HOURS_BONUS" || nextComponent.code === "SERVICE_TRIP_BONUS") {
       nextComponent.payoutFrequency = form.payoutFrequency || "WEEKLY";
       nextComponent.rules = componentRules.map((rule) => {
-        const selectedServiceType =
-          rule.serviceType ||
-          (isAutoPartnerType(form.partnerType)
-            ? "AUTO"
-            : nextComponent.code === "ONLINE_HOURS_BONUS"
-              ? "ANY"
-              : "RIDES");
+        const selectedServiceType = isBikePartnerType(form.partnerType)
+          ? "BIKE"
+          : rule.serviceType || getPartnerServiceType(form.partnerType, nextComponent.code);
         const serviceDetails = getServiceConditionDetails(selectedServiceType);
 
         return {
@@ -242,7 +250,7 @@ function DriverIncentiveEdit() {
         enabled: Boolean(form.enabled),
         scope: {
           partnerType: form.partnerType || "CAB",
-          vehicleType: (form.partnerType || "CAB") === "AUTO" ? "AUTO" : form.vehicleType || "ALL",
+          vehicleType: (form.partnerType || "CAB") === "AUTO" ? "AUTO" : (form.partnerType || "CAB") === "BIKE" ? "BIKE" : form.vehicleType || "ALL",
           zone: form.zone || "",
         },
       });
@@ -258,7 +266,7 @@ function DriverIncentiveEdit() {
         isActive: Boolean(form.isActive),
         scope: {
           partnerType: form.partnerType || "CAB",
-          vehicleType: (form.partnerType || "CAB") === "AUTO" ? "AUTO" : form.vehicleType || "ALL",
+          vehicleType: (form.partnerType || "CAB") === "AUTO" ? "AUTO" : (form.partnerType || "CAB") === "BIKE" ? "BIKE" : form.vehicleType || "ALL",
           zone: form.zone || "",
         },
         component: nextComponent,
@@ -361,6 +369,7 @@ function DriverIncentiveEdit() {
                 >
                   <option value="CAB">Cab</option>
                   <option value="AUTO">Auto</option>
+                  <option value="BIKE">Bike</option>
                 </select>
               </div>
 

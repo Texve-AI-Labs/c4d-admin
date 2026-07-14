@@ -23,6 +23,7 @@ export const fetchDriverIncentiveList = async ({
 } = {}) => {
   const params = {
     code: toApiCode(code),
+    mode:"RULES",
     partnerType,
     zone,
     vehicleType,
@@ -114,7 +115,7 @@ export const createDriverIncentiveRule = async ({
     isActive: Boolean(isActive),
     config: config && typeof config === "object" ? config : {},
   };
-
+// console.log("responce",payload);
   const response = await ApiRequestUtils.post(API_ROUTES.ADD_DE_TIER, payload);
   return response || {};
 };
