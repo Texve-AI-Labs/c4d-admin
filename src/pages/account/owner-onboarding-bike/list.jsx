@@ -69,10 +69,10 @@ const getDocumentTypeChipColor = (onboardingStage, accountStatus, vehicleStatus)
 };
 
 const getDocumentTypeChipValue = (onboardingStage, hasVehicle, vehicleDocumentStatus) => {
-  if (onboardingStage === "ACCOUNT") return "Bike Owner Documents";
+  if (onboardingStage === "ACCOUNT") return "Vehicle Owner Documents";
   if (onboardingStage === "VEHICLE") {
-    if (hasVehicle === false && vehicleDocumentStatus === "VERIFIED") return "Bike";
-    return "Bike Documents";
+    if (hasVehicle === false && vehicleDocumentStatus === "VERIFIED") return "Vehicle";
+    return "Vehicle  Documents";
   }
   if (onboardingStage === "COMPLETED") return " Completed";
   return "-";
@@ -118,7 +118,7 @@ const getOnboardingStatusChipValue = (
 
   if (onboardingStage === "VEHICLE") {
     if (hasVehicle === false && vehicleStatus === "VERIFIED") {
-      return "Bike add pending";
+      return "Vehicle add pending";
     }
     return getStatusLabelByDocStatus(vehicleStatus, "Upload pending") || "-";
   }

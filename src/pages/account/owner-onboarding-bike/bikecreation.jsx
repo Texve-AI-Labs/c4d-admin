@@ -301,10 +301,10 @@ const ParcelCabAdd = () => {
   const validationSchema = Yup.object({
     name: Yup.string().required('Vehicle Name is required'),
     ownerName: Yup.string().required('Owner Name is required'),
-    vehicleNumber: Yup.string().required('Bike Number is required'),
+    vehicleNumber: Yup.string().required('vehicle Number is required'),
     address: Yup.string().required('Current Address is required'),
     insurance: Yup.string().required('Insurance Expiry Date is required'),
-    autoType: Yup.string().required('Bike Type is required'),
+    autoType: Yup.string().required('vehicle Type is required'),
     seater: Yup.string().required('Seater is required'),
     modelYear: Yup.string()
       .required('Year of Model is required')
@@ -332,7 +332,7 @@ const ParcelCabAdd = () => {
           vehicleNumber: '',
           address: '',
           insurance: '',
-          autoType: 'BIKE',
+          autoType: '',
           seater: '3',
           modelYear: '',
           serviceArea: '',
@@ -349,12 +349,13 @@ const ParcelCabAdd = () => {
               vehicleNumber: values.vehicleNumber,
               curAddress: getSelectedAddressPayload(values.address),
               insurance: values.insurance,
-              vehicleType: 'BIKE',
+              vehicleType: values.autoType,
               seater: values.seater,
               modelYear: values.modelYear,
               serviceArea: values.serviceArea,
               subZoneId: values.subZoneId,
             };
+            // console.log("Responce",payload)
             const res = await ApiRequestUtils.post(API_ROUTES.CREATE_PARCEL_ADMIN, payload);
 
             if (res?.success) {
@@ -451,7 +452,7 @@ const ParcelCabAdd = () => {
                   <ErrorMessage name="ownerName" component="div" className="text-red-500 text-sm" />
                 </div>
                 <div>
-                  <label htmlFor="vehicleNumber" className="text-sm font-medium text-gray-700">Bike Number</label>
+                  <label htmlFor="vehicleNumber" className="text-sm font-medium text-gray-700">Vehicle Number</label>
                   <Field name="vehicleNumber" maxLength={10} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                   <ErrorMessage name="vehicleNumber" component="div" className="text-red-500 text-sm" />
                 </div>
@@ -476,10 +477,10 @@ const ParcelCabAdd = () => {
                   <Field type="date" name="insurance" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" min={currentDate()} />
                   <ErrorMessage name="insurance" component="div" className="text-red-500 text-sm" />
                 </div>
-                <div className="hidden">
-                  <label className="text-sm font-medium text-gray-700">Bike Type</label>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Vehicle Type</label>
                   <div className="space-x-4 mt-1">
-                    {['BIKE'].map((type) => (
+                    {['BIKE','AUTO'].map((type) => (
                       <label key={type} className="inline-flex items-center">
                         <Field type="radio" name="autoType" value={type} className="mr-2 border-2" onChange={handleChange} />
                         <span>{type}</span>

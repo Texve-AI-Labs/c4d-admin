@@ -84,13 +84,19 @@ const makeAddressPayload = (name, placeId) => ({
 
 const formatVehicleTypeValue = (value) => {
   if (!value) return "-";
+
   const raw = String(value).trim();
   if (!raw) return "-";
+
   const normalized = raw.toUpperCase();
-  if (["BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
+
+  if (normalized === "AUTO") return "Auto";
+  if (normalized === "BIKE") return "Bike";
+  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
   if (normalized === "PETROL" || normalized === "DIESEL") {
     return normalized[0] + normalized.slice(1).toLowerCase();
   }
+
   return raw
     .toLowerCase()
     .split(/\s+/)
@@ -431,7 +437,7 @@ const CompletedOnboardingDetails = () => {
 
       const vehicleDetailsRows = [
         { label: "Vehicle Name", value: cabResult?.name || "-" },
-        { label: "Bike Number", value: cabResult?.vehicleNumber || "-" },
+        { label: "Vehicle Number", value: cabResult?.vehicleNumber || "-" },
         { label: "Address", value: cabResult?.curAddress || "-" },
         { label: "Insurance Expiry Date", value: cabResult?.insurance || "-" },
         { label: "Vehicle Type", value: formatVehicleTypeValue(cabResult?.vehicleType || "-") },
@@ -448,9 +454,11 @@ const CompletedOnboardingDetails = () => {
         sectionKey: `${cabResult?.id || cabItem.id || "cab"}-${index}`,
         id: cabResult?.id || cabItem.id || `cab-${index + 1}`,
         cabId: cabResult?.id || cabItem.id || "-",
-        title: `Bike ${index + 1}${cabResult?.vehicleNumber ? ` - ${cabResult.vehicleNumber}` : ""}`,
+        title: `Vehicle ${index + 1}${cabResult?.vehicleNumber ? ` - ${cabResult.vehicleNumber}` : ""}`,
         vehicleDetailsRows,
         rawValues: {
+          vehicleNumber: cabResult?.vehicleNumber || "",
+          vehicleType: cabResult?.vehicleType || "",
           curAddress: cabResult?.curAddress || null,
         },
       };
@@ -701,7 +709,7 @@ const CompletedOnboardingDetails = () => {
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
         company: cabResult?.company || cabResult?.Account?.name || account?.name || "",
-        vehicleNumber: draftValues?.["Bike Number"] || cabResult?.vehicleNumber || "",
+        vehicleNumber: draftValues?.["Vehicle Number"] || cabResult?.vehicleNumber || "",
         curAddress: addressPayload,
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "BIKE",
