@@ -415,7 +415,8 @@ export function OnlineVehiclesList({ id = 0 }) {
                           { value: 'All', label: 'All' },
                           { value: 'CAB', label: 'Cab' },
                           { value: 'AUTO', label: 'Auto' },
-                          { value: 'PARCEL', label: 'Bike' }
+                          { value: 'BIKE', label: 'Bike-Taxi' },
+                          { value: 'PARCEL', label: 'Parcel-Bike' }
                         ]}
                         selectedFilters={typeFilter}
                         onFilterChange={handleFilterChange}

@@ -18,6 +18,7 @@ const getApplicableEntity = (serviceType) => {
     ACTING_DRIVER: "DRIVER",
     RIDES_RENTAL_CABS: "CAB",
     AUTO: "AUTO",
+    BIKE: "BIKE",
   };
   return mapping[serviceType] || "";
 };
@@ -103,6 +104,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                 <option value="DRIVER_ID">Driver ID</option>
                 <option value="CAB_ID">Cab ID</option>
                 <option value="AUTO_ID">Auto ID</option>
+                <option value="BIKE_ID">Bike ID</option>
               </Field>
             </div>
 
@@ -116,7 +118,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                   <option value="ELITE">Elite</option>
                 </Field>
               ) :
-                <Field type="text" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder={`Enter ${values.assignmentType === "DRIVER_ID" ? "Driver ID" : values.assignmentType === "CAB_ID" ? "Cab ID" : "Auto ID"}`} />
+                <Field type="text" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder={`Enter ${values.assignmentType === "DRIVER_ID" ? "Driver ID" : values.assignmentType === "CAB_ID" ? "Cab ID" : values.assignmentType === "BIKE_ID" ? "Bike ID" : "Auto ID"}`} />
               }
 
             </div>
@@ -144,6 +146,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                 <option value="ACTING_DRIVER">Driver</option>
                 <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
                 <option value="AUTO">Autos</option>
+                <option value="BIKE">Bikes</option>
               </Field>
               <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm my-1" />
             </div>

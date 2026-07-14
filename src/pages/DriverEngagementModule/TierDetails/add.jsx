@@ -123,7 +123,7 @@ function TierDetailsAdd() {
         config: {
           scope: {
             partnerType: form.partnerType || "CAB",
-            vehicleType: form.partnerType === "AUTO" ? "AUTO" : "ALL",
+            vehicleType: form.partnerType === "AUTO" ? "AUTO" : form.partnerType === "BIKE" ? "BIKE" : "ALL",
             zone: form.zone || "ALL",
           },
           ...typeConfig,

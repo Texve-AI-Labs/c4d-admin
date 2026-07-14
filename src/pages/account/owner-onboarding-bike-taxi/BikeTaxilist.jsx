@@ -6,6 +6,7 @@ import {
   Typography,
   Button,
   Checkbox,
+  Alert,
   Chip,
   Popover,
   PopoverHandler,
@@ -13,7 +14,7 @@ import {
   Spinner,
 } from "@material-tailwind/react";
 // import AccountSearchOnboarding from "./AccountSearchOnboarding";
-import ParcelSearch from "@/components/ParcelSearch";
+import BikeTaxiSearch from '@/components/BikeTaxiSearch';
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -22,9 +23,8 @@ import { FaFilter } from 'react-icons/fa';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
 import { KYC_STATUS_OPTIONS } from "@/pages/common/kycStatusOptions";
 import { EMPTY_KYC_STATUS_COUNTS, extractKycStatusCounts, normalizeKycStatusFilterValues } from "@/pages/common/kycStatusCounts";
-import KycStatusCards from "@/pages/common/KycStatusCards";
 
-const ACCOUNT_VIEW_FILTERS_KEY = 'ownerOnboardingBikeViewFilters';
+const ACCOUNT_VIEW_FILTERS_KEY = 'ownerOnboardingBikeTaxiViewFilters';
 const STAGE_FILTER_OPTIONS = [
   { value: 'All', label: 'All' },
   { value: 'ACCOUNT', label: 'Account' },
@@ -69,10 +69,10 @@ const getDocumentTypeChipColor = (onboardingStage, accountStatus, vehicleStatus)
 };
 
 const getDocumentTypeChipValue = (onboardingStage, hasVehicle, vehicleDocumentStatus) => {
-  if (onboardingStage === "ACCOUNT") return "Vehicle Owner Documents";
+  if (onboardingStage === "ACCOUNT") return "Bike Taxi Owner Documents";
   if (onboardingStage === "VEHICLE") {
     if (hasVehicle === false && vehicleDocumentStatus === "VERIFIED") return "Vehicle";
-    return "Vehicle  Documents";
+    return "Bike Taxi Documents";
   }
   if (onboardingStage === "COMPLETED") return " Completed";
   return "-";
@@ -82,8 +82,6 @@ const normalizeHasVehicle = (hasVehicle) => {
   if (hasVehicle === true || hasVehicle === "true" || hasVehicle === 1 || hasVehicle === "1") return true;
   return false;
 };
-
-const normalizeServiceTypes = () => "Parcel";
 
 const getOnboardingStatusChipColor = (onboardingStage, hasVehicle, accountStatus, vehicleStatus) => {
   if (onboardingStage === "COMPLETED") return "green";
@@ -118,7 +116,7 @@ const getOnboardingStatusChipValue = (
 
   if (onboardingStage === "VEHICLE") {
     if (hasVehicle === false && vehicleStatus === "VERIFIED") {
-      return "Vehicle add pending";
+      return "Bike add pending";
     }
     return getStatusLabelByDocStatus(vehicleStatus, "Upload pending") || "-";
   }
@@ -139,11 +137,11 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
     normalizedAccountStatus === "VERIFIED" &&
     normalizedVehicleStatus === "VERIFIED"
   ) {
-    return `/dashboard/vendors/account/owner-onboarding-bike/details/completed/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-bike-taxi/details/completed/${id}`;
   }
 
   if (normalizedStage === "VEHICLE" && normalizedVehicleStatus === "VERIFIED" && !hasVehicleNormalized) {
-    return `/dashboard/vendors/account/owner-onboarding-bike/vehicle-creation/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-bike-taxi/vehicle-creation/${id}`;
   }
 
   const shouldOpenVehicleDetails =
@@ -153,23 +151,23 @@ const getAccountNameDetailsPath = (id, onboardingStage, hasVehicle, accountStatu
       ["PENDING UPLOAD", "PENDING VERIFICATION", "DECLINED", "INVALID"].includes(normalizedVehicleStatus));
 
   if (shouldOpenVehicleDetails) {
-    return `/dashboard/vendors/account/owner-onboarding-bike/details/vehicle/${id}`;
+    return `/dashboard/vendors/account/owner-onboarding-bike-taxi/details/vehicle/${id}`;
   }
 
-  return `/dashboard/vendors/account/owner-onboarding-bike/details/account/${id}`;
+  return `/dashboard/vendors/account/owner-onboarding-bike-taxi/details/account/${id}`;
 };
-
 
 
 export function AccountList() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
+  const [alert, setAlert] = useState(false);
   const [loading, setLoading] = useState(false);
   const location = useLocation();
 
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
   const [statusFilter, setStatusFilter] = useState(['All']);
-  const [serviceTypeFilter, setServiceTypeFilter] = useState(['Parcel'])
+  const [serviceTypeFilter, setServiceTypeFilter] = useState(['Bike'])
   const [documentTypeFilter, setDocumentTypeFilter] = useState(['All'])
   const [availableStatusFilter, setavailableStatusFilter] = useState(['All'])
   const [sourceFilter, setSourceFilter] = useState(['All'])
@@ -243,7 +241,7 @@ export function AccountList() {
   }, []);
 
   useEffect(() => {
-    setServiceTypeFilter(["Parcel"]);
+    setServiceTypeFilter(["Bike"]);
   }, []);
 
   useEffect(() => {
@@ -285,7 +283,7 @@ export function AccountList() {
         district: zoneValue ? JSON.stringify(zoneValue) : undefined,
         stage: stageParam,
         source: sourceFilter,
-        serviceType: normalizeServiceTypes(serviceTypeFilter),
+        serviceType: "Bike",
       });
 
       // Prevent duplicate concurrent same-parameter hits (common in StrictMode/effect replays).
@@ -300,7 +298,7 @@ export function AccountList() {
         search: normalizedSearchQuery,
         district: zoneValue ? JSON.stringify(zoneValue) : undefined,
         stage: stageParam,
-        serviceType: normalizeServiceTypes(serviceTypeFilter),
+        serviceType: "Bike",
         filterType: JSON.stringify({
           // status: documentTypeFilter, // KYC Filter UI is commented
           source: sourceFilter,
@@ -345,6 +343,20 @@ export function AccountList() {
     fetchAccounts(pagination.currentPage, pagination.search, !searchChanged);
   }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, sourceFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, zoneFilter]);
 
+  useEffect(() => {
+    if (location.state?.accountAdded || location.state?.accountUpdated) {
+      const action = location.state.accountAdded ? 'added' : 'updated';
+      const accountName = location.state.accountName || 'Account';
+      setAlert({
+        message: `${accountName} ${action} successfully!`
+      });
+      setTimeout(() => {
+        setAlert(null);
+      }, 5000);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
   const handleRefresh = () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
     setPagination({
@@ -355,7 +367,7 @@ export function AccountList() {
       search: '',
     });
     setStatusFilter(['All']);
-    setServiceTypeFilter(['Parcel']);
+    setServiceTypeFilter(['Bike']);
     setDocumentTypeFilter(['All']);
     setavailableStatusFilter(['All']);
     setSourceFilter(['All']);
@@ -491,7 +503,7 @@ export function AccountList() {
     }
 
     else if (filterType === 'type') {
-      setServiceTypeFilter(['Parcel']);
+      setServiceTypeFilter(['Bike']);
     }
     else if (filterType === "source") {
       setSourceFilter(prev => {
@@ -562,9 +574,20 @@ export function AccountList() {
       </PopoverContent>
     </Popover>
   );
+
+
   return (
     <div className="mb-8 flex flex-col gap-12">
-      <ParcelSearch onSearch={getAccounts} initialValue={pagination.search} />
+      {alert && (
+        <div className='mb-2'>
+          <Alert
+            color='blue'
+            className='py-3 px-6 rounded-xl'
+          >
+            {alert.message}
+          </Alert>
+        </div>)}
+      <BikeTaxiSearch onSearch={getAccounts} initialValue={pagination.search} />
       <div className="px-6 -mt-4 pb-4 flex flex-wrap items-start gap-8">
         {/* <div className="min-w-[220px]">
             <Typography variant="small" className="text-sm font-semibold text-blue-gray-800 mb-2">
@@ -615,7 +638,7 @@ export function AccountList() {
           ${ColorStyles.bgColor}`}>
           <div className='flex items-center justify-between w-full'>
             <Typography variant="h6" color="white">
-              All Accounts List
+              All Bike Taxi Accounts List
             </Typography>
             <button
               className="bg-primary-400 text-white px-4 py-2 rounded-2xl flex items-center gap-2 hover:bg-primary-500"
@@ -753,7 +776,7 @@ export function AccountList() {
                               state={{
                                 prefetchedCabs: Array.isArray(cabs) ? cabs : [],
                                 ownerName: name || "",
-                                type: type || "Parcel",
+                                type: type || "Bike",
                                 accountId: id,
                               }}
                             >

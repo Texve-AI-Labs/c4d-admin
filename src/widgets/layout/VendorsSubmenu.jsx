@@ -35,13 +35,19 @@ function VendorsSubmenu({ miniSidenav }) {
         return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-auto");
       case "All Auto List":
         return pathname.startsWith("/dashboard/vendors/account/autolist");
-      case "All Bike Owner":
-        return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike");
-      case "All Bike List":
+      case "All Parcel-Bike Owner":
+        return (pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike") &&
+          !pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi")
+        );
+      case "All Parcel-Bike List":
         return (
           pathname.startsWith("/dashboard/vendors/account/parcel") &&
           !pathname.startsWith("/dashboard/vendors/account/parcel/list")
         );
+      case "All Bike-Taxi Owner":
+        return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi");
+      case "All Bike-Taxi List":
+        return pathname.startsWith("/dashboard/vendors/account/biketaxilist");
       case "All Document Verification":
         return pathname.startsWith("/dashboard/doc-verification");
       case "All Pending Documents":
@@ -56,11 +62,13 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Cab Owners", path: "/dashboard/vendors/account/owner-onboarding-cab", icon: "/img/owners.png" },
     { label: "All Acting Driver", path: "/dashboard/vendors/account/drivers", icon: "/img/acting_driver.png" },
     { label: "All Auto Owner", path: "/dashboard/vendors/account/owner-onboarding-auto", icon: "/img/parcel_list.png" },
-    { label: "All Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },
+    { label: "All Parcel-Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },
+    { label: "All Bike-Taxi Owner", path: "/dashboard/vendors/account/owner-onboarding-bike-taxi", icon: "/img/parcel_list.png" },
     { label: "Online Vehicles List", path: "/dashboard/vendors/onlineVehiclesList", icon: "/img/vehicleslist.png" },
     { label: "All Cab List", path: "/dashboard/vendors/vehicleList", icon: "/img/vehicles.png" },
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
     { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
+    { label: "All Bike-Taxi List", path: "/dashboard/vendors/account/bikeTaxiList", icon: "/img/Parcel_driver.png" },
     ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
       ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
       : []),

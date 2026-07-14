@@ -147,6 +147,8 @@ import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
 import AutoMasterPriceTableAdd from "./pages/finance/masterPriceTable/AutoMasterPriceTableAdd";
+import BikeMasterPriceTableAdd from "./pages/finance/masterPriceTable/BikeMasterPriceTableAdd";
+import BikeMasterPriceTableEdit from "./pages/finance/masterPriceTable/BikeMasterPriceTableEdit";
 import ParcelCommissionList from "./pages/finance/parcelCommission/list";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
@@ -177,6 +179,16 @@ import OwnerOnboardingBikeAccountDetails from "./pages/account/owner-onboarding-
 import OwnerOnboardingBikeVehicleDetails from "./pages/account/owner-onboarding-bike/vehicleDetails";
 import OwnerOnboardingBikeCompletedDetails from "./pages/account/owner-onboarding-bike/completedDetails";
 import OwnerOnboardingBikeCreation from "./pages/account/owner-onboarding-bike/bikecreation";
+import OwnerOnboardingBikeTaxiList from "./pages/account/owner-onboarding-bike-taxi/BikeTaxilist";
+import BikeTaxiLists from "./pages/account/owner-onboarding-bike-taxi/BikeTaxilists";
+import OwnerOnboardingBikeTaxiAdd from "./pages/account/owner-onboarding-bike-taxi/BikeTaxiadd";
+import OwnerOnboardingBikeTaxiDocuments from "./pages/account/owner-onboarding-bike-taxi/BikeTaxidocuments";
+import OwnerOnboardingBikeTaxiVehicleDocuments from "./pages/account/owner-onboarding-bike-taxi/BikeTaxivehicleDocuments";
+import OwnerOnboardingBikeTaxiAccountDetails from "./pages/account/owner-onboarding-bike-taxi/BikeTaxiaccountDetails";
+import OwnerOnboardingBikeTaxiVehicleDetails from "./pages/account/owner-onboarding-bike-taxi/BikeTaxivehicleDetails";
+import OwnerOnboardingBikeTaxiCompletedDetails from "./pages/account/owner-onboarding-bike-taxi/BikeTaxicompletedDetails";
+import OwnerOnboardingBikeTaxiCreation from "./pages/account/owner-onboarding-bike-taxi/BikeTaxiCreation";
+import BikeTaxiAccountCreationTabs from "./pages/account/owner-onboarding-bike-taxi/BikeTaxiAccountCreationTabs";
 import DriverCancellationHistoryList from "./pages/user/CancelltionHistory/list";
 import AdminDiscountHistory from "./pages/support/adminDiscountHistory";
 import ReturnTripDriverSubscriptionView from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionView";
@@ -828,6 +840,86 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi",
+        path: "/vendors/account/owner-onboarding-taxi/tabs",
+        element: <BikeTaxiAccountCreationTabs />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi List",
+        path: "/vendors/account/owner-onboarding-bike-taxi",
+        element: <OwnerOnboardingBikeTaxiList />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Bike Taxi List",
+        path: "/vendors/account/bikeTaxiList",
+        element: <BikeTaxiLists />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Add",
+        path: "/vendors/account/owner-onboarding-bike-taxi/add",
+        element: <OwnerOnboardingBikeTaxiAdd />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Documents",
+        path: "/vendors/account/owner-onboarding-bike-taxi/documents/:id",
+        element: <OwnerOnboardingBikeTaxiDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Vehicle Documents",
+        path: "/vendors/account/owner-onboarding-bike-taxi/vehicle-documents/:id",
+        element: <OwnerOnboardingBikeTaxiVehicleDocuments />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Account Details",
+        path: "/vendors/account/owner-onboarding-bike-taxi/details/account/:id",
+        element: <OwnerOnboardingBikeTaxiAccountDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Vehicle Details",
+        path: "/vendors/account/owner-onboarding-bike-taxi/details/vehicle/:id",
+        element: <OwnerOnboardingBikeTaxiVehicleDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Completed Details",
+        path: "/vendors/account/owner-onboarding-bike-taxi/details/completed/:id",
+        element: <OwnerOnboardingBikeTaxiCompletedDetails />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi Vehicle Creation",
+        path: "/vendors/account/owner-onboarding-bike-taxi/vehicle-creation/:id",
+        element: <OwnerOnboardingBikeTaxiCreation />,
+        display: false,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Owner Onboarding Bike Add",
         path: "/vendors/account/owner-onboarding-bike/add",
         element: <OwnerOnboardingBikeAdd />,
@@ -879,6 +971,14 @@ export const routes = [
         name: "Owner Onboarding Bike Vehicle Creation",
         path: "/vendors/account/owner-onboarding-bike/vehicle-creation/:id",
         element: <OwnerOnboardingBikeCreation />,
+        display: false,
+        permission: "Vendors",
+      },
+            {
+        icon: <UserIcon {...icon} />,
+        name: "Owner Onboarding Bike Taxi",
+        path: "/vendors/account/owner-onboarding-taxi/tabs",
+        element: <BikeTaxiAccountCreationTabs />,
         display: false,
         permission: "Vendors",
       },
@@ -1020,6 +1120,14 @@ export const routes = [
         permission: "Autos",
       },
         {
+          icon: <UserIcon {...icon} />,
+        name: "Bike Taxi Bookings",
+        path: "/bike-taxi",
+        element: <AllBookingsLists type={BOOKING_SERVICE_TYPE.BIKE} />,
+        display: false,
+        permission: "All bookings",
+      },
+      {
           icon: <UserIcon {...icon} />,
           name: "Parcel Bookings",
           path: "/booking/list/Parcel",
@@ -1240,6 +1348,22 @@ export const routes = [
         name: "Auto Master Price Add",
         path: "/finance/master-price/auto-add",
         element: <AutoMasterPriceTableAdd />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Bike Master Price Add",
+        path: "/finance/master-price/bike-add",
+        element: <BikeMasterPriceTableAdd />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Bike Master Price Edit",
+        path: "/finance/master-price/bike-edit/:id",
+        element: <BikeMasterPriceTableEdit />,
         display: true,
         permission: "Users"
       },

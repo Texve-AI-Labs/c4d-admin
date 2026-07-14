@@ -57,6 +57,7 @@ function TierListFilters({
           <option value="ALL">All</option>
           <option value="CAB">Cab</option>
           <option value="AUTO">Auto</option>
+          <option value="BIKE">Bike</option>
         </select>
       </div>
     </div>

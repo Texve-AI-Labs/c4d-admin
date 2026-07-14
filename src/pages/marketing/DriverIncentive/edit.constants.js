@@ -14,6 +14,7 @@ export const SERVICE_TYPE_OPTIONS_BY_CODE = {
   SERVICE_TRIP_BONUS: [
     { value: "RIDES", label: "Rides" },
     { value: "AUTO", label: "Auto" },
+    { value: "BIKE", label: "Bike" },
     { value: "RENTAL_OUTSTATION", label: "Round Trip" },
     { value: "RENTAL_HOURLY_PACKAGE", label: "Hourly Package" },
     { value: "RENTAL_DROP_TAXI", label: "Drop Taxi" },
@@ -21,6 +22,7 @@ export const SERVICE_TYPE_OPTIONS_BY_CODE = {
   SERVICE_TRIP_RULES: [
     { value: "RIDES", label: "Rides" },
     { value: "AUTO", label: "Auto" },
+    { value: "BIKE", label: "Bike" },
     { value: "RENTAL_OUTSTATION", label: "Round Trip" },
     { value: "RENTAL_HOURLY_PACKAGE", label: "Hourly Package" },
     { value: "RENTAL_DROP_TAXI", label: "Drop Taxi" },

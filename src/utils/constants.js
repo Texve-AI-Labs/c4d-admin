@@ -1030,7 +1030,14 @@ export const API_ROUTES = {
     'SUPPORT_TICKETS': '/admin/support-tickets',
     'SUPPORT_TICKET_BY_ID': '/admin/support-tickets/:id',
     'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status',
-    'CUSTOMER_CANCELLATION_CHARGE_LOGS': '/admin/customer-cancellation-charge-logs'
+    'CUSTOMER_CANCELLATION_CHARGE_LOGS': '/admin/customer-cancellation-charge-logs',
+    'ADD_NEW_BIKE_TAXI':'/register/admin/bike',
+    'UPDATE_BIKE_TAXI_DETAILS':'/update/admin/bike',
+    'GET_BIKE_BY_ID':'/bike/',
+    'GET_BIKE_LIST':"/admin/bikes", // show the bike taxi lst need to ui.
+    'BIKE_PACKAGE_LIST':'/bike-package-list',
+    'BIKE_MASTERPRICE_TABLE_ADD':'/add-bikes-package',
+    'BIKE_PRICE_EDIT':'/update-bike-package',
 
 };
 
@@ -1094,6 +1101,7 @@ export const BOOKING_SERVICE_TYPE = {
     AUTO: 'AUTO',
     PARCEL: 'PARCEL',
     ALL_CABS:'ALL_CABS',
+    BIKE:'BIKE',
     RETURN_TRIPS:'RETURN_TRIPS'
 };
 

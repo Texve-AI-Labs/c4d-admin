@@ -128,9 +128,21 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
 export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const isReturnTripsList =
-        String(type || "").toUpperCase() === "RETURN_TRIPS" ||
-        String(location.pathname || "").toLowerCase().includes("/booking/list/returntrips");
+    const bookingFeatures = useMemo(() => {
+        const features = [];
+        const normalizedType = String(type || "").toUpperCase();
+        const normalizedPath = String(location.pathname || "").toLowerCase();
+
+        if (normalizedType === "RETURN_TRIPS" || normalizedPath.includes("/booking/list/returntrips")) {
+            features.push("RETURN_TRIPS");
+        }
+        if (normalizedType === "BIKE" || normalizedPath.includes("/dashboard/bike-taxi")) {
+            features.push("BIKE");
+        }
+
+        return features;
+    }, [type, location.pathname]);
+    const hasFeature = (feature) => bookingFeatures.includes(feature);
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
@@ -190,6 +202,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
         if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
         if (path.startsWith("/dashboard/booking/list/returntrips")) return "RETURN_TRIPS";
         if (path.startsWith("/dashboard/auto")) return "AUTO";
+        if (path.startsWith("/dashboard/bike-taxi")) return "BIKE";
         if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
         return "";
     };
@@ -670,6 +683,9 @@ if (!statusFilter.includes('All')) {
         if (normalizedPath.startsWith("/dashboard/booking/list") || normalizedPath.startsWith("/dashboard/auto")) {
             updateInquiryTotalPendings(normalizedType, totalPendings);
         }
+         if (normalizedPath.startsWith("/dashboard/booking/list") || normalizedPath.startsWith("/dashboard/bike-taxi")) {
+            updateInquiryTotalPendings(normalizedType, totalPendings);
+        }
     }, [counts?.totalPendings, location.pathname, type, updateHomeTotalPendings, updateInquiryTotalPendings]);
 
     const handlePageChange = (page) => {
@@ -838,14 +854,15 @@ if (!statusFilter.includes('All')) {
     ];
 
     const allTabLabel =
-        type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" : "All Bookings";
-    const tableHeaders = isReturnTripsList
+        type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" :type === "BIKE" ? 'All Bike Taxi': "All Bookings";
+    const isCompactFeatureList = hasFeature("RETURN_TRIPS") || hasFeature("BIKE");
+    const tableHeaders = isCompactFeatureList
         ? ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
         : ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
 
     const tabs = useMemo(
         () =>
-            isReturnTripsList
+            isCompactFeatureList
         ? [
             { label: allTabLabel, value:'ALL_BOOKINGS'},
             { label: 'Today', value: 'TODAY' },
@@ -857,7 +874,7 @@ if (!statusFilter.includes('All')) {
             { label: 'Future', value: 'REMAINING' },
             { label: 'Custom date', value: 'CUSTOM_DATE' },
                   ],
-        [isReturnTripsList, allTabLabel]
+        [bookingFeatures, allTabLabel, isCompactFeatureList]
     );
     const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
 
@@ -890,7 +907,7 @@ if (!statusFilter.includes('All')) {
     const handleRefresh = () => {
         // Set manual filter flag to prevent useEffect conflicts
         setIsManualDateFilter(true);
-        const refreshedTab = isReturnTripsList ? 'TODAY' : 'ALL_BOOKINGS';
+        const refreshedTab = isCompactFeatureList ? 'TODAY' : 'ALL_BOOKINGS';
         
         // Reset all filters to their default state
         setStatusFilter(['All']);
@@ -1720,7 +1737,7 @@ if (!statusFilter.includes('All')) {
                                                                 }`}
                                                             />
                                                         </td>
-                                                       {!isReturnTripsList && (
+                                                       {!isCompactFeatureList && (
                                                     <td className={className}>
                                                             {data?.userId ? (
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
@@ -1742,7 +1759,7 @@ if (!statusFilter.includes('All')) {
                                                             )}
                                                         </td>
                                                         )}
-                                                        {!isReturnTripsList && (
+                                                        {!isCompactFeatureList && (
                                                         <td className={className}>
                                                             <button
                                                                 className={`text-xs font-semibold text-white flex items-center justify-center gap-2 rounded-sm px-2 py-2 ${(data?.followup || 'NONE') === 'NONE'
@@ -1767,7 +1784,7 @@ if (!statusFilter.includes('All')) {
                                                             </button>
                                                             </td>
                                                         )}
-                                                        {!isReturnTripsList && (
+                                                        {!isCompactFeatureList && (
                                                             <td className={className}>
                                                                 {data?.requiresSupportApproval ? (
                                                                     <Button
@@ -1785,7 +1802,7 @@ if (!statusFilter.includes('All')) {
                                                             </td>
                                                         )}
                                                         
-                                                        {!isReturnTripsList && (
+                                                        {!isCompactFeatureList && (
                                                         <td className={className}>
                                                             {/* {data?.status === 'STARTED' &&
                                                                 <Button

@@ -4,12 +4,12 @@ import { OP_OPTIONS } from "./typeConstants";
 import {
   buildComponentRuleConditionPayload,
   COMPONENT_LOCKED_ANY_SERVICE_OPTIONS,
-  COMPONENT_LOCKED_AUTO_SERVICE_OPTIONS,
   COMPONENT_RULE_SERVICE_OPTIONS,
   COMPONENT_TIER_KEYS,
   createComponentRuleCondition,
   createComponentRuleState,
   getComponentUiServiceType,
+  isBikePartner,
 } from "./componentRuleUtils";
 
 const getOptionValue = (option) =>
@@ -36,6 +36,10 @@ function TierComponentRulesSection({
   allowPeriodChange = false,
   serviceOptions = COMPONENT_RULE_SERVICE_OPTIONS,
 }) {
+  const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const isBike = isBikePartner(normalizedPartnerType);
+  const autoOptions = [{ label: "Auto", value: "AUTO" }];
+  const bikeOptions = [{ label: "Bike", value: "BIKE" }];
   const [componentState, setComponentState] = useState(
     createComponentRuleState({
       payoutFrequency: defaultPayoutFrequency,
@@ -70,8 +74,10 @@ function TierComponentRulesSection({
                 const nextServiceType =
                   metric === "onlineHours"
                     ? "ANY"
-                    : partnerType === "AUTO"
+                    : normalizedPartnerType === "AUTO"
                       ? "AUTO"
+                      : isBike
+                        ? "BIKE"
                       : getComponentUiServiceType(condition);
 
                 return createComponentRuleCondition({
@@ -116,8 +122,9 @@ function TierComponentRulesSection({
               ...tierConfig,
               rules: (Array.isArray(tierConfig.rules) ? tierConfig.rules : []).map((rule) => {
                 if (rule.metric === "onlineHours") return { ...rule, serviceType: "ANY" };
-                if (partnerType === "AUTO") return { ...rule, serviceType: "AUTO" };
-                if (rule.serviceType === "AUTO") return { ...rule, serviceType: defaultServiceType };
+                if (normalizedPartnerType === "AUTO") return { ...rule, serviceType: "AUTO" };
+                if (isBike) return { ...rule, serviceType: "BIKE" };
+                if (rule.serviceType === "AUTO" || rule.serviceType === "BIKE") return { ...rule, serviceType: defaultServiceType };
                 return rule;
               }),
             },
@@ -218,8 +225,10 @@ function TierComponentRulesSection({
                     serviceType:
                       nextValue === "onlineHours"
                         ? "ANY"
-                        : partnerType === "AUTO"
+                        : normalizedPartnerType === "AUTO"
                           ? "AUTO"
+                          : isBike
+                            ? "BIKE"
                           : rule.serviceType === "ANY" || rule.serviceType === "AUTO"
                             ? defaultServiceType
                             : rule.serviceType,
@@ -245,7 +254,7 @@ function TierComponentRulesSection({
             createComponentRuleCondition({
               metric: defaultMetric,
               period: prev?.payoutFrequency || defaultPayoutFrequency || defaultPeriod,
-              serviceType: partnerType === "AUTO" ? "AUTO" : defaultServiceType,
+              serviceType: normalizedPartnerType === "AUTO" ? "AUTO" : isBike ? "BIKE" : defaultServiceType,
               op: ">=",
               value: "1",
               amount: "0",
@@ -292,9 +301,11 @@ function TierComponentRulesSection({
                       serviceType:
                         rule?.metric === "onlineHours"
                           ? "ANY"
-                          : partnerType === "AUTO"
+                          : normalizedPartnerType === "AUTO"
                             ? "AUTO"
-                            : rule?.serviceType,
+                            : isBike
+                              ? "BIKE"
+                              : rule?.serviceType,
                     });
 
                     return {
@@ -434,11 +445,13 @@ function TierComponentRulesSection({
             <div className="space-y-3">
               {(tierConfig.rules || []).map((rule, index) => {
                 const currentServiceOptions =
-                  partnerType === "AUTO"
-                    ? COMPONENT_LOCKED_AUTO_SERVICE_OPTIONS
-                    : rule.metric === "onlineHours"
-                      ? COMPONENT_LOCKED_ANY_SERVICE_OPTIONS
-                      : serviceOptions;
+                  rule.metric === "onlineHours"
+                    ? COMPONENT_LOCKED_ANY_SERVICE_OPTIONS
+                          : normalizedPartnerType === "AUTO"
+                            ? autoOptions
+                            : isBike
+                              ? bikeOptions
+                              : serviceOptions;
 
                 return (
                   <div key={`${tierKey}-${index}`} className="rounded-md border border-blue-gray-100 p-3">
@@ -499,7 +512,7 @@ function TierComponentRulesSection({
                         </Typography>
                         <select
                           value={rule.serviceType}
-                          disabled={rule.metric === "onlineHours" || partnerType === "AUTO"}
+                          disabled={rule.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
                           onChange={(event) => onRuleChange(tierKey, index, "serviceType", event.target.value)}
                           className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 disabled:bg-blue-gray-50"
                         >

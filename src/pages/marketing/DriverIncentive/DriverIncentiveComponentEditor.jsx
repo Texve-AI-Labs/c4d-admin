@@ -17,12 +17,14 @@ function DriverIncentiveComponentEditor({
         ? "SERVICE_TRIP_BONUS"
         : form.code;
   const isAutoPartner = String(form.partnerType || "").trim().toUpperCase() === "AUTO";
+  const isBikePartnerType = String(form.partnerType || "").trim().toUpperCase() === "BIKE";
   const isRuleBasedComponent =
     normalizedCode === "ONLINE_HOURS_BONUS" || normalizedCode === "SERVICE_TRIP_BONUS";
   const componentTitleMap = {
     ONLINE_HOURS_BONUS: "Online Hours Bonus",
     SERVICE_TRIP_BONUS: "Service Trip Bonus",
   };
+  const isBikePartner = String(form.partnerType || "").trim().toUpperCase() === "BIKE";
   const metricOptionsByCode = {
     ONLINE_HOURS_BONUS: [{ value: "onlineHours", label: "Online Hours" }],
     SERVICE_TRIP_BONUS: [{ value: "tripCount", label: "Trip Count" }],
@@ -171,11 +173,13 @@ function DriverIncentiveComponentEditor({
                     )
                   }
                   className="w-full rounded-md border border-blue-gray-200 px-2 py-2 text-xs"
-                  disabled={isAutoPartner}
+                  disabled={isAutoPartner || isBikePartner}
                 >
                   {withCurrentOption(
                     isAutoPartner
                       ? [{ value: "AUTO", label: "Auto" }]
+                      : isBikePartner
+                        ? [{ value: "BIKE", label: "Bike" }]
                       : SERVICE_TYPE_OPTIONS_BY_CODE[form.code] || [{ value: "RIDES", label: "Rides" }],
                     rule.serviceType
                   ).map((serviceTypeOption) => (

@@ -5,9 +5,9 @@ import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
 import { Button } from '@material-tailwind/react';
 import { useNavigate } from "react-router-dom";
-import AccountCreationTabs from './AccountCreationTabs';
+import BikeTaxiAccountCreationTabs from './BikeTaxiAccountCreationTabs';
 
-const AddAccountNew = () => {
+const BikeTaxiAddAccountNew = () => {
     const navigate = useNavigate();
 
     const onSubmit = async (values, { setSubmitting }) => {
@@ -34,7 +34,7 @@ const AddAccountNew = () => {
             }
             const accountId = data?.data?.id;
             if (data?.success && accountId) {
-                navigate(`/dashboard/vendors/account/owner-onboarding-bike/documents/${accountId}`);
+                navigate(`/dashboard/vendors/account/owner-onboarding-bike-taxi/documents/${accountId}`);
                 return;
             }
         } catch (error) {
@@ -53,10 +53,8 @@ const AddAccountNew = () => {
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
-            <AccountCreationTabs activeStage={1} />
+            <BikeTaxiAccountCreationTabs activeStage={1} />
             <div className="mb-4">
-                {/* <h2 className="text-2xl font-bold">Add new Account</h2> */}
-                {/* <span className='text-xs text-blue-gray-600 mt-1'>All fields are required</span> */}
             </div>
             <Formik
                 initialValues={initialValues}
@@ -72,8 +70,7 @@ const AddAccountNew = () => {
                                     <label htmlFor="type" className="text-sm font-medium text-gray-700">Service Type</label>
                                     <Field as="select" name="type" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                         <option value="">Select Type</option>
-                                        <option value="Parcel">Parcel</option>
-                                        {/* <option value="Company">Travels</option> */}
+                                        <option value="Bike">Bike</option>
                                     </Field>
                                     <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                                 </div>
@@ -108,7 +105,7 @@ const AddAccountNew = () => {
                         <div className='flex flex-row'>
                             <Button
                                 fullWidth
-                                onClick={() => { navigate('/dashboard/vendors/account/owner-onboarding-bike'); }}
+                                onClick={() => { navigate('/dashboard/vendors/account/owner-onboarding-bike-taxi'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
                             >
                                 Cancel
@@ -130,4 +127,4 @@ const AddAccountNew = () => {
     );
 };
 
-export default AddAccountNew;
+export default BikeTaxiAddAccountNew;

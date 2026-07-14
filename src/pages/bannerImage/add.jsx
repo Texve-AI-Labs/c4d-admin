@@ -39,6 +39,29 @@ const AddBanner = () => {
     return suggestion.title || suggestion.fullText || '';
   };
 
+  const mapServiceDetails = (serviceType) => {
+    switch (serviceType) {
+      case 'DRIVER':
+        return { serviceType: 'DRIVER', bookingType: null, packageType: null };
+      case 'RENTAL_HOURLY_PACKAGE':
+        return { serviceType: 'RENTAL', bookingType: null, packageType: 'Local' };
+      case 'RENTAL':
+        return { serviceType: 'RENTAL', bookingType: 'ROUND_TRIP', packageType: 'Outstation' };
+      case 'RENTAL_DROP_TAXI':
+        return { serviceType: 'RENTAL', bookingType: 'DROP_ONLY', packageType: 'Outstation' };
+      case 'RIDES':
+        return { serviceType: 'RIDES', bookingType: null, packageType: null };
+      case 'AUTO':
+        return { serviceType: 'AUTO', bookingType: null, packageType: null };
+      case 'PARCEL':
+        return { serviceType: 'PARCEL', bookingType: null, packageType: null };
+      case 'BIKE':
+        return { serviceType: 'BIKE', bookingType: null, packageType: null };
+      default:
+        return { serviceType: 'RIDES', bookingType: null, packageType: null };
+    }
+  };
+
   const initialValues = {
     fromDate: '',
     toDate: '',
@@ -53,6 +76,7 @@ const AddBanner = () => {
     driverType: '',
     startTime: '',
     endTime: '',
+    serviceType: '',
   };
 
   const fetchGeoData = async () => {
@@ -82,6 +106,7 @@ const AddBanner = () => {
 
   const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER', 'ONTRIP_BANNER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
+  const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
 
   const validationSchema = Yup.object().shape({
     type: Yup.string().required('Type is required'),
@@ -113,6 +138,11 @@ const AddBanner = () => {
     endTime: Yup.string().when('type', {
       is: requiresStandardFields,
       then: (schema) => schema.required('End Time is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    serviceType: Yup.string().when('type', {
+      is: isServiceIntroImage,
+      then: (schema) => schema.required('Service Type is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
     driverType: Yup.string().when('type', {
@@ -180,6 +210,8 @@ const AddBanner = () => {
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
       const isOnTripBanner = values.type === "ONTRIP_BANNER";
+      const isServiceIntro = values.type === "SERVICE_INTRO_IMAGE";
+      const mappedServiceDetails = isServiceIntro ? mapServiceDetails(values.serviceType) : null;
       if (!isNewCustomer && !isIntroType && !isOnTripBanner) {
         // const fromDateIso = values.fromDate ? new Date(values.fromDate).toISOString() : '';
         // const toDateIso = values.toDate ? new Date(values.toDate).toISOString() : '';
@@ -187,14 +219,25 @@ const AddBanner = () => {
         formData.append('startTime', values.startTime || '');
         formData.append('endTime', values.endTime || '');
         formData.append('toDate', values.toDate);
+      if (!isServiceIntro) {
         formData.append('redirectUrl', values.redirectUrl.trim());
         formData.append('dropAddress', values.dropAddress || '');
         formData.append('dropLat', values.dropLocation?.lat || '');
         formData.append('dropLong', values.dropLocation?.lng || '');
         formData.append('navigateTo', values.navigateTo.trim());
+        }
       }
       if (values.type === 'TRAINING_VIDEO_DRIVER') {
         formData.append('redirectUrl', values.redirectUrl.trim());
+      }
+      if (isServiceIntro) {
+        formData.append('serviceType', mappedServiceDetails?.serviceType || '');
+        if (mappedServiceDetails?.bookingType) {
+          formData.append('bookingType', mappedServiceDetails.bookingType);
+        }
+        if (mappedServiceDetails?.packageType) {
+          formData.append('packageType', mappedServiceDetails.packageType);
+        }
       }
       if (values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER') {
         formData.append('driverType', values.driverType);
@@ -233,6 +276,7 @@ const AddBanner = () => {
       >
         {({ isSubmitting, values,setFieldValue }) => {
           const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER' || values.type === 'ONTRIP_BANNER';
+          const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
           const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType;
           return (
           <Form className="space-y-4">
@@ -247,7 +291,7 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'ONTRIP_BANNER') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'ONTRIP_BANNER' || selectedType === 'SERVICE_INTRO_IMAGE') {
                       setFieldValue('zone', 'All');
                     }
                     if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
@@ -265,6 +309,7 @@ const AddBanner = () => {
                   <option value="ONTRIP_BANNER">On Trip Banner</option>
                   {/* <option value="STATS">Stats</option> */}
                   <option value="TOP_NEW">Top New</option>
+                  <option value="SERVICE_INTRO_IMAGE">Service Intro Image (customer)</option>                  
                   {/* <option value="MIDCAROUSEL">MidCarousel</option> */}
                   {/* <option value="PROMOTION">Promotion</option> */}
                   {/* <option value="BOTTOM_NEW">Bottom New</option> */}
@@ -288,6 +333,7 @@ const AddBanner = () => {
                     <option value="CAB">CAB</option>
                     <option value="AUTO">AUTO</option>
                     <option value="PARCEL">PARCEL</option>
+                    <option value="BIKE">BIKE</option>
                     <option value="ALL">ALL</option>
                   </Field>
                   <ErrorMessage name="driverType" component="div" className="text-red-500 text-sm" />
@@ -305,6 +351,27 @@ const AddBanner = () => {
                     <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
                   </div>
                 </>
+              )}
+              {isServiceIntro && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Service Type</label>
+                  <Field
+                    as="select"
+                    name="serviceType"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                  >
+                    <option value="">Select Service Type</option>
+                    <option value="DRIVER">Driver</option>
+                    <option value="RENTAL_HOURLY_PACKAGE">Hourly Package</option>
+                    <option value="RENTAL">Outstation</option>
+                    <option value="RENTAL_DROP_TAXI">Drop Taxi</option>
+                    <option value="RIDES">Local</option>
+                    <option value="AUTO">Auto</option>
+                    <option value="PARCEL">Parcel</option>
+                    <option value="BIKE">Bike</option>
+                  </Field>
+                  <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
+                </div>
               )}
               {!hideStandardFields && (
                 <>
@@ -329,11 +396,13 @@ const AddBanner = () => {
                 <ErrorMessage name="endTime" component="div" className="text-red-500 text-sm" />
               </div>
 
+              {!isServiceIntro && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Redirect URL</label>
                 <Field name="redirectUrl" type="text" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
                 <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
               </div>
+              )}
               </>)}
               <div>
                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -360,7 +429,7 @@ const AddBanner = () => {
               </div>
 
               {/* Drop Location (New Field) */}
-              {!hideStandardFields && (
+              {!hideStandardFields && !isServiceIntro && (
                 <>              
               <div>
                 <label className="text-sm font-medium text-gray-700">Drop Location </label>
@@ -410,6 +479,7 @@ const AddBanner = () => {
                     'RENTAL_DROP_TAXI',
                     'RENTAL',
                     'AUTO',
+                    'BIKE',
                     'RIDES',
                     'DRIVER',
                     'PARCEL',

@@ -22,6 +22,7 @@ export function Topnav({ permissions = [] }) {
   const isAllRecordsSection =
     path.startsWith("/dashboard/booking/list") ||
     path.startsWith("/dashboard/auto") ||
+    path.startsWith("/dashboard/bike-taxi") ||
     path.startsWith("/dashboard/vendors/driver-return-trips");
 
   const isCustomersSection =
@@ -42,6 +43,8 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/account/allvehicles") ||
     path.startsWith("/dashboard/vendors/account/autoview") ||
     path.startsWith("/dashboard/vendors/account/autolist") ||
+    path.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi") ||
+    path.startsWith("/dashboard/vendors/account/biketaxilists") ||
     path.startsWith("/dashboard/doc-verification") ||
     path.startsWith("/dashboard/doc-verification/pending");
   

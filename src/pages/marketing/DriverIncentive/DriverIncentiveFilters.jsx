@@ -2,9 +2,11 @@ import React from "react";
 import { Card, CardBody, Typography } from "@material-tailwind/react";
 
 const PARTNER_TYPES = [
-  // "DRIVER", 
+  // "DRIVER",
+  // "ALL", 
   "CAB",
   "AUTO",
+  "BIKE",
 ];
 const STATUS_OPTIONS = [
   { label: "All", value: "ALL" },

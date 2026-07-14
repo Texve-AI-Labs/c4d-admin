@@ -9,6 +9,7 @@ const isOnlineHoursCode = (code = "") =>
 
 const isAutoPartnerType = (partnerType = "") =>
   String(partnerType || "").trim().toUpperCase() === "AUTO";
+const isBikePartnerType = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "BIKE";
 
 const normalizeText = (value = "") => String(value || "").trim().toUpperCase();
 
@@ -70,6 +71,7 @@ export const createEditableRule = (rule = {}, code = "", partnerType = "CAB") =>
   const fallbackMetric = isOnlineHoursCode(code) ? "onlineHours" : "tripCount";
   const fallbackServiceType = isAutoPartnerType(partnerType)
     ? "AUTO"
+    : isBikePartnerType(partnerType) ? "BIKE"
     : isOnlineHoursCode(code)
       ? "ANY"
       : "RIDES";
@@ -94,6 +96,7 @@ export const createDefaultRule = (code = "", partnerType = "CAB") =>
         period: "WEEKLY",
         serviceType: isAutoPartnerType(partnerType)
           ? "AUTO"
+          : isBikePartnerType(partnerType) ? "BIKE"
           : isOnlineHoursCode(code)
             ? "ANY"
             : "RIDES",
