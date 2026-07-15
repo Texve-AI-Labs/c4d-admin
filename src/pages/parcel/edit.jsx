@@ -6,6 +6,7 @@ import { Alert, Button, Input, List, ListItem, Dialog, DialogHeader, DialogBody,
 import { useNavigate, useParams } from 'react-router-dom';
 import { ACCOUNT_EDIT_SCHEMA } from '@/utils/validations';
 import { parseAddressParts } from '@/utils/addressUtils';
+import DownloadLinkButton from '@/components/DownloadLinkButton';
 import moment from 'moment';
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
@@ -684,58 +685,24 @@ const ParcelEdit = () => {
 
                             <div className="flex justify-center mt-4">
                                 {modalData.image && (
-                                    <a
+                                    <DownloadLinkButton
                                         href={modalData.image}
-                                        download={`document-${modalData.type || 'image'}-1`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        filename={`document-${modalData.type || 'image'}-1`}
                                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-2"
-                                        onClick={(e) => {
-                                            // Fallback: if download fails, open in new tab
-                                            if (!modalData.image || modalData.image === '') {
-                                                e.preventDefault();
-                                                alert('Document URL not available');
-                                                return;
-                                            }
-                                            // Try to trigger download
-                                            const link = document.createElement('a');
-                                            link.href = modalData.image;
-                                            link.download = `document-${modalData.type || 'image'}-1`;
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                        }}
+                                        onMissingHref={() => alert('Document URL not available')}
                                     >
                                         Download Image 1
-                                    </a>
+                                    </DownloadLinkButton>
                                 )}
                                 {modalData.image2 && (
-                                    <a
+                                    <DownloadLinkButton
                                         href={modalData.image2}
-                                        download={`document-${modalData.type || 'image'}-2`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                        filename={`document-${modalData.type || 'image'}-2`}
                                         className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                        onClick={(e) => {
-                                            // Fallback: if download fails, open in new tab
-                                            if (!modalData.image2 || modalData.image2 === '') {
-                                                e.preventDefault();
-                                                alert('Document URL not available');
-                                                return;
-                                            }
-                                            // Try to trigger download
-                                            const link = document.createElement('a');
-                                            link.href = modalData.image2;
-                                            link.download = `document-${modalData.type || 'image'}-2`;
-                                            link.target = '_blank';
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                        }}
+                                        onMissingHref={() => alert('Document URL not available')}
                                     >
                                         Download Image 2
-                                    </a>
+                                    </DownloadLinkButton>
                                 )}
                             </div>
                         </div>
