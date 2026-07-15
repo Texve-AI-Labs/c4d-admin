@@ -857,8 +857,12 @@ if (!statusFilter.includes('All')) {
         type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" :type === "BIKE" ? 'All Bike Taxi': "All Bookings";
     const isCompactFeatureList = hasFeature("RETURN_TRIPS") || hasFeature("BIKE");
     const tableHeaders = isCompactFeatureList
-        ? ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
-        : ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
+        ? [
+            // "Service Type", "Booking Type", "Package Type", 
+            "Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
+        : [
+            // "Service Type", "Booking Type", "Package Type", 
+            "Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
 
     const tabs = useMemo(
         () =>
@@ -1597,9 +1601,26 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    // const bookingTypeValue = data?.bookingType || data?.type || activeTab || '-';
+                                                    // const packageTypeValue = data?.packageType || data?.packageName || '-';
 
                                                 return (
                                                     <tr key={data?.id} className={className}>
+                                                        {/* <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {data?.serviceType ? data.serviceType : '-'}
+                                                            </Typography>
+                                                        </td>
+                                                        <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {bookingTypeValue}
+                                                            </Typography>
+                                                        </td>
+                                                        <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {packageTypeValue}
+                                                            </Typography>
+                                                        </td> */}
                                                         <td className={className}>
                                                             <div className="flex items-center">
                                                                 <Link
