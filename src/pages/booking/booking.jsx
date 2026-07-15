@@ -4236,7 +4236,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             {quoteDetails.amount?.driverCharge > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.driverCharge || '0')}</span>.
+                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge || '0')}</span>.
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.gst_percentage > 0 && (
@@ -4244,11 +4244,11 @@ const priceDetailsCardClass = isPeakHour
                                                                 • The estimated price includes  <span className="font-bold text-black">{quoteDetails.amount?.gst_percentage|| '0'}%</span> tax.
                                                             </Typography>
                                                             )}
-                                                            {quoteDetails.amount?.extraNightCharge > 0 && (
+                                                            {/* {quoteDetails.amount?.extraNightCharge > 0 && (
                                                              <Typography className="text-sm text-gray-700">
                                                                 • Night Charge of <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge)}</span> applies if the trip extends past{' '}.
                                                             </Typography>
-                                                            )}
+                                                            )} */}
                                                             {Number(values.luggage) > 0 && (
                                                                 <Typography className=" text-sm text-gray-700">
                                                                     • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
