@@ -509,10 +509,18 @@ const getQuoteOutstationDetails = async (values) => {
         'RENTAL_HOURLY_PACKAGE': 'RENTAL',
     };
     const mappedServiceType = serviceTypeMap[values?.serviceType] || values?.serviceType;
+    const isDriverService = values?.serviceType === 'DRIVER';
+    const driverPackageType = isDriverService
+        ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
+        : 'Outstation';
+    const driverBookingType = isDriverService
+        ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+        : (values?.tripType ? values.tripType.toUpperCase() : '');
+
     const quoteData = {
         serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
         customerId: values?.customerId?.id,
-        packageType: 'Outstation',
+        packageType: driverPackageType,
         fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
         ...(values?.serviceType !== 'DRIVER' ? { carType: values?.carType } : {}),
@@ -527,9 +535,9 @@ const getQuoteOutstationDetails = async (values) => {
             isPremiumService : values?.isPremiumService ? true : false
     };
     if (values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') {
-        quoteData.bookingType = values?.tripType ? values.tripType.toUpperCase() : '';
+        quoteData.bookingType = driverBookingType;
     }
-    const isDriverOutstation = values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation';
+    const isDriverOutstation = isDriverService && values?.packageTypeSelected === 'Outstation';
         const isRoundTripCustom =
             isDriverOutstation &&
         values?.tripType === 'Round Trip' &&
@@ -537,8 +545,7 @@ const getQuoteOutstationDetails = async (values) => {
     if (!isDriverOutstation || isRoundTripCustom) {
         quoteData.toDate = moment(`${values?.toDate} ${values?.toTime}`, "YYYY-MM-DD HH:mm:ss").toISOString();
     }
-        if (values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation' && values?.packageSelected && values?.packageSelected !== 'custom_date') {
-        quoteData.packageType = 'Outstation';
+        if (isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected && values?.packageSelected !== 'custom_date') {
         quoteData.packageId = Number(values.packageSelected);
         quoteData.period = Number(values.packageSelected);
     }
@@ -582,8 +589,8 @@ const getQuoteOutstationDetails = async (values) => {
     const initialValues = {
         serviceType: bookingData?.serviceType || '',
         packageTypeSelected: bookingData?.packageType || '',
-        tripType: bookingData?.serviceType === 'DRIVER' && bookingData?.packageType === 'Outstation'
-            ? 'Round Trip'
+        tripType: bookingData?.serviceType === 'DRIVER'
+            ? (bookingData?.packageType === 'Outstation' ? 'Round Trip' : 'Drop Only')
             : (bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || ''),
         // transmissionType : bookingData?.transmissionType || '',
         packageSelected: bookingData?.packageId ? bookingData?.packageId : '',
@@ -675,11 +682,19 @@ const getQuoteOutstationDetails = async (values) => {
 
             actualZone = zoneData.serviceArea.name;
 
+            const isDriverService = values?.serviceType === 'DRIVER';
+            const driverPackageType = isDriverService
+                ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
+                : 'Local';
+            const driverBookingType = isDriverService
+                ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+                : (values?.tripType ? values.tripType.toUpperCase() : '');
+
             const quoteDate = {
                 serviceType: values.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL' : values.serviceType || mappedServiceType,
                 customerId: values?.customerId?.id,
                 serviceFor: values.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : values.serviceType,
-                packageType: 'Local',
+                packageType: driverPackageType,
                 fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                 ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
                 period: values.serviceType === 'RENTAL'|| values.serviceType === 'DRIVER' ? packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || '' : '',
@@ -703,7 +718,7 @@ const getQuoteOutstationDetails = async (values) => {
                 (values?.serviceType === 'RENTAL' && values?.packageTypeSelected == 'Local');
 
             if (!isHourlyPackageSelection && values?.serviceType !== 'AUTO' && values?.serviceType !== 'RIDES') {
-                quoteDate.bookingType = values?.tripType ? values.tripType.toUpperCase() : '';
+                quoteDate.bookingType = driverBookingType;
             }
             const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
                 ? (
@@ -988,20 +1003,26 @@ const getQuoteOutstationDetails = async (values) => {
                 const selectedPackage = packageTypeSelectedData.find(
                     (pkg) => pkg.id === Number(values?.packageSelected)
                 );
-            const period = values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation'? (values?.packageSelected && values?.packageSelected !== 'custom_date' ? Number(values?.packageSelected) : ''): (values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'DRIVER'? selectedPackage?.period || '' : '');
+            const period = values?.serviceType === 'DRIVER'
+                ? ''
+                : (values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'DRIVER'
+                    ? selectedPackage?.period || ''
+                    : '');
                 const isHourlyPackageSelection =
                     values?.serviceType === 'RENTAL_HOURLY_PACKAGE' ||
                     (values?.serviceType === 'RENTAL' && values?.packageTypeSelected == 'Local');
 
                 data = {
                     packageId: values?.packageSelected === "0" || values?.packageSelected === "custom_date" ? 0 : Number(values?.packageSelected),
-                    packageType: values?.packageTypeSelected,
+                    packageType: values?.serviceType === 'DRIVER' ? 'Local' : values?.packageTypeSelected,
                     customerId: bookingData?.Customer?.id,
                     bookingId: bookingData?.id,
                     adminBooking: true,
                     serviceType: values?.serviceType,
                     ...((!isHourlyPackageSelection && values?.serviceType !== 'AUTO') && {
-                        bookingType: values?.tripType?.toUpperCase() || '',
+                        bookingType: values?.serviceType === 'DRIVER'
+                            ? (values?.packageTypeSelected === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+                            : (values?.tripType?.toUpperCase() || ''),
                     }),
                 // transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
                     ...(values?.serviceType !== 'DRIVER' ? { carType: values?.carType ? values?.carType : bookingData?.carType } : {}),
