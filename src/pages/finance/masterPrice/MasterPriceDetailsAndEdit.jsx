@@ -162,7 +162,7 @@ export function MasterPriceDetailsAndEdit() {
                                     />
                                 </div>
                             </div>
-                             {values?.serviceType === 'DRIVER' &&
+                             {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' &&
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <Field type="number" name="dropPriceAbove" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
