@@ -18,6 +18,7 @@ import moment from 'moment';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import { FaFilter } from 'react-icons/fa';
+import { fetchZoneOptions } from '@/pages/marketing/DriverIncentive/zoneOptions';
 
 const BannerView = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const BannerView = () => {
   const [positionValues, setPositionValues] = useState([]);
   const [typeFilter, setTypeFilter] = useState(['All']);
   const [zoneFilter, setZoneFilter] = useState(['All']);
+  const [zoneOptions, setZoneOptions] = useState([{ label: 'All', value: 'All' }]);
   const [statusTab, setStatusTab] = useState('active');
   const [positionErrorById, setPositionErrorById] = useState({});
 
@@ -63,12 +65,28 @@ const BannerView = () => {
     }
   };
 
-  const getServiceTypeLabel = (serviceType) => {
+  const getServiceTypeLabel = (item) => {
+    if (!item) return '-';
+
+    const serviceType = item.serviceType || '';
+    const bookingType = item.bookingType || '';
+    const packageType = item.packageType || '';
+
+    if (serviceType === 'RENTAL' && bookingType === 'ROUND_TRIP' && packageType === 'Outstation') {
+      return 'Outstation';
+    }
+
+    if (serviceType === 'RENTAL' && bookingType === 'DROP_ONLY' && packageType === 'Outstation') {
+      return 'Drop Taxi';
+    }
+
+    if (serviceType === 'RENTAL' && packageType === 'Local') {
+      return 'Hourly Package';
+    }
+
     const mapped = mapServiceDetails(serviceType);
     const serviceLabel = formatTypeText(mapped.serviceType);
-    const bookingLabel = mapped.bookingType ? ` - ${formatTypeText(mapped.bookingType)}` : '';
-    const packageLabel = mapped.packageType ? ` - ${formatTypeText(mapped.packageType)}` : '';
-    return `${serviceLabel}${bookingLabel}${packageLabel}`;
+    return serviceLabel || '-';
   };
 
   const formatDate = (dateValue) => {
@@ -82,6 +100,18 @@ const BannerView = () => {
   };
 
   useEffect(() => {
+    const loadZoneOptions = async () => {
+      const options = await fetchZoneOptions();
+      setZoneOptions(
+        options.map((opt) => ({
+          label: opt.label === 'ALL' ? 'All' : opt.label,
+          value: opt.value === '' ? 'All' : opt.value,
+        }))
+      );
+    };
+
+    loadZoneOptions();
+
     const fetchBanners = async () => {
       try {
         setLoading(true);
@@ -116,7 +146,7 @@ const BannerView = () => {
     } finally {
       setLoading(false);
     }
-  };
+    };
 
   fetchBanners();
 }, [location.state, typeFilter, zoneFilter, statusTab]);
@@ -219,30 +249,17 @@ const BannerView = () => {
   );
 
   const typeOptions = [
-  { value: 'ALL', label: 'All' },
-  { value: 'TOP', label: 'Top' },
-  { value: 'BOTTOM', label: 'Bottom' },
-  { value: 'YOUTUBE', label: 'YouTube' },
-  { value: 'BACKGROUND', label: 'Background' },
-  { value: 'BANNER', label: 'Banner' },
-  { value: 'STATS', label: 'Stats' },
-  { value: 'TOP_NEW', label: 'Top New'},
-  // { value: 'MIDCAROUSEL', label: 'Mid Carousel'},
-  { value: 'PROMOTION', label: 'Promotion'},
-  { value: 'BOTTOM_NEW', label: 'Bottom New'},
+  { value: 'All', label: 'All' },
+  {value:'BANNER', label:'Customer Banner' },
+  {value:'BANNER_DRIVER', label:'Banner Driver' },
+  {value:'ONTRIP_BANNER', label:'On Trip Banner' },
+  {value: 'TOP_NEW', label: 'Top New'},
+  {value: 'SERVICE_INTRO_IMAGE', label:'Service Intro Image (customer)'},
   { value: 'NEW_CUSTOMER', label: 'New Customer' },
-  { value: 'INTRO_SLIDES', label: 'Intro Slides' },
+  { value: 'INTRO_SLIDES', label: 'Intro Slides (customer)'},
   { value: 'INTRO_SLIDES_DRIVER', label: 'Intro Slides (Driver)' },
-  { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' },
-];
-
-  const zoneOptions = [
-    { value: 'All', label: 'All'},
-    { value: 'Chennai', label: 'Chennai' },
-    { value: 'Thiruvannamali', label: 'Thiruvannamali' },
-    { value: 'Vellore', label: 'Vellore' },
-    { value: 'Kanchipuram', label: 'Kanchipuram' },
-  ];
+  { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' }
+] ;
 
   // Client-side filtering remains as a fallback
   const filteredBannerList = bannerList.filter(item =>
@@ -303,7 +320,7 @@ const BannerView = () => {
                   <th className="py-3 px-5 text-left text-gray-700">Image</th>
                  <th className="py-3 px-5 text-left">
                     <FilterPopover
-                      title={<span className="text-base font-semibold text-gray-700">Type</span>}
+                      title={<span className="text-base font-semibold text-gray-700 mr-1">Type</span>}
                       options={typeOptions}
                       selectedFilters={typeFilter}
                       onFilterChange={(value) => handleFilterChange('type', value)}
@@ -347,7 +364,7 @@ const BannerView = () => {
                         />
                       </td>
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>
-                      <td className="py-3 px-5">{item.redirectUrl || '-'}</td>
+                      <td className="py-3 px-5 break-words max-w-xs">{item.redirectUrl || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         {formatDate(item.fromDate)}
                       </td>
@@ -364,7 +381,7 @@ const BannerView = () => {
                         {formatTypeText(item.driverType)}
                       </td>
                       <td className="py-3 px-5">
-                        {getServiceTypeLabel(item.serviceType)}
+                        {getServiceTypeLabel(item)}
                       </td>
                       <td className="py-3 px-5">
                         <Switch
