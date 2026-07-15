@@ -1381,7 +1381,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         {getCurrentPremiumOptions().length > 0 ? (
                                                             <div className="flex gap-4">
                                                                 {getCurrentPremiumOptions().map((premium, index) => (
-                                                                    <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                    <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                         <Field
                                                                             type="radio"
                                                                             name="carType"
@@ -1625,7 +1625,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     <ul className="border rounded-lg bg-white mt-2">
                                                         {pickupSuggestions.map((suggestion, index) => (
                                                             <li
-                                                                key={index}
+                                                                key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
@@ -1659,7 +1659,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     <ul className="border rounded-lg bg-white mt-2">
                                                         {dropSuggestions.map((suggestion, index) => (
                                                             <li
-                                                                key={index}
+                                                                key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => {
                                                                     handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
@@ -1697,7 +1697,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     <ul className="border rounded-lg bg-white mt-2">
                                                         {driverSuggestions.map((suggestion, index) => (
                                                             <li
-                                                                key={index}
+                                                                key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driver', setFieldValue, values)}
                                                             >
@@ -1732,7 +1732,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     <ul className="border rounded-lg bg-white mt-2 max-h-48 overflow-y-auto">
                                                         {driverEndSuggestions.map((suggestion, index) => (
                                                             <li
-                                                                key={index}
+                                                                key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                 className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driverEnd', setFieldValue, values)}
                                                             >
@@ -2194,7 +2194,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             {getCurrentPremiumOptions().length > 0 ? (
                                                                 <div className="flex gap-4">
                                                                     {getCurrentPremiumOptions().map((premium, index) => (
-                                                                        <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                        <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                             <Field
                                                                                 type="radio"
                                                                                 name="carType"
@@ -2332,7 +2332,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <ul className="border rounded-lg bg-white mt-2">
                                                             {pickupSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
                                                                         handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
@@ -2367,7 +2367,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <ul className="border rounded-lg bg-white mt-2">
                                                             {dropSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
                                                                         handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
@@ -2403,10 +2403,10 @@ const getQuoteOutstationDetails = async (values) => {
                                                 />
                                                 {driverSuggestions.length > 0 && (
                                                     <ul className="border rounded-lg bg-white mt-2">
-                                                        {driverSuggestions.map((suggestion, index) => (
-                                                            <li
-                                                                key={index}
-                                                                className="p-2 cursor-pointer hover:bg-gray-100"
+                                                            {driverSuggestions.map((suggestion, index) => (
+                                                                <li
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
+                                                                    className="p-2 cursor-pointer hover:bg-gray-100"
                                                                 onClick={() => handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), 'driver', setFieldValue, values)}
                                                             >
                                                                 <div className="flex flex-col">
@@ -2678,8 +2678,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                     </p>
                                                     {getCurrentPremiumOptions().length > 0 ? (
                                                         <div className="flex gap-4">
-                                                            {getCurrentPremiumOptions().map((premium, index) => (
-                                                                <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                {getCurrentPremiumOptions().map((premium, index) => (
+                                                                    <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                     <Field
                                                                         type="radio"
                                                                         name="carType"
@@ -2749,7 +2749,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <ul className="border rounded-lg bg-white mt-2">
                                                             {pickupSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
                                                                         handleSelectLocation(getSuggestionText(suggestion), true, getSuggestionPlaceId(suggestion), setFieldValue, values);
@@ -2786,7 +2786,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <ul className="border rounded-lg bg-white mt-2">
                                                             {dropSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
                                                                         handleSelectLocation(getSuggestionText(suggestion), false, getSuggestionPlaceId(suggestion), setFieldValue, values);
