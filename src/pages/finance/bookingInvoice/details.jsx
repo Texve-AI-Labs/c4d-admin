@@ -11,6 +11,7 @@ import {
 } from "@material-tailwind/react";
 import ConfirmBooking from "@/pages/booking/confirmBooking";
 import moment from "moment";
+import { downloadBlob } from "@/utils/downloadUtils";
 
 const BookingInvoiceDetails = () => {
   const { id } = useParams(); // bookingId
@@ -68,16 +69,10 @@ const BookingInvoiceDetails = () => {
       API_ROUTES.GENERATE_INVOICE + "/" + id
     );
 
-    const url = window.URL.createObjectURL(
-      new Blob([pdfData], { type: "application/pdf" })
+    downloadBlob(
+      new Blob([pdfData], { type: "application/pdf" }),
+      `Invoice_${id}.pdf`
     );
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Invoice_${id}.pdf`;
-    link.click();
-
-    window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Error downloading invoice:", error);
   }
