@@ -284,6 +284,7 @@ const BannerView = () => {
                   <th className="py-3 px-5 text-left  text-gray-700">Schedule Start Time</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Schedule End Time</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Driver Type</th>
+                  <th className="py-3 px-5 text-left  text-gray-700">Service Type</th>  
                   <th className="py-3 px-5 text-left  text-gray-700">Status</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Position</th>
                   <th className="py-3 px-5 text-left  text-gray-700">
@@ -315,7 +316,7 @@ const BannerView = () => {
                         />
                       </td>
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>
-                      <td className="py-3 px-5 break-all">{item.redirectUrl || '-'}</td>
+                      <td className="py-3 px-5">{item.redirectUrl || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         {formatDate(item.fromDate)}
                       </td>
@@ -330,6 +331,9 @@ const BannerView = () => {
                       </td>
                       <td className="py-3 px-5">
                         {formatTypeText(item.driverType)}
+                      </td>
+                      <td className="py-3 px-5">
+                        {formatTypeText(item.serviceType)}
                       </td>
                       <td className="py-3 px-5">
                         <Switch
