@@ -855,7 +855,7 @@ if (!statusFilter.includes('All')) {
 
     const allTabLabel =
         type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" :type === "BIKE" ? 'All Bike Taxi': "All Bookings";
-    const isCompactFeatureList = hasFeature("RETURN_TRIPS") || hasFeature("BIKE");
+    const isCompactFeatureList = hasFeature("BIKE");
     const tableHeaders = isCompactFeatureList
         ? [
             // "Service Type", "Booking Type", "Package Type", 
@@ -1739,11 +1739,12 @@ if (!statusFilter.includes('All')) {
                                                             <Chip
                                                                 variant="ghost"
                                                                 // color={"blue"}
-                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED": data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
+                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED":data?.status === "BOOKING_REJECTED" ? "REQUEST_DRIVER" : data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
                                                                 className={`py-0.5 px-2 text-[11px] font-medium w-fit ${
                                                                     data?.status === "QUOTED" ? "bg-yellow-600 text-white ":
                                                                     data?.status === "REQUEST_DRIVER" ? "bg-orange-600 text-white" :
                                                                     data?.status === "CONFIRMED" ? "bg-green-600 text-white" : 
+                                                                    data?.status === "BOOKING_REJECTED" ? "bg-blue-gray-900 text-white":
                                                                     data?.status === "BOOKING_ACCEPTED" ? "bg-green-600 text-white":
                                                                     data?.status === "CUSTOMER_CANCELLED" ? "bg-gray-600 text-white": 
                                                                     data?.status === "ENDED" ? "bg-green-600 text-white" :
@@ -1850,7 +1851,16 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                            {data?.status === "BOOKING_REJECTED" ? (
+                                                                <Button
+                                                                    fullWidth
+                                                                    onClick={() => onAssignDriverHandler(data)}
+                                                                    className={`text-xs font-semibold text-blue-gray-900 flex-wrap ${ColorStyles.bgStatusColor}`}
+                                                                    disabled={data?.User == null}
+                                                                >
+                                                                    Assign Return Trips
+                                                                </Button>
+                                                            ) : data?.serviceType !== "PARCEL" && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}

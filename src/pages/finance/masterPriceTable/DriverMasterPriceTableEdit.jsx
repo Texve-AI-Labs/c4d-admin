@@ -204,10 +204,12 @@ const DriverMasterPriceTableEdit = () => {
                                     <Field type="time" name="nightHoursTo" className="p-2 rounded border" />
                                 </div>
                             </div>
+                            {values?.serviceType === "DRIVER" && values?.type === "Outstation" && 
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                     <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md" />
                                 </div>
+                                }
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                     <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md" />
