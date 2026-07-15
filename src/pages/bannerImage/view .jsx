@@ -40,6 +40,37 @@ const BannerView = () => {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
+  const mapServiceDetails = (serviceType) => {
+    switch (serviceType) {
+      case 'DRIVER':
+        return { serviceType: 'DRIVER', bookingType: null, packageType: null };
+      case 'RENTAL_HOURLY_PACKAGE':
+        return { serviceType: 'RENTAL', bookingType: null, packageType: 'Local' };
+      case 'RENTAL':
+        return { serviceType: 'RENTAL', bookingType: 'ROUND_TRIP', packageType: 'Outstation' };
+      case 'RENTAL_DROP_TAXI':
+        return { serviceType: 'RENTAL', bookingType: 'DROP_ONLY', packageType: 'Outstation' };
+      case 'RIDES':
+        return { serviceType: 'RIDES', bookingType: null, packageType: null };
+      case 'AUTO':
+        return { serviceType: 'AUTO', bookingType: null, packageType: null };
+      case 'PARCEL':
+        return { serviceType: 'PARCEL', bookingType: null, packageType: null };
+      case 'BIKE':
+        return { serviceType: 'BIKE', bookingType: null, packageType: null };
+      default:
+        return { serviceType: '', bookingType: null, packageType: null };
+    }
+  };
+
+  const getServiceTypeLabel = (serviceType) => {
+    const mapped = mapServiceDetails(serviceType);
+    const serviceLabel = formatTypeText(mapped.serviceType);
+    const bookingLabel = mapped.bookingType ? ` - ${formatTypeText(mapped.bookingType)}` : '';
+    const packageLabel = mapped.packageType ? ` - ${formatTypeText(mapped.packageType)}` : '';
+    return `${serviceLabel}${bookingLabel}${packageLabel}`;
+  };
+
   const formatDate = (dateValue) => {
     if (!dateValue) return '-';
     return moment(dateValue).format('DD-MM-YYYY');
@@ -333,7 +364,7 @@ const BannerView = () => {
                         {formatTypeText(item.driverType)}
                       </td>
                       <td className="py-3 px-5">
-                        {formatTypeText(item.serviceType)}
+                        {getServiceTypeLabel(item.serviceType)}
                       </td>
                       <td className="py-3 px-5">
                         <Switch
