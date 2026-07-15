@@ -2203,6 +2203,12 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             <span className="text-gray-900 font-semibold">{Number(bookingDetails?.paymentDetails?.details?.discountPercentage || 0).toFixed(2)}%</span>
                                         </div>
                                     )}
+                                            {bookingDetails?.paymentDetails?.details?.discountAmount > 0  && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' &&(
+                                    <div className="flex flex-col-2 gap-2">
+                                        <span className="text-gray-500 font-semibold">Total Discount Applied:</span>
+                                        <span className="text-gray-900 font-medium">  ₹ {bookingDetails?.paymentDetails?.details?.discountAmount} </span>
+                                </div>
+                                )}
                          {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' && shouldShowQuotePricing(bookingDetails) &&(
                                              <div  className="flex flex-col-2 gap-2">                                                                       
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
@@ -2277,12 +2283,6 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 )}
                                             </>
                                         )}
-                                          {/* {bookingDetails?.paymentDetails?.details?.discountAmount > 0  && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' &&(
-                                    <div className="flex flex-col-2 gap-2">
-                                        <span className="text-gray-500 font-semibold">Total Discount Applied:</span>
-                                        <span className="text-gray-900 font-medium">  ₹ {bookingDetails?.paymentDetails?.details?.discountAmount} </span>
-                                </div>
-                                )} */}
                                         {quoteCancelChargeApplicable && shouldShowQuotePricing(bookingDetails) && (
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Cancel Charge Added:</span>
