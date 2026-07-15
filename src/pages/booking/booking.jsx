@@ -1979,7 +1979,7 @@ const priceDetailsCardClass = isPeakHour
                                 <ul className="absolute top-full left-0 w-full border rounded-lg bg-white mt-2 max-h-60 overflow-y-auto z-10">
                                     {searchResults.map((result, index) => (
                                         <li
-                                            key={index}
+                                            key={result?.bookingNumber || result?.id || [result?.firstName, result?.phoneNumber].filter(Boolean).join('-') || index}
                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                             onClick={() => {
                                                 if (result?.type == 'booking') {
@@ -2403,8 +2403,8 @@ const priceDetailsCardClass = isPeakHour
                                                                             </p>
                                                                             {getCurrentPremiumOptions().length > 0 ? (
                                                                 <div className="flex gap-4">
-                                                                                    {getCurrentPremiumOptions().map((premium, index) => (
-                                                                                        <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                        {getCurrentPremiumOptions().map((premium, index) => (
+                                                                            <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                                             <Field
                                                                                                 type="radio"
                                                                                                 name="carType"
@@ -2799,7 +2799,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     {getCurrentPremiumOptions().length > 0 ? (
                                                                         <div className="flex gap-4">
                                                                             {getCurrentPremiumOptions().map((premium, index) => (
-                                                                                <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                                <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                                     <Field
                                                                                         type="radio"
                                                                                         name="carType"
@@ -2922,9 +2922,9 @@ const priceDetailsCardClass = isPeakHour
                                                     </div>
                                                         {pickupSuggestions.length > 0 && (
                                                             <ul className="border rounded-lg bg-white mt-2">
-                                                                {pickupSuggestions.map((suggestion, index) => (
+                                                            {pickupSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), true, null, setFieldValue,values)}
                                                                 >
@@ -2977,9 +2977,9 @@ const priceDetailsCardClass = isPeakHour
                                                                 </div>
                                                                 {dropSuggestions.length > 0 && (
                                                                     <ul className="border rounded-lg bg-white mt-2">
-                                                                        {dropSuggestions.map((suggestion, index) => (
+                                                            {dropSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
                                                                                     handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false, null, setFieldValue,values);
@@ -3098,9 +3098,9 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                             {driverSuggestions.length > 0 && (
                                                                 <ul className="border rounded-lg bg-white mt-2">
-                                                                    {driverSuggestions.map((suggestion, index) => (
+                                                            {driverSuggestions.map((suggestion, index) => (
                                                                     <li
-                                                                        key={index}
+                                                                        key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                         className="p-2 cursor-pointer hover:bg-gray-100"
                                                                             onClick={() => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false, 'driver', setFieldValue,values)}
                                                                     >
@@ -3189,14 +3189,14 @@ const priceDetailsCardClass = isPeakHour
                                                             <ul className="border rounded-lg bg-white mt-2 max-h-40 overflow-y-auto z-10">
                                                                 {driverEndSuggestions.map((suggestion, index) => (
                                                                         <li
-                                                                            key={index}
+                                                                            key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                                                         onClick={() => {
                                                                             const selectedAddress = getSuggestionText(suggestion);
                                                                             handleSelectLocation(selectedAddress, getSuggestionPlaceId(suggestion), false, 'driverEnd', setFieldValue, values);
                                                                             // Uncheck the "same as start" when user selects different location
                                                                             if (selectedAddress !== values.driverPickUpAddress) {
-                                                                                document.getElementById('sameAsStart').checked = false;
+                                                                                setFieldValue('sameAsStart', false);
                                                                             }
                                                                         }}
                                                                     >
