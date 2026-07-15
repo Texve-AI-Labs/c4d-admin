@@ -794,6 +794,26 @@ const handleSaveDriverEndLocation = async () => {
             : totalEstimatedFareAfterSystemDiscount;
     const finalEstimatedFareAfterDiscountsWithCancelCharge =
         finalEstimatedFareAfterDiscounts + quoteCancelChargeAmount;
+    const currentBookingStatus = String(bookingDetails?.status || "").toUpperCase();
+    const normalizedBookingStatus = currentBookingStatus.replace(/\s+/g, "_");
+    const showPaymentReceiptSummary = [ BOOKING_STATUS.END_OTP, BOOKING_STATUS.ENDED, BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.ENDED, "END OTP","PAYMENT REQUESTED","TRIP ENDED","ENDED"].includes(currentBookingStatus) || [BOOKING_STATUS.END_OTP,BOOKING_STATUS.ENDED,BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.ENDED].includes(normalizedBookingStatus);
+    const showQuoteSummary = !showPaymentReceiptSummary;
+    const displayFareBreakdown = (() => {
+        if (normalizedBookingStatus === BOOKING_STATUS.END_OTP) {
+            return  bookingDetails?.finalFareBreakdown || {};
+        }
+        if (normalizedBookingStatus === BOOKING_STATUS.ENDED) {
+            return bookingDetails?.finalFareBreakdown || bookingDetails?.paymentDetails?.details || {};
+        }
+        return bookingDetails?.value?.estimatedFareBreakdown || bookingDetails?.value?.fareBreakdown || {};
+    })();
+    const displayCollectedAmount = Number(bookingDetails?.paymentDetails?.details?.amountAfterGst ?? amount?.total ?? finalPaymentPirces?.amountAfterGST ?? 0);
+    const displayWalletApplicable = normalizeBoolean(bookingDetails?.walletApplicable);
+    const displayWalletAmount = Number(bookingDetails?.walletAmount || 0);
+    const hideWalletForStatuses = [BOOKING_STATUS.END_OTP, BOOKING_STATUS.PAYMENT_REQUESTED, BOOKING_STATUS.ENDED,BOOKING_STATUS.COMPLETED];
+    const showWalletForStatus = !hideWalletForStatuses.includes(normalizedBookingStatus);
+    const displayQuoteBaseAmount = Number(bookingDetails?.value?.fareBreakdown?.total ?? bookingDetails?.estimatedFareBreakdown?.total ?? bookingDetails?.value?.estimatedPrice ?? 0);
+    const displayQuoteTotalAfterWallet = Math.max(0, displayQuoteBaseAmount - displayWalletAmount);
         //hidden swal.fire
     // const lastAdminStatusToastKeyRef = React.useRef("");
     // const shouldShowAdminDiscountStatusToast =
@@ -2084,6 +2104,26 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     </span>
                                 </div>
                             )}
+                            {showWalletForStatus && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Wallet Applicable:</span>
+                                    <span className="text-gray-900 font-medium">
+                                        {displayWalletApplicable ? "Yes" : "No"}
+                                    </span>
+                                </div>
+                            )}
+                            {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Wallet Amount:</span>
+                                    <span className="text-gray-900 font-medium">₹ {displayWalletAmount.toFixed(2)}</span>
+                                </div>
+                            )}
+                            {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Total After Wallet:</span>
+                                    <span className="text-gray-900 font-medium">₹ {displayQuoteTotalAfterWallet.toFixed(2)}</span>
+                                </div>
+                            )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
                              {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' &&(bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
                             )  && (
@@ -2291,10 +2331,10 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                 </span>
                                         </div>
                                     )}
-                                    {!(bookingDetails?.status === "END_OTP") && (Number(amount?.total || 0)) > 0 && (
+                                    {displayCollectedAmount > 0 && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total Collected Amount {inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-semibold">₹ {Number(amount?.total || 0).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-semibold">₹ {Number(displayCollectedAmount || 0).toFixed(2)}</span>
                                 </div>
                                     )}
                                         {/* {shouldShowQuotePricing(bookingDetails) && (
