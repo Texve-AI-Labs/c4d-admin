@@ -2105,7 +2105,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 </div>
                             )}
                             {showWalletForStatus && (
-                                <div className="flex flex-col-2 gap-2">
+                                <div className="hidden">
                                     <span className="text-gray-500 font-semibold">Wallet Applicable:</span>
                                     <span className="text-gray-900 font-medium">
                                         {displayWalletApplicable ? "Yes" : "No"}

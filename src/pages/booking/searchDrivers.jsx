@@ -34,6 +34,7 @@ export function SearchDrivers(props) {
     const [seconds, setSeconds] = useState(30);
     const parcelVehicleType = props?.bookingData?.parcelVehicleType || "BIKE";
     const parcelSubZoneId =  props?.bookingData?.subZoneId || null;
+    const returnTripId = props?.bookingData?.returnTripId ?? props?.bookingData?.fullData?.returnTripId ?? null;
     const shouldIncludeParcelSubZone = Boolean(parcelSubZoneId) && parcelVehicleType !== "AUTO";
     const isParcelAuto = props?.bookingData?.serviceType === "PARCEL" && parcelVehicleType === "AUTO";
     const showParcelSubZone = props?.bookingData?.serviceType === "PARCEL" && parcelVehicleType === "BIKE";
@@ -243,6 +244,7 @@ export function SearchDrivers(props) {
                         distance: 0,
                         type: "Both",
                         packageId: props?.bookingData?.packageId,
+                        ...(returnTripId != null ? { returnTripId } : {}),
                     }
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.GET_RENTAL_CAB_DRIVERS, data);
                     if (requestDriver?.success) {
@@ -519,6 +521,7 @@ export function SearchDrivers(props) {
                 estimatedMin: fullData.estimatedMin || null,
                 // packageId: fullData.package,
                 // fromWebportal: true,
+                ...(returnTripId != null ? { returnTripId } : {}),
             }
             let data = await ApiRequestUtils.update(API_ROUTES.CONFIRM_RENTAL_BOOKING, reqBody);
             if (data?.success) {

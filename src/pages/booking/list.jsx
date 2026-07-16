@@ -1601,6 +1601,23 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    // if (data?.status === 'REQUEST_DRIVER' && Number(data?.returnTripId) > 0) {
+                                                    //     console.log('Return trip row debug:', {
+                                                    //         id: data?.id,
+                                                    //         status: data?.status,
+                                                    //         returnTripId: data?.returnTripId,
+                                                    //         pickupLat: data?.pickupLat,
+                                                    //         pickupLong: data?.pickupLong,
+                                                    //         driverId: data?.Driver?.id,
+                                                    //         cabId: data?.Cab?.id,
+                                                    //         serviceType: data?.serviceType,
+                                                    //         userId: data?.userId,
+                                                    //         ownership: data?.ownership,
+                                                    //         hasAssignedDriver,
+                                                    //         hasAssignedVehicle,
+                                                    //         hasAssignedDriverOrCab,
+                                                    //     });
+                                                    // }
                                                     // const bookingTypeValue = data?.bookingType || data?.type || activeTab || '-';
                                                     // const packageTypeValue = data?.packageType || data?.packageName || '-';
 
@@ -1739,12 +1756,11 @@ if (!statusFilter.includes('All')) {
                                                             <Chip
                                                                 variant="ghost"
                                                                 // color={"blue"}
-                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED":data?.status === "BOOKING_REJECTED" ? "REQUEST_DRIVER" : data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
+                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED" : data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
                                                                 className={`py-0.5 px-2 text-[11px] font-medium w-fit ${
                                                                     data?.status === "QUOTED" ? "bg-yellow-600 text-white ":
                                                                     data?.status === "REQUEST_DRIVER" ? "bg-orange-600 text-white" :
                                                                     data?.status === "CONFIRMED" ? "bg-green-600 text-white" : 
-                                                                    data?.status === "BOOKING_REJECTED" ? "bg-blue-gray-900 text-white":
                                                                     data?.status === "BOOKING_ACCEPTED" ? "bg-green-600 text-white":
                                                                     data?.status === "CUSTOMER_CANCELLED" ? "bg-gray-600 text-white": 
                                                                     data?.status === "ENDED" ? "bg-green-600 text-white" :
@@ -1835,6 +1851,16 @@ if (!statusFilter.includes('All')) {
                                                                     End Trip
                                                                 </Button>
                                                             } */}
+                                                            {data?.serviceType === 'RENTAL' && data?.status === 'REQUEST_DRIVER' && Number(data?.returnTripId) > 0 && data?.pickupLat && data?.pickupLong && data?.pickupLat && data?.pickupLong && 
+                                                                <Button
+                                                                    fullWidth
+                                                                    onClick={() => onAssignDriverHandler(data)}
+                                                                    className={`text-xs font-semibold text-blue-gray-900 flex-wrap ${ColorStyles.bgStatusColor}`}
+                                                                    disabled={data?.User == null}
+                                                                >
+                                                                    Assign return trips
+                                                                </Button>
+                                                            }
                                                                 {['RIDES', 'RENTAL','AUTO'].includes(data?.serviceType) && ([ 'CONFIRMED','REQUEST_DRIVER'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType =="DRIVER"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) && 
                                                                 <Button
                                                                     fullWidth
@@ -1853,16 +1879,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.status === "BOOKING_REJECTED" ? (
-                                                                <Button
-                                                                    fullWidth
-                                                                    onClick={() => onAssignDriverHandler(data)}
-                                                                    className={`text-xs font-semibold text-blue-gray-900 flex-wrap ${ColorStyles.bgStatusColor}`}
-                                                                    disabled={data?.User == null}
-                                                                >
-                                                                    Assign Return Trips
-                                                                </Button>
-                                                            ) : data?.serviceType !== "PARCEL" && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                                {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}
@@ -1876,7 +1893,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
+                                                            {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => {
