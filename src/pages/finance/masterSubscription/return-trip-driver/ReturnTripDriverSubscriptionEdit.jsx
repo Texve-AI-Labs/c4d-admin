@@ -4,24 +4,27 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import * as Yup from "yup";
+import { fetchZoneOptions } from "./zoneOptions";
 
 const validationSchema = Yup.object({
+  tier: Yup.string().required("Tier is required"),
   planName: Yup.string().required("Plan Name is required"),
   serviceType: Yup.string().required("Service Type is required"),
+  zone: Yup.string().required("Zone is required"),
   eligibleForReturnTrip: Yup.boolean().required("Eligible For Return Trip is required"),
   status: Yup.string().required("Status is required"),
 });
 
 const handleEditSubmit = async (id, values, { setSubmitting, setFieldError }, navigate) => {
   try {
-    const response = await ApiRequestUtils.update(`${API_ROUTES.UPDATE_RETURN_TRIP_ELIGIBILITY}/${id}`, values);
+    const response = await ApiRequestUtils.update(`${API_ROUTES.UPDATE_RETURN_TRIP_ELIGIBILITY}/${id}`, values, 0, { suppressAlert: true });
     if (response?.success === false) {
-      setFieldError("planName", response?.message || "Unable to update rule.");
+      setFieldError("planName", response?.error || response?.message || "Unable to update rule.");
       return;
     }
     navigate("/dashboard/finance/master-subscription/return-trip-driver");
   } catch (err) {
-    setFieldError("planName", err?.response?.data?.message || err?.message || "Unable to update rule.");
+    setFieldError("planName", err?.response?.data?.error || err?.response?.data?.message || err?.message || "Unable to update rule.");
   } finally {
     setSubmitting(false);
   }
@@ -40,13 +43,16 @@ export default function ReturnTripDriverSubscriptionEdit() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [form, setForm] = useState({
+    tier: "",
     planName: "",
     serviceType: "RIDES_RENTAL_CABS",
+    zone: "ALL",
     eligibleForReturnTrip: false,
     status: "ACTIVE",
     notes: "",
   });
   const [error, setError] = useState("");
+  const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,8 +62,10 @@ export default function ReturnTripDriverSubscriptionEdit() {
         const row = rows.find((item) => String(item.id) === String(id));
         if (row) {
           setForm({
+            tier: row.tier || "",
             planName: normalizePlanName(row.planName),
             serviceType: row.serviceType || "RIDES_RENTAL_CABS",
+            zone: row.zone || "ALL",
             eligibleForReturnTrip: Boolean(row.eligibleForReturnTrip),
             status: row.status || "ACTIVE",
             notes: row.notes || "",
@@ -69,6 +77,10 @@ export default function ReturnTripDriverSubscriptionEdit() {
     };
     if (id) fetchData();
   }, [id]);
+
+  useEffect(() => {
+    fetchZoneOptions().then(setZoneOptions).catch(() => setZoneOptions([{ label: "ALL", value: "" }]));
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4">
@@ -83,6 +95,16 @@ export default function ReturnTripDriverSubscriptionEdit() {
         >
           {({ values, setFieldValue }) => (
             <Form className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium">Tier</label>
+                <Field as="select" name="tier" className="mt-1 w-full rounded-md border p-2">
+                  <option value="">Select Tier</option>
+                  <option value="SILVER">SILVER</option>
+                  <option value="GOLD">GOLD</option>
+                  <option value="ELITE">ELITE</option>
+                </Field>
+                <ErrorMessage name="tier" component="div" className="mt-1 text-sm text-red-600" />
+              </div>
               <div>
                 <label className="block text-sm font-medium">Plan Name</label>
                 <Field as="select" name="planName" className="mt-1 w-full rounded-md border p-2">
@@ -101,6 +123,17 @@ export default function ReturnTripDriverSubscriptionEdit() {
                   <option value="AUTO">AUTO</option>
                 </Field>
                 <ErrorMessage name="serviceType" component="div" className="mt-1 text-sm text-red-600" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Zone</label>
+                <Field as="select" name="zone" className="mt-1 w-full rounded-md border p-2">
+                  {zoneOptions.map((option) => (
+                    <option key={`${option.value || "all"}-${option.label}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage name="zone" component="div" className="mt-1 text-sm text-red-600" />
               </div>
               <div>
                 <label className="block text-sm font-medium">Eligible For Return Trip</label>

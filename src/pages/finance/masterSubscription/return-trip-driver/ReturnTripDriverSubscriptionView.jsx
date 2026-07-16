@@ -1,16 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Card, CardBody, CardHeader, Typography } from "@material-tailwind/react";
-import { useNavigate } from "react-router-dom";
+import { Button, Card, CardBody, CardHeader, Typography } from "@material-tailwind/react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 
-const getStatusBadgeClass = (status) => {
-  switch ((status || "").toUpperCase()) {
+const STATUS_TABS = [
+  { label: "Active", value: "ACTIVE" },
+  { label: "Inactive", value: "INACTIVE" },
+];
+
+const getStatusBadgeClass = (status,tier) => {
+  switch (String(status || tier || "").toUpperCase()) {
     case "ACTIVE":
       return "bg-green-100 text-green-700 border-green-200";
     case "INACTIVE":
       return "bg-red-100 text-red-700 border-red-200";
+    case "SILVER":
+      return "bg-slate-100 text-slate-700 border-slate-200";
+    case "GOLD":
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    case "ELITE":
+      return "bg-violet-100 text-violet-700 border-violet-200";
     default:
       return "bg-gray-100 text-gray-700 border-gray-200";
   }
@@ -29,12 +40,24 @@ const formatEligible = (value) => (value ? "Yes" : "No");
 
 export default function ReturnTripDriverSubscriptionView() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [rows, setRows] = useState([]);
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "ACTIVE");
+
+  useEffect(() => {
+    const nextStatus = searchParams.get("status") || "ACTIVE";
+    setStatusFilter(nextStatus);
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const response = await ApiRequestUtils.get(API_ROUTES.GET_RETURN_TRIP_ELIGIBILITY);
+      const queryParams = {};
+      if (statusFilter) {
+        queryParams.status = statusFilter;
+      }
+
+      const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_RETURN_TRIP_ELIGIBILITY, queryParams);
       const data = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response?.result)
@@ -43,13 +66,13 @@ export default function ReturnTripDriverSubscriptionView() {
       setRows(data);
     };
     fetchData().catch((error) => console.error("Error fetching return trip eligibility:", error));
-  }, []);
+  }, [statusFilter]);
 
   const filteredRows = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return rows;
     return rows.filter((row) =>
-      [row?.planName, row?.serviceType, row?.status, row?.notes]
+        [row?.tier, row?.planName, row?.serviceType, row?.status, row?.zone, row?.notes]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query))
     );
@@ -57,8 +80,29 @@ export default function ReturnTripDriverSubscriptionView() {
 
   return (
     <div className="mb-8 flex flex-col gap-12">
-      <div className="p-4  rounded-lg shadow-sm">
-        <div className="flex items-end justify-self-end gap-4">
+      <div className="p-4  bg-gray-50 rounded-lg shadow-sm">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <Card className="inline-block border border-blue-gray-100 shadow-none">
+            <CardBody className="flex flex-wrap gap-2 p-2">
+              {STATUS_TABS.map((tab) => {
+                const isActive = statusFilter === tab.value;
+                return (
+                  <Button
+                    key={tab.value}
+                    variant={isActive ? "filled" : "text"}
+                    color={isActive ? "teal" : "blue-gray"}
+                    onClick={() => {
+                      setStatusFilter(tab.value);
+                      setSearchParams({ status: tab.value });
+                    }}
+                    className={`normal-case text-sm px-4 py-2 ${!isActive ? "text-blue-gray-700" : ""}`}
+                  >
+                    {tab.label}
+                  </Button>
+                );
+              })}
+            </CardBody>
+          </Card>
           {/* <div className="relative flex-grow max-w-[420px]">
             <input
               type="text"
@@ -72,7 +116,7 @@ export default function ReturnTripDriverSubscriptionView() {
           </div> */}
           <button
             onClick={() => navigate("/dashboard/finance/master-subscription/return-trip-driver/add")}
-            className="ml-4 rounded-md border border-emerald-700 bg-primary-600 px-4 py-2 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+            className="rounded-md border border-emerald-700 bg-primary-600 px-4 py-2 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             Add new
           </button>
@@ -89,7 +133,7 @@ export default function ReturnTripDriverSubscriptionView() {
           <table className="w-full min-w-[900px] table-auto">
             <thead>
               <tr>
-                {["Plan Name", "Service Type", "Eligible", "Status", "Notes"].map((heading) => (
+                {["Tier","Plan Name", "Service Type", "Eligible", "Status","Zone", "Notes"].map((heading) => (
                   <th key={heading} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                     <Typography variant="small" className="text-[11px] text-black font-bold uppercase">
                       {heading}
@@ -101,6 +145,11 @@ export default function ReturnTripDriverSubscriptionView() {
             <tbody>
               {filteredRows.length > 0 ? (filteredRows.map((row) => (
                 <tr key={row.id} className="text-sm">
+                  <td className="border-b border-blue-gray-50 py-3 px-5">
+                    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(row.tier)}`}>
+                      {row.tier || "-"}
+                    </span>
+                  </td>
                   <td className="border-b border-blue-gray-50 py-3 px-5">{normalizePlanName(row.planName)}</td>
                   <td className="border-b border-blue-gray-50 py-3 px-5">
                     <span
@@ -114,6 +163,11 @@ export default function ReturnTripDriverSubscriptionView() {
                   <td className="border-b border-blue-gray-50 py-3 px-5">
                     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(row.status)}`}>
                       {row.status || "-"}
+                    </span>
+                  </td>
+                  <td className="border-b border-blue-gray-50 py-3 px-5">
+                    <span className="inline-flex items-center rounded-full border border-blue-gray-200 bg-blue-gray-50 px-3 py-1 text-xs font-semibold text-blue-gray-700">
+                      {row.zone || "-"}
                     </span>
                   </td>
                   <td className="border-b border-blue-gray-50 py-3 px-5">{row.notes || "-"}</td>
