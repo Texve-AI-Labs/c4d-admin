@@ -547,7 +547,10 @@ const getQuoteOutstationDetails = async (values) => {
     }
         if (isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected && values?.packageSelected !== 'custom_date') {
         quoteData.packageId = Number(values.packageSelected);
-        quoteData.period = Number(values.packageSelected);
+            const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
+            if (selectedPackage?.period) {
+                quoteData.period = selectedPackage.period;
+            }
     }
     if(values?.serviceType !== 'DRIVER')
         {
@@ -1003,29 +1006,30 @@ const getQuoteOutstationDetails = async (values) => {
                 const selectedPackage = packageTypeSelectedData.find(
                     (pkg) => pkg.id === Number(values?.packageSelected)
                 );
-            const period = values?.serviceType === 'DRIVER'
-                ? ''
-                : (values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'DRIVER'
-                    ? selectedPackage?.period || ''
-                    : '');
+            const isDriverService = values?.serviceType === 'DRIVER';
+            const shouldOmitDriverPackage = isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected === 'custom_date';
+            const driverPackagePeriod = selectedPackage?.period ?? '';
                 const isHourlyPackageSelection =
                     values?.serviceType === 'RENTAL_HOURLY_PACKAGE' ||
                     (values?.serviceType === 'RENTAL' && values?.packageTypeSelected == 'Local');
 
                 data = {
-                    packageId: values?.packageSelected === "0" || values?.packageSelected === "custom_date" ? 0 : Number(values?.packageSelected),
-                    packageType: values?.serviceType === 'DRIVER' ? 'Local' : values?.packageTypeSelected,
+                    packageType: values?.packageTypeSelected,
                     customerId: bookingData?.Customer?.id,
                     bookingId: bookingData?.id,
                     adminBooking: true,
                     serviceType: values?.serviceType,
+                    ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
+                    ...(!shouldOmitDriverPackage && {
+                        packageId: values?.packageSelected === "0" ? 0 : Number(values?.packageSelected),
+                    }),
                     ...((!isHourlyPackageSelection && values?.serviceType !== 'AUTO') && {
-                        bookingType: values?.serviceType === 'DRIVER'
+                        bookingType: isDriverService
                             ? (values?.packageTypeSelected === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
                             : (values?.tripType?.toUpperCase() || ''),
                     }),
                 // transmissionType : values?.transmissionType ? values?.transmissionType : bookingData?.transmissionType,
-                    ...(values?.serviceType !== 'DRIVER' ? { carType: values?.carType ? values?.carType : bookingData?.carType } : {}),
+                    ...(isDriverService ? {} : { carType: values?.carType ? values?.carType : bookingData?.carType }),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
@@ -1047,7 +1051,6 @@ const getQuoteOutstationDetails = async (values) => {
                     dropLong: null,
                     dropAddress: null,
                     toDate: null,
-                    period,
                     acType: values?.acType.toUpperCase(),
                     sourceType: values?.sourceType,
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {

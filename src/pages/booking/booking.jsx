@@ -105,6 +105,8 @@ const getAdminDiscountUpdatedTs = (item = {}) =>
 const Booking = (props) => {
     const [loading, setLoading] = useState(false);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [selectedPackagePeriod, setSelectedPackagePeriod] = useState('');
+    const [selectedPackageId, setSelectedPackageId] = useState('');
     const [bookingTimes, setBookingTimes] = useState([]);
     const [bookingTimesForDay, setBookingTimesForDay] = useState([]);
     const [range, setRange] = useState({});
@@ -622,7 +624,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         }
         if (isDriverService && values?.packageTypeSelected === 'Outstation'  && values?.packageSelected !== 'custom_date') {
             quoteData.packageId = Number(values.packageSelected);
-            quoteData.period = Number(values.packageSelected);
+            const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
+            quoteData.period = selectedPackage?.period ?? selectedPackagePeriod ?? '';
         }
         if (values?.serviceType === 'RENTAL_DROP_TAXI') {
             quoteData.serviceFor = 'RENTAL_DROP_TAXI';
@@ -761,7 +764,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             isPremiumService : val?.isPremiumService ? true : false
         };
         if (val.serviceType === 'RENTAL_HOURLY_PACKAGE' || val?.serviceType === 'DRIVER') {
-            quoteDate.period = packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected))?.period || '';
+            const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected));
+            quoteDate.period = selectedPackage?.period ?? selectedPackagePeriod ?? '';
         }
         if (val?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && val?.serviceType !== 'AUTO' &&  val?.serviceType !== 'RIDES') {
             quoteDate.bookingType = driverBookingType;
@@ -1332,17 +1336,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             (pkg) => pkg.id === Number(values?.packageSelected)
         );
 
-        const period =
-            values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation'
-                ? (values.packageSelected && values.packageSelected !== 'custom_date' ? Number(values.packageSelected) : '')
-                : (values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'DRIVER'
-                    ? selectedPackage?.period || ''
-                    : '');
+        const isDriverService = values?.serviceType === 'DRIVER';
+        const shouldOmitDriverPackage = isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected === 'custom_date';
+        const driverPackagePeriod = selectedPackage?.period ?? selectedPackagePeriod ?? '';
 
         const bookingData = {
             carId: values?.carSelected?.id,
-            packageId: values?.packageSelected === "0" || values?.packageSelected === "custom_date" ? 0 : Number(values?.packageSelected),
-            packageType: values.serviceType === 'DRIVER' ? 'Local' : values?.packageTypeSelected,
+            packageType: values.serviceType === 'DRIVER' ? (values?.packageTypeSelected || 'Local') : values?.packageTypeSelected,
             date: values?.rideDate,
             time: values?.rideTime,
             // fromDate: values.fromDate,
@@ -1350,8 +1350,12 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             adminBooking: true,
             serviceType: values.serviceType || "AUTO",
             cabType: values.cabType,
+            ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
+            ...(!shouldOmitDriverPackage && {
+                packageId: values?.packageSelected === "0" ? 0 : Number(values?.packageSelected),
+            }),
             ...((values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') && {
-                bookingType: values?.serviceType === 'DRIVER'
+                bookingType: isDriverService
                     ? (values?.packageTypeSelected === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
                     : (values?.tripType?.toUpperCase() || ''),
             }),
@@ -1359,7 +1363,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
-            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
+            ...(isDriverService ? {} : { carType: values.carType || '' }),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
@@ -2545,7 +2549,10 @@ const priceDetailsCardClass = isPeakHour
                                                                     );
 
                                                                     if (selectedPackage) {
+                                                                        setSelectedPackageId(String(selectedPackage.id));
+                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
                                                                         const period = Number(selectedPackage.period) || 0;
+                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
 
                                                                         
                                                                         let baseMoment;
