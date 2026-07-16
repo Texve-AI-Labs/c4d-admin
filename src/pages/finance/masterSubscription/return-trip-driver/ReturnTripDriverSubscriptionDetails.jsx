@@ -24,8 +24,10 @@ export default function ReturnTripDriverSubscriptionDetails() {
           <h2 className="text-xl font-semibold">Return Trip Driver Subscription Details</h2>
         </div>
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+          <FieldRow label="Tier" value={row?.tier} />
           <FieldRow label="Plan Name" value={row?.planName} />
           <FieldRow label="Service Type" value={row?.serviceType} />
+          <FieldRow label="Zone" value={row?.zone} />
           <div className="rounded-md border p-3">
             <div className="text-xs font-semibold uppercase text-gray-500">Eligible For Return Trip</div>
             <div className="mt-2 flex items-center gap-3">

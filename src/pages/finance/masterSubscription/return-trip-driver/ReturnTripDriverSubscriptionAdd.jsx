@@ -1,34 +1,40 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import * as Yup from "yup";
+import { fetchZoneOptions } from "./zoneOptions";
 
 const initialValues = {
+  tier: "",
   planName: "",
   serviceType: "RIDES_RENTAL_CABS",
+  zone: "ALL",
   eligibleForReturnTrip: false,
   status: "ACTIVE",
   notes: "",
 };
 
 const validationSchema = Yup.object({
+  tier: Yup.string().required("Tier is required"),
   planName: Yup.string().required("Plan Name is required"),
   serviceType: Yup.string().required("Service Type is required"),
+  zone: Yup.string().required("Zone is required"),
   eligibleForReturnTrip: Yup.boolean().required("Eligible For Return Trip is required"),
   status: Yup.string().required("Status is required"),
 });
 
-const handleAddSubmit = async (values, { setSubmitting, setFieldError }, navigate) => {
+const handleAddSubmit = async (values, { setSubmitting }, navigate, setModalMessage) => {
   try {
-    const response = await ApiRequestUtils.post(API_ROUTES.ADD_RETURN_TRIP_ELIGIBILITY, values);
+    const response = await ApiRequestUtils.post(API_ROUTES.ADD_RETURN_TRIP_ELIGIBILITY, values, 0, { suppressAlert: true });
     if (response?.success === false) {
-      setFieldError("planName", response?.message || "Unable to save rule.");
+      setModalMessage(response?.error || response?.message || "Unable to save rule.");
       return;
     }
     navigate("/dashboard/finance/master-subscription/return-trip-driver");
   } catch (err) {
-    setFieldError("planName", err?.response?.data?.message || err?.message || "Unable to save rule.");
+    setModalMessage(err?.response?.data?.error || err?.response?.data?.message || err?.message || "Unable to save rule.");
   } finally {
     setSubmitting(false);
   }
@@ -36,6 +42,12 @@ const handleAddSubmit = async (values, { setSubmitting, setFieldError }, navigat
 
 export default function ReturnTripDriverSubscriptionAdd() {
   const navigate = useNavigate();
+  const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
+  const [modalMessage, setModalMessage] = useState("");
+
+  useEffect(() => {
+    fetchZoneOptions().then(setZoneOptions).catch(() => setZoneOptions([{ label: "ALL", value: "" }]));
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4">
@@ -44,10 +56,20 @@ export default function ReturnTripDriverSubscriptionAdd() {
         <Formik
           initialValues={initialValues}
           validationSchema={validationSchema}
-          onSubmit={(values, formikHelpers) => handleAddSubmit(values, formikHelpers, navigate)}
+          onSubmit={(values, formikHelpers) => handleAddSubmit(values, formikHelpers, navigate, setModalMessage)}
         >
           {({ values, setFieldValue, isSubmitting }) => (
             <Form className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium">Tier</label>
+                <Field as="select" name="tier" className="mt-1 w-full rounded-md border p-2">
+                  <option value="">Select Tier</option>
+                  <option value="SILVER">SILVER</option>
+                  <option value="GOLD">GOLD</option>
+                  <option value="ELITE">ELITE</option>
+                </Field>
+                <ErrorMessage name="tier" component="div" className="mt-1 text-sm text-red-600" />
+              </div>
               <div>
                 <label className="block text-sm font-medium">Plan Name</label>
                 <Field as="select" name="planName" className="mt-1 w-full rounded-md border p-2">
@@ -66,6 +88,17 @@ export default function ReturnTripDriverSubscriptionAdd() {
                   <option value="AUTO">AUTO</option>
                 </Field>
                 <ErrorMessage name="serviceType" component="div" className="mt-1 text-sm text-red-600" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Zone</label>
+                <Field as="select" name="zone" className="mt-1 w-full rounded-md border p-2">
+                  {zoneOptions.map((option) => (
+                    <option key={`${option.value || "all"}-${option.label}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage name="zone" component="div" className="mt-1 text-sm text-red-600" />
               </div>
               <div>
                 <label className="block text-sm font-medium">Eligible For Return Trip</label>
@@ -114,6 +147,23 @@ export default function ReturnTripDriverSubscriptionAdd() {
           )}
         </Formik>
       </div>
+      {modalMessage ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+            <p className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{modalMessage}</p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                onClick={() => setModalMessage("")}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
