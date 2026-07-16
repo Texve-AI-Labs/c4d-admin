@@ -128,6 +128,7 @@ const ServiceAreaForm = ({
     { value: "RIDES", label: "Local Rides" },
     { value: "RENTAL_HOURLY_PACKAGE", label: "Hourly Package" },
     { value: "AUTO", label: "Auto" },
+    { value: "BIKE", label: "Bike Taxi" },
     { value: "PARCEL", label: "Parcel" },
   ];
   const driverServiceOptions = [
