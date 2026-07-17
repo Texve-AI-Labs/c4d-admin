@@ -18,6 +18,7 @@ export function Topnav({ permissions = [] }) {
   const isDiscountModuleRoute = path.startsWith("/dashboard/finance/discountmodule");
   const isCustomDiscountRoute = path.startsWith("/dashboard/finance/custom-discount");
   const isTaxRoute = path.startsWith("/dashboard/finance/gst");
+  const isWithdrawalRulesRoute = path.startsWith("/dashboard/finance/withdrawal-rules");
 
   const isAllRecordsSection =
     path.startsWith("/dashboard/booking/list") ||
@@ -71,7 +72,8 @@ export function Topnav({ permissions = [] }) {
     isInstantRewardRoute ||
     isDiscountModuleRoute ||
     isCustomDiscountRoute ||
-    isTaxRoute;
+    isTaxRoute ||
+    isWithdrawalRulesRoute;
   const isDriverEngagementSection =
     path.startsWith("/dashboard/driverengagement");
   const isAdminSection =
