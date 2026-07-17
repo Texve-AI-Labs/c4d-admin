@@ -23,9 +23,9 @@ const PRICE_SCHEMA = Yup.object().shape({
   baseKm: Yup.number().min(0, 'Must be positive').required('Base KM is required'),
   baseFare: Yup.number().min(0, 'Must be positive').required('Base Fare is required'),
   ratePerKm: Yup.number().min(0, 'Must be positive').required('Rate per KM is required'),
-  ratePerMin: Yup.number().min(0, 'Must be positive').required('Rate per minute is required'),
+  // ratePerMin: Yup.number().min(0, 'Must be positive').required('Rate per minute is required'),
   additionalMin: Yup.number().min(0, 'Must be positive').required('Additional min charge is required'),
-  surchargePercentage: Yup.number().min(0).required('Surcharge percentage is required'),
+  // surchargePercentage: Yup.number().min(0).required('Surcharge percentage is required'),
   nightCharge: Yup.number().min(0).required('Night charge is required'),
   waitingMins: Yup.number().min(0).required('Waiting minutes required'),
   waitingCharge: Yup.number().min(0).required('Waiting charge required'),
@@ -113,10 +113,10 @@ const BikeMasterPriceTableEdit = () => {
         baseFare: Number(values.baseFare),
         period: values.type || 'Bike',
         kilometerPrice: Number(values.ratePerKm),
-        minCharge: Number(values.ratePerMin),
+        minCharge: Number(values.ratePerMin) || 0,
         extraKmPrice: Number(values.extraKmPrice),
         additionalMinCharge: Number(values.additionalMin),
-        surChargePercentage: Number(values.surchargePercentage),
+        surChargePercentage: Number(values.surchargePercentage) || 0,
         nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
         nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
         nightCharge: Number(values.nightCharge),
@@ -170,7 +170,7 @@ const BikeMasterPriceTableEdit = () => {
                 />
                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
             </div>
-                <div>
+                <div className='hidden'>
                     <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
                     <Field type="number" name="surchargePercentage"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                     
@@ -226,7 +226,7 @@ const BikeMasterPriceTableEdit = () => {
                                                          
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                                          <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th>
+                                                          {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                                       </tr>
                                                   </thead>
@@ -240,7 +240,7 @@ const BikeMasterPriceTableEdit = () => {
                                                               <Field type="number" name="ratePerKm"  className=" p-1  rounded-md bg-gray-50" />
                                                           </td>
                                                           
-                                                          <td className="px-6 py-1">
+                                                          <td className="px-6 py-1 hidden">
                                                               <Field type="number" name="ratePerMin"  className=" p-1  rounded-md bg-gray-50" />
                                                           </td>
                                                            <td className="px-6 py-1">
