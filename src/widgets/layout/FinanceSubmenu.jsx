@@ -27,7 +27,7 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Custom Discount", path: "/dashboard/finance/custom-discount/list", requiredPermission: "Users" },
     { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
     { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
-    { label: "Driver Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
+    { label: "Driver KM Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
   ];
   const filteredItems = items.filter(({ requiredPermission }) => {
     if (!requiredPermission) return true;
@@ -44,7 +44,7 @@ function FinanceSubmenu({ permissions = [] }) {
     if (label === "Cash Back") {
       return pathname.startsWith("/dashboard/finance/cash-back");
     }
-    if (label === "Driver Bonus") {
+    if (label === "Driver KM Bonus") {
       return pathname.startsWith("/dashboard/finance/driver-bonus");
     }
     if (label === "Discount Module") {
