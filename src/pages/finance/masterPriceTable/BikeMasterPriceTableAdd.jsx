@@ -27,10 +27,10 @@ const PRICE_SCHEMA = Yup.object().shape({
     baseFare: Yup.number().required('Base Fare is required'),
     baseKm: Yup.number().required('Base Km is required'),
     ratePerKm: Yup.number().required('Rate Per Km is required'),
-    ratePerMin: Yup.number().required('Rate Per Min is required'),
+    // ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min Charge is required'),
     // rateParameter: Yup.string().required('Rate Parameter is required'),
-    surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
+    // surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
     nightHoursFrom: Yup.string().required('Night start time is required'),
     nightHoursTo: Yup.string().required('Night end time is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
@@ -73,11 +73,11 @@ const BikeMasterPriceTableAdd = () => {
         baseFare: '',
         baseKm: '',
         ratePerKm: '',
-        ratePerMin: '',
+        ratePerMin: 0,
         additionalMin: '',
         // rateParameter: null,
         extraKmPrice:'',
-        surchargePercentage: '',
+        surchargePercentage: 0,
         nightHoursFrom: '',
         nightHoursTo: '',
         nightCharge: '',
@@ -105,14 +105,14 @@ const BikeMasterPriceTableAdd = () => {
                 baseFare: Number(values.baseFare),
                 baseKm: Number(values.baseKm),
                 kilometerPrice: Number(values.ratePerKm),
-                minCharge: Number(values.ratePerMin),
+                minCharge: Number(values.ratePerMin) || 0,
 
                 extraKmPrice:Number(values.extraKmPrice),
 
                 // rateParameter: values.rateParameter || null,
                 additionalMinCharge: Number(values.additionalMin),
 
-                surChargePercentage: Number(values.surchargePercentage),
+                surChargePercentage: Number(values.surchargePercentage) || 0,
 
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
@@ -218,7 +218,7 @@ const BikeMasterPriceTableAdd = () => {
                             </div> */}
 
                             {/* Surcharge */}
-                            <div>
+                            <div className='hidden'>
                                 <label className="text-sm font-medium text-gray-700">
                                     Surcharge Percentage
                                 </label>
@@ -410,9 +410,9 @@ const BikeMasterPriceTableAdd = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
                                                 Rate Per Km
                                             </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
+                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
                                                 Rate Per Min
-                                            </th>
+                                            </th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
                                                 Additional Min Charge
                                             </th>
@@ -445,7 +445,7 @@ const BikeMasterPriceTableAdd = () => {
                                                     className="text-red-500 text-xs"
                                                 />
                                             </td>
-                                            <td className="px-6 py-3">
+                                            <td className="px-6 py-3 hidden">
                                                 <Field
                                                     type="number"
                                                     name="ratePerMin"
