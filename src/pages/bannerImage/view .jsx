@@ -49,9 +49,9 @@ const BannerView = () => {
       case 'RENTAL_HOURLY_PACKAGE':
         return { serviceType: 'RENTAL', bookingType: null, packageType: 'Local' };
       case 'RENTAL':
-        return { serviceType: 'RENTAL', bookingType: 'ROUND_TRIP', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'ROUND TRIP', packageType: 'Outstation' };
       case 'RENTAL_DROP_TAXI':
-        return { serviceType: 'RENTAL', bookingType: 'DROP_ONLY', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'DROP ONLY', packageType: 'Outstation' };
       case 'RIDES':
         return { serviceType: 'RIDES', bookingType: null, packageType: null };
       case 'AUTO':

@@ -46,9 +46,9 @@ const AddBanner = () => {
       case 'RENTAL_HOURLY_PACKAGE':
         return { serviceType: 'RENTAL', bookingType: null, packageType: 'Local' };
       case 'RENTAL':
-        return { serviceType: 'RENTAL', bookingType: 'ROUND_TRIP', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'ROUND TRIP', packageType: 'Outstation' };
       case 'RENTAL_DROP_TAXI':
-        return { serviceType: 'RENTAL', bookingType: 'DROP_ONLY', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'DROP ONLY', packageType: 'Outstation' };
       case 'RIDES':
         return { serviceType: 'RIDES', bookingType: null, packageType: null };
       case 'AUTO':
@@ -302,7 +302,7 @@ const AddBanner = () => {
                   <option value="">select the Type</option>
                   {/* <option value="TOP">Top</option> */}
                   {/* <option value="BOTTOM">Bottom</option> */}
-                  {/* <option value="YOUTUBE">YouTube</option> */}
+                  {/* <option value="YOUTUBE">YouTube</option> */} 
                   {/* <option value="BACKGROUND">Background</option> */}
                   <option value="BANNER">Customer Banner</option>
                   <option value="BANNER_DRIVER">Banner Driver</option>
