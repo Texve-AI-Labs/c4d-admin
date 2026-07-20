@@ -24,10 +24,19 @@ const ensureMandatoryServiceAccess = (tierAccess = {}) => ({
 const getSelectedAccessCount = (tierAccess = {}) =>
   Object.values(tierAccess).filter(Boolean).length;
 
-function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone = "", initialConfig = {}, partnerType = "CAB" }) {
+function DispatchRulesSection({
+  registerBuilder,
+  serviceAreas = [],
+  selectedZone = "",
+  initialConfig = {},
+  partnerType = "CAB",
+  parcelVehicleType = "BIKE",
+}) {
   const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const normalizedParcelVehicleType = String(parcelVehicleType || "BIKE").trim().toUpperCase();
   const isAutoPartner = normalizedPartnerType === "AUTO";
   const isBikePartner = normalizedPartnerType === "BIKE";
+  const isParcelPartner = normalizedPartnerType === "PARCEL";
   const showAllowedZones = selectedZone === "ALL";
   const [dispatchServiceAccess, setDispatchServiceAccess] = useState({
     SILVER: { RIDES: true, RENTAL_DROP_ONLY: false, RENTAL_OUTSTATION: false, RENTAL_HOURLY_PACKAGE: false },
@@ -296,6 +305,25 @@ function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone
         };
       }
 
+      if (isParcelPartner) {
+        return {
+          parcelVehicleType: normalizedParcelVehicleType,
+          serviceAccess: {
+            SILVER: { [normalizedParcelVehicleType]: true },
+            GOLD: { [normalizedParcelVehicleType]: true },
+            ELITE: { [normalizedParcelVehicleType]: true },
+          },
+          unlockRules: {
+            SILVER: [],
+            GOLD: [],
+            ELITE: [],
+          },
+          enforcement: {
+            strictMode: true,
+          },
+        };
+      }
+
       const buildTierUnlockRules = (tierKey) =>
         Object.entries(dispatchUnlockConditions[tierKey] || {})
           .filter(([serviceKey, conditions]) =>
@@ -335,12 +363,20 @@ function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone
         },
       };
     },
-    [dispatchServiceAccess, dispatchUnlockConditions, dispatchAllowedZones, isAutoPartner, isBikePartner]
+    [
+      dispatchServiceAccess,
+      dispatchUnlockConditions,
+      dispatchAllowedZones,
+      isAutoPartner,
+      isBikePartner,
+      isParcelPartner,
+      normalizedParcelVehicleType,
+    ]
   );
 
   registerBuilder(payloadBuilder);
 
-  if (isAutoPartner || isBikePartner) {
+  if (isAutoPartner || isBikePartner || isParcelPartner) {
     return (
       <div className="space-y-4">
         {TIER_KEYS.map((tierKey) => (
@@ -356,11 +392,15 @@ function DispatchRulesSection({ registerBuilder, serviceAreas = [], selectedZone
                 <label className="inline-flex items-center gap-2">
                   <input type="checkbox" checked disabled className="h-4 w-4 rounded border-blue-gray-300" />
                   <Typography variant="small" color="blue-gray">
-                    {isAutoPartner ? "Auto" : "Bike"}
+                    {isAutoPartner ? "Auto" : isBikePartner ? "Bike" : normalizedParcelVehicleType === "AUTO" ? "Auto" : "Bike"}
                   </Typography>
                 </label>
                 <Typography variant="small" color="gray" className="mt-1 text-xs">
-                  {isAutoPartner ? "Auto is mandatory for AUTO partner." : "Bike is mandatory for BIKE partner."}
+                  {isAutoPartner
+                    ? "Auto is mandatory for AUTO partner."
+                    : isBikePartner
+                      ? "Bike is mandatory for BIKE partner."
+                      : `${normalizedParcelVehicleType === "AUTO" ? "Auto" : "Bike"} is mandatory for PARCEL partner.`}
                 </Typography>
               </div>
             </div>

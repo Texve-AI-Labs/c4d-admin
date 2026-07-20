@@ -20,6 +20,7 @@ const SERVICE_OPTIONS = [
   { label: "Drop Taxi", value: "RENTAL_DROP_ONLY" },
   { label: "Local", value: "RIDES" },
   { label: "Auto", value: "AUTO" },
+  { label: "Parcel", value: "PARCEL" },
 ];
 
 function ServiceTripRulesSection(props) {

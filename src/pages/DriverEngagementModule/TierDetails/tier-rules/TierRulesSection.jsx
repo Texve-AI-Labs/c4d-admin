@@ -47,9 +47,16 @@ const getUiServiceType = (condition = {}) => {
 };
 
 const LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "All", value: "ANY" }];
+const PARCEL_SERVICE_TYPE_OPTIONS = [{ label: "Parcel", value: "PARCEL" }];
 
-function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "CAB" }) {
+function TierRulesSection({
+  registerBuilder,
+  initialConfig = {},
+  partnerType = "CAB",
+  parcelVehicleType = "BIKE",
+}) {
   const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const normalizedParcelVehicleType = String(parcelVehicleType || "BIKE").trim().toUpperCase();
   const isBike = isBikePartner(normalizedPartnerType);
   const [evaluation, setEvaluation] = useState({
     weekStart: "MONDAY",
@@ -91,6 +98,8 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                     ? "ANY"
                     : normalizedPartnerType === "AUTO"
                       ? "AUTO"
+                      : normalizedPartnerType === "PARCEL"
+                        ? "PARCEL"
                       : isBike
                         ? "BIKE"
                       : getUiServiceType(condition),
@@ -121,6 +130,8 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                   ? "ANY"
                   : normalizedPartnerType === "AUTO"
                     ? "AUTO"
+                    : normalizedPartnerType === "PARCEL"
+                      ? "PARCEL"
                     : isBike
                       ? "BIKE"
                     : condition.serviceType === "ANY"
@@ -144,6 +155,9 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
             tierRules.map((condition) => {
               if (condition.metric === "onlineHours") return { ...condition, serviceType: "ANY" };
               if (normalizedPartnerType === "AUTO") return { ...condition, serviceType: "AUTO" };
+              if (normalizedPartnerType === "PARCEL") {
+                return { ...condition, serviceType: "PARCEL", parcelVehicleType: normalizedParcelVehicleType };
+              }
               if (isBike) return { ...condition, serviceType: "BIKE" };
               return condition.serviceType === "AUTO" || condition.serviceType === "BIKE"
                 ? { ...condition, serviceType: "RIDES" }
@@ -184,15 +198,20 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
             tierKey,
             {
               conditions: (tierConditions[tierKey] || []).map((condition) => {
-                const mappedService = mapServiceDetails(
-                  condition.metric === "onlineHours" ? "ANY" : condition.serviceType
-                );
+                const mappedService =
+                  condition.metric === "onlineHours"
+                    ? { serviceType: "ANY", bookingType: null, packageType: null }
+                    : normalizedPartnerType === "PARCEL"
+                      ? { serviceType: "PARCEL", bookingType: null, packageType: null }
+                      : mapServiceDetails(condition.serviceType);
                 return {
                   metric: condition.metric,
                   period: condition.period,
                   serviceType: mappedService.serviceType,
                   bookingType: mappedService.bookingType,
                   packageType: mappedService.packageType,
+                  parcelVehicleType:
+                    normalizedPartnerType === "PARCEL" ? normalizedParcelVehicleType : null,
                   op: condition.op,
                   value: Number(condition.value || 0),
                   isMandatory: Boolean(condition.isMandatory),
@@ -207,7 +226,7 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
       //   onMissingMetrics: fallbackPolicy.onMissingMetrics || "FAIL_MANDATORY",
       // },
     }),
-    [evaluation, tierConditions, fallbackPolicy]
+    [evaluation, tierConditions, fallbackPolicy, normalizedPartnerType, normalizedParcelVehicleType]
   );
 
   registerBuilder(payloadBuilder);
@@ -267,6 +286,8 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                           ? LOCKED_SERVICE_TYPE_OPTIONS
                           : normalizedPartnerType === "AUTO"
                             ? [{ label: "Auto", value: "AUTO" }]
+                            : normalizedPartnerType === "PARCEL"
+                              ? PARCEL_SERVICE_TYPE_OPTIONS
                             : isBike
                               ? [{ label: "Bike", value: "BIKE" }]
                               : SERVICE_TYPE_OPTIONS

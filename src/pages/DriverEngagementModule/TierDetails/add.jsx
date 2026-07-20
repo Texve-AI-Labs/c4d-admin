@@ -60,6 +60,7 @@ function TierDetailsAdd() {
   const [form, setForm] = useState({
     type: typeFromQuery,
     partnerType: "CAB",
+    parcelVehicleType: "BIKE",
     name: "",
     description: "",
     isActive: true,
@@ -123,7 +124,15 @@ function TierDetailsAdd() {
         config: {
           scope: {
             partnerType: form.partnerType || "CAB",
-            vehicleType: form.partnerType === "AUTO" ? "AUTO" : form.partnerType === "BIKE" ? "BIKE" : "ALL",
+            vehicleType:
+              form.partnerType === "AUTO"
+                ? "AUTO"
+                : form.partnerType === "BIKE"
+                  ? "BIKE"
+                  : form.partnerType === "PARCEL"
+                    ? form.parcelVehicleType || "BIKE"
+                    : "ALL",
+            parcelVehicleType: form.partnerType === "PARCEL" ? form.parcelVehicleType || "BIKE" : null,
             zone: form.zone || "ALL",
           },
           ...typeConfig,
@@ -159,13 +168,19 @@ function TierDetailsAdd() {
       <Card>
         <CardBody>
           <form onSubmit={onSubmit} className="space-y-5">
-            <CommonFieldsSection form={form} onInputChange={onInputChange} serviceAreas={serviceAreas} />
+            <CommonFieldsSection
+              form={form}
+              onInputChange={onInputChange}
+              serviceAreas={serviceAreas}
+              showParcelVehicleType
+            />
 
             <ActiveSection
               registerBuilder={registerBuilder}
               serviceAreas={serviceAreas}
               selectedZone={form.zone}
               partnerType={form.partnerType}
+              parcelVehicleType={form.parcelVehicleType}
             />
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
