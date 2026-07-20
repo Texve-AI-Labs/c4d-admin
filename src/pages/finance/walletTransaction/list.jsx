@@ -39,6 +39,13 @@ const formatDateTime = (value) => {
   });
 };
 
+const formatCurrency = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  const amount = Number(value);
+  if (Number.isNaN(amount)) return String(value);
+  return `₹ ${amount.toFixed(2)}`;
+};
+
 const normalizeRows = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.items)) return payload.items;
@@ -62,6 +69,15 @@ const formatProcessedBy = (value) => {
     value?.id ||
     "-"
   );
+};
+
+const getProcessedByTone = (value) => {
+  const normalized = String(value || "").toUpperCase();
+  if (normalized.includes("SUPER_USER")) return "bg-violet-800 text-violet-800 border-violet-200";
+  if (normalized.includes("ADMIN")) return "bg-blue-100 text-blue-700 border-blue-200";
+  if (normalized.includes("SUPPORT")) return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  if (normalized.includes("FINANCE")) return "bg-amber-100 text-amber-700 border-amber-200";
+  return "bg-slate-100 text-slate-700 border-slate-200";
 };
 
 const WalletTransactionList = () => {
@@ -400,19 +416,25 @@ const WalletTransactionList = () => {
                                 {item?.tier || "-"}
                               </span>
                             </td>
-                            <td className="p-3 text-sm whitespace-nowrap">{item?.amount ?? "-"}</td>
+                            <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.amount)}</td>
                             <td className="p-3 text-sm whitespace-nowrap">
                               <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.status)}`}>
                                 {item?.status || "-"}
                               </span>
                             </td>
-                            <td className="p-3 text-sm whitespace-nowrap">{item?.walletBalanceBefore ?? "-"}</td>
-                            <td className="p-3 text-sm whitespace-nowrap">{item?.walletBalanceAfter ?? "-"}</td>
-                            <td className="p-3 text-sm whitespace-nowrap">{item?.entityBalance ?? "-"}</td>
+                            <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceBefore)}</td>
+                            <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceAfter)}</td>
+                            <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.entityBalance)}</td>
                             <td className="p-3 text-sm whitespace-nowrap">
+                              <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${getProcessedByTone(
+                                typeof item?.processedBy === "object"
+                                  ? formatProcessedBy(item?.processedBy)
+                                  : resolveUserName(item?.processedBy)
+                              )}`}>
                               {typeof item?.processedBy === "object"
                                 ? formatProcessedBy(item?.processedBy)
                                 : resolveUserName(item?.processedBy)}
+                              </span>
                             </td>
                             <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.processedAt)}</td>
                             <td className="p-3 text-sm whitespace-nowrap">{item?.paymentTransactionId ?? "-"}</td>
@@ -448,7 +470,7 @@ const WalletTransactionList = () => {
 
               <div ref={reviewRef} className="xl:sticky xl:top-6 h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-5 py-4">
-                  <Typography variant="h6" className="text-white">
+                  <Typography variant="h6" className="text-black">
                     Withdrawal Review
                   </Typography>
                   <Typography className="mt-1 text-sm text-slate-200">
@@ -470,7 +492,7 @@ const WalletTransactionList = () => {
                           </div>
                           <div>
                             <div className="text-slate-500">Requested Amount</div>
-                            <div className="font-semibold text-slate-900">{selectedRow?.amount ?? "-"}</div>
+                            <div className="font-semibold text-slate-900">{formatCurrency(selectedRow?.amount)}</div>
                           </div>
                           <div>
                             <div className="text-slate-500">Current Status</div>
@@ -478,11 +500,11 @@ const WalletTransactionList = () => {
                           </div>
                           <div>
                             <div className="text-slate-500">Wallet Before</div>
-                            <div className="font-semibold text-slate-900">{selectedRow?.walletBalanceBefore ?? "-"}</div>
+                            <div className="font-semibold text-slate-900">{formatCurrency(selectedRow?.walletBalanceBefore)}</div>
                           </div>
                           <div>
                             <div className="text-slate-500">Wallet After</div>
-                            <div className="font-semibold text-slate-900">{selectedRow?.walletBalanceAfter ?? "-"}</div>
+                            <div className="font-semibold text-slate-900">{formatCurrency(selectedRow?.walletBalanceAfter)}</div>
                           </div>
                         </div>
                       </div>
