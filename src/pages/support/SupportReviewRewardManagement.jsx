@@ -409,7 +409,8 @@ function SupportReviewRewardManagement() {
 
             {error ? <Typography className="mt-4 text-sm text-red-600">{error}</Typography> : null}
 
-            <div className="mt-6">
+            <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(360px,1fr)]">
+              <div>
               <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full  border-collapse">
@@ -507,8 +508,9 @@ function SupportReviewRewardManagement() {
                   </Button>
               </div>
             </div>
-            <div className="mt-2 overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
-              <div ref={ticketReviewRef} className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-5 py-4 text-white">
+
+            <div ref={ticketReviewRef} className="overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-5 py-4 text-white">
                 <Typography variant="h6" className="text-black">
                   Ticket Review
                 </Typography>
@@ -519,30 +521,58 @@ function SupportReviewRewardManagement() {
               <div className="p-5">
                 {ticket ? (
                   <div className="space-y-3">
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50">
-                      <table className="w-full border-collapse text-sm">
-                        <tbody>
-                          <tr className="border-b border-slate-200 bg-primary text-white">
-                            <th className="w-40 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">Ticket ID</th>
-                            <th className="w-40 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">Category</th>
-                            <th className="w-40 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">Booking ID</th>
-                            <th className="w-40 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">Customer</th>
-                            <th className="w-40 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700 whitespace-nowrap">Disputed Amount</th>
-                            <th className="w-40 bg-slate-100 px-4 py-3 text-left font-semibold text-slate-700">Proof</th>
-                          </tr>
-                          <tr className="border-b border-slate-200">
-                            <td className="px-4 py-3 text-slate-900">{ticket?.ticketId || "-"}</td>
-                            <td className="px-4 py-3 text-slate-900 whitespace-nowrap">{ticket?.category || "-"}</td>
-                            <td className="px-4 py-3 text-slate-900">{booking?.bookingNumber || "-"}</td>
-                            <td className="px-4 py-3 text-slate-900">{customer?.firstName || customer?.name || "-"}</td>
-                            <td className="px-4 py-3 text-slate-900">{formatCurrency(ticket?.disputedAmount)}</td>
-                            <td className="px-4 py-3 text-slate-900">{ticket?.proofUrl ? "Available" : "Not provided"}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <Typography className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Ticket ID
+                          </Typography>
+                          <Typography className="mt-1 text-sm font-semibold text-slate-900">
+                            {ticket?.ticketId || "-"}
+                          </Typography>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <Typography className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Category
+                          </Typography>
+                          <Typography className="mt-1 text-sm font-semibold text-slate-900">
+                            {ticket?.category || "-"}
+                          </Typography>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <Typography className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Booking ID
+                          </Typography>
+                          <Typography className="mt-1 text-sm font-semibold text-slate-900">
+                            {booking?.bookingNumber || "-"}
+                          </Typography>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <Typography className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Customer
+                          </Typography>
+                          <Typography className="mt-1 text-sm font-semibold text-slate-900">
+                            {customer?.firstName || customer?.name || "-"}
+                          </Typography>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <Typography className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Disputed Amount
+                          </Typography>
+                          <Typography className="mt-1 text-sm font-semibold text-slate-900">
+                            {formatCurrency(ticket?.disputedAmount)}
+                          </Typography>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <Typography className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Proof
+                          </Typography>
+                          <Typography className="mt-1 text-sm font-semibold text-slate-900">
+                            {ticket?.proofUrl ? "Available" : "Not provided"}
+                        </Typography>
+                      </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3">
                       <div className="space-y-2">
                         <Typography className="text-sm font-semibold text-black">
                           Status
@@ -627,6 +657,7 @@ function SupportReviewRewardManagement() {
                     Select a ticket to inspect details and update its workflow status.
                   </Typography>
                 )}
+                </div>
               </div>
             </div>
 
