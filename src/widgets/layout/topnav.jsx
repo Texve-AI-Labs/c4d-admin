@@ -12,13 +12,14 @@ import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 export function Topnav({ permissions = [] }) {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
-  const isCashBackRoute = path.startsWith("/dashboard/finance/cash-back");
-  const isMasterPriceRoute = path.startsWith("/dashboard/finance/master-price");
-  const isInstantRewardRoute = path.startsWith("/dashboard/finance/instant-reward");
-  const isDiscountModuleRoute = path.startsWith("/dashboard/finance/discountmodule");
-  const isCustomDiscountRoute = path.startsWith("/dashboard/finance/custom-discount");
-  const isTaxRoute = path.startsWith("/dashboard/finance/gst");
-  const isWithdrawalRulesRoute = path.startsWith("/dashboard/finance/withdrawal-rules");
+  const financePath = path.startsWith("/dashboard/finance") ? "/dashboard/finance" : "/finance";
+  const isCashBackRoute = path.startsWith(`${financePath}/cash-back`);
+  const isMasterPriceRoute = path.startsWith(`${financePath}/master-price`);
+  const isInstantRewardRoute = path.startsWith(`${financePath}/instant-reward`);
+  const isDiscountModuleRoute = path.startsWith(`${financePath}/discountmodule`);
+  const isCustomDiscountRoute = path.startsWith(`${financePath}/custom-discount`);
+  const isTaxRoute = path.startsWith(`${financePath}/gst`);
+  const isWithdrawalRulesRoute = path.startsWith(`${financePath}/withdrawal-rules`);
 
   const isAllRecordsSection =
     path.startsWith("/dashboard/booking/list") ||
@@ -67,6 +68,7 @@ export function Topnav({ permissions = [] }) {
 
   const isFinanceSection =
     path.startsWith("/dashboard/finance") ||
+    path.startsWith("/finance") ||
     isCashBackRoute ||
     isMasterPriceRoute ||
     isInstantRewardRoute ||
