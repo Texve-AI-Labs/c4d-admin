@@ -28,3 +28,15 @@ export const SERVICE_TYPE_OPTIONS_BY_CODE = {
     { value: "RENTAL_DROP_TAXI", label: "Drop Taxi" },
   ],
 };
+
+export const PARTNER_TYPE_OPTIONS = [
+  { value: "CAB", label: "Cab" },
+  { value: "AUTO", label: "Auto" },
+  { value: "BIKE", label: "Bike" },
+  { value: "PARCEL", label: "Parcel" },
+];
+
+export const PARCEL_VEHICLE_TYPE_OPTIONS = [
+  { value: "BIKE", label: "Bike" },
+  { value: "AUTO", label: "Auto" },
+];

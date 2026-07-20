@@ -18,17 +18,25 @@ function DriverIncentiveComponentEditor({
         : form.code;
   const isAutoPartner = String(form.partnerType || "").trim().toUpperCase() === "AUTO";
   const isBikePartnerType = String(form.partnerType || "").trim().toUpperCase() === "BIKE";
+  const isParcelPartnerType = String(form.partnerType || "").trim().toUpperCase() === "PARCEL";
+  const parcelVehicleType = String(form.parcelVehicleType || "BIKE").trim().toUpperCase();
   const isRuleBasedComponent =
     normalizedCode === "ONLINE_HOURS_BONUS" || normalizedCode === "SERVICE_TRIP_BONUS";
   const componentTitleMap = {
     ONLINE_HOURS_BONUS: "Online Hours Bonus",
     SERVICE_TRIP_BONUS: "Service Trip Bonus",
   };
-  const isBikePartner = String(form.partnerType || "").trim().toUpperCase() === "BIKE";
   const metricOptionsByCode = {
     ONLINE_HOURS_BONUS: [{ value: "onlineHours", label: "Online Hours" }],
     SERVICE_TRIP_BONUS: [{ value: "tripCount", label: "Trip Count" }],
   };
+  const serviceTypeOptions = isAutoPartner
+    ? [{ value: "AUTO", label: "Auto" }]
+    : isParcelPartnerType
+      ? [{ value: "PARCEL", label: "Parcel" }]
+      : isBikePartnerType
+        ? [{ value: "BIKE", label: "Bike" }]
+        : SERVICE_TYPE_OPTIONS_BY_CODE[form.code] || [{ value: "RIDES", label: "Rides" }];
   const componentTitle = componentTitleMap[normalizedCode] || form.code || "-";
 
   return (
@@ -170,19 +178,12 @@ function DriverIncentiveComponentEditor({
                       prev.map((item, idx) =>
                         idx === index ? { ...item, serviceType: event.target.value } : item
                       )
-                    )
+                  )
                   }
                   className="w-full rounded-md border border-blue-gray-200 px-2 py-2 text-xs"
-                  disabled={isAutoPartner || isBikePartner}
+                  disabled={isAutoPartner || isBikePartnerType || isParcelPartnerType}
                 >
-                  {withCurrentOption(
-                    isAutoPartner
-                      ? [{ value: "AUTO", label: "Auto" }]
-                      : isBikePartner
-                        ? [{ value: "BIKE", label: "Bike" }]
-                      : SERVICE_TYPE_OPTIONS_BY_CODE[form.code] || [{ value: "RIDES", label: "Rides" }],
-                    rule.serviceType
-                  ).map((serviceTypeOption) => (
+                  {withCurrentOption(serviceTypeOptions, rule.serviceType).map((serviceTypeOption) => (
                     <option
                       key={`${form.code}-service-${getOptionValue(serviceTypeOption)}`}
                       value={getOptionValue(serviceTypeOption)}
@@ -192,6 +193,21 @@ function DriverIncentiveComponentEditor({
                   ))}
                 </select>
               </div>
+              {isParcelPartnerType && (
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-1 text-xs font-semibold">
+                    Parcel Vehicle Type
+                  </Typography>
+                  <select
+                    value={parcelVehicleType}
+                    onChange={(event) => onInputChange("parcelVehicleType", event.target.value)}
+                    className="w-full rounded-md border border-blue-gray-200 px-2 py-2 text-xs"
+                  >
+                    <option value="BIKE">Bike</option>
+                    <option value="AUTO">Auto</option>
+                  </select>
+                </div>
+              )}
               <div>
                 <Typography variant="small" color="blue-gray" className="mb-1 text-xs font-semibold">
                   Operator

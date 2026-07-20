@@ -5,6 +5,7 @@ import { createDriverIncentiveRule } from "./driverIncentiveApi";
 import { fetchZoneOptions } from "./zoneOptions";
 import DriverIncentiveComponentEditor from "./DriverIncentiveComponentEditor";
 import { createDefaultRule, getServiceConditionDetails } from "./edit.utils";
+import { PARTNER_TYPE_OPTIONS, PARCEL_VEHICLE_TYPE_OPTIONS } from "./edit.constants";
 
 const TYPE_OPTIONS = [
   { value: "ONLINE_HOURS_RULES", label: "Online Hours Rules" },
@@ -15,6 +16,7 @@ const isOnlineHoursType = (code) => code === "ONLINE_HOURS_RULES";
 const isAutoPartnerType = (partnerType = "") =>
   String(partnerType || "").trim().toUpperCase() === "AUTO";
 const isBikePartnerType= (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "BIKE";
+const isParcelPartnerType = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "PARCEL";
 const getPartnerServiceType = (partnerType = "", code = "") => {
   if (isAutoPartnerType(partnerType)) return "AUTO";
   if (isBikePartnerType(partnerType)) return "BIKE";
@@ -43,8 +45,9 @@ function DriverIncentiveAdd() {
   const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
   const [form, setForm] = useState({
     code: query.get("code") || "ONLINE_HOURS_RULES",
-    partnerType: query.get("partnerType") || "BIKE",
+    partnerType: query.get("partnerType") || "CAB",
     vehicleType: isAutoPartnerType(query.get("partnerType")) ? "AUTO" : isBikePartnerType(query.get("partnerType")) ? "BIKE" : "BIKE",
+    parcelVehicleType: query.get("parcelVehicleType") || "BIKE",
     zone: query.get("zone") || "ALL",
     name: "",
     description: "",
@@ -56,10 +59,7 @@ function DriverIncentiveAdd() {
   });
   const [componentRules, setComponentRules] = useState([
     {
-      ...createDefaultRule(
-        query.get("code") || "ONLINE_HOURS_RULES",
-        query.get("partnerType") || "BIKE"
-      ),
+      ...createDefaultRule(query.get("code") || "ONLINE_HOURS_RULES", query.get("partnerType") || "CAB"),
       period: "WEEKLY",
     },
   ]);
@@ -80,14 +80,30 @@ function DriverIncentiveAdd() {
         setComponentRules((prevRules) =>
           prevRules.map((rule) => ({
             ...rule,
-            serviceType: getPartnerServiceType(nextPartnerType, form.code),
+            serviceType: isParcelPartnerType(nextPartnerType)
+              ? "PARCEL"
+              : getPartnerServiceType(nextPartnerType, form.code),
+            parcelVehicleType: isParcelPartnerType(nextPartnerType)
+              ? String(prev.parcelVehicleType || "BIKE").toUpperCase()
+              : undefined,
           }))
         );
         return {
           ...prev,
           partnerType: value,
           vehicleType: value === "AUTO" ? "AUTO" : value === "BIKE" ? "BIKE" : "ALL",
+          parcelVehicleType: value === "PARCEL" ? prev.parcelVehicleType || "BIKE" : prev.parcelVehicleType,
         };
+      }
+      if (name === "parcelVehicleType") {
+        setComponentRules((prevRules) =>
+          prevRules.map((rule) => ({
+            ...rule,
+            serviceType: "PARCEL",
+            parcelVehicleType: String(value || "BIKE").toUpperCase(),
+          }))
+        );
+        return { ...prev, parcelVehicleType: value };
       }
       return { ...prev, [name]: value };
     });
@@ -132,10 +148,14 @@ function DriverIncentiveAdd() {
         validFrom: toUtcIsoStringOrNull(form.validFrom),
         validTo: toUtcIsoStringOrNull(form.validTo),
         rules: componentRules.map((rule) => {
-          const selectedServiceType = isBikePartnerType(form.partnerType)
+          const selectedServiceType = isParcelPartnerType(form.partnerType)
+            ? "PARCEL"
+            : isBikePartnerType(form.partnerType)
             ? "BIKE"
             : rule.serviceType || getPartnerServiceType(form.partnerType, form.code);
-          const serviceDetails = getServiceConditionDetails(selectedServiceType);
+          const serviceDetails = isParcelPartnerType(form.partnerType)
+            ? { bookingType: null, packageType: null }
+            : getServiceConditionDetails(selectedServiceType);
 
           return {
             amount: Number(rule.amount || 0),
@@ -143,6 +163,9 @@ function DriverIncentiveAdd() {
               metric: rule.metric || (isOnlineHoursType(form.code) ? "onlineHours" : "tripCount"),
               period: form.payoutFrequency || rule.period || "WEEKLY",
               serviceType: selectedServiceType,
+              ...(isParcelPartnerType(form.partnerType)
+                ? { parcelVehicleType: String(form.parcelVehicleType || "BIKE").toUpperCase() }
+                : {}),
               ...serviceDetails,
               op: rule.op || ">=",
               value: Number(rule.value || 0),
@@ -152,22 +175,29 @@ function DriverIncentiveAdd() {
         }),
       };
 
+      const scope = {
+        partnerType: form.partnerType || "CAB",
+        vehicleType:
+          form.partnerType === "PARCEL"
+            ? String(form.parcelVehicleType || "BIKE").toUpperCase()
+            : form.partnerType === "AUTO"
+              ? "AUTO"
+              : form.partnerType === "BIKE"
+                ? "BIKE"
+                : "ALL",
+        ...(isParcelPartnerType(form.partnerType)
+          ? { parcelVehicleType: String(form.parcelVehicleType || "BIKE").toUpperCase() }
+          : {}),
+        zone: form.zone || "ALL",
+      };
+
       const payload = {
         name: form.name,
         description: form.description,
         isActive: form.isActive,
         type: form.code,
         config: {
-          scope: {
-            partnerType: form.partnerType || "BIKE",
-            vehicleType:
-              form.partnerType === "AUTO"
-                ? "AUTO"
-                : form.partnerType === "BIKE"
-                  ? "BIKE"
-                  : "ALL",
-            zone: form.zone || "ALL",
-          },
+          scope,
           components: [component],
         },
       };
@@ -243,11 +273,32 @@ function DriverIncentiveAdd() {
                   onChange={(event) => onInputChange("partnerType", event.target.value)}
                   className="w-full rounded-md border border-blue-gray-200 px-3 py-2 text-sm"
                 >
-                  <option value="CAB">Cab</option>
-                  <option value="AUTO">Auto</option>
-                  <option value="BIKE">Bike</option>
+                  {PARTNER_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
+
+              {isParcelPartnerType(form.partnerType) && (
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-1 font-semibold">
+                    Parcel Vehicle Type
+                  </Typography>
+                  <select
+                    value={form.parcelVehicleType}
+                    onChange={(event) => onInputChange("parcelVehicleType", event.target.value)}
+                    className="w-full rounded-md border border-blue-gray-200 px-3 py-2 text-sm"
+                  >
+                    {PARCEL_VEHICLE_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <Typography variant="small" color="blue-gray" className="mb-1 font-semibold">

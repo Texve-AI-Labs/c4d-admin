@@ -25,6 +25,7 @@ function DriverIncentiveList() {
   const navigate = useNavigate();
   const [code, setCode] = useState("ONLINE_HOURS_RULES");
   const [partnerType, setPartnerType] = useState("CAB");
+  const [parcelVehicleType, setParcelVehicleType] = useState("ALL");
   const [status, setStatus] = useState("ALL");
   const [zone, setZone] = useState("");
   const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
@@ -52,7 +53,16 @@ function DriverIncentiveList() {
           partnerType,
           zone,
           isActive: status === "ALL" ? undefined : status === "ACTIVE",
-          vehicleType: String(partnerType || "").toUpperCase() === "AUTO" ? "AUTO": String(partnerType || "").toUpperCase() === "BIKE" ? "BIKE" : "ALL",
+          vehicleType: String(partnerType || "").toUpperCase() === "PARCEL"
+            ? String(parcelVehicleType || "ALL").toUpperCase()
+            : String(partnerType || "").toUpperCase() === "AUTO"
+              ? "AUTO"
+              : String(partnerType || "").toUpperCase() === "BIKE"
+                ? "BIKE"
+                : "ALL",
+          ...(String(partnerType || "").toUpperCase() === "PARCEL" && String(parcelVehicleType || "").toUpperCase() !== "ALL"
+            ? { parcelVehicleType }
+            : {}),
         });
         const rawRows = Array.isArray(response?.rows)
           ? response.rows
@@ -79,7 +89,7 @@ function DriverIncentiveList() {
     };
 
     loadList();
-  }, [code, partnerType, zone, status]);
+  }, [code, partnerType, parcelVehicleType, zone, status]);
 
   return (
     <div className="mb-10 mt-5 space-y-4 bg-white p-2 px-4 shadow-sm">
@@ -105,10 +115,12 @@ function DriverIncentiveList() {
       </div>
       <DriverIncentiveFilters
         partnerType={partnerType}
+        parcelVehicleType={parcelVehicleType}
         status={status}
         zone={zone}
         zoneOptions={zoneOptions}
         onPartnerTypeChange={setPartnerType}
+        onParcelVehicleTypeChange={setParcelVehicleType}
         onStatusChange={setStatus}
         onZoneChange={setZone}
       />

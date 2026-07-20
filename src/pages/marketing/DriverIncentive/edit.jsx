@@ -9,6 +9,7 @@ import {
 import { fetchZoneOptions } from "./zoneOptions";
 import DriverIncentiveComponentEditor from "./DriverIncentiveComponentEditor";
 import { createDefaultRule, createEditableRule, getServiceConditionDetails, getTargetComponent } from "./edit.utils";
+import { PARTNER_TYPE_OPTIONS, PARCEL_VEHICLE_TYPE_OPTIONS } from "./edit.constants";
 
 const toTypeCode = (code = "") =>
   code === "ONLINE_HOURS_BONUS"
@@ -21,11 +22,7 @@ const isAutoPartnerType = (partnerType = "") =>
   String(partnerType || "").trim().toUpperCase() === "AUTO";
 
 const isBikePartnerType = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "BIKE";
-const getPartnerServiceType = (partnerType = "", code = "") => {
-  if (isAutoPartnerType(partnerType)) return "AUTO";
-  if (isBikePartnerType(partnerType)) return "BIKE";
-  return code === "ONLINE_HOURS_BONUS" ? "ANY" : "RIDES";
-};
+const isParcelPartnerType = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "PARCEL";
 const toUtcIsoStringOrNull = (dateTimeLocalValue) => {
   if (!dateTimeLocalValue) {
     return null;
@@ -75,6 +72,7 @@ function DriverIncentiveEdit() {
     isActive: true,
     partnerType: "CAB",
     vehicleType: "ALL",
+    parcelVehicleType: "BIKE",
     zone: "",
     code: "",
     enabled: true,
@@ -150,6 +148,7 @@ function DriverIncentiveEdit() {
               : (scope?.partnerType || "BIKE") === "BIKE"
                 ? "BIKE"
               : scope?.vehicleType || "ALL",
+          parcelVehicleType: String(scope?.parcelVehicleType || "BIKE").toUpperCase(),
           zone: scope?.zone || "",
           code: component?.code || selectedCode || "",
           enabled: typeof component?.enabled === "boolean" ? component.enabled : true,
@@ -161,10 +160,12 @@ function DriverIncentiveEdit() {
           Array.isArray(component?.rules) && component.rules.length > 0
             ? component.rules.map((rule) => ({
               ...createEditableRule(rule, component?.code || selectedCode || "", scope?.partnerType || "CAB"),
-              serviceType:
-                isBikePartnerType(scope?.partnerType) || isBikePartnerType(selectedRow?.scope?.partnerType)
+              serviceType: isParcelPartnerType(scope?.partnerType) ? "PARCEL" : isBikePartnerType(scope?.partnerType) || isBikePartnerType(selectedRow?.scope?.partnerType)
                   ? "BIKE"
                   : createEditableRule(rule, component?.code || selectedCode || "", scope?.partnerType || "CAB").serviceType,
+              parcelVehicleType: isParcelPartnerType(scope?.partnerType)
+                ? String(scope?.parcelVehicleType || "BIKE").toUpperCase()
+                : undefined,
               period: resolvedPayoutFrequency,
             }))
             : [{
@@ -183,7 +184,18 @@ function DriverIncentiveEdit() {
   }, [id, location.state, selectedCode]);
 
   const onInputChange = (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      if (name === "parcelVehicleType") {
+        setComponentRules((prevRules) =>
+          prevRules.map((rule) => ({
+            ...rule,
+            serviceType: "PARCEL",
+            parcelVehicleType: String(value || "BIKE").toUpperCase(),
+          }))
+        );
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   const onPayoutFrequencyChange = (value) => {
@@ -216,10 +228,14 @@ function DriverIncentiveEdit() {
     if (nextComponent.code === "ONLINE_HOURS_BONUS" || nextComponent.code === "SERVICE_TRIP_BONUS") {
       nextComponent.payoutFrequency = form.payoutFrequency || "WEEKLY";
       nextComponent.rules = componentRules.map((rule) => {
-        const selectedServiceType = isBikePartnerType(form.partnerType)
+        const selectedServiceType = isParcelPartnerType(form.partnerType)
+          ? "PARCEL"
+        : isBikePartnerType(form.partnerType)
           ? "BIKE"
           : rule.serviceType || getPartnerServiceType(form.partnerType, nextComponent.code);
-        const serviceDetails = getServiceConditionDetails(selectedServiceType);
+        const serviceDetails = isParcelPartnerType(form.partnerType)
+          ? { bookingType: null, packageType: null }
+          : getServiceConditionDetails(selectedServiceType);
 
         return {
           amount: Number(rule.amount || 0),
@@ -227,6 +243,9 @@ function DriverIncentiveEdit() {
             metric: rule.metric || (nextComponent.code === "ONLINE_HOURS_BONUS" ? "onlineHours" : "tripCount"),
             period: form.payoutFrequency || rule.period || "WEEKLY",
             serviceType: selectedServiceType,
+            ...(isParcelPartnerType(form.partnerType)
+              ? { parcelVehicleType: String(form.parcelVehicleType || "BIKE").toUpperCase() }
+              : {}),
             ...serviceDetails,
             op: rule.op || ">=",
             value: Number(rule.value || 0),
@@ -250,7 +269,12 @@ function DriverIncentiveEdit() {
         enabled: Boolean(form.enabled),
         scope: {
           partnerType: form.partnerType || "CAB",
-          vehicleType: (form.partnerType || "CAB") === "AUTO" ? "AUTO" : (form.partnerType || "CAB") === "BIKE" ? "BIKE" : form.vehicleType || "ALL",
+          vehicleType: (form.partnerType || "CAB") === "PARCEL"
+            ? String(form.parcelVehicleType || "BIKE").toUpperCase()
+            : (form.partnerType || "CAB") === "AUTO" ? "AUTO" : (form.partnerType || "CAB") === "BIKE" ? "BIKE" : form.vehicleType || "ALL",
+          ...(isParcelPartnerType(form.partnerType)
+            ? { parcelVehicleType: String(form.parcelVehicleType || "BIKE").toUpperCase() }
+            : {}),
           zone: form.zone || "",
         },
       });
@@ -266,7 +290,12 @@ function DriverIncentiveEdit() {
         isActive: Boolean(form.isActive),
         scope: {
           partnerType: form.partnerType || "CAB",
-          vehicleType: (form.partnerType || "CAB") === "AUTO" ? "AUTO" : (form.partnerType || "CAB") === "BIKE" ? "BIKE" : form.vehicleType || "ALL",
+          vehicleType: (form.partnerType || "CAB") === "PARCEL"
+            ? String(form.parcelVehicleType || "BIKE").toUpperCase()
+            : (form.partnerType || "CAB") === "AUTO" ? "AUTO" : (form.partnerType || "CAB") === "BIKE" ? "BIKE" : form.vehicleType || "ALL",
+          ...(isParcelPartnerType(form.partnerType)
+            ? { parcelVehicleType: String(form.parcelVehicleType || "BIKE").toUpperCase() }
+            : {}),
           zone: form.zone || "",
         },
         component: nextComponent,
@@ -367,11 +396,32 @@ function DriverIncentiveEdit() {
                   disabled
                   className="w-full rounded-md border border-blue-gray-200 bg-blue-gray-50 px-3 py-2 text-sm"
                 >
-                  <option value="CAB">Cab</option>
-                  <option value="AUTO">Auto</option>
-                  <option value="BIKE">Bike</option>
+                  {PARTNER_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
+
+              {isParcelPartnerType(form.partnerType) && (
+                <div>
+                  <Typography variant="small" color="blue-gray" className="mb-1 font-semibold">
+                    Parcel Vehicle Type
+                  </Typography>
+                  <select
+                    value={form.parcelVehicleType}
+                    onChange={(event) => onInputChange("parcelVehicleType", event.target.value)}
+                    className="w-full rounded-md border border-blue-gray-200 px-3 py-2 text-sm"
+                  >
+                    {PARCEL_VEHICLE_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 <Typography variant="small" color="blue-gray" className="mb-1 font-semibold">
