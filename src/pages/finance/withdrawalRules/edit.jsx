@@ -12,6 +12,7 @@ const validationSchema = Yup.object({
   tier: Yup.string().required("Tier is required"),
   minWithdrawalAmount: Yup.number().required("Min Withdrawal Amount is required"),
   maxWithdrawalAmount: Yup.number().required("Max Withdrawal Amount is required"),
+  minimumHoldAmount: Yup.number().required("Minimum Hold Amount Amount is required"),
   name: Yup.string().required("Name is required"),
   description: Yup.string().required("Description is required"),
 });
@@ -27,6 +28,7 @@ export default function WithdrawalRulesEdit() {
     isWithdrawalAllowed: false,
     minWithdrawalAmount: "",
     maxWithdrawalAmount: "",
+    minimumHoldAmount:"",
     name: "",
     description: "",
     isActive: true,
@@ -46,6 +48,7 @@ export default function WithdrawalRulesEdit() {
             isWithdrawalAllowed: Boolean(item.isWithdrawalAllowed),
             minWithdrawalAmount: item.minWithdrawalAmount || "",
             maxWithdrawalAmount: item.maxWithdrawalAmount || "",
+            minimumHoldAmount: item.minimumHoldAmount || "",
             name: item.name || "",
             description: item.description || "",
             isActive: Boolean(item.isActive),
@@ -100,7 +103,7 @@ export default function WithdrawalRulesEdit() {
               <Form className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium">Entity Type</label>
-                  <Field as="select" name="entityType" className="mt-1 w-full rounded-md border p-2">
+                  <Field as="select" name="entityType" className="mt-1 w-full rounded-md border p-2" disabled>
                     <option value="">Select Entity Type</option>
                     {WITHDRAWAL_RULE_ENTITY_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                   </Field>
@@ -143,6 +146,11 @@ export default function WithdrawalRulesEdit() {
                   <label className="block text-sm font-medium">Max Withdrawal Amount</label>
                   <Field name="maxWithdrawalAmount" type="number" step="0.01" className="mt-1 w-full rounded-md border p-2" />
                   <ErrorMessage name="maxWithdrawalAmount" component="div" className="mt-1 text-sm text-red-600" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Minimum Hold Amount</label>
+                  <Field name="minimumHoldAmount" type="number" step="0.01" className="mt-1 w-full rounded-md border p-2" />
+                  <ErrorMessage name="minimumHoldAmount" component="div" className="mt-1 text-sm text-red-600" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium">Name</label>

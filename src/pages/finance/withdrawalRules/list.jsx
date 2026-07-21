@@ -134,6 +134,7 @@ const WithdrawalRulesList = () => {
                     <th className="py-3 px-5 text-left">Withdrawal Allowed</th>
                     <th className="py-3 px-5 text-left">Min Amount</th>
                     <th className="py-3 px-5 text-left">Max Amount</th>
+                    <th className="py-3 px-5 text-left">Minimum Hold Amount</th>
                     <th className="py-3 px-5 text-left">Description</th>
                     <th className="py-3 px-5 text-left">Status</th>
                     <th className="py-3 px-5 text-left">Action</th>
@@ -161,6 +162,7 @@ const WithdrawalRulesList = () => {
                         </td>
                         <td className="py-3 px-5">{item.minWithdrawalAmount ?? "-"}</td>
                         <td className="py-3 px-5">{item.maxWithdrawalAmount ?? "-"}</td>
+                        <td className="py-3 px-5">{item.minimumHoldAmount ?? "-"}</td>
                         <td className="py-3 px-5">{item.description ?? "-"}</td>
                         <td className="py-3 px-5">
                           <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badgeClassByValue(item.isActive ? "ACTIVE" : "INACTIVE")}`}>

@@ -1,5 +1,5 @@
 export const WITHDRAWAL_RULE_ENTITY_TYPES = [
-  { label: "RIDES_RENTAL_CABS", value: "RIDES_RENTAL_CABS" },
+  { label: "CAB", value: "CAB" },
   { label: "ACTING_DRIVER", value: "ACTING_DRIVER" },
   { label: "AUTO", value: "AUTO" },
   { label: "BIKE", value: "BIKE" },
