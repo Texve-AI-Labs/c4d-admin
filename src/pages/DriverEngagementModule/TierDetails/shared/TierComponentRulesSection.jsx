@@ -35,6 +35,7 @@ function TierComponentRulesSection({
   hideMetricSelector = false,
   allowMetricChange = false,
   allowPeriodChange = false,
+  disableServiceType = false,
   serviceOptions = COMPONENT_RULE_SERVICE_OPTIONS,
 }) {
   const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
@@ -535,7 +536,7 @@ function TierComponentRulesSection({
                         </Typography>
                         <select
                           value={rule.serviceType}
-                          disabled={rule.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
+                          disabled={disableServiceType || rule.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
                           onChange={(event) => onRuleChange(tierKey, index, "serviceType", event.target.value)}
                           className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 disabled:bg-blue-gray-50"
                         >

@@ -24,6 +24,7 @@ const SERVICE_OPTIONS = [
 ];
 
 function ServiceTripRulesSection(props) {
+  const normalizedPartnerType = String(props?.partnerType || "").trim().toUpperCase();
   return (
     <TierComponentRulesSection
       {...props}
@@ -38,6 +39,7 @@ function ServiceTripRulesSection(props) {
       periodOptions={PERIOD_OPTIONS}
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
       serviceOptions={SERVICE_OPTIONS}
+      disableServiceType={normalizedPartnerType === "PARCEL"}
     />
   );
 }
