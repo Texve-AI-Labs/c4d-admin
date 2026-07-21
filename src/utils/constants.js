@@ -1038,6 +1038,13 @@ export const API_ROUTES = {
     'BIKE_PACKAGE_LIST':'/bike-package-list',
     'BIKE_MASTERPRICE_TABLE_ADD':'/add-bikes-package',
     'BIKE_PRICE_EDIT':'/update-bike-package',
+    'ADMIN_WITHDRAWAL_RULES':'/admin/withdrawal-rules',
+    'ADMIN_WITHDRAWAL_RULES_ADD':'/admin/withdrawal-rules',
+    'ADMIN_WITHDRAWAL_RULES_EDIT':'/admin/withdrawal-rules',
+    'ADMIN_WITHDRAWALS_GET':'/admin/withdrawals',
+    'ADMIN_WITHDRAWALS_TRANSACTION':'/admin/withdrawals',
+    'ADMIN_WITHDRAWALS':'/admin/withdrawals',
+    'ADMIN_WITHDRAWALS_UPDATE':'/admin/withdrawals',
 
 };
 

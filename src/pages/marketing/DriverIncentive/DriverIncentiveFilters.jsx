@@ -7,7 +7,9 @@ const PARTNER_TYPES = [
   "CAB",
   "AUTO",
   "BIKE",
+  "PARCEL",
 ];
+const PARCEL_VEHICLE_TYPES = ["ALL", "BIKE", "AUTO"];
 const STATUS_OPTIONS = [
   { label: "All", value: "ALL" },
   { label: "Active", value: "ACTIVE" },
@@ -29,10 +31,12 @@ const formatZoneLabel = (value = "") => {
 
 function DriverIncentiveFilters({
   partnerType,
+  parcelVehicleType,
   status,
   zone,
   zoneOptions,
   onPartnerTypeChange,
+  onParcelVehicleTypeChange,
   onStatusChange,
   onZoneChange,
 }) {
@@ -90,6 +94,24 @@ function DriverIncentiveFilters({
               ))}
             </select>
           </div>
+          {String(partnerType || "").toUpperCase() === "PARCEL" && (
+            <div>
+              <Typography variant="small" className="mb-1 font-semibold text-blue-gray-700">
+                Parcel Vehicle Type
+              </Typography>
+              <select
+                value={parcelVehicleType}
+                onChange={(event) => onParcelVehicleTypeChange(event.target.value)}
+                className="h-11 w-full rounded-lg border border-blue-gray-100 bg-white px-3 text-sm text-blue-gray-700 outline-none focus:border-blue-400"
+              >
+                {PARCEL_VEHICLE_TYPES.map((item) => (
+                  <option key={item} value={item}>
+                    {toLabelCase(item)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </CardBody>
     </Card>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { Button } from '@material-tailwind/react';
+import { Button, Dialog, DialogBody, DialogHeader, DialogFooter, Typography } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select'; // Assuming react-select is used
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
@@ -22,7 +22,8 @@ const AddBanner = () => {
   const [error, setError] = useState(null);
   const [serviceAreas, setServiceAreas] = useState([]);
   const [dropSuggestions, setDropSuggestions] = useState([]);
-  const [dropLocation, setDropLocation] = useState(null); 
+  const [dropLocation, setDropLocation] = useState(null);
+  const [modalMessage, setModalMessage] = useState(""); 
 
   const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -46,9 +47,9 @@ const AddBanner = () => {
       case 'RENTAL_HOURLY_PACKAGE':
         return { serviceType: 'RENTAL', bookingType: null, packageType: 'Local' };
       case 'RENTAL':
-        return { serviceType: 'RENTAL', bookingType: 'ROUND_TRIP', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'ROUND TRIP', packageType: 'Outstation' };
       case 'RENTAL_DROP_TAXI':
-        return { serviceType: 'RENTAL', bookingType: 'DROP_ONLY', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'DROP ONLY', packageType: 'Outstation' };
       case 'RIDES':
         return { serviceType: 'RIDES', bookingType: null, packageType: null };
       case 'AUTO':
@@ -250,15 +251,18 @@ const AddBanner = () => {
       formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
 
       const response = await ApiRequestUtils.postDocs(API_ROUTES.POST_BANNER, formData);
-
+      if (response?.success === false) {
+        setModalMessage(response?.error || response?.message || 'Unable to save banner.');
+      return;
+    }
       if (response?.success) {
         navigate('/dashboard/user/bannerimgView');
       } else {
-        setError(response?.error || 'Banner upload failed.');
+        setModalMessage(response?.error || response?.message || 'Banner upload failed.');
       } 
     } catch (err) {
       console.error('Upload error:', err);
-      setError('Something went wrong. Try again.');
+      setModalMessage(err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Something went wrong. Try again.');
     } finally {
       setSubmitting(false);
     }
@@ -268,6 +272,27 @@ const AddBanner = () => {
     <div className="p-4 mx-auto bg-white rounded-xl shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add Banner</h2>
       {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+      <Dialog open={Boolean(modalMessage)} handler={() => setModalMessage('')} size="sm">
+        <DialogHeader className="flex items-center justify-between">
+          <Typography variant="h6" color="blue-gray">
+            Alert
+          </Typography>
+        </DialogHeader>
+        <DialogBody divider>
+          <Typography variant="paragraph" color="blue-gray">
+            {modalMessage}
+          </Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            type="button"
+            className={`${ColorStyles.continueButtonColor}`}
+            onClick={() => setModalMessage('')}
+          >
+            Ok
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       <Formik
         initialValues={initialValues}
@@ -302,7 +327,7 @@ const AddBanner = () => {
                   <option value="">select the Type</option>
                   {/* <option value="TOP">Top</option> */}
                   {/* <option value="BOTTOM">Bottom</option> */}
-                  {/* <option value="YOUTUBE">YouTube</option> */}
+                  {/* <option value="YOUTUBE">YouTube</option> */} 
                   {/* <option value="BACKGROUND">Background</option> */}
                   <option value="BANNER">Customer Banner</option>
                   <option value="BANNER_DRIVER">Banner Driver</option>

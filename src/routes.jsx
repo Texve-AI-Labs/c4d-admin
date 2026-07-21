@@ -64,6 +64,10 @@ import { ReceiptList } from "./pages/finance/receipt/ReceiptList";
 import ReceiptDetails from "./pages/finance/receipt/ReceiptDetails";
 import { InvoiceList } from "./pages/finance/invoice/InvoiceList";
 import InvoiceDetails from "./pages/finance/invoice/InvoiceDetails";
+import WithdrawalRulesList from "./pages/finance/withdrawalRules/list";
+import WithdrawalRulesAdd from "./pages/finance/withdrawalRules/add";
+import WithdrawalRulesEdit from "./pages/finance/withdrawalRules/edit";
+import WalletTransactionList from "./pages/finance/walletTransaction/list";
 import { MasterPriceDetailsAndEdit } from "./pages/finance/masterPrice/MasterPriceDetailsAndEdit";
 import MasterPriceTableAdd from "./pages/finance/masterPriceTable/MasterPriceTableAdd";
 import MasterPriceTableDetails from "./pages/finance/masterPriceTable/MasterPriceTableDetails";
@@ -1422,6 +1426,38 @@ export const routes = [
         element: <InvoiceList />,
         display: false,
         permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Withdrawal Rules",
+        path: "/finance/withdrawal-rules",
+        element: <WithdrawalRulesList />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Withdrawal Rules Add",
+        path: "/finance/withdrawal-rules/add",
+        element: <WithdrawalRulesAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Withdrawal Rules Edit",
+        path: "/finance/withdrawal-rules/edit/:id",
+        element: <WithdrawalRulesEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Wallet Transaction",
+        path: "/finance/wallet-transaction",
+        element: <WalletTransactionList />,
+        display: false,
+        permission: "Users",
       },
       {
         icon: <UserIcon {...icon} />,

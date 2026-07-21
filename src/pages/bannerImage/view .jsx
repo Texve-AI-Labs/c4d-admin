@@ -49,9 +49,9 @@ const BannerView = () => {
       case 'RENTAL_HOURLY_PACKAGE':
         return { serviceType: 'RENTAL', bookingType: null, packageType: 'Local' };
       case 'RENTAL':
-        return { serviceType: 'RENTAL', bookingType: 'ROUND_TRIP', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'ROUND TRIP', packageType: 'Outstation' };
       case 'RENTAL_DROP_TAXI':
-        return { serviceType: 'RENTAL', bookingType: 'DROP_ONLY', packageType: 'Outstation' };
+        return { serviceType: 'RENTAL', bookingType: 'DROP ONLY', packageType: 'Outstation' };
       case 'RIDES':
         return { serviceType: 'RIDES', bookingType: null, packageType: null };
       case 'AUTO':
@@ -72,11 +72,11 @@ const BannerView = () => {
     const bookingType = item.bookingType || '';
     const packageType = item.packageType || '';
 
-    if (serviceType === 'RENTAL' && bookingType === 'ROUND_TRIP' && packageType === 'Outstation') {
+    if (serviceType === 'RENTAL' && bookingType === 'ROUND TRIP' && packageType === 'Outstation') {
       return 'Outstation';
     }
 
-    if (serviceType === 'RENTAL' && bookingType === 'DROP_ONLY' && packageType === 'Outstation') {
+    if (serviceType === 'RENTAL' && bookingType === 'DROP ONLY' && packageType === 'Outstation') {
       return 'Drop Taxi';
     }
 

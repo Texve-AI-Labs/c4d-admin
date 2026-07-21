@@ -236,7 +236,7 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                                 />
                                                 <span className="ml-2">Acting Driver</span>
                                             </label>
-                                            <label className="inline-flex items-center">
+                                            {/* <label className="inline-flex items-center">
                                                 <Field
                                                     type="radio"
                                                     name="serviceType"
@@ -255,7 +255,7 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                                     disabled
                                                 />
                                                 <span className="ml-2">OWNER</span>
-                                            </label>
+                                            </label> */}
                                         </div>
                                         <ErrorMessage
                                             name="serviceType"

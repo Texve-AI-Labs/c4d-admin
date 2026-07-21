@@ -1,4 +1,4 @@
-export const mapServiceDetails = (serviceType) => {
+export const mapServiceDetails = (serviceType, parcelVehicleType = null) => {
   switch (serviceType) {
     case "ANY":
       return { serviceType: "ANY", bookingType: null, packageType: null };
@@ -14,6 +14,8 @@ export const mapServiceDetails = (serviceType) => {
       return { serviceType: "AUTO", bookingType: null, packageType: null };
     case "BIKE":
       return { serviceType: "BIKE", bookingType: null, packageType: null };
+    case "PARCEL": 
+      return { serviceType: "PARCEL", bookingType: null, packageType: null, parcelVehicleType: parcelVehicleType ? String(parcelVehicleType).toUpperCase() : null };
     default:
       return { serviceType: "RIDES", bookingType: null, packageType: null };
   }

@@ -22,6 +22,7 @@ function TierComponentRulesSection({
   registerBuilder,
   initialConfig = {},
   partnerType = "CAB",
+  parcelVehicleType = "BIKE",
   componentCode,
   title,
   defaultMetric,
@@ -34,9 +35,11 @@ function TierComponentRulesSection({
   hideMetricSelector = false,
   allowMetricChange = false,
   allowPeriodChange = false,
+  disableServiceType = false,
   serviceOptions = COMPONENT_RULE_SERVICE_OPTIONS,
 }) {
   const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const normalizedParcelVehicleType = String(parcelVehicleType || "BIKE").trim().toUpperCase();
   const isBike = isBikePartner(normalizedPartnerType);
   const autoOptions = [{ label: "Auto", value: "AUTO" }];
   const bikeOptions = [{ label: "Bike", value: "BIKE" }];
@@ -76,6 +79,8 @@ function TierComponentRulesSection({
                     ? "ANY"
                     : normalizedPartnerType === "AUTO"
                       ? "AUTO"
+                      : normalizedPartnerType === "PARCEL"
+                        ? "PARCEL"
                       : isBike
                         ? "BIKE"
                       : getComponentUiServiceType(condition);
@@ -123,6 +128,9 @@ function TierComponentRulesSection({
               rules: (Array.isArray(tierConfig.rules) ? tierConfig.rules : []).map((rule) => {
                 if (rule.metric === "onlineHours") return { ...rule, serviceType: "ANY" };
                 if (normalizedPartnerType === "AUTO") return { ...rule, serviceType: "AUTO" };
+                if (normalizedPartnerType === "PARCEL") {
+                  return { ...rule, serviceType: "PARCEL", parcelVehicleType: normalizedParcelVehicleType };
+                }
                 if (isBike) return { ...rule, serviceType: "BIKE" };
                 if (rule.serviceType === "AUTO" || rule.serviceType === "BIKE") return { ...rule, serviceType: defaultServiceType };
                 return rule;
@@ -227,6 +235,8 @@ function TierComponentRulesSection({
                         ? "ANY"
                         : normalizedPartnerType === "AUTO"
                           ? "AUTO"
+                          : normalizedPartnerType === "PARCEL"
+                            ? "PARCEL"
                           : isBike
                             ? "BIKE"
                           : rule.serviceType === "ANY" || rule.serviceType === "AUTO"
@@ -254,7 +264,14 @@ function TierComponentRulesSection({
             createComponentRuleCondition({
               metric: defaultMetric,
               period: prev?.payoutFrequency || defaultPayoutFrequency || defaultPeriod,
-              serviceType: normalizedPartnerType === "AUTO" ? "AUTO" : isBike ? "BIKE" : defaultServiceType,
+              serviceType:
+                normalizedPartnerType === "AUTO"
+                  ? "AUTO"
+                  : normalizedPartnerType === "PARCEL"
+                    ? "PARCEL"
+                    : isBike
+                      ? "BIKE"
+                      : defaultServiceType,
               op: ">=",
               value: "1",
               amount: "0",
@@ -286,6 +303,7 @@ function TierComponentRulesSection({
           enabled: Boolean(componentState.enabled),
           payoutFrequency: componentState.payoutFrequency || defaultPayoutFrequency,
           applyMode: componentState.applyMode || "SUM",
+          parcelVehicleType: normalizedPartnerType === "PARCEL" ? normalizedParcelVehicleType : null,
           tiers: Object.fromEntries(
             COMPONENT_TIER_KEYS.map((tierKey) => {
               const tierConfig = componentState?.tiers?.[tierKey] || {};
@@ -303,6 +321,8 @@ function TierComponentRulesSection({
                           ? "ANY"
                           : normalizedPartnerType === "AUTO"
                             ? "AUTO"
+                            : normalizedPartnerType === "PARCEL"
+                              ? "PARCEL"
                             : isBike
                               ? "BIKE"
                               : rule?.serviceType,
@@ -319,6 +339,8 @@ function TierComponentRulesSection({
                         bookingType: mappedCondition.bookingType,
                         packageType: mappedCondition.packageType,
                         serviceType: mappedCondition.serviceType,
+                        parcelVehicleType:
+                          normalizedPartnerType === "PARCEL" ? normalizedParcelVehicleType : null,
                       },
                     };
                   }),
@@ -336,6 +358,8 @@ function TierComponentRulesSection({
       defaultPeriod,
       defaultPayoutFrequency,
       partnerType,
+      normalizedPartnerType,
+      normalizedParcelVehicleType,
     ]
   );
 
@@ -512,7 +536,7 @@ function TierComponentRulesSection({
                         </Typography>
                         <select
                           value={rule.serviceType}
-                          disabled={rule.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
+                          disabled={disableServiceType || rule.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
                           onChange={(event) => onRuleChange(tierKey, index, "serviceType", event.target.value)}
                           className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 disabled:bg-blue-gray-50"
                         >

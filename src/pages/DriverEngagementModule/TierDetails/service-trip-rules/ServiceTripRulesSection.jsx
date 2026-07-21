@@ -20,9 +20,11 @@ const SERVICE_OPTIONS = [
   { label: "Drop Taxi", value: "RENTAL_DROP_ONLY" },
   { label: "Local", value: "RIDES" },
   { label: "Auto", value: "AUTO" },
+  { label: "Parcel", value: "PARCEL" },
 ];
 
 function ServiceTripRulesSection(props) {
+  const normalizedPartnerType = String(props?.partnerType || "").trim().toUpperCase();
   return (
     <TierComponentRulesSection
       {...props}
@@ -37,6 +39,7 @@ function ServiceTripRulesSection(props) {
       periodOptions={PERIOD_OPTIONS}
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
       serviceOptions={SERVICE_OPTIONS}
+      disableServiceType={normalizedPartnerType === "PARCEL"}
     />
   );
 }

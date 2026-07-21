@@ -5,6 +5,7 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { normalizeTierRows } from "./shared/tierApi";
 import { extractApiErrorMessage, showTierErrorAlert } from "./shared/tierErrorAlert";
+import CommonFieldsSection from "./shared/CommonFieldsSection";
 import TierRulesSection from "./tier-rules/TierRulesSection";
 import IncentiveRulesSection from "./incentive-rules/IncentiveRulesSection";
 import DispatchRulesSection from "./dispatch-rules/DispatchRulesSection";
@@ -71,6 +72,7 @@ function TierDetailsEdit() {
   const [form, setForm] = useState({
     type: "",
     partnerType: "CAB",
+    parcelVehicleType: "BIKE",
     name: "",
     description: "",
     isActive: true,
@@ -83,6 +85,10 @@ function TierDetailsEdit() {
         setForm({
           type: rowData.type || "TIER_RULES",
           partnerType: rowData?.config?.scope?.partnerType || "CAB",
+          parcelVehicleType:
+            rowData?.config?.scope?.parcelVehicleType ||
+            rowData?.config?.scope?.vehicleType ||
+            "BIKE",
           name: rowData.name || "",
           description: rowData.description || "",
           isActive: typeof rowData.isActive === "boolean" ? rowData.isActive : true,
@@ -104,6 +110,10 @@ function TierDetailsEdit() {
           setForm({
             type: raw.type || "TIER_RULES",
             partnerType: raw?.config?.scope?.partnerType || "CAB",
+            parcelVehicleType:
+              raw?.config?.scope?.parcelVehicleType ||
+              raw?.config?.scope?.vehicleType ||
+              "BIKE",
             name: raw.name || "",
             description: raw.description || "",
             isActive: typeof raw.isActive === "boolean" ? raw.isActive : true,
@@ -178,7 +188,13 @@ function TierDetailsEdit() {
                 ? "AUTO"
                 : (form.partnerType || existingScope.partnerType) === "BIKE"
                   ? "BIKE"
+                  : (form.partnerType || existingScope.partnerType) === "PARCEL"
+                    ? form.parcelVehicleType || existingScope.vehicleType || "BIKE"
                 : existingScope.vehicleType || "ALL",
+            parcelVehicleType:
+              (form.partnerType || existingScope.partnerType) === "PARCEL"
+                ? form.parcelVehicleType || existingScope.parcelVehicleType || existingScope.vehicleType || "BIKE"
+                : null,
             zone: form.zone || "ALL",
           },
         },
@@ -273,72 +289,18 @@ function TierDetailsEdit() {
       <Card>
         <CardBody>
           <form onSubmit={onSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-              <div>
-                <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">
-                  Type
-                </Typography>
-                <input
-                  value={formatTypeLabel(form.type)}
-                  disabled
-                  className="w-full rounded-md border border-blue-gray-200 bg-blue-gray-50 px-3 py-2 text-sm text-blue-gray-700"
-                />
-              </div>
-              <div>
-                <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">
-                  Name
-                </Typography>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
-                />
-              </div>
-              <div>
-                <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">
-                  Partner Type
-                </Typography>
-                <select
-                  value={form.partnerType}
-                  disabled
-                  className="w-full rounded-md border border-blue-gray-200 bg-blue-gray-50 px-3 py-2 text-sm text-blue-gray-700"
-                >
-                  <option value="CAB">Cab</option>
-                  <option value="AUTO">Auto</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div>
-                <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">
-                  Zone
-                </Typography>
-                <select
-                  value={form.zone}
-                  onChange={(e) => setForm((prev) => ({ ...prev, zone: e.target.value }))}
-                  className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
-                >
-                  <option value="ALL">All</option>
-                  {serviceAreas.map((area) => (
-                    <option key={area.id || area.name} value={area.name}>
-                      {area.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">
-                  Description
-                </Typography>
-                <textarea
-                  rows={4}
-                  value={form.description}
-                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
-                />
-              </div>
-            </div>
+            <CommonFieldsSection
+              form={form}
+              onInputChange={(event) => {
+                const { name, type, checked, value } = event.target;
+                setForm((prev) => ({
+                  ...prev,
+                  [name]: type === "checkbox" ? checked : value,
+                }));
+              }}
+              serviceAreas={serviceAreas}
+              showParcelVehicleType
+            />
 
             <div className="flex items-center">
               <label className="inline-flex items-center gap-2">
@@ -359,6 +321,7 @@ function TierDetailsEdit() {
               serviceAreas={serviceAreas}
               selectedZone={form.zone}
               partnerType={form.partnerType}
+              parcelVehicleType={form.parcelVehicleType}
               initialConfig={rowData?.config || {}}
             />
 

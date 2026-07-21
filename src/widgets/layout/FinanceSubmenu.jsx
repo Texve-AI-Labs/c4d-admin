@@ -21,13 +21,15 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
     { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
     { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
+    { label: "Wallet Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission:"Users" },
+    { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission:"Users"  },
     { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
     { label: "Discount Module", path: "/dashboard/finance/discountModuleList", requiredPermission: "Users" },
     { label: "Custom Discount", path: "/dashboard/finance/custom-discount/list", requiredPermission: "Users" },
     { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
     { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
-    { label: "Driver Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
+    { label: "Driver KM Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
   ];
   const filteredItems = items.filter(({ requiredPermission }) => {
     if (!requiredPermission) return true;
@@ -44,7 +46,7 @@ function FinanceSubmenu({ permissions = [] }) {
     if (label === "Cash Back") {
       return pathname.startsWith("/dashboard/finance/cash-back");
     }
-    if (label === "Driver Bonus") {
+    if (label === "Driver KM Bonus") {
       return pathname.startsWith("/dashboard/finance/driver-bonus");
     }
     if (label === "Discount Module") {
@@ -61,6 +63,12 @@ function FinanceSubmenu({ permissions = [] }) {
     }
     if (label === "Master Subscription Table") {
       return pathname === "/dashboard/finance/master-subscription";
+    }
+    if (label === "Withdrawal Rules") {
+      return pathname.startsWith("/dashboard/finance/withdrawal-rules");
+    }
+    if (label === "Wallet Transaction") {
+      return pathname.startsWith("/dashboard/finance/wallet-transaction");
     }
     if (label === "Return Trip Driver Master Subscription Table") {
       return pathname.startsWith("/dashboard/finance/master-subscription/return-trip-driver");

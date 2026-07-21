@@ -20,7 +20,8 @@ export const SERVICE_TYPE_OPTIONS = [
     {label: 'Round Trip' , value: "RENTAL"}, 
     {label: 'Drop Taxi' , value: "RENTAL_DROP_TAXI"}, 
     {label: 'Local' , value: "RIDES"}, 
-    {label: 'Auto' , value: "AUTO"}
+    {label: 'Auto' , value: "AUTO"},
+    {label: 'Parcel' , value: "PARCEL"}
 ];
 export const OP_OPTIONS = [
     {label: '>' , value: ">"}, 
@@ -45,4 +46,16 @@ export const DISPATCH_SERVICE_KEYS = [
     {label: 'Hourly Package' , value: "RENTAL_HOURLY_PACKAGE"}, 
     {label: 'Drop Taxi' , value: "RENTAL_DROP_ONLY"}, 
     {label: 'Round Trip' , value: "RENTAL_OUTSTATION"}
+];
+
+export const PARTNER_TYPE_OPTIONS = [
+    { label: "Cab", value: "CAB" },
+    { label: "Auto", value: "AUTO" },
+    { label: "Bike", value: "BIKE" },
+    { label: "Parcel", value: "PARCEL" },
+];
+
+export const PARCEL_VEHICLE_TYPE_OPTIONS = [
+    { label: "Bike", value: "BIKE" },
+    { label: "Auto", value: "AUTO" },
 ];

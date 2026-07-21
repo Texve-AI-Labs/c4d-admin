@@ -7,13 +7,19 @@ export const COMPONENT_RULE_SERVICE_OPTIONS = [
   { label: "Drop Taxi", value: "RENTAL_DROP_ONLY" },
   { label: "Local", value: "RIDES" },
   { label: "Auto", value: "AUTO" },
+  { label: "Parcel", value: "PARCEL" },
 ];
 
 export const COMPONENT_LOCKED_ANY_SERVICE_OPTIONS = [{ label: "All", value: "ANY" }];
 export const COMPONENT_LOCKED_AUTO_SERVICE_OPTIONS = [{ label: "Auto", value: "AUTO" }];
 export const COMPONENT_LOCKED_BIKE_SERVICE_OPTIONS = [{ label: "Bike", value: "BIKE" }];
+export const COMPONENT_PARCEL_VEHICLE_TYPE_OPTIONS = [
+  { label: "Bike", value: "BIKE" },
+  { label: "Auto", value: "AUTO" },
+];
 
 export const isBikePartner = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "BIKE";
+export const isParcelPartner = (partnerType = "") => String(partnerType || "").trim().toUpperCase() === "PARCEL";
 
 export const createComponentRuleCondition = ({
   metric = "onlineHours",
@@ -91,6 +97,7 @@ export const getComponentUiServiceType = (condition = {}) => {
 
 export const buildComponentRuleConditionPayload = (rule = {}) => {
   const normalizedServiceType = String(rule?.serviceType || "").trim().toUpperCase();
+  const normalizedParcelVehicleType = String(rule?.parcelVehicleType || "").trim().toUpperCase();
 
   if (normalizedServiceType === "ANY") {
     return {
@@ -113,6 +120,15 @@ export const buildComponentRuleConditionPayload = (rule = {}) => {
       serviceType: "RIDES",
       bookingType: null,
       packageType: null,
+    };
+  }
+
+  if (normalizedServiceType === "PARCEL") {
+    return {
+      serviceType: "PARCEL",
+      bookingType: null,
+      packageType: null,
+      parcelVehicleType: normalizedParcelVehicleType || null,
     };
   }
 
