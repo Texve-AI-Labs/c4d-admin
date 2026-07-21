@@ -908,7 +908,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                         />
                                         <span className="ml-2">Acting Driver</span>
                                     </label>
-                                    <label className="inline-flex items-center">
+                                    {/* <label className="inline-flex items-center">
                                         <Field
                                             type="radio"
                                             name="serviceType"
@@ -925,7 +925,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                             className="form-radio"
                                         />
                                         <span className="ml-2">OWNER</span>
-                                    </label>
+                                    </label> */}
                                 </div>
                                 <ErrorMessage
                                     name="serviceType"

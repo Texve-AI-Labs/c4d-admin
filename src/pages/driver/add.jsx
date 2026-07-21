@@ -674,7 +674,7 @@ const DriverAdd = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation</label>
-                                        <Field as="select" name="salutation" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
+                                        <Field as="select" name="salutation" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
                                             <option value="">Select salutation</option>
                                             <option value="Mr">Mr</option>
                                             <option value="Mrs">Mrs</option>
@@ -685,12 +685,12 @@ const DriverAdd = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name</label>
-                                        <Field type="text" name="firstName" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                        <Field type="text" name="firstName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
                                         <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name</label>
-                                        <Field type="text" name="fatherName" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                        <Field type="text" name="fatherName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="fatherName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
@@ -716,7 +716,7 @@ const DriverAdd = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="age" className="text-sm font-medium text-gray-700">Age</label>
-                                        <Field type="text" name="age" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                                        <Field type="text" name="age" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled />
                                         <ErrorMessage name="age" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
 
@@ -793,7 +793,7 @@ const DriverAdd = () => {
                                                 />
                                                 <span className="ml-2">Acting Driver</span>
                                             </label>
-                                            <label className="inline-flex items-center">
+                                            {/* <label className="inline-flex items-center">
                                                 <Field
                                                     type="radio"
                                                     name="serviceType"
@@ -812,7 +812,7 @@ const DriverAdd = () => {
                                                     disabled={!isEditable}
                                                 />
                                                 <span className="ml-2">OWNER</span>
-                                            </label>
+                                            </label> */}
                                         </div>
                                         <ErrorMessage
                                             name="serviceType"
