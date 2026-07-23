@@ -80,9 +80,10 @@ export function DeleteAccount() {
       // console.log("OTP verification response:", response);
       if (response.success) {
         setStep(3);
-      } else {
-        throw new Error("Invalid OTP");
-      }
+      } 
+      // else {
+      //   throw new Error("Invalid OTP");
+      // }
     } catch (err) {
       setError(err.message || "Failed to verify OTP");
     } finally {
