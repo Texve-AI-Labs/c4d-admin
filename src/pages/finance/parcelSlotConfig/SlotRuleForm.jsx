@@ -21,14 +21,18 @@ import WeeklyConfig from "./WeeklyConfig";
 
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
 
-const fetchParcelGeoOptions = async (geoParams = {}) => {
-  const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, geoParams);
-  const allGeo = Array.isArray(response?.data) ? response.data : [];
-  const filteredAreas = allGeo.filter((area) => area.type === "Service Area");
-  const filteredSubZones = allGeo.filter((area) => area.type === "Zone" && area.description === "Zone");
+const fetchParcelGeoOptions = async () => {
+  const [areaResp, zoneResp] = await Promise.all([
+    ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" }),
+    ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Zone" }),
+  ]);
+
+  const filteredAreas = Array.isArray(areaResp?.data) ? areaResp.data : [];
+  const filteredSubZones = Array.isArray(zoneResp?.data) ? zoneResp.data : [];
 
   const zones = filteredAreas
     .map((area) => ({
+      id: String(area.id ?? area._id ?? ""),
       label: area.name || area.label || "Unnamed Zone",
       value: area.name || area.label || "",
       raw: area,
@@ -38,15 +42,11 @@ const fetchParcelGeoOptions = async (geoParams = {}) => {
   const subZones = filteredSubZones
     .map((area) => ({
       id: String(area.id ?? area._id ?? ""),
+      type: area.type || "",
+      description: area.description || "",
       label: area.name || area.label || "Unnamed Sub Zone",
       value: String(area.id ?? area._id ?? area.name ?? area.label ?? ""),
-      zone:
-        area.zone ||
-        area.zoneName ||
-        area.parentZone ||
-        area.serviceArea ||
-        area.serviceAreaName ||
-        "",
+      parentId: String(area.parent_id ?? area.parentId ?? area.parent?.id ?? area.serviceArea?.id ?? ""),
       raw: area,
     }))
     .filter((item) => normalizeText(item.value));
@@ -116,6 +116,7 @@ const getDateRangeValues = (fromDate, toDate) => {
 };
 
 const buildInitialForm = (initialValues = {}) => ({
+  zoneId: initialValues.zoneId || "",
   zone: resolveZoneValue(initialValues.zone || initialValues),
   subZoneId: resolveSubZoneValue(initialValues.subZoneId || initialValues),
   ruleType: initialValues.ruleType || "WEEKLY",
@@ -164,18 +165,25 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
 
   const filteredSubZones = useMemo(
     () =>
-      form.zone
+      form.zoneId
         ? subZones.filter(
-            (item) => !item.zone || String(item.zone).toLowerCase() === String(form.zone).toLowerCase()
+            (item) =>
+              String(item.type || "").toLowerCase() === "zone" &&
+              String(item.description || "").toLowerCase() === "zone" &&
+              String(item.parentId || "").toLowerCase() === String(form.zoneId || "").toLowerCase()
           )
-        : subZones,
-    [form.zone, subZones]
+        : subZones.filter(
+            (item) =>
+              String(item.type || "").toLowerCase() === "zone" &&
+              String(item.description || "").toLowerCase() === "zone"
+          ),
+    [form.zoneId, subZones]
   );
 
   const selectedZoneLabel = useMemo(() => {
-    const match = zones.find((item) => String(item.value) === String(form.zone));
+    const match = zones.find((item) => String(item.id) === String(form.zoneId));
     return match?.label || String(form.zone || "").toUpperCase();
-  }, [form.zone, zones]);
+  }, [form.zone, form.zoneId, zones]);
 
   const selectedSubZoneLabel = useMemo(() => {
     const match = filteredSubZones.find((item) => String(item.value) === String(form.subZoneId));
@@ -453,14 +461,22 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                   <RequiredMark />
                 </label>
                 <Select
-                  value={form.zone}
+                  value={form.zoneId}
                   selected={() => selectedZoneLabel || "Zone"}
-                  onChange={(value) => setForm((prev) => ({ ...prev, zone: value || "", subZoneId: "" }))}
+                  onChange={(value) => {
+                    const selected = zones.find((item) => String(item.id) === String(value));
+                    setForm((prev) => ({
+                      ...prev,
+                      zoneId: value || "",
+                      zone: selected?.label || "",
+                      subZoneId: "" ,
+                    }));
+                  }}
                   disabled={isViewMode}
                   menuProps={{ className: "max-h-56 overflow-y-auto" }}
                 >
                   {zones.map((zone) => (
-                    <Option key={zone.value} value={zone.value}>
+                    <Option key={zone.id || zone.value} value={zone.id || zone.value}>
                       {zone.label}
                     </Option>
                   ))}
