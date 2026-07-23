@@ -9,7 +9,7 @@ const showDefaultFailureAlert = (message) => {
 
 export const ApiRequestUtils = {
     post: async (apiRoute, body, custID = 0, options = {}) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || body?.sessionId || null ;
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
@@ -127,7 +127,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
     },
 
     delete: async (apiRoute, body) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || body?.sessionId || null ;
         const { data } = await axios.delete(getBaseUrl() + apiRoute, {
             headers: {
                 'Content-Type': 'application/json',
