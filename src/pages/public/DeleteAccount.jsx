@@ -77,7 +77,7 @@ export function DeleteAccount() {
         phoneNumber: phoneNumber,
         deviceToken: token
       });
-      // console.log("OTP verification response:", response);
+      console.log("OTP verification response:", response);
       if (response.success) {
         setStep(3);
       } 
