@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Input, Option, Select } from "@material-tailwind/react";
+import { Button, Input, Option, Select, Typography } from "@material-tailwind/react";
 
 const Filters = ({
   filters,
@@ -39,7 +39,7 @@ const Filters = ({
   };
 
   return (
-    <div className="rounded-2xl border border-blue-gray-100 bg-white p-4 shadow-sm mb-2">
+    <div className=" bg-white p-4 shadow-sm mb-2 border">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-blue-gray-800">Filters</p>

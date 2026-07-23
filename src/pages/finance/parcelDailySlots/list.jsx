@@ -133,13 +133,7 @@ const ParcelDailySlotsList = () => {
   };
 
   return (
-    <div className="mb-8 mt-5 bg-white rounded-xl flex flex-col gap-6">
-      <div className="flex items-center justify-between p-4">
-        <Typography variant="h5" className="font-semibold">
-          Parcel Daily Slots
-        </Typography>
-      </div>
-
+    <div className=" bg-white rounded-xl flex flex-col gap-6">
       <Filters
         filters={filters}
         zones={serviceAreas}
