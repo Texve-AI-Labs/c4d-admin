@@ -33,7 +33,7 @@ export function DeleteAccount() {
         phoneNumber: phoneNumber
       });
       setLoading(false);
-      console.log("Session response:", response);
+      // console.log("Session response:", response);
       if (response.sid) {
         setSessionId(response.sid);
       } else {
@@ -51,7 +51,7 @@ export function DeleteAccount() {
       const response = await ApiRequestUtils.post("/verify", {
         phoneNumber: '+91' + phoneNumber,
         sessionId: sessionId,
-        user: null
+        user: "USER"
       });
       
       if (response.success) {
@@ -77,8 +77,8 @@ export function DeleteAccount() {
         phoneNumber: phoneNumber,
         deviceToken: token
       });
-      console.log("OTP verification response:", response);
-      if (response==='') {
+      // console.log("OTP verification response:", response);
+      if (response.success) {
         setStep(3);
       } else {
         throw new Error("Invalid OTP");
