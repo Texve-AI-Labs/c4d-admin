@@ -10,6 +10,7 @@ const showDefaultFailureAlert = (message) => {
 export const ApiRequestUtils = {
     post: async (apiRoute, body, custID = 0, options = {}) => {
         const token = localStorage.getItem('token') || body?.sessionId || null ;
+        console.log("Token:----> ", token);
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
