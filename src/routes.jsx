@@ -158,6 +158,8 @@ import ParcelSlotConfigList from "./pages/finance/parcelSlotConfig/list";
 import SlotRuleForm from "./pages/finance/parcelSlotConfig/SlotRuleForm";
 import ParcelSlotConfigEdit from "./pages/finance/parcelSlotConfig/edit";
 import ParcelSlotConfigDetails from "./pages/finance/parcelSlotConfig/details";
+import ParcelDailySlotsList from "./pages/finance/parcelDailySlots/list";
+import ParcelDailySlotsDetails from "./pages/finance/parcelDailySlots/details";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
 import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
@@ -1436,6 +1438,22 @@ export const routes = [
         name: "Parcel Slot Config Details",
         path: "/finance/parcel-slot-config/details/:id",
         element: <ParcelSlotConfigDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Parcel Daily Slots",
+        path: "/finance/parcel-daily-slots",
+        element: <ParcelDailySlotsList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Parcel Daily Slot Details",
+        path: "/finance/parcel-daily-slots/details/:id",
+        element: <ParcelDailySlotsDetails />,
         display: false,
         permission: "Users",
       },

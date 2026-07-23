@@ -1048,7 +1048,8 @@ export const API_ROUTES = {
     'ADMIN_WITHDRAWALS_UPDATE':'/admin/withdrawals',
     'GET_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'POST_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
-    'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules'
+    'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
+    'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
 
 };
 
