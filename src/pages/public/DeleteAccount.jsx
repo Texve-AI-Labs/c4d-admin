@@ -94,7 +94,7 @@ export function DeleteAccount() {
     try {
       setLoading(true);
       setError("");
-      const response = await ApiRequestUtils.delete("/delete-account", {
+      const response = await ApiRequestUtils.delete("/delete-my-account", {
         sessionId: sessionId,
         phoneNumber: phoneNumber
       });
