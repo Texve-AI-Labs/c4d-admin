@@ -78,7 +78,7 @@ export function DeleteAccount() {
         deviceToken: token
       });
       console.log("OTP verification response:", response);
-      if (response.success) {
+      if (response.success || response ==='') {
         setStep(3);
       } 
       // else {
