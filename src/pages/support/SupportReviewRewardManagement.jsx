@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, CardBody, Dialog, DialogBody, DialogHeader, Input, Option, Select, Spinner, Textarea, Typography } from "@material-tailwind/react";
 import moment from "moment";
+import * as Yup from "yup";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 
@@ -89,6 +90,30 @@ const DocumentPreview = ({ src }) => {
   );
 };
 
+const ErrorMessage = ({ children }) => {
+  if (!children) return null;
+  return <Typography className="text-xs font-medium text-red-600">{children}</Typography>;
+};
+
+const buildValidationSchema = (requiresRewardFields) =>
+  Yup.object({
+    status: Yup.string().required("Status is required."),
+    rewardAmount: requiresRewardFields
+      ? Yup.number()
+          .typeError("Reward amount must be a number.")
+          .required("Reward amount is required.")
+          .min(0, "Reward amount must be zero or greater.")
+      : Yup.number()
+          .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+          .nullable(),
+    rewardReason: requiresRewardFields
+      ? Yup.string().trim().required("Reward reason is required.")
+      : Yup.string().nullable(),
+    adminRemarks: requiresRewardFields
+      ? Yup.string().trim().required("Admin remarks is required.")
+      : Yup.string().nullable(),
+  });
+
 function SupportReviewRewardManagement() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -113,6 +138,7 @@ function SupportReviewRewardManagement() {
   const [rewardAmount, setRewardAmount] = useState("");
   const [rewardReason, setRewardReason] = useState("");
   const [adminRemarks, setAdminRemarks] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [proofOpen, setProofOpen] = useState(false);
   const ticketReviewRef = useRef(null);
 
@@ -189,6 +215,7 @@ function SupportReviewRewardManagement() {
     setError("");
     setSelectedId("");
     setProofOpen(false);
+    setFieldErrors({});
     await fetchTickets(pagination.currentPage);
   };
 
@@ -199,6 +226,7 @@ function SupportReviewRewardManagement() {
   const handleApplyFilters = async () => {
     setSelectedId("");
     setProofOpen(false);
+    setFieldErrors({});
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
     await fetchTickets(1, filters);
   };
@@ -215,6 +243,7 @@ function SupportReviewRewardManagement() {
     setFilters(resetFilters);
     setSelectedId("");
     setProofOpen(false);
+    setFieldErrors({});
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
     await fetchTickets(1, resetFilters);
   };
@@ -259,8 +288,17 @@ function SupportReviewRewardManagement() {
   const handleUpdateStatus = async () => {
     const id = selectedTicketKey;
     if (!id) return;
-    if (!status) {
-      setError("Select a status.");
+    try {
+      await validationSchema.validate(formValues, { abortEarly: false });
+      setFieldErrors({});
+    } catch (validationError) {
+      const nextErrors = {};
+      (validationError?.inner || []).forEach((item) => {
+        if (item?.path && !nextErrors[item.path]) nextErrors[item.path] = item.message;
+      });
+      setFieldErrors(nextErrors);
+      const firstMessage = validationError?.inner?.[0]?.message || validationError?.message || "Please fix the form errors.";
+      setError(firstMessage);
       return;
     }
 
@@ -271,11 +309,6 @@ function SupportReviewRewardManagement() {
       adminRemarks: adminRemarks || undefined,
     };
 
-    if (payload.rewardAmount !== undefined && Number.isNaN(payload.rewardAmount)) {
-      setError("Reward amount must be a number.");
-      return;
-    }
-
     try {
       setSaving(true);
       setError("");
@@ -284,6 +317,7 @@ function SupportReviewRewardManagement() {
         await fetchTickets();
         setSelectedId("");
         setProofOpen(false);
+        setFieldErrors({});
       } else {
         setError(response?.message || "Failed to update ticket.");
       }
@@ -302,6 +336,32 @@ function SupportReviewRewardManagement() {
   const showRewardFields = ["UNDER_REVIEW","APPROVED", "REJECTED", "RESOLVED"].includes(selectedStatus);
   const isTerminalTicket = isTerminalStatus(ticket?.status || "");
   const allowedStatusOptions = getAllowedStatusOptions(selectedStatus);
+  const validationSchema = useMemo(() => buildValidationSchema(showRewardFields), [showRewardFields]);
+  const formValues = useMemo(
+    () => ({
+      status,
+      rewardAmount,
+      rewardReason,
+      adminRemarks,
+    }),
+    [status, rewardAmount, rewardReason, adminRemarks]
+  );
+  const isFormValid = useMemo(() => {
+    try {
+      validationSchema.validateSync(formValues, { abortEarly: false });
+      return true;
+    } catch {
+      return false;
+    }
+  }, [validationSchema, formValues]);
+
+  const setFieldValue = (key, value) => {
+    setFieldErrors((prev) => ({ ...prev, [key]: "" }));
+    if (key === "status") setStatus(value);
+    if (key === "rewardAmount") setRewardAmount(value);
+    if (key === "rewardReason") setRewardReason(value);
+    if (key === "adminRemarks") setAdminRemarks(value);
+  };
 
   return (
     <div className="p-2 bg-white rounded-lg shadow-sm">
@@ -575,13 +635,13 @@ function SupportReviewRewardManagement() {
                     <div className="grid grid-cols-1 gap-3">
                       <div className="space-y-2">
                         <Typography className="text-sm font-semibold text-black">
-                          Status
+                          Status <span className="text-red-600">*</span>
                         </Typography>
                         <Select
                           value={selectedStatus}
                           label="Status"
                           selected={(element) => element?.props?.children || formatBadgeText(selectedStatus)}
-                          onChange={(value) => setStatus(value || "UNDER_REVIEW")}
+                          onChange={(value) => setFieldValue("status", value || "UNDER_REVIEW")}
                           disabled={isTerminalTicket}
                         >
                           {allowedStatusOptions.map((option) => (
@@ -590,45 +650,49 @@ function SupportReviewRewardManagement() {
                             </Option>
                           ))}
                         </Select>
+                        <ErrorMessage>{fieldErrors.status}</ErrorMessage>
                       </div>
 
                       {showRewardFields ? (
                         <>
                           <div className="space-y-2">
                             <Typography className="text-sm font-semibold text-black">
-                              Reward Amount
+                              Reward Amount <span className="text-red-600">*</span>
                             </Typography>
                             <Input
                               type="number"
                               value={rewardAmount}
-                              onChange={(e) => setRewardAmount(e.target.value)}
+                              onChange={(e) => setFieldValue("rewardAmount", e.target.value)}
                               disabled={isTerminalTicket}
                               className="!border-slate-300 !text-black placeholder:!text-black/40"
                             />
+                            <ErrorMessage>{fieldErrors.rewardAmount}</ErrorMessage>
                           </div>
 
                           <div className="space-y-2">
                             <Typography className="text-sm font-semibold text-black">
-                              Reward Reason
+                              Reward Reason <span className="text-red-600">*</span>
                             </Typography>
                             <Textarea
                               value={rewardReason}
-                              onChange={(e) => setRewardReason(e.target.value)}
+                              onChange={(e) => setFieldValue("rewardReason", e.target.value)}
                               disabled={isTerminalTicket}
                               className="!border-slate-300 !text-black placeholder:!text-black/40"
                             />
+                            <ErrorMessage>{fieldErrors.rewardReason}</ErrorMessage>
                           </div>
 
                           <div className="space-y-2">
                             <Typography className="text-sm font-semibold text-black">
-                              Admin Remarks
+                              Admin Remarks <span className="text-red-600">*</span>
                             </Typography>
                             <Textarea
                               value={adminRemarks}
-                              onChange={(e) => setAdminRemarks(e.target.value)}
+                              onChange={(e) => setFieldValue("adminRemarks", e.target.value)}
                               disabled={isTerminalTicket}
                               className="!border-slate-300 !text-black placeholder:!text-black/40"
                             />
+                            <ErrorMessage>{fieldErrors.adminRemarks}</ErrorMessage>
                           </div>
                         </>
                       ) : null}
