@@ -254,7 +254,7 @@ const Booking = (props) => {
   useEffect(() => {
     if (selectedAreaId) {
       const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
-      const newServices = (selectedArea ? selectedArea.services : []);
+      const newServices = (selectedArea ? selectedArea.services : []).filter((service) => service !== 'BIKE');
       setServices(newServices);
     //   console.log('Services for selected area:', newServices);
       setCurrentServiceType('');
@@ -1382,7 +1382,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             luggage: values.luggage,
             seaterCapacity:values.seaterCapacity,
             landmark: values.landmark || '',
-            period,
+            ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
             serviceType: values.serviceType || mappedServiceType,
             zone: actualZone,
             isPremiumService : values?.isPremiumService ? true : false
@@ -4179,9 +4179,11 @@ const priceDetailsCardClass = isPeakHour
                                                                 • The first additional <span className="font-bold text-black">
                                                                                 {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
+                                                            {quoteDetails.amount?.driverWithin > 0 && 
                                                             <Typography className="text-sm text-gray-700">
                                                                 • A Driver starting  Points <span className="font-bold text-black">{Number(quoteDetails.amount?.driverWithin).toFixed(2) || ''}</span> Kms.
                                                             </Typography>
+                                                            }
                                                             {quoteDetails.amount?.gst_percentage > 0 && (
                                                             <Typography className="text-sm text-gray-700">
                                                                 • The estimated price includes  <span className="font-bold text-black">{quoteDetails.amount?.gst_percentage|| '0'}%</span> tax.
@@ -4255,9 +4257,11 @@ const priceDetailsCardClass = isPeakHour
                                                                 The first additional <span className="font-bold text-black">
                                                                                 {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
+                                                            {quoteDetails.amount?.driverWithin > 0 && 
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • A Driver starting  Points <span className="font-bold text-black">{Number(quoteDetails.amount?.driverWithin).toFixed(2)|| '2'}</span> Kms.
                                                             </Typography>
+                                                            }
                                                             {quoteDetails.amount?.driverCharge > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge || '0')}</span>.

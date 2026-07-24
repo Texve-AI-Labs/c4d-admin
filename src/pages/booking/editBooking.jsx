@@ -403,7 +403,7 @@ const EditBooking = (props) => {
     useEffect(() => {
         if (selectedAreaId) {
             const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
-            const newServices = selectedArea ? selectedArea.services : [];
+            const newServices = (selectedArea ? selectedArea.services : []).filter((service) => service !== 'BIKE');
             setServices(newServices);
             setCurrentServiceType('');
         } else {
