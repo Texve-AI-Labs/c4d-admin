@@ -18,6 +18,8 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Subscription Invoice", path: "/dashboard/finance/invoice" },
     { label: "Booking Receipt", path: "/dashboard/finance/receipt" },
     { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
+    { label: "Parcel Slot Config", path: "/dashboard/finance/parcel-slot-config", requiredPermission: "Users" },
+    { label: "Parcel Daily Slots", path: "/dashboard/finance/parcel-daily-slots", requiredPermission: "Users" },
     { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
     { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
     { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
@@ -36,7 +38,8 @@ function FinanceSubmenu({ permissions = [] }) {
     return permissions.includes(requiredPermission);
   });
   const firstRowItems = filteredItems.slice(0, 5);
-  const secondRowItems = filteredItems.slice(5);
+  const secondRowItems = filteredItems.slice(5, 10);
+  const thirdRowItems = filteredItems.slice(10);
   const isMainItemActive = (label, path, navActive) => {
     if (navActive) return true;
 
@@ -60,6 +63,12 @@ function FinanceSubmenu({ permissions = [] }) {
     }
     if(label === "Parcel Commission") {
       return pathname.startsWith("/dashboard/finance/parcel-commission");
+    }
+    if (label === "Parcel Slot Config") {
+      return pathname.startsWith("/dashboard/finance/parcel-slot-config");
+    }
+    if (label === "Parcel Daily Slots") {
+      return pathname.startsWith("/dashboard/finance/parcel-daily-slots");
     }
     if (label === "Master Subscription Table") {
       return pathname === "/dashboard/finance/master-subscription";
@@ -103,6 +112,9 @@ function FinanceSubmenu({ permissions = [] }) {
       <ul className={NAV_UI.topnav.list}>{renderItems(firstRowItems)}</ul>
       {secondRowItems.length > 0 ? (
         <ul className={NAV_UI.topnav.secondaryList}>{renderItems(secondRowItems)}</ul>
+      ) : null}
+      {thirdRowItems.length > 0 ? (
+        <ul className={NAV_UI.topnav.secondaryList}>{renderItems(thirdRowItems)}</ul>
       ) : null}
     </div>
   );

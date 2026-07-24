@@ -95,24 +95,27 @@ const ErrorMessage = ({ children }) => {
   return <Typography className="text-xs font-medium text-red-600">{children}</Typography>;
 };
 
-const buildValidationSchema = (requiresRewardFields) =>
-  Yup.object({
+const buildValidationSchema = (currentStatus) => {
+  const normalizedStatus = String(currentStatus || "").toUpperCase();
+  const requiresRewardFields = ["UNDER_REVIEW", "APPROVED"].includes(normalizedStatus);
+  const requiresAdminRemarks = normalizedStatus === "REJECTED";
+
+  return Yup.object({
     status: Yup.string().required("Status is required."),
     rewardAmount: requiresRewardFields
       ? Yup.number()
           .typeError("Reward amount must be a number.")
           .required("Reward amount is required.")
           .min(0, "Reward amount must be zero or greater.")
-      : Yup.number()
-          .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-          .nullable(),
+      : Yup.mixed().notRequired().nullable(),
     rewardReason: requiresRewardFields
       ? Yup.string().trim().required("Reward reason is required.")
-      : Yup.string().nullable(),
-    adminRemarks: requiresRewardFields
+      : Yup.mixed().notRequired().nullable(),
+    adminRemarks: requiresAdminRemarks
       ? Yup.string().trim().required("Admin remarks is required.")
-      : Yup.string().nullable(),
+      : Yup.string().trim().nullable(),
   });
+};
 
 function SupportReviewRewardManagement() {
   const [rows, setRows] = useState([]);
@@ -332,11 +335,12 @@ function SupportReviewRewardManagement() {
   const ticket = selectedRow;
   const booking = ticket?.booking || {};
   const customer = ticket?.customer || {};
-  const selectedStatus = String(ticket?.status || status || "UNDER_REVIEW").toUpperCase();
-  const showRewardFields = ["UNDER_REVIEW","APPROVED", "REJECTED", "RESOLVED"].includes(selectedStatus);
+  const selectedStatus = String(status || ticket?.status || "UNDER_REVIEW").toUpperCase();
+  const showRewardFields = ["UNDER_REVIEW","APPROVED", "REJECTED"].includes(selectedStatus);
   const isTerminalTicket = isTerminalStatus(ticket?.status || "");
+  const disableRewardFields = selectedStatus === "REJECTED";
   const allowedStatusOptions = getAllowedStatusOptions(selectedStatus);
-  const validationSchema = useMemo(() => buildValidationSchema(showRewardFields), [showRewardFields]);
+  const validationSchema = useMemo(() => buildValidationSchema(selectedStatus), [selectedStatus]);
   const formValues = useMemo(
     () => ({
       status,
@@ -362,6 +366,16 @@ function SupportReviewRewardManagement() {
     if (key === "rewardReason") setRewardReason(value);
     if (key === "adminRemarks") setAdminRemarks(value);
   };
+
+  useEffect(() => {
+    if (selectedStatus !== "REJECTED") return;
+    setFieldErrors((prev) => {
+      const nextErrors = { ...prev };
+      delete nextErrors.rewardAmount;
+      delete nextErrors.rewardReason;
+      return nextErrors;
+    });
+  }, [selectedStatus]);
 
   return (
     <div className="p-2 bg-white rounded-lg shadow-sm">
@@ -663,7 +677,7 @@ function SupportReviewRewardManagement() {
                               type="number"
                               value={rewardAmount}
                               onChange={(e) => setFieldValue("rewardAmount", e.target.value)}
-                              disabled={isTerminalTicket}
+                              disabled={isTerminalTicket || disableRewardFields}
                               className="!border-slate-300 !text-black placeholder:!text-black/40"
                             />
                             <ErrorMessage>{fieldErrors.rewardAmount}</ErrorMessage>
@@ -676,7 +690,7 @@ function SupportReviewRewardManagement() {
                             <Textarea
                               value={rewardReason}
                               onChange={(e) => setFieldValue("rewardReason", e.target.value)}
-                              disabled={isTerminalTicket}
+                              disabled={isTerminalTicket || disableRewardFields}
                               className="!border-slate-300 !text-black placeholder:!text-black/40"
                             />
                             <ErrorMessage>{fieldErrors.rewardReason}</ErrorMessage>
