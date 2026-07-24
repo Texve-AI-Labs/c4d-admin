@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, CardBody, CardHeader, Chip, Spinner, Typography } from "@material-tailwind/react";
 import { Link, useNavigate } from "react-router-dom";
+import { saveAs } from "file-saver";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { EMPTY_FILTERS } from "./constants";
 import Filters from "./components/Filters";
-import { buildDailySlotQuery, formatDate, formatDateTime, formatTime, getSlotStateChip, normalizeText } from "./utils";
+import { buildDailySlotQuery, formatDate, formatDateTime, formatTime, getDayChip, getSlotStateChip, normalizeText } from "./utils";
 
 const DEFAULT_PAGINATION = {
   currentPage: 1,
@@ -23,6 +24,7 @@ const ParcelDailySlotsList = () => {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     const loadGeo = async () => {
@@ -126,11 +128,51 @@ const ParcelDailySlotsList = () => {
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
+  const handleExportExcel = async () => {
+    if ((filters.fromDate && !filters.toDate) || (!filters.fromDate && filters.toDate)) {
+      return;
+    }
+
+    try {
+      setExportLoading(true);
+      const exportParams = buildDailySlotQuery({
+        ...filters,
+        page: 1,
+        limit: pagination.itemsPerPage || "",
+      });
+      const response = await ApiRequestUtils.fetchExcelDownload(API_ROUTES.EXPORT_DALIY_SLOT, 0, exportParams);
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const filenameParts = ["Parcel_Daily_Slots"];
+      if (filters.date) filenameParts.push(filters.date);
+      if (filters.fromDate || filters.toDate) filenameParts.push(`${filters.fromDate || "from"}_to_${filters.toDate || "to"}`);
+      if (filters.zone) filenameParts.push(filters.zone);
+      if (filters.subZoneId) filenameParts.push(`subZone-${filters.subZoneId}`);
+      let filename = `${filenameParts.filter(Boolean).join("_")}.xlsx`;
+      const contentDisposition = response.headers?.["content-disposition"];
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+        if (match?.[1]) filename = match[1];
+      }
+
+      saveAs(blob, filename);
+    } catch (error) {
+      console.error("Failed to export parcel daily slots:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
       setPagination((prev) => ({ ...prev, currentPage: page }));
     }
   };
+
+  const hasAnyAppliedFilter = Boolean(filters.date || filters.fromDate || filters.toDate || filters.zoneId || filters.subZoneId);
 
   return (
     <div className=" bg-white rounded-xl flex flex-col gap-6">
@@ -144,10 +186,20 @@ const ParcelDailySlotsList = () => {
       />
 
       <Card>
-        <CardHeader variant="gradient" className={`p-5 ${ColorStyles.bgColor}`}>
+        <CardHeader variant="gradient" className={`flex items-center justify-between gap-3 p-5 ${ColorStyles.bgColor}`}>
           <Typography variant="h6" color="white">
             Daily Slot History
           </Typography>
+          {hasAnyAppliedFilter ? (
+            <Button
+              size="sm"
+              className="rounded-lg bg-white px-4 py-2 text-blue-700 shadow-sm hover:bg-blue-gray-50"
+              onClick={handleExportExcel}
+              disabled={exportLoading}
+            >
+              {exportLoading ? "Exporting..." : "Export"}
+            </Button>
+          ) : null}
         </CardHeader>
         <CardBody className="pt-0 px-0">
           {loading ? (
@@ -198,7 +250,9 @@ const ParcelDailySlotsList = () => {
                               row.subZone?.name || row.subZone?.label || row.subZoneId || "-"
                             )}
                           </td>
-                          <td className="px-5 py-3 whitespace-nowrap">{row.dayOfWeek || "-"}</td>
+                          <td className="px-5 py-3 whitespace-nowrap">
+                            {row.dayOfWeek ? ( <Chip value={getDayChip(row.dayOfWeek).label} className={getDayChip(row.dayOfWeek).className} />) : ("-")}
+                          </td>
                           <td className="px-5 py-3 whitespace-nowrap">{formatTime(row.startTime)}</td>
                           <td className="px-5 py-3 whitespace-nowrap">{formatTime(row.endTime)}</td>
                           <td className="px-5 py-3 whitespace-nowrap">{row.maxBookings ?? "-"}</td>

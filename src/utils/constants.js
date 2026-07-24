@@ -1050,6 +1050,7 @@ export const API_ROUTES = {
     'POST_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
+    'EXPORT_DALIY_SLOT':'/admin/daily/slot/export',
 
 };
 

@@ -9,6 +9,7 @@ import {
   formatTime,
   getBookingEntityLabel,
   getBookingEntityValue,
+  getBookingPhoneNumber,
   getBookingStatusChip,
   getSlotStateChip,
   getVehicleTypeChip,
@@ -57,7 +58,7 @@ const ParcelDailySlotsDetails = () => {
 
   return (
     <div className="flex flex-col gap-6 bg-white p-4 rounded-xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <Typography variant="h5" className="font-semibold">
           Parcel Daily Slot Details
         </Typography>
@@ -117,6 +118,7 @@ const ParcelDailySlotsDetails = () => {
                         <div className="flex flex-col">
                           {/* <span className="font-semibold">{getBookingEntityLabel(booking)}</span> */}
                           <span className="text-sm text-blue-gray-600">{getBookingEntityValue(booking)}</span>
+                          <span className="text-xs text-blue-gray-500">{getBookingPhoneNumber(booking)}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3 whitespace-nowrap">

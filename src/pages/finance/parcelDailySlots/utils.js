@@ -39,6 +39,14 @@ export const getBookingEntityValue = (booking = {}) => {
   return "-";
 };
 
+export const getBookingPhoneNumber = (booking = {}) => {
+  if (booking.driver?.phoneNumber) return booking.driver.phoneNumber;
+  if (booking.parcel?.phoneNumber) return booking.parcel.phoneNumber;
+  if (booking.auto?.phoneNumber) return booking.auto.phoneNumber;
+  if (booking.bike?.phoneNumber) return booking.bike.phoneNumber;
+  return "-";
+};
+
 export const getSlotStateChip = (slot) => {
   if (slot?.isExpired) return { label: "EXPIRED", className: "inline-flex rounded-full bg-gray-500 px-2 py-0.5 text-xs font-semibold text-white" };
   if (slot?.isFull) return { label: "FULL", className: "inline-flex rounded-full bg-red-500 px-2 py-0.5 text-xs font-semibold text-white" };
@@ -62,4 +70,19 @@ export const getBookingStatusChip = (value) => {
   if (normalized === "PENDING") return { label: normalized, className: "inline-flex rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white" };
   if (normalized === "EXPIRED") return { label: normalized, className: "inline-flex rounded-full bg-gray-500 px-2 py-0.5 text-xs font-semibold text-white" };
   return { label: normalized || "-", className: "inline-flex rounded-full bg-blue-gray-500 px-2 py-0.5 text-xs font-semibold text-white" };
+};
+
+export const getDayChip = (value) => {
+  const normalized = String(value || "").toUpperCase();
+  const base = "inline-flex rounded-full px-2 py-0.5 text-xs font-semibold text-white";
+
+  if (normalized === "MONDAY") return { label: normalized, className: `${base} bg-indigo-600` };
+  if (normalized === "TUESDAY") return { label: normalized, className: `${base} bg-sky-600` };
+  if (normalized === "WEDNESDAY") return { label: normalized, className: `${base} bg-emerald-600` };
+  if (normalized === "THURSDAY") return { label: normalized, className: `${base} bg-amber-600` };
+  if (normalized === "FRIDAY") return { label: normalized, className: `${base} bg-pink-600` };
+  if (normalized === "SATURDAY") return { label: normalized, className: `${base} bg-violet-600` };
+  if (normalized === "SUNDAY") return { label: normalized, className: `${base} bg-red-500` };
+
+  return { label: normalized || "-", className: `${base} bg-blue-gray-500` };
 };
