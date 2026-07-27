@@ -108,6 +108,7 @@ const AddBanner = () => {
   const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER', 'ONTRIP_BANNER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
+  const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
 
   const validationSchema = Yup.object().shape({
     type: Yup.string().required('Type is required'),
@@ -222,6 +223,8 @@ const AddBanner = () => {
         formData.append('toDate', values.toDate);
       if (!isServiceIntro) {
         formData.append('redirectUrl', values.redirectUrl.trim());
+      }
+      if (!isServiceIntro && !isExternalPromotions) {
         formData.append('dropAddress', values.dropAddress || '');
         formData.append('dropLat', values.dropLocation?.lat || '');
         formData.append('dropLong', values.dropLocation?.lng || '');
@@ -249,6 +252,7 @@ const AddBanner = () => {
       formData.append('image', values.image, values.image.name);
       formData.append('fileTypeImage', values.image?.type || '');
       formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
+      // console.log("Responce:-------> ", values)
 
       const response = await ApiRequestUtils.postDocs(API_ROUTES.POST_BANNER, formData);
       if (response?.success === false) {
@@ -334,6 +338,7 @@ const AddBanner = () => {
                   <option value="ONTRIP_BANNER">On Trip Banner</option>
                   {/* <option value="STATS">Stats</option> */}
                   <option value="TOP_NEW">Top New</option>
+                  <option value="EXTERNAL_PROMOTIONS">External Promotions</option>
                   <option value="SERVICE_INTRO_IMAGE">Service Intro Image (customer)</option>                  
                   {/* <option value="MIDCAROUSEL">MidCarousel</option> */}
                   {/* <option value="PROMOTION">Promotion</option> */}
@@ -454,7 +459,7 @@ const AddBanner = () => {
               </div>
 
               {/* Drop Location (New Field) */}
-              {!hideStandardFields && !isServiceIntro && (
+              {!hideStandardFields && !isServiceIntro && !isExternalPromotions && (
                 <>              
               <div>
                 <label className="text-sm font-medium text-gray-700">Drop Location </label>
