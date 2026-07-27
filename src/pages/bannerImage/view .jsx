@@ -255,6 +255,7 @@ const BannerView = () => {
   {value:'ONTRIP_BANNER', label:'On Trip Banner' },
   {value: 'TOP_NEW', label: 'Top New'},
   {value: 'SERVICE_INTRO_IMAGE', label:'Service Intro Image (customer)'},
+  {value: "EXTERNAL_PROMOTIONS",label:'External Promotions'},
   { value: 'NEW_CUSTOMER', label: 'New Customer' },
   { value: 'INTRO_SLIDES', label: 'Intro Slides (customer)'},
   { value: 'INTRO_SLIDES_DRIVER', label: 'Intro Slides (Driver)' },
