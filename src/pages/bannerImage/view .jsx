@@ -426,6 +426,7 @@ const BannerView = () => {
                                   if (b.id === item.id) return false;
                                   if (String(b.position) !== newPosition) return false;
                                   if (b.type !== item.type) return false;
+                                  if ((b.zone || '') !== (item.zone || '')) return false;
 
                                   if (
                                     item.type === 'INTRO_SLIDES_DRIVER' ||
@@ -443,8 +444,8 @@ const BannerView = () => {
                                     [item.id]:
                                       item.type === 'INTRO_SLIDES_DRIVER' ||
                                       item.type === 'TRAINING_VIDEO_DRIVER'
-                                        ? `Another ${item.type} (${item.driverType || 'N/A'}) banner already uses position ${newPosition}`
-                                        : `Another ${item.type} banner already uses position ${newPosition}`,
+                                        ? `Another ${item.type} (${item.driverType || 'N/A'}) banner in ${item.zone || 'N/A'} already uses position ${newPosition}`
+                                        : `Another ${item.type} banner in ${item.zone || 'N/A'} already uses position ${newPosition}`,
                                   }));
                                   return;
                                 }
