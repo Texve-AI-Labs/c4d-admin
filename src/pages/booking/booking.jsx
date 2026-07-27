@@ -4190,9 +4190,9 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             )}
 
-                                                            {quoteDetails.amount?.driverCharge > 0 && (
+                                                            {quoteDetails.expectedPackageDetails?.nightCharge > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.driverCharge || '0')}</span>
+                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.expectedPackageDetails?.nightCharge || '0')}</span>
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.extraNightCharge > 0 && (
