@@ -27,6 +27,14 @@ function MarketingSubmenu({ miniSidenav }) {
       );
     }
 
+    if (label === "Dynamic Text") {
+      return (
+        pathname.startsWith("/dashboard/vendors/dynamic-text") ||
+        pathname.startsWith("/dashboard/vendors/dynamic-text/add") ||
+        pathname.startsWith("/dashboard/vendors/dynamic-text/edit")
+      );
+    }
+
     // if (label === "Testimonial") {
     //   return (
     //     pathname.startsWith("/dashboard/user/testimonialview") ||
@@ -40,6 +48,7 @@ function MarketingSubmenu({ miniSidenav }) {
   const items = [
         { label: "Driver Incentive", path: "/dashboard/vendors/driver-incentive", icon: "/img/driver_app_notification.png" },
         { label: "Daily push notification", path: "/dashboard/vendors/notificationList", icon: "/img/push_notification.png" },
+        { label: "Dynamic Text", path: "/dashboard/vendors/dynamic-text", icon: "/img/push_notification.png" },
         { label: "Banner Image", path: "/dashboard/user/bannerimgView", icon: "/img/banner_img.png" },
         { label: "Batch notification for Customer App", path: "/dashboard/vendors/customerNotificationList", icon: "/img/customerNotification.png" },
         { label: "In-app notification for Driver App", path: "/dashboard/vendors/driverNotificationList", icon: "/img/driver_app_notification.png" },
