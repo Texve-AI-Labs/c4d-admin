@@ -13,6 +13,16 @@ import { API_ROUTES } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CabSearch from '@/components/CabSearch';
 
+const toText = (value, fallback = "-") => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (value instanceof Error) return value.message || fallback;
+  if (value && typeof value === "object") {
+    return value.name || value.label || value.title || value.message || JSON.stringify(value);
+  }
+  return value == null || value === "" ? fallback : String(value);
+};
+
 export function AllVehicles() {
   const [cabs, setCabs] = useState([]);
   const [allCabs, setAllCabs] = useState([]);
@@ -90,7 +100,7 @@ export function AllVehicles() {
           color='blue'
           className='py-3 px-6 rounded-xl'
         >
-          {paramsPassed?.cabName} {paramsPassed?.cabAdded ? 'added' : 'updated'} successfully!
+          {toText(paramsPassed?.cabName, "Cab")} {paramsPassed?.cabAdded ? 'added' : 'updated'} successfully!
         </Alert>
       </div>}
       <CabSearch onSearch={getCabs} />
@@ -139,7 +149,7 @@ export function AllVehicles() {
                                   color="blue"
                                   className="font-semibold underline"
                                 >
-                                  {name}
+                                  {toText(name)}
                                 </Typography>
                                 {/* <Typography className="text-xs font-normal text-blue-gray-500">
                                   {email}
@@ -149,29 +159,29 @@ export function AllVehicles() {
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {formatPhoneNumber(phoneNumber)}
+                              {toText(formatPhoneNumber(phoneNumber))}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {carType}
+                              {toText(carType)}
                             </Typography>
                           </td>
                           <td className={className}>
-                            <Link to={`/dashboard/vendors/account/drivers/details/${Drivers[0]?.id}`}>
+                            <Link to={`/dashboard/vendors/account/drivers/details/${Drivers?.[0]?.id || ""}`}>
                               <Typography className="text-xs font-semibold underline" color='blue'>
-                                {Drivers ? Drivers[0]?.firstName : ""}
+                                {toText(Drivers?.[0]?.firstName || "")}
                               </Typography>
                             </Link>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600 ">
-                              {intercityCount}
+                              {toText(intercityCount)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {outstationCount}
+                              {toText(outstationCount)}
                             </Typography>
                           </td>
                           <td className={className}>
@@ -210,7 +220,7 @@ export function AllVehicles() {
                                 {status == "ACTIVE" ? "Mark Offline" : "Mark Online"}
                               </Button>
                             </td>
-                            {Drivers.length > 0 && Account?.type !== "Individual" && <td className={className}>
+                            {(Drivers?.length > 0) && Account?.type !== "Individual" && <td className={className}>
                               <Button
                                 as="a"
                                 onClick={() => navigate(`/dashboard/vendors/account/allVehicles/assignDriver/${id}`)}
