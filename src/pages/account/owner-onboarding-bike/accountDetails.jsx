@@ -3,7 +3,7 @@ import { Card, CardBody, Typography, Button, Chip, Dialog, DialogHeader, DialogB
 import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, ColorStyles, STATE_LIST, THALUK_LIST } from "@/utils/constants";
+import { API_ROUTES, ColorStyles, DISTRICT_LIST, STATE_LIST, THALUK_LIST } from "@/utils/constants";
 import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from './AccountCreationTabs';
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
@@ -142,6 +142,7 @@ const AccountOnboardingDetails = () => {
     street: "",
     thaluk: "",
     district: "",
+    accountDistrict: "",
     state: "",
     pincode: "",
   });
@@ -200,6 +201,7 @@ const AccountOnboardingDetails = () => {
       street: account?.street || "",
       thaluk: account?.thaluk || "",
       district: account?.district || "",
+      accountDistrict: account?.accountDistrict || "",
       state: account?.state || "",
       pincode: account?.pincode || "",
     });
@@ -396,8 +398,8 @@ const AccountOnboardingDetails = () => {
     if (!thaluk) nextErrors.thaluk = "Thaluk is required";
     else if (!THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk)) nextErrors.thaluk = "Please select a valid Thaluk";
 
-    if (!district) nextErrors.district = "District is required";
-    else if (district.length < 2) nextErrors.district = "District must be at least 2 characters";
+    if (!district) nextErrors.district = "Zone is required";
+    else if (district.length < 2) nextErrors.district = "Zone must be at least 2 characters";
 
     if (!state) nextErrors.state = "State is required";
     else if (!STATE_LIST.some((item) => item.value === state || item.label === state)) nextErrors.state = "Please select a valid State";
@@ -825,14 +827,14 @@ const AccountOnboardingDetails = () => {
                   {addressErrors.thaluk ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.thaluk}</Typography> : null}
                 </div>
                 <div>
-                  <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
+                  <label htmlFor="district" className="text-sm font-medium text-gray-700">Zone</label>
                   <select
                     id="district"
                     value={addressForm.district}
                     onChange={(e) => handleAddressInputChange("district", e.target.value)}
                     className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
-                  <option value="">Select District</option>
+                  <option value="">Select Zone</option>
                   {serviceAreas.map((area) => (
                     <option key={area.id} value={area.name}>
                       {area.name}
@@ -840,6 +842,20 @@ const AccountOnboardingDetails = () => {
                   ))}
                 </select>
                   {addressErrors.district ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.district}</Typography> : null}
+              </div>
+              <div>
+                <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">Account District</label>
+                <select
+                  id="accountDistrict"
+                  value={addressForm.accountDistrict}
+                  onChange={(e) => handleAddressInputChange("accountDistrict", e.target.value)}
+                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                >
+                  <option value="">Select District</option>
+                  {DISTRICT_LIST.map((district) => (
+                    <option key={district.value} value={district.value}>{district.label}</option>
+                  ))}
+                </select>
                 </div>
                 <div>
                   <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>
