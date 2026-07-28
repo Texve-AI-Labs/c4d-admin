@@ -1965,11 +1965,13 @@ const priceDetailsCardClass = isPeakHour
                             <input
                                 type="text"
                                 className="relative w-full py-2 px-8 border  rounded-xl text-sm bg-gray-100 pr-10"
-                                placeholder="Search by customer number or booking ID"
+                                placeholder="Search by booking ID or customer"
                                 value={searchText}
                                 onChange={(e) => {
-                                    setSearchText(e.target.value);
-                                    searchBookings(e.target.value);
+                                    const value = e.target.value;
+                                    setSearchText(value);
+                                    setSearchBookingId('');
+                                    searchBookings(value);
                                 }}
                             />
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -2014,6 +2016,7 @@ const priceDetailsCardClass = isPeakHour
                                                     setSearchBookingId('');
                                                 }
                                                 setSearchResults([]);
+                                                if (refreshFn) refreshFn();
                                             }}
                                         >
                                             {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
