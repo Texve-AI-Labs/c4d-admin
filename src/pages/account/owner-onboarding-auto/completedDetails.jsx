@@ -3,7 +3,7 @@ import { Button, Card, CardBody, Chip, IconButton, Spinner, Typography } from "@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, THALUK_LIST } from "@/utils/constants";
+import { API_ROUTES, THALUK_LIST, DISTRICT_LIST } from "@/utils/constants";
 import { parseAddressParts } from "@/utils/addressUtils";
 import moment from "moment";
 import AccountDocumentsSection from "./AccountDocumentsSection";
@@ -303,6 +303,7 @@ const CompletedOnboardingDetails = () => {
       street: account?.street || "",
       thaluk: account?.thaluk || "",
       district: account?.district || "",
+      accountDistrict: account?.accountDistrict || "",
       state: account?.state || "",
       pincode: account?.pincode || "",
     });
@@ -402,9 +403,16 @@ const CompletedOnboardingDetails = () => {
       })
       .map(([key, value]) => {
         const label = toLabel(key);
-        const displayLabel = label === "Has Vehicle" ? "Isvehicle" : label;
+        const displayLabel =
+          key === "district"
+            ? "Zone"
+            : key === "accountDistrict"
+              ? "Account District"
+              : label === "Has Vehicle"
+                ? "Isvehicle"
+                : label;
         if (displayLabel === "Id") return null;
-        if (["Available Status", "Service Type", "Zone"].includes(label)) return null;
+        if (["Available Status", "Service Type"].includes(label)) return null;
         if (["Phone Number", "Owner Phone Number"].includes(label)) {
           return { label: displayLabel, value: formatIndianPhone(value) };
         }
@@ -563,6 +571,7 @@ const CompletedOnboardingDetails = () => {
         street: account?.street || "",
         thaluk: account?.thaluk || "",
         district: account?.district || "",
+        accountDistrict: account?.accountDistrict || "",
         state: account?.state || "",
         pincode: account?.pincode || "",
         source: account?.source || "",
@@ -597,6 +606,7 @@ const CompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
         source: accountDraft?.source || "",
@@ -835,6 +845,7 @@ const CompletedOnboardingDetails = () => {
                         street: account?.street || "",
                         thaluk: account?.thaluk || "",
                         district: account?.district || "",
+                        accountDistrict: account?.accountDistrict || "",
                         state: account?.state || "",
                         pincode: account?.pincode || "",
                       });
@@ -893,7 +904,8 @@ const CompletedOnboardingDetails = () => {
                     ["address", "Address"],
                     ["street", "Street"],
                     ["thaluk", "Thaluk"],
-                    ["district", "District"],
+                    ["district", "Zone"],
+                    ["accountDistrict", "Account District"],
                     ["state", "State"],
                     ["pincode", "Pincode"],
                   ].map(([key, label]) => (
@@ -933,6 +945,7 @@ const CompletedOnboardingDetails = () => {
                                         street: parsed.street,
                                         thaluk: parsed.thaluk,
                                         district: parsed.district,
+                                        accountDistrict: parsed.accountDistrict,
                                         state: parsed.state,
                                         pincode: parsed.pincode,
                                       }));
@@ -975,11 +988,22 @@ const CompletedOnboardingDetails = () => {
                           onChange={(e) => setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }))}
                           className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
                         >
-                          <option value="">Select District</option>
+                          <option value="">Select Zone</option>
                           {serviceAreas.map((area) => (
                             <option key={area.id} value={area.name}>
                               {area.name}
                               </option>
+                            ))}
+                          </select>
+                      ) : key === "accountDistrict" ? (
+                        <select
+                          value={accountDraft?.[key] || ""}
+                          onChange={(e) => setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        >
+                          <option value="">Select District</option>
+                          {DISTRICT_LIST.map((district) => (
+                            <option key={district.value} value={district.value}>{district.label}</option>
                             ))}
                           </select>
                       ) : (
