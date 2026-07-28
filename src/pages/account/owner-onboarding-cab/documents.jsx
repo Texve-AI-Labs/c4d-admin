@@ -3,7 +3,7 @@ import { Card, CardBody, Typography, Button, Chip, Dialog, DialogHeader, DialogB
 import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, ColorStyles, STATE_LIST, THALUK_LIST } from "@/utils/constants";
+import { API_ROUTES, ColorStyles, DISTRICT_LIST, STATE_LIST, THALUK_LIST } from "@/utils/constants";
 import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
@@ -138,6 +138,7 @@ const AccountDocuments = () => {
     street: "",
     thaluk: "",
     district: "",
+    accountDistrict: "",
     state: "",
     pincode: "",
   });
@@ -302,6 +303,7 @@ const AccountDocuments = () => {
       street: account?.street || "",
       thaluk: account?.thaluk || "",
       district: account?.district || "",
+      accountDistrict: account?.accountDistrict || "",
       state: account?.state || "",
       pincode: account?.pincode || "",
     });
@@ -338,6 +340,7 @@ const AccountDocuments = () => {
       street: parsed.street || "",
       thaluk: parsed.taluk || "",
       district: parsed.district || "",
+      accountDistrict: parsed.accountDistrict || "",
       state: parsed.state || "",
       pincode: parsed.pincode || "",
     }));
@@ -371,6 +374,7 @@ const AccountDocuments = () => {
         street: String(addressForm.street || "").trim(),
         thaluk: String(addressForm.thaluk || "").trim(),
         district: String(addressForm.district || "").trim(),
+        accountDistrict: String(addressForm.accountDistrict || "").trim(),
         state: String(addressForm.state || "").trim(),
         pincode: String(addressForm.pincode || "").trim(),
       };
@@ -684,25 +688,39 @@ const AccountDocuments = () => {
                 </select>
                 {addressErrors.thaluk ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.thaluk}</Typography> : null}
               </div>
-              <div>
-                <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
-                <select
-                  id="district"
+                <div>
+                  <label htmlFor="district" className="text-sm font-medium text-gray-700">Zone</label>
+                  <select
+                    id="district"
                   value={addressForm.district}
                   onChange={(e) => handleAddressInputChange("district", e.target.value)}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
-                  <option value="">Select District</option>
+                  <option value="">Select Zone</option>
                   {serviceAreas.map((area) => (
                     <option key={area.id} value={area.name}>
                       {area.name}
                     </option>
                   ))}
-                </select>
-                {addressErrors.district ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.district}</Typography> : null}
-              </div>
-              <div>
-                <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>
+                  </select>
+                  {addressErrors.district ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.district}</Typography> : null}
+                </div>
+                <div>
+                  <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">Account District</label>
+                  <select
+                    id="accountDistrict"
+                    value={addressForm.accountDistrict}
+                    onChange={(e) => handleAddressInputChange("accountDistrict", e.target.value)}
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                  >
+                    <option value="">Select District</option>
+                    {DISTRICT_LIST.map((district) => (
+                      <option key={district.value} value={district.value}>{district.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>
                 <select
                   id="state"
                   value={addressForm.state}
