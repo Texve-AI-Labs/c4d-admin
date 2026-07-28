@@ -55,6 +55,7 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/notificationlist") ||
     path.startsWith("/dashboard/vendors/notification/add") ||
     path.startsWith("/dashboard/vendors/notification/edit") ||
+    path.startsWith("/dashboard/vendors/dynamic-text") ||
     path.startsWith("/dashboard/vendors/customerNotificationList") ||
     path.startsWith("/dashboard/vendors/customerNotification/add") ||
     path.startsWith("/dashboard/vendors/customerNotification/edit") ||

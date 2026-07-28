@@ -83,6 +83,9 @@ import NotificationListEdit from "./pages/vendor/notificationEdit";
 import DriverIncentiveList from "./pages/marketing/DriverIncentive/list";
 import DriverIncentiveEdit from "./pages/marketing/DriverIncentive/edit";
 import DriverIncentiveAdd from "./pages/marketing/DriverIncentive/add";
+import DynamicTextList from "./pages/marketing/dynamicText/listDynamicText";
+import DynamicTextAdd from "./pages/marketing/dynamicText/addDynamicText";
+import DynamicTextEdit from "./pages/marketing/dynamicText/editDynamicText";
 import SkipLogs from "./pages/marketing/skipLogs";
 import InstantReward from "./pages/vendor/instantReward";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
@@ -318,6 +321,30 @@ export const routes = [
         path: "/vendors/notificationList",
         element: <NotificationList />,
         display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "dynamic text",
+        path: "/vendors/dynamic-text",
+        element: <DynamicTextList />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "dynamic text add",
+        path: "/vendors/dynamic-text/add",
+        element: <DynamicTextAdd />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "dynamic text edit",
+        path: "/vendors/dynamic-text/edit/:id",
+        element: <DynamicTextEdit />,
+        display: false,
         permission: "Marketing",
       },
       {
