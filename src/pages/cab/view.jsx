@@ -12,6 +12,7 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CabSearch from '@/components/CabSearch';
+import { safeText } from "@/utils/text";
 
 export function CabView() {
   const [cabs, setCabs] = useState([]);
@@ -90,7 +91,7 @@ export function CabView() {
           color='blue'
           className='py-3 px-6 rounded-xl'
         >
-          {paramsPassed?.cabName} {paramsPassed?.cabAdded ? 'added' : 'updated'} successfully!
+          {safeText(paramsPassed?.cabName, "Cab")} {paramsPassed?.cabAdded ? 'added' : 'updated'} successfully!
         </Alert>
       </div>}
       <CabSearch onSearch={getCabs} />
@@ -139,29 +140,29 @@ export function CabView() {
                                   color="blue"
                                   className="font-semibold underline"
                                 >
-                                  {name}
+                                  {safeText(name)}
                                 </Typography>
                               </Link>
                             </div>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {formatPhoneNumber(phoneNumber)}
+                              {safeText(formatPhoneNumber(phoneNumber))}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {carType}
+                              {safeText(carType)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600 ">
-                              {intercityCount}
+                              {safeText(intercityCount)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {outstationCount}
+                              {safeText(outstationCount)}
                             </Typography>
                           </td>
                           <td className={className}>
