@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button, Card, CardBody, Spinner, Typography } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -25,8 +25,6 @@ const WalletTransactionList = () => {
   const [status, setStatus] = useState("IN_PROGRESS");
   const [paymentTransactionId, setPaymentTransactionId] = useState("");
   const [adminReason, setAdminReason] = useState("");
-  const reviewRef = useRef(null);
-
   const selectedRow = useMemo(() => items.find((item) => String(item?.id) === String(selectedId)) || null, [items, selectedId]);
   const selectedStatus = String(status || "IN_PROGRESS").toUpperCase();
   const isTerminalStatus = ["PAID", "REJECTED"].includes(String(selectedRow?.status || "").toUpperCase());
@@ -86,9 +84,6 @@ const WalletTransactionList = () => {
   const handleSelectRow = (row) => {
     if (!row?.id) return;
     setSelectedId(row.id);
-    requestAnimationFrame(() => {
-      reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
   };
 
   const handleFilterChange = (key, value) => {
@@ -216,8 +211,7 @@ const WalletTransactionList = () => {
             ) : null}
             {error ? <Typography className="mt-4 text-sm text-red-600">{error}</Typography> : null}
 
-            <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-              <div>
+            <div className="mt-6">
                 <WalletTransactionTable items={items} selectedId={selectedId} onSelectRow={handleSelectRow} allUsers={allUsers} />
                 <div className="mt-4 flex items-center justify-center">
                   <Button size="sm" variant="outlined" disabled={pagination.currentPage === 1 || loading} onClick={() => handlePageChange(pagination.currentPage - 1)} className="mx-1">
@@ -231,6 +225,7 @@ const WalletTransactionList = () => {
               </div>
 
               <WalletTransactionReviewPanel
+                open={Boolean(selectedRow)}
                 selectedRow={selectedRow}
                 selectedStatus={selectedStatus}
                 onStatusChange={setStatus}
@@ -242,9 +237,8 @@ const WalletTransactionList = () => {
                 saving={saving}
                 isTerminalStatus={isTerminalStatus}
                 isNotEligible={isNotEligible}
-                reviewRef={reviewRef}
+                onClose={() => setSelectedId("")}
               />
-            </div>
           </CardBody>
         </Card>
       </div>

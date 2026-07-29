@@ -3,6 +3,7 @@ import { Button, Input, Option, Select, Textarea, Typography } from "@material-t
 import { badgeClassByValue, formatCurrency } from "../utils";
 
 const WalletTransactionReviewPanel = ({
+  open,
   selectedRow,
   selectedStatus,
   onStatusChange,
@@ -14,15 +15,29 @@ const WalletTransactionReviewPanel = ({
   saving,
   isTerminalStatus,
   isNotEligible,
-  reviewRef,
+  onClose,
 }) => {
+  if (!open) return null;
+
   return (
-    <div ref={reviewRef} className="xl:sticky xl:top-6 h-fit overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-5 py-4">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[16px] border border-slate-200 bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-5 py-4">
+          <div>
         <Typography variant="h6" className="text-black">
           Withdrawal Review
         </Typography>
         <Typography className="mt-1 text-sm text-slate-200">Selected request details</Typography>
+          </div>
+          <Button onClick={onClose} className="rounded-full bg-red-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-none">
+            Close
+          </Button>
       </div>
       <div className="p-5">
         {selectedRow ? (
@@ -101,6 +116,7 @@ const WalletTransactionReviewPanel = ({
         ) : (
           <Typography className="text-sm text-slate-600">Select a withdrawal request to open its review panel.</Typography>
         )}
+      </div>
       </div>
     </div>
   );

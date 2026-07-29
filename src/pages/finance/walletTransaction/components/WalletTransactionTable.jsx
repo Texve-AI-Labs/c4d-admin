@@ -14,11 +14,12 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
             <th className="p-2 text-sm font-semibold text-black-100">Tier</th>
             <th className="p-2 text-sm font-semibold text-black-100">Amount</th>
             <th className="p-2 text-sm font-semibold text-black-100">Status</th>
-            <th className="p-2 text-sm font-semibold text-black-100">Eligibility</th>
-            <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Eligibility Reason</th>
+            {/* <th className="p-2 text-sm font-semibold text-black-100">Eligibility</th>
+            <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Eligibility Reason</th> */}
             <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Wallet Before</th>
             <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Requested Amount</th>
-            <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Wallet After</th>      
+            <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Wallet After</th>
+            <th className="p-2 text-sm font-semibold text-black-100">Raised At</th>      
             <th className="p-2 text-sm font-semibold text-black-100">Processed By</th>
             <th className="p-2 text-sm font-semibold text-black-100">Processed At</th>
             {/* <th className="p-2 text-sm font-semibold text-black-100">Payment Txn</th> */}
@@ -51,7 +52,7 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
                 <td className="p-3 text-sm whitespace-nowrap">
                   <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.status)}`}>{item?.status || "-"}</span>
                 </td>
-                <td className="p-3 text-sm whitespace-nowrap">
+                {/* <td className="p-3 text-sm whitespace-nowrap">
                   {isInProgress ? (
                     <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.isStillEligibleForPayment ? "ELIGIBLE" : "NOT ELIGIBLE")}`}>
                       {item?.isStillEligibleForPayment ? "Eligible" : "Not eligible"}
@@ -60,10 +61,11 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
                     "-"
                   )}
                 </td>
-                <td className="p-3 text-sm whitespace-nowrap">{isInProgress ? (item?.paymentEligibilityReason ?? "-") : "-"}</td>
+                <td className="p-3 text-sm whitespace-nowrap">{isInProgress ? (item?.paymentEligibilityReason ?? "-") : "-"}</td> */}
                 <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceBefore)}</td>
-                                <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.amount)}</td>
+                <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.amount)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceAfter)}</td>
+                <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.createdAt)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
                   <span className='inline-flex rounded-full border px-2.5 py-1 bg-gray-100 text-blue-gray-300 text-xs font-semibold shadow-sm'>{processedByLabel}</span>
                 </td>
