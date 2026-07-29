@@ -3,10 +3,27 @@ import { Button, Card, CardBody, Spinner, Typography } from "@material-tailwind/
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import Swal from "sweetalert2";
+import * as Yup from "yup";
 import WalletTransactionFilters from "./components/WalletTransactionFilters";
 import WalletTransactionTable from "./components/WalletTransactionTable";
 import WalletTransactionReviewPanel from "./components/WalletTransactionReviewPanel";
 import { normalizeRows } from "./utils";
+
+const validationSchema = Yup.object().shape({
+  status: Yup.string()
+    .oneOf(["PAID", "REJECTED"], "Status must be PAID or REJECTED.")
+    .required("Status is required."),
+  paymentTransactionId: Yup.string().when("status", {
+    is: "PAID",
+    then: (schema) => schema.trim().required("Payment Transaction ID is required when marking as PAID."),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  adminReason: Yup.string().when("status", {
+    is: (value) => ["REJECTED", "PAID"].includes(String(value).toUpperCase()),
+    then: (schema) => schema.trim().required("Admin Reason is required when marking as PAID or REJECTED."),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+});
 
 const WalletTransactionList = () => {
   const [items, setItems] = useState([]);
@@ -25,6 +42,7 @@ const WalletTransactionList = () => {
   const [status, setStatus] = useState("IN_PROGRESS");
   const [paymentTransactionId, setPaymentTransactionId] = useState("");
   const [adminReason, setAdminReason] = useState("");
+  const [formError, setFormError] = useState("");
   const selectedRow = useMemo(() => items.find((item) => String(item?.id) === String(selectedId)) || null, [items, selectedId]);
   const selectedStatus = String(status || "IN_PROGRESS").toUpperCase();
   const isTerminalStatus = ["PAID", "REJECTED"].includes(String(selectedRow?.status || "").toUpperCase());
@@ -79,6 +97,7 @@ const WalletTransactionList = () => {
     setStatus(rowStatus === "IN_PROGRESS" && selectedRow?.isStillEligibleForPayment === false ? "REJECTED" : rowStatus);
     setPaymentTransactionId(selectedRow?.paymentTransactionId || "");
     setAdminReason(selectedRow?.adminReason || "");
+    setFormError("");
   }, [selectedRow]);
 
   const handleSelectRow = (row) => {
@@ -132,23 +151,16 @@ const WalletTransactionList = () => {
   const handleUpdateStatus = async () => {
     const id = selectedRow?.id;
     if (!id) return;
-    const normalizedStatus = String(status).toUpperCase();
-    if (!["PAID", "REJECTED"].includes(normalizedStatus)) {
-      setError("Status must be PAID or REJECTED.");
-      return;
-    }
-    if (normalizedStatus === "PAID" && !String(paymentTransactionId || "").trim()) {
-      setError("Payment Transaction ID is required when marking as PAID.");
-      return;
-    }
     const payload = {
-      status: normalizedStatus,
-      paymentTransactionId: paymentTransactionId || undefined,
-      adminReason: adminReason || undefined,
+      status: String(status).toUpperCase(),
+      paymentTransactionId: paymentTransactionId || "",
+      adminReason: adminReason || "",
     };
     try {
       setSaving(true);
       setError("");
+      setFormError("");
+      await validationSchema.validate(payload, { abortEarly: false });
       const response = await ApiRequestUtils.update(`${API_ROUTES.ADMIN_WITHDRAWALS_UPDATE}/${id}`, payload);
       if (response?.success) {
         await fetchWalletTransactions(pagination.currentPage);
@@ -165,6 +177,10 @@ const WalletTransactionList = () => {
         setError(response?.message || "Failed to update withdrawal request.");
       }
     } catch (err) {
+      if (err?.name === "ValidationError") {
+        setFormError(err?.errors?.[0] || err?.message || "Validation failed.");
+        return;
+      }
       console.error("Failed to update withdrawal request:", err);
       setError(err?.response?.data?.message || err?.message || "Failed to update withdrawal request.");
     } finally {
@@ -179,7 +195,7 @@ const WalletTransactionList = () => {
           <CardBody>
             <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
-                <Typography variant="h6" className="text-2xl font-semibold text-slate-900">
+                <Typography variant="h6" className="text-xl font-semibold text-black">
                   Withdrawal Requests
                 </Typography>
                 <Typography className="text-sm text-slate-500">Review pending requests and pay or reject them</Typography>
@@ -188,10 +204,11 @@ const WalletTransactionList = () => {
                   variant="outlined"
                   onClick={() => fetchWalletTransactions(pagination.currentPage)}
                   disabled={loading || saving}
-                  className="self-start rounded-full bg-red-600 px-5 py-3 text-xs font-semibold text-white shadow-sm hover:shadow-md disabled:opacity-60"
+                  size='sm'
+                  className="self-start rounded-full bg-red-600 text-xs font-semibold text-white shadow-sm hover:shadow-md disabled:opacity-60"
                 >
                   <span className="flex items-center gap-2">
-                    {loading ? <Spinner className="h-4 w-4" /> : null}
+                    {loading ? <Spinner className="h-2 w-2" /> : null}
                     {loading ? "Refreshing..." : "Refresh"}
                   </span>
                 </Button>
@@ -238,6 +255,7 @@ const WalletTransactionList = () => {
                 isTerminalStatus={isTerminalStatus}
                 isNotEligible={isNotEligible}
                 onClose={() => setSelectedId("")}
+                formError={formError}
               />
           </CardBody>
         </Card>

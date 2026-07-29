@@ -67,7 +67,7 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
                 <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceAfter)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.createdAt)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
-                  <span className='inline-flex rounded-full border px-2.5 py-1 bg-gray-100 text-blue-gray-300 text-xs font-semibold shadow-sm'>{processedByLabel}</span>
+                  <span className='inline-flex rounded-full border px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold'>{processedByLabel}</span>
                 </td>
                 <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.processedAt)}</td>
                 {/* <td className="p-3 text-sm whitespace-nowrap">{item?.paymentTransactionId ?? "-"}</td> */}

@@ -16,6 +16,7 @@ const WalletTransactionReviewPanel = ({
   isTerminalStatus,
   isNotEligible,
   onClose,
+  formError,
 }) => {
   if (!open) return null;
 
@@ -42,6 +43,11 @@ const WalletTransactionReviewPanel = ({
       <div className="p-5">
         {selectedRow ? (
           <div className="space-y-4">
+            {formError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {formError}
+              </div>
+            ) : null}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Entity Type</div>
