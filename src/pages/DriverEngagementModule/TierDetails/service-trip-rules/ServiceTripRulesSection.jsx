@@ -25,6 +25,8 @@ const SERVICE_OPTIONS = [
 
 function ServiceTripRulesSection(props) {
   const normalizedPartnerType = String(props?.partnerType || "").trim().toUpperCase();
+  const serviceOptions =
+    normalizedPartnerType === "CAB" ? [{ label: "All", value: "ANY" }, ...SERVICE_OPTIONS] : SERVICE_OPTIONS;
   return (
     <TierComponentRulesSection
       {...props}
@@ -38,7 +40,7 @@ function ServiceTripRulesSection(props) {
       allowMetricChange
       periodOptions={PERIOD_OPTIONS}
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
-      serviceOptions={SERVICE_OPTIONS}
+      serviceOptions={serviceOptions}
       disableServiceType={normalizedPartnerType === "PARCEL"}
     />
   );
