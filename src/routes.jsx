@@ -1857,7 +1857,7 @@ export const routes = [
         path: "/support/review-reward-management",
         element: <SupportReviewRewardManagement />,
         display: true,
-        permission: "Users"
+        permission: "Support"
       },
       {
         icon: <UserIcon {...icon} />,
