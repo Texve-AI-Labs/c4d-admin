@@ -46,6 +46,10 @@ const RentalsPriceMasterAdd = () => {
     const [zones, setZones] = useState([]);
     const navigate = useNavigate();
 
+    const resolveZoneLabel = (zoneValue) => {
+        const selectedZone = zones.find((option) => String(option.value) === String(zoneValue));
+        return selectedZone?.label || String(zoneValue || "");
+    };
 useEffect(() => {
     const fetchZones = async () => {
       try {
@@ -158,7 +162,7 @@ useEffect(() => {
         try {
             const reqBody = {
                 // 'carType': values.carType,
-                 'zone': String(values.zone),
+                'zone': resolveZoneLabel(values.zone),
                 'serviceType': 'RENTAL',
                 'type': String(values.type),
                 'period': String(values.period),
