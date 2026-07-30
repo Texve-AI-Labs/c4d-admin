@@ -12,6 +12,7 @@ export const SERVICE_TYPE_OPTIONS_BY_CODE = {
   ONLINE_HOURS_BONUS: [{ value: "ANY", label: "All" }],
   ONLINE_HOURS_RULES: [{ value: "ANY", label: "All" }],
   SERVICE_TRIP_BONUS: [
+    { value: "ANY", label: "All" },
     { value: "RIDES", label: "Rides" },
     { value: "AUTO", label: "Auto" },
     { value: "BIKE", label: "Bike" },
@@ -20,6 +21,7 @@ export const SERVICE_TYPE_OPTIONS_BY_CODE = {
     { value: "RENTAL_DROP_TAXI", label: "Drop Taxi" },
   ],
   SERVICE_TRIP_RULES: [
+    { value: "ANY", label: "All" },
     { value: "RIDES", label: "Rides" },
     { value: "AUTO", label: "Auto" },
     { value: "BIKE", label: "Bike" },
