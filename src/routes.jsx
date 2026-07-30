@@ -210,6 +210,10 @@ import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscript
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
+import DriverAdsList from "./pages/support/driverAdsList";
+import DriverAdsCreate from "./pages/support/driverAdsCreate";
+import DriverAdsDetail from "./pages/support/driverAdsDetail";
+import DriverAdsEdit from "./pages/support/driverAdsEdit";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -1807,6 +1811,38 @@ export const routes = [
           permission: "Users"
         },
 
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads",
+        path: "/support/driver-ads",
+        element: <DriverAdsList />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Create",
+        path: "/support/driver-ads/create",
+        element: <DriverAdsCreate />,
+        display: false,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Detail",
+        path: "/support/driver-ads/details/:id",
+        element: <DriverAdsDetail />,
+        display: false,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Edit",
+        path: "/support/driver-ads/edit/:id",
+        element: <DriverAdsEdit />,
+        display: false,
+        permission: "Support"
+      },
       {
         icon: <UserIcon {...icon} />,
         name: "Rate Card",

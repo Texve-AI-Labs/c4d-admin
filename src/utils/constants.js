@@ -1055,6 +1055,10 @@ export const API_ROUTES = {
     'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
     'EXPORT_DALIY_SLOT':'/admin/daily/slot/export',
+    'GET_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'POST_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'GET_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'UPDATE_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
 
 };
 
