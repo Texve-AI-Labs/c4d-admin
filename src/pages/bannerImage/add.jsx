@@ -105,7 +105,7 @@ const AddBanner = () => {
     })),
   ];
 
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER', 'ONTRIP_BANNER'];
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
@@ -211,10 +211,9 @@ const AddBanner = () => {
       const formData = new FormData();
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
-      const isOnTripBanner = values.type === "ONTRIP_BANNER";
       const isServiceIntro = values.type === "SERVICE_INTRO_IMAGE";
       const mappedServiceDetails = isServiceIntro ? mapServiceDetails(values.serviceType) : null;
-      if (!isNewCustomer && !isIntroType && !isOnTripBanner) {
+      if (!isNewCustomer && !isIntroType ) {
         // const fromDateIso = values.fromDate ? new Date(values.fromDate).toISOString() : '';
         // const toDateIso = values.toDate ? new Date(values.toDate).toISOString() : '';
         formData.append('fromDate', values.fromDate);
@@ -248,7 +247,7 @@ const AddBanner = () => {
       }
       formData.append('status', values.status === 'true' || values.status === true);
       formData.append('type', values.type.trim());
-      formData.append('zone', isNewCustomer || isIntroType || isOnTripBanner ? 'All' : values.zone);
+      formData.append('zone', isNewCustomer || isIntroType  ? 'All' : values.zone);
       formData.append('image', values.image, values.image.name);
       formData.append('fileTypeImage', values.image?.type || '');
       formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
@@ -304,7 +303,7 @@ const AddBanner = () => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, values,setFieldValue }) => {
-          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER' || values.type === 'ONTRIP_BANNER';
+          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
           const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
           const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType;
           return (
@@ -320,7 +319,7 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'ONTRIP_BANNER' || selectedType === 'SERVICE_INTRO_IMAGE') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE') {
                       setFieldValue('zone', 'All');
                     }
                     if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
@@ -333,7 +332,7 @@ const AddBanner = () => {
                   {/* <option value="BOTTOM">Bottom</option> */}
                   {/* <option value="YOUTUBE">YouTube</option> */} 
                   {/* <option value="BACKGROUND">Background</option> */}
-                  <option value="BANNER">Customer Banner</option>
+                  <option value="BANNER">Customer Banner First App</option>
                   <option value="BANNER_DRIVER">Banner Driver</option>
                   <option value="ONTRIP_BANNER">On Trip Banner</option>
                   {/* <option value="STATS">Stats</option> */}
