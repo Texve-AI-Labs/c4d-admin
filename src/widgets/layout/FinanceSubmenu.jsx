@@ -18,22 +18,28 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Subscription Invoice", path: "/dashboard/finance/invoice" },
     { label: "Booking Receipt", path: "/dashboard/finance/receipt" },
     { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
+    { label: "Parcel Slot Config", path: "/dashboard/finance/parcel-slot-config", requiredPermission: "Users" },
+    { label: "Parcel Daily Slots", path: "/dashboard/finance/parcel-daily-slots", requiredPermission: "Users" },
     { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
+    { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
     { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
+    { label: "Withdrawal Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission:"Users" },
+    { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission:"Users"  },
     { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
     { label: "Discount Module", path: "/dashboard/finance/discountModuleList", requiredPermission: "Users" },
     { label: "Custom Discount", path: "/dashboard/finance/custom-discount/list", requiredPermission: "Users" },
     { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
     { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
-    { label: "Driver Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
+    { label: "Driver KM Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
   ];
   const filteredItems = items.filter(({ requiredPermission }) => {
     if (!requiredPermission) return true;
     return permissions.includes(requiredPermission);
   });
   const firstRowItems = filteredItems.slice(0, 5);
-  const secondRowItems = filteredItems.slice(5);
+  const secondRowItems = filteredItems.slice(5, 10);
+  const thirdRowItems = filteredItems.slice(10);
   const isMainItemActive = (label, path, navActive) => {
     if (navActive) return true;
 
@@ -43,7 +49,7 @@ function FinanceSubmenu({ permissions = [] }) {
     if (label === "Cash Back") {
       return pathname.startsWith("/dashboard/finance/cash-back");
     }
-    if (label === "Driver Bonus") {
+    if (label === "Driver KM Bonus") {
       return pathname.startsWith("/dashboard/finance/driver-bonus");
     }
     if (label === "Discount Module") {
@@ -58,6 +64,24 @@ function FinanceSubmenu({ permissions = [] }) {
     if(label === "Parcel Commission") {
       return pathname.startsWith("/dashboard/finance/parcel-commission");
     }
+    if (label === "Parcel Slot Config") {
+      return pathname.startsWith("/dashboard/finance/parcel-slot-config");
+    }
+    if (label === "Parcel Daily Slots") {
+      return pathname.startsWith("/dashboard/finance/parcel-daily-slots");
+    }
+    if (label === "Master Subscription Table") {
+      return pathname === "/dashboard/finance/master-subscription";
+    }
+    if (label === "Withdrawal Rules") {
+      return pathname.startsWith("/dashboard/finance/withdrawal-rules");
+    }
+    if (label === "Withdrawal Transaction") {
+      return pathname.startsWith("/dashboard/finance/wallet-transaction");
+    }
+    if (label === "Return Trip Driver Master Subscription Table") {
+      return pathname.startsWith("/dashboard/finance/master-subscription/return-trip-driver");
+    }
 
     return pathname.startsWith(path.toLowerCase());
   };
@@ -65,7 +89,7 @@ function FinanceSubmenu({ permissions = [] }) {
   const renderItems = (menuItems) =>
     menuItems.map(({ label, path }) => (
         <li key={label}>
-          <NavLink to={path} end={false}>
+          <NavLink to={path} end={label === "Master Subscription Table"}>
             {({ isActive }) => (
               <Button
                 variant="text"
@@ -88,6 +112,9 @@ function FinanceSubmenu({ permissions = [] }) {
       <ul className={NAV_UI.topnav.list}>{renderItems(firstRowItems)}</ul>
       {secondRowItems.length > 0 ? (
         <ul className={NAV_UI.topnav.secondaryList}>{renderItems(secondRowItems)}</ul>
+      ) : null}
+      {thirdRowItems.length > 0 ? (
+        <ul className={NAV_UI.topnav.secondaryList}>{renderItems(thirdRowItems)}</ul>
       ) : null}
     </div>
   );

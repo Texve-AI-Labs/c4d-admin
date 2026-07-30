@@ -46,6 +46,10 @@ const RentalsPriceMasterAdd = () => {
     const [zones, setZones] = useState([]);
     const navigate = useNavigate();
 
+    const resolveZoneLabel = (zoneValue) => {
+        const selectedZone = zones.find((option) => String(option.value) === String(zoneValue));
+        return selectedZone?.label || String(zoneValue || "");
+    };
 useEffect(() => {
     const fetchZones = async () => {
       try {
@@ -158,7 +162,7 @@ useEffect(() => {
         try {
             const reqBody = {
                 // 'carType': values.carType,
-                 'zone': String(values.zone),
+                'zone': resolveZoneLabel(values.zone),
                 'serviceType': 'RENTAL',
                 'type': String(values.type),
                 'period': String(values.period),
@@ -328,11 +332,11 @@ useEffect(() => {
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {values?.type === 'Outstation' && <div>
+                            {/* {values?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Toll Charge</label>
                                 <Field type="number" name="tollCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="tollCharge" component="div" className="text-red-500 text-sm" />
-                            </div>}
+                            </div>} */}
                             {values?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Driver Charge</label>
                                 <Field type="number" name="driverCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />

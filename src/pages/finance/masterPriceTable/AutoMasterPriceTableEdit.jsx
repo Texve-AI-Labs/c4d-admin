@@ -23,9 +23,9 @@ const PRICE_SCHEMA = Yup.object().shape({
   baseKm: Yup.number().min(0, 'Must be positive').required('Base KM is required'),
   baseFare: Yup.number().min(0, 'Must be positive').required('Base Fare is required'),
   ratePerKm: Yup.number().min(0, 'Must be positive').required('Rate per KM is required'),
-  ratePerMin: Yup.number().min(0, 'Must be positive').required('Rate per minute is required'),
+  // ratePerMin: Yup.number().min(0, 'Must be positive').required('Rate per minute is required'),
   additionalMin: Yup.number().min(0, 'Must be positive').required('Additional min charge is required'),
-  surchargePercentage: Yup.number().min(0).required('Surcharge percentage is required'),
+  // surchargePercentage: Yup.number().min(0).required('Surcharge percentage is required'),
   nightCharge: Yup.number().min(0).required('Night charge is required'),
   waitingMins: Yup.number().min(0).required('Waiting minutes required'),
   waitingCharge: Yup.number().min(0).required('Waiting charge required'),
@@ -63,6 +63,8 @@ const AutoMasterPriceEdit = () => {
           baseFare: priceData.baseFare || 0,
           ratePerKm: priceData.kilometerPrice || 0,
           ratePerMin: priceData.minCharge || 0,
+          extraKmPrice:priceData.extraKmPrice || 0, 
+          period:priceData.type || 'Auto',
           additionalMin: priceData.additionalMinCharge || 0,
           surchargePercentage: priceData.surChargePercentage || 0,
           nightHoursFrom: convertToTimeFormat(priceData.nightHoursFrom),
@@ -107,12 +109,13 @@ const AutoMasterPriceEdit = () => {
       const reqBody = {
         packageId: Number(id),
         zone: values.zone.trim() || '',
+        period:values.type || 'Auto',
         baseKm: Number(values.baseKm),
         baseFare: Number(values.baseFare),
         kilometerPrice: Number(values.ratePerKm),
-        minCharge: Number(values.ratePerMin),
+        minCharge: Number(values.ratePerMin) || 0,
         additionalMinCharge: Number(values.additionalMin),
-        surChargePercentage: Number(values.surchargePercentage),
+        surChargePercentage: Number(values.surchargePercentage) || 0,
         nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
         nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
         nightCharge: Number(values.nightCharge),
@@ -122,7 +125,7 @@ const AutoMasterPriceEdit = () => {
         cancelCharge: Number(values.cancellationCharge),
         status: values.status === 'ACTIVE' ? 1 : 0,
         premiumConfig: premiumConfig || [],
-        extraKmPrice: 0,
+        extraKmPrice: Number(values.extraKmPrice),
         freeExtraMinutes: Number(values.freeExtraMinutes) || 0,
         driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
         driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay) || 0,
@@ -166,7 +169,7 @@ const AutoMasterPriceEdit = () => {
                 />
                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
             </div>
-                <div>
+                <div className='hidden'>
                     <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
                     <Field type="number" name="surchargePercentage"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                     
@@ -201,6 +204,10 @@ const AutoMasterPriceEdit = () => {
                     <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
                     <Field type="number" name="cancellationCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                 </div>
+                 <div>
+                    <label className="text-sm font-medium text-gray-700">Addtional Km Charge</label>
+                    <Field type="number" name="extraKmPrice"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                </div>
                 <div className="lg:col-span-2">
                     <label className="text-sm font-medium text-gray-700">Night Hours</label>
                     <div className="flex items-center gap-3 mt-1">
@@ -218,7 +225,7 @@ const AutoMasterPriceEdit = () => {
                                                          
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                                          <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th>
+                                                          {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                                       </tr>
                                                   </thead>
@@ -232,7 +239,7 @@ const AutoMasterPriceEdit = () => {
                                                               <Field type="number" name="ratePerKm"  className=" p-1  rounded-md bg-gray-50" />
                                                           </td>
                                                           
-                                                          <td className="px-6 py-1">
+                                                          <td className="px-6 py-1 hidden">
                                                               <Field type="number" name="ratePerMin"  className=" p-1  rounded-md bg-gray-50" />
                                                           </td>
                                                            <td className="px-6 py-1">

@@ -10,6 +10,11 @@ import { CAB_ADD_SCHEMA } from '@/utils/validations';
 import LocationInput from '@/pages/account/owner-onboarding-cab/LocationInput';
 import AccountCreationTabs from '@/pages/account/owner-onboarding-cab/AccountCreationTabs';
 
+const makeAddressPayload = (name, placeId) => ({
+    name,
+    ...(placeId ? { placeId } : {}),
+});
+
 const LuggageAutoSync = ({ carType, setFieldValue, getLuggageForCarType, luggageCapacityMap }) => {
     useEffect(() => {
         const normalizedCarType = String(carType || '').toLowerCase();
@@ -170,6 +175,7 @@ const CabAddNew = () => {
     const [existingVehicleDocsByType, setExistingVehicleDocsByType] = useState({});
     const [selectedVehicleDocType, setSelectedVehicleDocType] = useState("");
     const [previewZoom, setPreviewZoom] = useState({});
+    const [selectedAddress, setSelectedAddress] = useState(null);
     const location = useLocation();
     const { ownerName, type, accountId, vehicleDocuments } = location.state || {};
     const effectiveAccountId = accountId || id;
@@ -316,6 +322,20 @@ const CabAddNew = () => {
         const apiValue = Number(luggageCapacityMap?.[normalized]);
         if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
         return "";
+    };
+
+    const handleAddressSelect = (suggestion) => {
+        setSelectedAddress(suggestion || null);
+    };
+
+    const getSelectedAddressPayload = (fallbackAddress) => {
+        const placeId =
+            selectedAddress?.placeId ||
+            selectedAddress?.place_id ||
+            selectedAddress?.placeID ||
+            selectedAddress?.id ||
+            "";
+        return makeAddressPayload(fallbackAddress || "", placeId);
     };
 
 
@@ -525,10 +545,14 @@ const CabAddNew = () => {
 
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
+            const cabAddressPayload = getSelectedAddressPayload(values.address);
+            if (!cabAddressPayload?.placeId) {
+                throw new Error("Please select the address from the suggestions so placeId can be saved.");
+            }
             const cabDetails = {
                 name: values.name,
                 carNumber: values.carNumber,
-                curAddress: values.address,
+                curAddress: cabAddressPayload,
                 district: resolvedAccount?.district || "",
                 insurance: values.insurance,
                 carType: values.carType,
@@ -950,7 +974,18 @@ const CabAddNew = () => {
                                                                     form={form}
                                                                     suggestions={owneraddressSuggestions}
                                                                     onSearch={(query) => searchLocations(query, "owner")}
-                                                                    onSelect={() => { }}
+                                                                    onSelect={(suggestion) => {
+                                                                        handleAddressSelect(suggestion);
+                                                                        form.setFieldValue(
+                                                                            field.name,
+                                                                            suggestion?.formatted_address ||
+                                                                                suggestion?.name ||
+                                                                                suggestion?.fullText ||
+                                                                                suggestion?.title ||
+                                                                                suggestion?.address ||
+                                                                                ""
+                                                                        );
+                                                                    }}
                                                                 />
                                                             )}
                                                         </Field>

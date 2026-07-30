@@ -96,7 +96,7 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
 
     return (
         <>
-            <div className="p-4 mx-auto">
+            <div className="p-4 mx-auto bg-white rounded-xl shadow-md sm:p-8">
                 <div className="flex flex-row justify-between pr-5">
                     <h2 className="text-2xl font-bold mb-4">Driver Details</h2>
                     <img src="/img/printing.png" height={30} width={30} alt="" onClick={handlePrintClick} />
@@ -236,7 +236,7 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                                 />
                                                 <span className="ml-2">Acting Driver</span>
                                             </label>
-                                            <label className="inline-flex items-center">
+                                            {/* <label className="inline-flex items-center">
                                                 <Field
                                                     type="radio"
                                                     name="serviceType"
@@ -255,7 +255,7 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                                     disabled
                                                 />
                                                 <span className="ml-2">OWNER</span>
-                                            </label>
+                                            </label> */}
                                         </div>
                                         <ErrorMessage
                                             name="serviceType"

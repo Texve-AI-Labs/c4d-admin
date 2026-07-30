@@ -12,16 +12,19 @@ import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 export function Topnav({ permissions = [] }) {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
-  const isCashBackRoute = path.startsWith("/dashboard/finance/cash-back");
-  const isMasterPriceRoute = path.startsWith("/dashboard/finance/master-price");
-  const isInstantRewardRoute = path.startsWith("/dashboard/finance/instant-reward");
-  const isDiscountModuleRoute = path.startsWith("/dashboard/finance/discountmodule");
-  const isCustomDiscountRoute = path.startsWith("/dashboard/finance/custom-discount");
-  const isTaxRoute = path.startsWith("/dashboard/finance/gst");
+  const financePath = path.startsWith("/dashboard/finance") ? "/dashboard/finance" : "/finance";
+  const isCashBackRoute = path.startsWith(`${financePath}/cash-back`);
+  const isMasterPriceRoute = path.startsWith(`${financePath}/master-price`);
+  const isInstantRewardRoute = path.startsWith(`${financePath}/instant-reward`);
+  const isDiscountModuleRoute = path.startsWith(`${financePath}/discountmodule`);
+  const isCustomDiscountRoute = path.startsWith(`${financePath}/custom-discount`);
+  const isTaxRoute = path.startsWith(`${financePath}/gst`);
+  const isWithdrawalRulesRoute = path.startsWith(`${financePath}/withdrawal-rules`);
 
   const isAllRecordsSection =
     path.startsWith("/dashboard/booking/list") ||
     path.startsWith("/dashboard/auto") ||
+    path.startsWith("/dashboard/bike-taxi") ||
     path.startsWith("/dashboard/vendors/driver-return-trips");
 
   const isCustomersSection =
@@ -30,6 +33,7 @@ export function Topnav({ permissions = [] }) {
   const isSupportSection =
     path.startsWith("/dashboard/rental-rate-card") ||
     path.startsWith("/dashboard/leads") ||
+    path.startsWith("/dashboard/support") ||
     (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && path.startsWith("/dashboard/support/admin-discount-history"));
 
   const isVendorsSection =
@@ -41,6 +45,8 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/account/allvehicles") ||
     path.startsWith("/dashboard/vendors/account/autoview") ||
     path.startsWith("/dashboard/vendors/account/autolist") ||
+    path.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi") ||
+    path.startsWith("/dashboard/vendors/account/biketaxilists") ||
     path.startsWith("/dashboard/doc-verification") ||
     path.startsWith("/dashboard/doc-verification/pending");
   
@@ -49,6 +55,7 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/notificationlist") ||
     path.startsWith("/dashboard/vendors/notification/add") ||
     path.startsWith("/dashboard/vendors/notification/edit") ||
+    path.startsWith("/dashboard/vendors/dynamic-text") ||
     path.startsWith("/dashboard/vendors/customerNotificationList") ||
     path.startsWith("/dashboard/vendors/customerNotification/add") ||
     path.startsWith("/dashboard/vendors/customerNotification/edit") ||
@@ -62,12 +69,14 @@ export function Topnav({ permissions = [] }) {
 
   const isFinanceSection =
     path.startsWith("/dashboard/finance") ||
+    path.startsWith("/finance") ||
     isCashBackRoute ||
     isMasterPriceRoute ||
     isInstantRewardRoute ||
     isDiscountModuleRoute ||
     isCustomDiscountRoute ||
-    isTaxRoute;
+    isTaxRoute ||
+    isWithdrawalRulesRoute;
   const isDriverEngagementSection =
     path.startsWith("/dashboard/driverengagement");
   const isAdminSection =

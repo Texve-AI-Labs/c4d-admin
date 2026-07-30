@@ -180,7 +180,7 @@ const DriverBonusEdit = () => {
               <ErrorMessage error={errors.perKmRate} />
             </div>
           )}
-            {rateType === "PER_KM" ? (
+            {rateType === "PER_KM" && (
               <>
             <div>
               <label className="mb-1 block text-sm">Min KM</label>
@@ -193,10 +193,6 @@ const DriverBonusEdit = () => {
               <ErrorMessage error={errors.maxKm} />
                 </div>
               </>
-            ) : (
-              <div className="md:col-span-2 rounded-md border border-dashed border-gray-300 bg-gray-50 p-3 text-sm text-gray-600">
-                KM range is only used for per-km rules.
-              </div>
             )}
             <div>
               <label className="mb-1 block text-sm">Priority</label>

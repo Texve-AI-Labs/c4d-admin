@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Typography, Button } from "@material-tailwind/react";
 import { mapServiceDetails } from "../shared/ruleMappings";
 import { TIER_KEYS, METRIC_OPTIONS, PERIOD_OPTIONS, SERVICE_TYPE_OPTIONS, OP_OPTIONS } from "../shared/typeConstants";
+import { isBikePartner } from "../shared/componentRuleUtils";
 
 const createCondition = () => ({
   metric: "onlineHours",
@@ -46,9 +47,17 @@ const getUiServiceType = (condition = {}) => {
 };
 
 const LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "All", value: "ANY" }];
-const AUTO_LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "Auto", value: "AUTO" }];
+const PARCEL_SERVICE_TYPE_OPTIONS = [{ label: "Parcel", value: "PARCEL" }];
 
-function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "CAB" }) {
+function TierRulesSection({
+  registerBuilder,
+  initialConfig = {},
+  partnerType = "CAB",
+  parcelVehicleType = "BIKE",
+}) {
+  const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
+  const normalizedParcelVehicleType = String(parcelVehicleType || "BIKE").trim().toUpperCase();
+  const isBike = isBikePartner(normalizedPartnerType);
   const [evaluation, setEvaluation] = useState({
     weekStart: "MONDAY",
     timezone: "Asia/Kolkata",
@@ -87,8 +96,12 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                 serviceType:
                   (condition?.metric || "onlineHours") === "onlineHours"
                     ? "ANY"
-                    : partnerType === "AUTO"
+                    : normalizedPartnerType === "AUTO"
                       ? "AUTO"
+                      : normalizedPartnerType === "PARCEL"
+                        ? "PARCEL"
+                      : isBike
+                        ? "BIKE"
                       : getUiServiceType(condition),
                 op: condition?.op || ">=",
                 value: String(condition?.value ?? ""),
@@ -115,8 +128,12 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
               serviceType:
                 nextValue === "onlineHours"
                   ? "ANY"
-                  : partnerType === "AUTO"
+                  : normalizedPartnerType === "AUTO"
                     ? "AUTO"
+                    : normalizedPartnerType === "PARCEL"
+                      ? "PARCEL"
+                    : isBike
+                      ? "BIKE"
                     : condition.serviceType === "ANY"
                       ? "RIDES"
                       : condition.serviceType,
@@ -137,10 +154,12 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
             tierKey,
             tierRules.map((condition) => {
               if (condition.metric === "onlineHours") return { ...condition, serviceType: "ANY" };
-              if (partnerType === "AUTO") {
-                return { ...condition, serviceType: "AUTO" };
+              if (normalizedPartnerType === "AUTO") return { ...condition, serviceType: "AUTO" };
+              if (normalizedPartnerType === "PARCEL") {
+                return { ...condition, serviceType: "PARCEL", parcelVehicleType: normalizedParcelVehicleType };
               }
-              return condition.serviceType === "AUTO"
+              if (isBike) return { ...condition, serviceType: "BIKE" };
+              return condition.serviceType === "AUTO" || condition.serviceType === "BIKE"
                 ? { ...condition, serviceType: "RIDES" }
                 : condition;
             }),
@@ -179,15 +198,20 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
             tierKey,
             {
               conditions: (tierConditions[tierKey] || []).map((condition) => {
-                const mappedService = mapServiceDetails(
-                  condition.metric === "onlineHours" ? "ANY" : condition.serviceType
-                );
+                const mappedService =
+                  condition.metric === "onlineHours"
+                    ? { serviceType: "ANY", bookingType: null, packageType: null }
+                    : normalizedPartnerType === "PARCEL"
+                      ? { serviceType: "PARCEL", bookingType: null, packageType: null }
+                      : mapServiceDetails(condition.serviceType);
                 return {
                   metric: condition.metric,
                   period: condition.period,
                   serviceType: mappedService.serviceType,
                   bookingType: mappedService.bookingType,
                   packageType: mappedService.packageType,
+                  parcelVehicleType:
+                    normalizedPartnerType === "PARCEL" ? normalizedParcelVehicleType : null,
                   op: condition.op,
                   value: Number(condition.value || 0),
                   isMandatory: Boolean(condition.isMandatory),
@@ -202,7 +226,7 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
       //   onMissingMetrics: fallbackPolicy.onMissingMetrics || "FAIL_MANDATORY",
       // },
     }),
-    [evaluation, tierConditions, fallbackPolicy]
+    [evaluation, tierConditions, fallbackPolicy, normalizedPartnerType, normalizedParcelVehicleType]
   );
 
   registerBuilder(payloadBuilder);
@@ -256,13 +280,17 @@ function TierRulesSection({ registerBuilder, initialConfig = {}, partnerType = "
                         value={condition.serviceType}
                         onChange={(e) => onConditionChange(tierKey, index, "serviceType", e.target.value)}
                         className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
-                        disabled={condition.metric === "onlineHours" || partnerType === "AUTO"}
+                        disabled={condition.metric === "onlineHours" || normalizedPartnerType === "AUTO" || isBike}
                       >
                         {(condition.metric === "onlineHours"
                           ? LOCKED_SERVICE_TYPE_OPTIONS
-                          : partnerType === "AUTO"
-                            ? AUTO_LOCKED_SERVICE_TYPE_OPTIONS
-                            : SERVICE_TYPE_OPTIONS
+                          : normalizedPartnerType === "AUTO"
+                            ? [{ label: "Auto", value: "AUTO" }]
+                            : normalizedPartnerType === "PARCEL"
+                              ? PARCEL_SERVICE_TYPE_OPTIONS
+                            : isBike
+                              ? [{ label: "Bike", value: "BIKE" }]
+                              : SERVICE_TYPE_OPTIONS
                         ).map((option) => (
                           <option key={getOptionValue(option)} value={getOptionValue(option)}>{getOptionLabel(option)}</option>
                         ))}

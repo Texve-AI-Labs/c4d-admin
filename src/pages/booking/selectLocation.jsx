@@ -56,7 +56,7 @@ const getSuggestionPlaceId = (suggestion) => {
                 <List className="w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ">
                     {suggestions.map((suggestion, index) => (
                         <ListItem
-                            key={index}
+                            key={suggestion?.placeId || suggestion?.place_id || suggestion?.id || getSuggestionText(suggestion) || index}
                             onClick={() => onSelect(suggestion)}
                             className=" hover:bg-gray-100 cursor-pointer"
                         >

@@ -28,16 +28,22 @@ const DiscountAdd = () => {
     AUTO: [
       { value: 'AUTO', label: 'AUTO' },
     ],
+    BIKE: [
+      { value: 'BIKE', label: 'BIKE' },
+    ],
     PARCEL: [
       { value: 'PARCEL', label: 'PARCEL' },
     ],
   };
 
-  const PARCEL_VEHICLE_OPTIONS = ['BIKE', 'AUTO'];
+  const PARCEL_VEHICLE_OPTIONS = ['', 'BIKE', 'AUTO'];
+  const CAB_TYPE_OPTIONS = ['Mini', 'Sedan', 'SUV', 'MUV'];
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
   };
+  const getCabTypeOptions = (serviceType) =>
+    String(serviceType || '').toUpperCase() === 'RIDES' ? ['Mini', 'Sedan'] : CAB_TYPE_OPTIONS;
   const getServiceTypeOptions = (entity) => SERVICE_TYPE_OPTIONS_BY_ENTITY[entity] || [];
 
   const initialValues = {
@@ -53,7 +59,7 @@ const DiscountAdd = () => {
     discountType: '',
     percentage: '',
     amount: '',
-    driverWalletApplicable: false,
+    driverWalletApplicable: true,
     startDate: '',
     endDate: '',
     isActive: 'true',
@@ -63,7 +69,7 @@ const DiscountAdd = () => {
     cabType: '',
     premiumCabType: '',
     isPremium: false,
-    parcelVehicleType: 'BIKE',
+    parcelVehicleType: '',
     subZoneId: '',
     removeImage: false,
     removeDashboardOfferImg: false,
@@ -157,25 +163,6 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
   setFieldValue('removeDashboardOfferImg', true);
 };
   const handleSubmit = async (values, { setSubmitting, setFieldError }) => {
-//    const payload = {
-//   serviceType: values.serviceType?.trim(),
-//   percentage:
-//     values.percentage !== '' && !isNaN(values.percentage)
-//       ? parseFloat(values.percentage)
-//       : 0,
-//   startDate: values.startDate
-//     ? new Date(values.startDate).toISOString().split('T')[0]
-//     : undefined,
-//   endDate: values.endDate
-//     ? new Date(values.endDate).toISOString().split('T')[0]
-//     : undefined,
-//   isActive: values.isActive,
-//   title: values.title,
-//   description: values.description,
-//   serviceArea: values.serviceArea.includes['All'] ? ['All'] : values.serviceArea,
-//   image: values.image,
-//   cabType: values.cabType
-// };
 
     try {
       const hasAmount = Number(values.amount) > 0;
@@ -247,10 +234,12 @@ if (values.removeDashboardOfferImg) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
       } else if (values.serviceType === 'DRIVER') {
-        formData.append('cabType', values.cabType || null);
+        formData.append('cabType', null);
       } else if (values.serviceType === 'AUTO') {
         formData.append('isPremium', values.isPremium);
-      } else {
+      } else if (values.serviceType === 'BIKE') {
+        formData.append('isPremium', values.isPremium);
+      }  else {
         const finalCabType = values.isPremium ? values.premiumCabType : values.cabType;
         formData.append('cabType', finalCabType);
         formData.append('isPremium', values.isPremium);
@@ -315,18 +304,18 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 <Field type="hidden" name="removeImage" />
                 <Field type="hidden" name="removeDashboardOfferImg" />
                 <div>
-                <label className="text-sm font-medium text-gray-700">entity Type</label>
+                <label className="text-sm font-medium text-gray-700">Entity Type</label>
                 <Field
                   as="select"
                   name="entity"
                     onChange={(e) => {
                       const nextEntity = e.target.value;
                       setFieldValue('entity', nextEntity);
-                      setFieldValue('serviceType', '');
-                      setFieldValue('parcelVehicleType', 'BIKE');
+                      setFieldValue('serviceType', ['DRIVER', 'AUTO','BIKE','PARCEL'].includes(nextEntity) ? nextEntity : '');
+                      setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');
                       setFieldValue('isPremium', false);
-                      setFieldValue('cabType', '');
+                      setFieldValue('cabType', nextEntity === 'DRIVER' ? null : '');
                       setFieldValue('premiumCabType', '');
                     }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
@@ -336,6 +325,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                   <option value="CAB">Cab</option>
                   <option value="AUTO">Auto</option>
                   <option value="PARCEL">Parcel</option>
+                  <option value="BIKE">Bike</option>
                   
                 </Field>
                 <ErrorMessage name="entity" className="text-red-500 text-sm" component="div" />
@@ -431,8 +421,10 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                         setFieldValue('isPremium', false);
                         setFieldValue('cabType', '');
                         setFieldValue('premiumCabType', '');
+                      } else if (nextServiceType === 'DRIVER') {
+                        setFieldValue('cabType', null);
                       } else {
-                        setFieldValue('parcelVehicleType', 'BIKE');
+                        setFieldValue('parcelVehicleType', '');
                         setFieldValue('subZoneId', '');
                       }
                     }}
@@ -461,7 +453,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                         }
                       }}
                       className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
-                    >
+                    ><option value="">Select Any One</option>
                       <option value="BIKE">BIKE</option>
                       <option value="AUTO">AUTO</option>
                     </Field>
@@ -569,7 +561,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
               </div>
                 )}
 
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && values.serviceType !== 'AUTO' && values.isPremium === false && (
+              {!isGeneralParcel && values.serviceType !== 'PARCEL' && values.serviceType !== 'AUTO' && values.serviceType !== 'DRIVER' && values.serviceType !== 'BIKE' && values.isPremium === false && (
               <div>
                 <label className="text-sm font-medium text-gray-700">Car Type</label>
                 <Field
@@ -578,10 +570,9 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
                   <option value="">Select Car Type</option>
-                  <option value="Mini">Mini</option>
-                  <option value="Sedan">Sedan</option>
-                  <option value="SUV">Suv</option>
-                  <option value="MUV">Muv</option>
+                  {getCabTypeOptions(values.serviceType).map((carType) => (
+                    <option key={carType} value={carType}>{carType}</option>
+                  ))}
                   </Field>
                 <ErrorMessage name="cabType" className="text-red-500 text-sm" component="div" />
               </div>
@@ -652,17 +643,16 @@ const getCurrentPremiumOptions = (currentServiceType) => {
               <div>
                 <label className="text-sm font-medium text-gray-700">Start Date & Time</label>
                 <Field
-                  type="datetime-local"
+                  type="date"
                   name="startDate"
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 />
                 <ErrorMessage name="startDate" className="text-red-500 text-sm" component="div" />
               </div>
-
               <div>
                 <label className="text-sm font-medium text-gray-700">End Date & Time</label>
                 <Field
-                  type="datetime-local"
+                  type="date"
                   name="endDate"
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 />

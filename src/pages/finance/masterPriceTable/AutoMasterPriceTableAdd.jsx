@@ -27,10 +27,10 @@ const PRICE_SCHEMA = Yup.object().shape({
     baseFare: Yup.number().required('Base Fare is required'),
     baseKm: Yup.number().required('Base Km is required'),
     ratePerKm: Yup.number().required('Rate Per Km is required'),
-    ratePerMin: Yup.number().required('Rate Per Min is required'),
+    // ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min Charge is required'),
-    rateParameter: Yup.string().required('Rate Parameter is required'),
-    surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
+    // rateParameter: Yup.string().required('Rate Parameter is required'),
+    // surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
     nightHoursFrom: Yup.string().required('Night start time is required'),
     nightHoursTo: Yup.string().required('Night end time is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
@@ -73,10 +73,11 @@ const AutoMasterPriceTableAdd = () => {
         baseFare: '',
         baseKm: '',
         ratePerKm: '',
-        ratePerMin: '',
+        ratePerMin: 0,
         additionalMin: '',
-        rateParameter: '',
-        surchargePercentage: '',
+        // rateParameter: '',
+        extraKmPrice:'',
+        surchargePercentage: 0,
         nightHoursFrom: '',
         nightHoursTo: '',
         nightCharge: '',
@@ -95,20 +96,23 @@ const AutoMasterPriceTableAdd = () => {
     const onSubmit = async (values, { setSubmitting }) => {
         try {
             const reqBody = {
-                 type: "Auto",
+                type: "Auto",
                 serviceType: 'AUTO',
+                period:values.type,
                 zone: values.zone,
                 status: values.status === 'ACTIVE' ? 1 : 0,
 
                 baseFare: Number(values.baseFare),
                 baseKm: Number(values.baseKm),
                 kilometerPrice: Number(values.ratePerKm),
-                minCharge: Number(values.ratePerMin),
+                minCharge: Number(values.ratePerMin) || 0,
 
-                rateParameter: values.rateParameter,
+                extraKmPrice:Number(values.extraKmPrice),
+
+                // rateParameter: values.rateParameter,
                 additionalMinCharge: Number(values.additionalMin),
 
-                surChargePercentage: Number(values.surchargePercentage),
+                surChargePercentage: Number(values.surchargePercentage) || 0,
 
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
@@ -190,7 +194,7 @@ const AutoMasterPriceTableAdd = () => {
                             </div>
 
                             {/* Rate Parameter */}
-                            <div>
+                            {/* <div>
                                 <label className="text-sm font-medium text-gray-700">
                                     Rate Parameter
                                 </label>
@@ -210,10 +214,10 @@ const AutoMasterPriceTableAdd = () => {
                                     component="div"
                                     className="text-red-500 text-sm"
                                 />
-                            </div>
+                            </div> */}
 
                             {/* Surcharge */}
-                            <div>
+                            <div className='hidden'>
                                 <label className="text-sm font-medium text-gray-700">
                                     Surcharge Percentage
                                 </label>
@@ -375,6 +379,21 @@ const AutoMasterPriceTableAdd = () => {
                                     className="text-red-500 text-sm"
                                 />
                             </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">
+                                    Addtional Km Charge
+                                </label>
+                                <Field
+                                    type="number"
+                                    name="extraKmPrice"
+                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                />
+                                {/* <ErrorMessage
+                                    name="extraKmPrice"
+                                    component="div"
+                                    className="text-red-500 text-sm"
+                                /> */}
+                            </div>
                         </div>
 
                         {/* Pricing Table (Mini Only - API Supported) */}
@@ -390,9 +409,9 @@ const AutoMasterPriceTableAdd = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
                                                 Rate Per Km
                                             </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
+                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
                                                 Rate Per Min
-                                            </th>
+                                            </th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase">
                                                 Additional Min Charge
                                             </th>
@@ -425,7 +444,7 @@ const AutoMasterPriceTableAdd = () => {
                                                     className="text-red-500 text-xs"
                                                 />
                                             </td>
-                                            <td className="px-6 py-3">
+                                            <td className="px-6 py-3 hidden">
                                                 <Field
                                                     type="number"
                                                     name="ratePerMin"

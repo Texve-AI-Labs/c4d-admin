@@ -2,6 +2,35 @@ import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 
+const formatVehicleTypeValue = (value) => {
+  if (!value) return "-";
+  const raw = String(value).trim();
+  if (!raw) return "-";
+  const normalized = raw.toUpperCase();
+
+  if (normalized === "AUTO") return "Auto";
+  if (normalized === "BIKE") return "Bike";
+  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") {
+    return normalized[0] + normalized.slice(1).toLowerCase();
+  }
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+};
+
+
+const normalizeVehicleTypeInput = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const normalized = raw.toUpperCase();
+  if (["AUTO", "BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") return normalized;
+  return normalized;
+};
+
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
@@ -44,7 +73,7 @@ const VehicleInfoSection = ({
     () =>
       new Set([
         "Vehicle Name",
-        "Bike Number",
+        "Vehicle Number",
         "Address",
         "Insurance Expiry Date",
         "Vehicle Type",
@@ -59,7 +88,7 @@ const VehicleInfoSection = ({
   const leftDisplayOrder = useMemo(
     () => [
       "Vehicle Name",
-      "Bike Number",
+      "Vehicle Number",
       "Insurance Expiry Date",
       "Vehicle Type",
       "Model Year",
@@ -83,8 +112,34 @@ const VehicleInfoSection = ({
   const getInitialDraft = (section) => {
     const map = {};
     (section?.vehicleDetailsRows || []).forEach((row) => {
-      if (editableLabels.has(row.label)) map[row.label] = row.value === "-" ? "" : row.value;
+      if (!editableLabels.has(row.label)) return;
+      if (row.label === "Address" && row.value && typeof row.value === "object") {
+        map[row.label] = row.value.name || "";
+        map.AddressPlaceId = row.value.placeId || row.value.place_id || row.value.placeID || row.value.id || "";
+        return;
+      }
+      map[row.label] = row.label === "Vehicle Type" ? normalizeVehicleTypeInput(row.value) : row.value === "-" ? "" : row.value;
     });
+    const rawAddress = section?.rawValues?.curAddress;
+    const rawVehicleNumber = section?.rawValues?.vehicleNumber;
+    const rawVehicleType = section?.rawValues?.vehicleType;
+    if (!map["Vehicle Number"] && rawVehicleNumber) {
+      map["Vehicle Number"] = String(rawVehicleNumber);
+    }
+    if (!map["Vehicle Type"] && rawVehicleType) {
+      map["Vehicle Type"] = normalizeVehicleTypeInput(rawVehicleType);
+    }
+    if (!map.AddressPlaceId && rawAddress && typeof rawAddress === "object") {
+      map.AddressPlaceId =
+        rawAddress.placeId ||
+        rawAddress.place_id ||
+        rawAddress.placeID ||
+        rawAddress.id ||
+        "";
+    }
+    if (!map.Address && rawAddress) {
+      map.Address = typeof rawAddress === "object" ? rawAddress.name || "" : String(rawAddress);
+    }
     return map;
   };
 
@@ -142,7 +197,7 @@ const VehicleInfoSection = ({
                       </IconButton>
                     </div>
                     <Typography className="text-xs text-blue-gray-500 px-3 -mt-1">
-                      Bike ID: {section.cabId}
+                      Vehicle ID: {section.cabId}
                     </Typography>
                   </div>
                   <div className="ml-auto rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-2">
@@ -192,12 +247,13 @@ const VehicleInfoSection = ({
                         {editingSectionId === section.id && editableLabels.has(row.label) ? (
                           row.label === "Vehicle Type" ? (
                             <select
-                              value={draftValues[row.label] || ""}
+                              value={normalizeVehicleTypeInput(draftValues[row.label])}
+                              disabled
                               onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              {/* <option value="BIKE">BIKE</option> */}
+                              <option value="AUTO">Auto</option>
                               <option value="BIKE">Bike</option>
                             </select>
                           ) : row.label === "Service Area Name" ? (
@@ -258,7 +314,10 @@ const VehicleInfoSection = ({
                                 value={draftValues[row.label] || ""}
                                 onChange={(e) => {
                                   const value = e.target.value;
-                                  setDraftValues((prev) => ({ ...prev, [row.label]: value }));
+                                  setDraftValues((prev) => ({
+                                    ...prev,
+                                    [row.label]: value,
+                                  }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
@@ -271,7 +330,17 @@ const VehicleInfoSection = ({
                                       type="button"
                                       className="w-full text-left px-2.5 py-2 text-sm hover:bg-blue-gray-50"
                                       onClick={() => {
-                                        setDraftValues((prev) => ({ ...prev, [row.label]: getSuggestionText(suggestion) }));
+                                        setDraftValues((prev) => ({
+                                          ...prev,
+                                          [row.label]: getSuggestionText(suggestion),
+                                          AddressPlaceId:
+                                            suggestion?.placeId ||
+                                            suggestion?.place_id ||
+                                            suggestion?.placeID ||
+                                            suggestion?.id ||
+                                            prev.AddressPlaceId ||
+                                            "",
+                                        }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
                                     >
@@ -297,6 +366,14 @@ const VehicleInfoSection = ({
                           )
                         ) : row.label === "Status" || row.label === "Commission Status" ? (
                           <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                        ) : row.label === "Vehicle Type" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {formatVehicleTypeValue(row.value)}
+                          </Typography>
+                        ) : row.label === "Address" && row.value && typeof row.value === "object" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {row.value.name || row.value.address || row.value.fullText || "-"}
+                          </Typography>
                         ) : (
                           <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
                         )}

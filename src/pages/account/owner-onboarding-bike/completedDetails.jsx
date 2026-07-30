@@ -3,7 +3,7 @@ import { Button, Card, CardBody, Chip, IconButton, Spinner, Typography } from "@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, THALUK_LIST } from "@/utils/constants";
+import { API_ROUTES, DISTRICT_LIST, THALUK_LIST } from "@/utils/constants";
 import { parseAddressParts } from "@/utils/addressUtils";
 import moment from "moment";
 import AccountDocumentsSection from "./AccountDocumentsSection";
@@ -75,6 +75,33 @@ const normalizeVehicleStatus = (value) => {
   if (normalized === "INACTIVE") return "IN_ACTIVE";
   if (normalized === "ACTIVE" || normalized === "IN_ACTIVE" || normalized === "BLOCKED") return normalized;
   return "IN_ACTIVE";
+};
+
+const makeAddressPayload = (name, placeId) => ({
+  name,
+  ...(placeId ? { placeId } : {}),
+});
+
+const formatVehicleTypeValue = (value) => {
+  if (!value) return "-";
+
+  const raw = String(value).trim();
+  if (!raw) return "-";
+
+  const normalized = raw.toUpperCase();
+
+  if (normalized === "AUTO") return "Auto";
+  if (normalized === "BIKE") return "Bike";
+  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
+  if (normalized === "PETROL" || normalized === "DIESEL") {
+    return normalized[0] + normalized.slice(1).toLowerCase();
+  }
+
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ");
 };
 
 const normalizeServiceType = (value) => {
@@ -292,6 +319,7 @@ const CompletedOnboardingDetails = () => {
       street: account?.street || "",
       thaluk: account?.thaluk || "",
       district: account?.district || "",
+      accountDistrict: account?.accountDistrict || "",
       state: account?.state || "",
       pincode: account?.pincode || "",
     });
@@ -389,9 +417,16 @@ const CompletedOnboardingDetails = () => {
       })
       .map(([key, value]) => {
         const label = toLabel(key);
-        const displayLabel = label === "Has Vehicle" ? "Isvehicle" : label;
+        const displayLabel =
+          key === "district"
+            ? "Zone"
+            : key === "accountDistrict"
+              ? "Account District"
+              : label === "Has Vehicle"
+                ? "Isvehicle"
+                : label;
         if (displayLabel === "Id") return null;
-        if (["Available Status", "Service Type", "Zone"].includes(label)) return null;
+        if (["Available Status", "Service Type"].includes(label)) return null;
         if (["Phone Number", "Owner Phone Number"].includes(label)) {
           return { label: displayLabel, value: formatIndianPhone(value) };
         }
@@ -410,10 +445,10 @@ const CompletedOnboardingDetails = () => {
 
       const vehicleDetailsRows = [
         { label: "Vehicle Name", value: cabResult?.name || "-" },
-        { label: "Bike Number", value: cabResult?.vehicleNumber || "-" },
+        { label: "Vehicle Number", value: cabResult?.vehicleNumber || "-" },
         { label: "Address", value: cabResult?.curAddress || "-" },
         { label: "Insurance Expiry Date", value: cabResult?.insurance || "-" },
-        { label: "Vehicle Type", value: toDisplayCase(cabResult?.vehicleType || "-") },
+        { label: "Vehicle Type", value: formatVehicleTypeValue(cabResult?.vehicleType || "-") },
         { label: "Model Year", value: String(cabResult?.modelYear || "-").trim() },
         { label: "Seater", value: cabResult?.seater || "-" },
         { label: "Service Area Name", value: cabResult?.subZone?.parent?.name || "-" },
@@ -427,8 +462,13 @@ const CompletedOnboardingDetails = () => {
         sectionKey: `${cabResult?.id || cabItem.id || "cab"}-${index}`,
         id: cabResult?.id || cabItem.id || `cab-${index + 1}`,
         cabId: cabResult?.id || cabItem.id || "-",
-        title: `Bike ${index + 1}${cabResult?.vehicleNumber ? ` - ${cabResult.vehicleNumber}` : ""}`,
+        title: `Vehicle ${index + 1}${cabResult?.vehicleNumber ? ` - ${cabResult.vehicleNumber}` : ""}`,
         vehicleDetailsRows,
+        rawValues: {
+          vehicleNumber: cabResult?.vehicleNumber || "",
+          vehicleType: cabResult?.vehicleType || "",
+          curAddress: cabResult?.curAddress || null,
+        },
       };
     });
   }, [cabs]);
@@ -544,6 +584,7 @@ const CompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
         source: accountDraft?.source || "",
@@ -628,7 +669,10 @@ const CompletedOnboardingDetails = () => {
         name: cabResult?.name || "",
         company: cabResult?.company || cabResult?.Account?.name || account?.name || "",
         vehicleNumber: cabResult?.vehicleNumber || "",
-        curAddress: cabResult?.curAddress || "",
+        curAddress: makeAddressPayload(
+          cabResult?.curAddress?.name || cabResult?.curAddress || "",
+          cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+        ),
         insurance: cabResult?.insurance || "",
         vehicleType: cabResult?.vehicleType || "BIKE",
         seater: cabResult?.seater || "",
@@ -661,12 +705,21 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
+      const existingAddress = cabResult?.curAddress || {};
+      const addressPayload = makeAddressPayload(
+        draftValues?.Address || existingAddress?.name || "",
+        draftValues?.AddressPlaceId || existingAddress?.placeId || existingAddress?.place_id || existingAddress?.placeID || ""
+      );
+      if (!addressPayload?.placeId) {
+        window.alert("Please select the address from the suggestions so placeId can be saved.");
+        return;
+      }
       const parcelDetails = {
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
         company: cabResult?.company || cabResult?.Account?.name || account?.name || "",
-        vehicleNumber: draftValues?.["Bike Number"] || cabResult?.vehicleNumber || "",
-        curAddress: draftValues?.Address || cabResult?.curAddress || "",
+        vehicleNumber: draftValues?.["Vehicle Number"] || cabResult?.vehicleNumber || "",
+        curAddress: addressPayload,
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "BIKE",
         seater: draftValues?.Seater || cabResult?.seater || "",
@@ -768,6 +821,7 @@ const CompletedOnboardingDetails = () => {
                           street: account?.street || "",
                           thaluk: account?.thaluk || "",
                           district: account?.district || "",
+                          accountDistrict: account?.accountDistrict || "",
                           state: account?.state || "",
                           pincode: account?.pincode || "",
                         });
@@ -826,7 +880,8 @@ const CompletedOnboardingDetails = () => {
                       ["address", "Address"],
                       ["street", "Street"],
                       ["thaluk", "Thaluk"],
-                      ["district", "District"],
+                      ["district", "Zone"],
+                      ["accountDistrict", "Account District"],
                       ["state", "State"],
                       ["pincode", "Pincode"],
                     ].map(([key, label]) => (
@@ -866,6 +921,7 @@ const CompletedOnboardingDetails = () => {
                                           street: parsed.street,
                                           thaluk: parsed.thaluk,
                                           district: parsed.district,
+                                          accountDistrict: parsed.accountDistrict,
                                           state: parsed.state,
                                           pincode: parsed.pincode,
                                         }));
@@ -908,11 +964,22 @@ const CompletedOnboardingDetails = () => {
                             onChange={(e) => setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }))}
                             className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
                           >
-                            <option value="">Select District</option>
+                            <option value="">Select Zone</option>
                             {serviceAreas.map((area) => (
                               <option key={area.id} value={area.name}>
                                 {area.name}
                               </option>
+                            ))}
+                          </select>
+                      ) : key === "accountDistrict" ? (
+                        <select
+                          value={accountDraft?.[key] || ""}
+                          onChange={(e) => setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }))}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
+                        >
+                          <option value="">Select District</option>
+                          {DISTRICT_LIST.map((district) => (
+                            <option key={district.value} value={district.value}>{district.label}</option>
                             ))}
                           </select>
                         ) : (
@@ -1059,7 +1126,7 @@ const CompletedOnboardingDetails = () => {
                 onSaveVehicleDetails={handleVehicleDetailsSave}
                 vehicleDetailsSavingId={vehicleDetailsSavingId}
                 getVehicleAddressSuggestionsBySection={(sectionId) =>
-                  (vehicleAddressSuggestionsById[String(sectionId)] || []).map((item) => getSuggestionText(item)).filter(Boolean)
+                  vehicleAddressSuggestionsById[String(sectionId)] || []
                 }
                 onVehicleAddressSearch={searchVehicleLocations}
                 serviceAreaOptions={serviceAreas}

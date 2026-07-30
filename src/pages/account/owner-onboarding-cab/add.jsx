@@ -22,6 +22,7 @@ const AddAccountNew = () => {
                 street: "",
                 thaluk: "",
                 district: "",
+                accountDistrict: "",
                 state: "",
                 pincode: "",
                 source: values?.source,

@@ -14,10 +14,12 @@ const MAX_RETRY_DELAY_MS = 15000;
 const FALLBACK_SUMMARY_REFRESH_MS = 120000;
 const AUTH_FATAL_LOGOUT_THRESHOLD = 2;
 const DEDUPE_TTL_MS = 20000;
+const RECONNECT_WARNING_THRESHOLD = 2;
 
 const FALLBACK_REALTIME_CONTEXT = {
   isLive: false,
   isReconnecting: false,
+  reconnectReason: null,
   eventSeq: 0,
   lastEvent: null,
   summaryCounts: {},
@@ -60,6 +62,7 @@ export const RealtimeEventsProvider = ({ children }) => {
   const authToken = user?.token || localStorage.getItem("token") || "";
   const [isLive, setIsLive] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [reconnectReason, setReconnectReason] = useState(null);
   const [eventSeq, setEventSeq] = useState(0);
   const [lastEvent, setLastEvent] = useState(null);
   const [summaryCounts, setSummaryCounts] = useState({});
@@ -113,6 +116,7 @@ export const RealtimeEventsProvider = ({ children }) => {
   const retryAttemptRef = React.useRef(0);
   const authFatalCountRef = React.useRef(0);
   const dedupeCacheRef = React.useRef(new Map());
+  const reconnectStreakRef = React.useRef(0);
 
   const shouldRefreshOnConnected = useCallback(() => {
     const now = Date.now();
@@ -206,6 +210,7 @@ export const RealtimeEventsProvider = ({ children }) => {
     if (!authToken) {
       setIsLive(false);
       setIsReconnecting(false);
+      setReconnectReason(null);
       setSummaryCounts({});
       setHomeTotalPendings(0);
       setInquiriesPendingsByType({});
@@ -239,8 +244,10 @@ export const RealtimeEventsProvider = ({ children }) => {
         }
         authFatalCountRef.current = 0;
         retryAttemptRef.current = 0;
+        reconnectStreakRef.current = 0;
         setIsLive(true);
         setIsReconnecting(false);
+        setReconnectReason(null);
       },
       onmessage(message) {
         const normalized = normalizeEvent(message);
@@ -257,21 +264,20 @@ export const RealtimeEventsProvider = ({ children }) => {
           }
           return;
         }
-        if (
-          normalized.eventType === "booking_created" ||
-          normalized.eventType === "booking_status_changed" ||
-          normalized.eventType === "message"
-        ) {
-          requestSummaryRefresh(false);
-        }
       },
       onclose() {
         setIsLive(false);
-        setIsReconnecting(true);
+        reconnectStreakRef.current += 1;
+        const reconnecting = reconnectStreakRef.current >= RECONNECT_WARNING_THRESHOLD;
+        setIsReconnecting(reconnecting);
+        setReconnectReason(reconnecting ? "stream_closed" : "transient_close");
       },
       onerror(error) {
         setIsLive(false);
-        setIsReconnecting(true);
+        reconnectStreakRef.current += 1;
+        const reconnecting = reconnectStreakRef.current >= RECONNECT_WARNING_THRESHOLD;
+        setIsReconnecting(reconnecting);
+        setReconnectReason(String(error?.message || "").includes("SSE_AUTH_FATAL") ? "auth_error" : "stream_error");
         if (String(error?.message || "").includes("SSE_AUTH_FATAL")) {
           authFatalCountRef.current += 1;
           throw error;
@@ -301,6 +307,7 @@ export const RealtimeEventsProvider = ({ children }) => {
       dedupeCacheRef.current.clear();
       retryAttemptRef.current = 0;
       authFatalCountRef.current = 0;
+      reconnectStreakRef.current = 0;
       setIsLive(false);
       setIsReconnecting(false);
     };
@@ -324,6 +331,7 @@ export const RealtimeEventsProvider = ({ children }) => {
     () => ({
       isLive,
       isReconnecting,
+      reconnectReason,
       eventSeq,
       lastEvent,
       summaryCounts,
@@ -340,6 +348,7 @@ export const RealtimeEventsProvider = ({ children }) => {
     [
       isLive,
       isReconnecting,
+      reconnectReason,
       eventSeq,
       lastEvent,
       summaryCounts,

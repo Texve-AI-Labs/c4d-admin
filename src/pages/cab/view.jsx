@@ -12,16 +12,7 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import CabSearch from '@/components/CabSearch';
-
-const toText = (value, fallback = "-") => {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (value instanceof Error) return value.message || fallback;
-  if (value && typeof value === "object") {
-    return value.name || value.label || value.title || value.message || JSON.stringify(value);
-  }
-  return value == null || value === "" ? fallback : String(value);
-};
+import { safeText } from "@/utils/text";
 
 export function CabView() {
   const [cabs, setCabs] = useState([]);
@@ -100,7 +91,7 @@ export function CabView() {
           color='blue'
           className='py-3 px-6 rounded-xl'
         >
-          {toText(paramsPassed?.cabName, "Cab")} {paramsPassed?.cabAdded ? 'added' : 'updated'} successfully!
+          {safeText(paramsPassed?.cabName, "Cab")} {paramsPassed?.cabAdded ? 'added' : 'updated'} successfully!
         </Alert>
       </div>}
       <CabSearch onSearch={getCabs} />
@@ -149,29 +140,29 @@ export function CabView() {
                                   color="blue"
                                   className="font-semibold underline"
                                 >
-                                  {toText(name)}
+                                  {safeText(name)}
                                 </Typography>
                               </Link>
                             </div>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {toText(formatPhoneNumber(phoneNumber))}
+                              {safeText(formatPhoneNumber(phoneNumber))}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {toText(carType)}
+                              {safeText(carType)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600 ">
-                              {toText(intercityCount)}
+                              {safeText(intercityCount)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {toText(outstationCount)}
+                              {safeText(outstationCount)}
                             </Typography>
                           </td>
                           <td className={className}>

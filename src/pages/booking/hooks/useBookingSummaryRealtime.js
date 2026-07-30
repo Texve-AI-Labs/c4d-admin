@@ -146,8 +146,12 @@ export const useBookingSummaryRealtime = ({
     if (!lastEvent) return;
 
     const eventType = lastEvent.eventType || "message";
+    const state = scheduleRef.current;
     if (eventType === "connected") {
-      requestSummaryRefresh({ immediate: true, dedupeMs: EVENT_DEDUPE_MS.connected });
+      const staleMs = Date.now() - (state.lastSuccessfulSummaryAt || 0);
+      if (isReconnecting || staleMs > MAX_STALE_MS) {
+        requestSummaryRefresh({ immediate: true, dedupeMs: EVENT_DEDUPE_MS.connected });
+      }
       return;
     }
 

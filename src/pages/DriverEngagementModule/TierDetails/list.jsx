@@ -20,6 +20,7 @@ function TierDetailsList() {
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [partnerTypeFilter, setPartnerTypeFilter] = useState("CAB");
+  const [parcelVehicleTypeFilter, setParcelVehicleTypeFilter] = useState("ALL");
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedRowIds, setExpandedRowIds] = useState({});
@@ -54,7 +55,7 @@ function TierDetailsList() {
     };
 
     fetchTiers();
-  }, [typeFilter, statusFilter, partnerTypeFilter]);
+  }, [typeFilter, statusFilter, partnerTypeFilter, parcelVehicleTypeFilter]);
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -67,11 +68,18 @@ function TierDetailsList() {
             : row.isActive === false;
       const partnerType =
         row?.raw?.config?.scope?.partnerType || row?.raw?.scope?.partnerType || row?.raw?.partnerType || "ALL";
+      const parcelVehicleType = row?.raw?.config?.scope?.parcelVehicleType || row?.raw?.config?.scope?.vehicleType || row?.raw?.scope?.parcelVehicleType || row?.raw?.scope?.vehicleType || "ALL";
       const partnerTypeMatches =
         partnerTypeFilter === "ALL" ? true : String(partnerType || "").toUpperCase() === partnerTypeFilter;
-      return typeMatches && statusMatches && partnerTypeMatches;
+      const parcelVehicleTypeMatches =
+        partnerTypeFilter === "PARCEL"
+          ? parcelVehicleTypeFilter === "ALL"
+            ? true
+            : String(parcelVehicleType || "").toUpperCase() === parcelVehicleTypeFilter
+          : true;
+      return typeMatches && statusMatches && partnerTypeMatches && parcelVehicleTypeMatches;
     });
-  }, [rows, typeFilter, statusFilter, partnerTypeFilter]);
+  }, [rows, typeFilter, statusFilter, partnerTypeFilter, parcelVehicleTypeFilter]);
 
   return (
     <div className="mt-5 mb-10 bg-white p-2 px-4 shadow-sm">
@@ -94,9 +102,11 @@ function TierDetailsList() {
         typeFilter={typeFilter}
         statusFilter={statusFilter}
         partnerTypeFilter={partnerTypeFilter}
+        parcelVehicleTypeFilter={parcelVehicleTypeFilter}
         onTypeFilterChange={setTypeFilter}
         onStatusFilterChange={setStatusFilter}
         onPartnerTypeFilterChange={setPartnerTypeFilter}
+        onParcelVehicleTypeFilterChange={setParcelVehicleTypeFilter}
       />
 
       <Card>

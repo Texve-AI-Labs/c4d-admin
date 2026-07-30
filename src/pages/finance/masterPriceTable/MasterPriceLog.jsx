@@ -46,7 +46,7 @@ const MasterPriceLog = ({ id }) => {
         "additional_min_charge": "Additional Min",
         "sur_charge_percentage": "Surcharge Percentage",
         "extra_km_price": "Additional KM Rate",
-        "toll_charge": "Toll Charge",
+        // "toll_charge": "Toll Charge",
         "driver_charge": "Driver Charge",
         "driver_cancel_mins": "Driver Cancel Mins",
         "driver_free_cancellations_per_day": "Driver Free Cancellations / Day",

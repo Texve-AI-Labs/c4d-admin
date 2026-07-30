@@ -14,20 +14,11 @@ import {
 } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import moment from "moment";
 import { FaFilter } from "react-icons/fa";
-
-const toText = (value, fallback = "-") => {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (value instanceof Error) return value.message || fallback;
-  if (value && typeof value === "object") {
-    return value.name || value.label || value.title || value.message || JSON.stringify(value);
-  }
-  return value == null || value === "" ? fallback : String(value);
-};
+import { safeText } from "@/utils/text";
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -326,28 +317,23 @@ export function VehiclesList({ id = 0 }) {
                     ({ id, driverName, name, vehicleType, carType, type, assigned,firstName,driverAddress,curAddress,Account, carNumber, Drivers, subscriptionStatus, phoneNumber,status, created_at }) => (                      
                         <tr key={id}>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{toText(Drivers?.[0]?.firstName || driverName || Account?.name || "")}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Drivers?.[0]?.firstName || driverName || Account?.name || '')}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Link
-                          className="underline cursor-pointer text-primary-600"
-                          to={`/dashboard/vendors/account/allVehicles/details/${id}`}
-                        >
-                          <Typography className="text-xs font-semibold text-primary-600">{toText(name)}</Typography>
-                        </Link>
+                        <Typography className="text-xs font-semibold">{safeText(name)}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{toText(Drivers?.[0]?.phoneNumber?.name || Drivers?.[0]?.phoneNumber || phoneNumber || "-")}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Drivers?.[0]?.phoneNumber?.name || Drivers?.[0]?.phoneNumber || phoneNumber || "-")}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{toText(carType)}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(carType)}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{toText(carNumber)}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(carNumber)}</Typography>
                       </td>
                         <td className="py-3 px-5 border-b border-blue-gray-50">
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {toText(Drivers?.[0]?.curAddress?.name || Drivers?.[0]?.curAddress ||  driverAddress || curAddress || 'N/A')}
+                              {safeText(Drivers?.[0]?.curAddress?.name || Drivers?.[0]?.curAddress ||  driverAddress || curAddress || 'N/A')}
                           </Typography>
                         </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
@@ -356,12 +342,12 @@ export function VehiclesList({ id = 0 }) {
                         </Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                          <Chip
-                            variant="ghost"
-                            color={Drivers?.[0]?.status === "ACTIVE" ? "green" : "blue-gray"}
-                            value={Drivers?.[0]?.status === "ACTIVE" ? "Active" : "In_Active"}
-                            className="py-0.5 px-2 text-[11px] font-medium w-fit"
-                          />
+                        <Chip
+                          variant="ghost"
+                          color={Drivers?.[0]?.status === "ACTIVE" ? "green" : "blue-gray"}
+                          value={Drivers?.[0]?.status === "ACTIVE" ? "Active" : "In_Active"}
+                          className="py-0.5 px-2 text-[11px] font-medium w-fit"
+                        />
                          {Drivers?.[0]?.status === "ACTIVE" && statusCheckedDriverIds.indexOf(Drivers?.[0]?.id)==-1 &&  <Typography
                           className="text-xs font-semibold text-primary-900 underline cursor-pointer"
                           onClick={()=>checkPresence(Drivers?.[0]?.id)}

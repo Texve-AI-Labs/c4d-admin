@@ -67,7 +67,7 @@ const SearchableDropdown = ({ searchVal, addVal, selected, options, onSelect, se
             setSearchBookingId('');
         }
         setSelectedValue(null);
-        onSelect(options);
+        onSelect(null);
         setIsOpen(false);
     };
 

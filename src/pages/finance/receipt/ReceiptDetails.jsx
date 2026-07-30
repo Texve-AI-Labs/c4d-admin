@@ -148,8 +148,8 @@ const ReceiptDetails = () => {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700">Driver Name</label>
                                 <div
-                                    onClick={() => handleDriverNavigation(receipt.DriverId)}
-                                    className="p-3 h-[50px] w-full rounded-md border bg-gray-200 border-gray-300 flex items-center text-primary-600 underline cursor-pointer"
+                                    // onClick={() => handleDriverNavigation(receipt.DriverId)}
+                                    className="p-3 h-[50px] w-full rounded-md border bg-gray-200 border-gray-300 flex items-center"
                                 >
                                     {receipt.Driver?.firstName || ""} {receipt.Driver?.lastName || ""}
                                 </div>
@@ -433,7 +433,7 @@ const ReceiptDetails = () => {
                     Download PDF
                 </Button>
             </div>
-            <Dialog open={isOpen}>
+            <Dialog open={isOpen} size="xl" className="max-w-6xl w-[95vw]">
                 <DialogHeader className="flex justify-end items-end">
                     <button
                         onClick={() => setIsOpen(false)}

@@ -418,16 +418,12 @@ export default function ParcelMasterPriceForm({
                   onChange={(e) => {
                     const selectedVehicleType = normalizeParcelVehicleType(e.target.value, "BIKE");
                     updateField("parcelVehicleType", selectedVehicleType);
-                    if (selectedVehicleType === "AUTO") {
-                      updateField("subZoneId", "");
-                    }
                   }}
                 >
                   <option value="BIKE">BIKE</option>
                   <option value="AUTO">AUTO</option>
                 </select>
               </div>
-              {!isAutoVehicleType ? (
               <div className="min-w-0">
                 <label className="text-xs font-semibold text-gray-500 uppercase">Sub Zone</label>
                 <select
@@ -442,7 +438,6 @@ export default function ParcelMasterPriceForm({
                   ))}
                 </select>
               </div>
-              ) : null}
               <div className="min-w-0">
                 <label className="text-xs font-semibold text-gray-500 uppercase">Base Fare</label>
                 <UiInput className={inputClass} type="number" readOnly={readOnly} value={form.baseFare} onChange={(e) => updateField("baseFare", e.target.value)} />

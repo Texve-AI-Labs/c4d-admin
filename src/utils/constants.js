@@ -906,6 +906,10 @@ export const API_ROUTES = {
     'UPDATE_NOTIFICATION': '/update-scheduled-notification',
     'CANCEL_NOTIFICATION': '/cancel-scheduled-notification',
     'GET_NOTIFICATION': '/get-notification',
+    'POST_UI_CONTENT': '/ui-contents',
+    'GET_UI_CONTENT': '/ui-contents',
+    'UPDATE_UI_CONTENT': '/ui-contents',
+    'DELETE_UI_CONTENT': '/ui-contents',
     'INSTANT_REWARD': '/instant-reward',
     'GET_REWARD': '/get-instant-reward',
     'CUSTOMER_WALLET': '/getWalletTransactions',
@@ -1023,7 +1027,38 @@ export const API_ROUTES = {
     'GET_SKIP_EVENTS': '/admin/telemetry/skip-events',
     'VALIDATE_NOTIFICATION_TIME': '/validate-notification-time',
     'MASTER_SUB_PLAN_GROUP':'/admin/plan-group/logs',
-    'SUPPORT_END_LOACTION':'/booking/end-location-reason'
+    'SUPPORT_END_LOACTION':'/booking/end-location-reason',
+    'GET_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
+    'ADD_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
+    'UPDATE_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
+    'SUPPORT_TICKETS': '/admin/support-tickets',
+    'SUPPORT_TICKET_BY_ID': '/admin/support-tickets/:id',
+    'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status',
+    'CUSTOMER_CANCELLATION_CHARGE_LOGS': '/admin/customer-cancellation-charge-logs',
+    'ADD_NEW_BIKE_TAXI':'/register/admin/bike',
+    'UPDATE_BIKE_TAXI_DETAILS':'/update/admin/bike',
+    'GET_BIKE_BY_ID':'/bike/',
+    'GET_BIKE_LIST':"/admin/bikes", // show the bike taxi lst need to ui.
+    'BIKE_PACKAGE_LIST':'/bike-package-list',
+    'BIKE_MASTERPRICE_TABLE_ADD':'/add-bikes-package',
+    'BIKE_PRICE_EDIT':'/update-bike-package',
+    'ADMIN_WITHDRAWAL_RULES':'/admin/withdrawal-rules',
+    'ADMIN_WITHDRAWAL_RULES_ADD':'/admin/withdrawal-rules',
+    'ADMIN_WITHDRAWAL_RULES_EDIT':'/admin/withdrawal-rules',
+    'ADMIN_WITHDRAWALS_GET':'/admin/withdrawals',
+    'ADMIN_WITHDRAWALS_TRANSACTION':'/admin/withdrawals',
+    'ADMIN_WITHDRAWALS':'/admin/withdrawals',
+    'ADMIN_WITHDRAWALS_UPDATE':'/admin/withdrawals',
+    'GET_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
+    'POST_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
+    'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
+    'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
+    'EXPORT_DALIY_SLOT':'/admin/daily/slot/export',
+    'GET_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'POST_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'GET_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'UPDATE_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
@@ -1086,6 +1121,7 @@ export const BOOKING_SERVICE_TYPE = {
     AUTO: 'AUTO',
     PARCEL: 'PARCEL',
     ALL_CABS:'ALL_CABS',
+    BIKE:'BIKE',
     RETURN_TRIPS:'RETURN_TRIPS'
 };
 

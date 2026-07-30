@@ -18,15 +18,20 @@ export const fetchDriverIncentiveList = async ({
   partnerType = "CAB",
   zone = "",
   vehicleType = "ALL",
+  parcelVehicleType,
   isActive,
   settingId,
 } = {}) => {
   const params = {
     code: toApiCode(code),
+    mode:"RULES",
     partnerType,
     zone,
     vehicleType,
   };
+  if (typeof parcelVehicleType === "string" && parcelVehicleType.trim()) {
+    params.parcelVehicleType = parcelVehicleType.trim().toUpperCase();
+  }
 
   if (settingId !== undefined && settingId !== null && settingId !== "") {
     params.settingId = settingId;
@@ -100,20 +105,22 @@ export const updateDriverIncentiveStatus = async ({
   return response || {};
 };
 
-export const createDriverIncentiveRule = async ({
-  name,
-  description,
-  isActive = true,
-  type = "ONLINE_HOURS_RULES",
-  config = {},
-}) => {
-  const payload = {
-    type,
-    name: String(name || "").trim(),
-    description: String(description || "").trim(),
-    isActive: Boolean(isActive),
-    config: config && typeof config === "object" ? config : {},
-  };
+export const createDriverIncentiveRule = async (input = {}) => {
+  const payload =
+    input && typeof input === "object" && (input.component || input.scope)
+      ? {
+          ...input,
+          name: String(input.name || "").trim(),
+          description: String(input.description || "").trim(),
+          isActive: Boolean(input.isActive),
+        }
+      : {
+          type: input?.type || "ONLINE_HOURS_RULES",
+          name: String(input?.name || "").trim(),
+          description: String(input?.description || "").trim(),
+          isActive: Boolean(input?.isActive),
+          config: input?.config && typeof input.config === "object" ? input.config : {},
+        };
 
   const response = await ApiRequestUtils.post(API_ROUTES.ADD_DE_TIER, payload);
   return response || {};

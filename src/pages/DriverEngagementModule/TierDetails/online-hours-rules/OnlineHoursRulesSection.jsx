@@ -27,6 +27,8 @@ function OnlineHoursRulesSection(props) {
       metricOptions={METRIC_OPTIONS}
       periodOptions={PERIOD_OPTIONS}
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
+      syncPeriodWithPayoutFrequency
+      hideMandatory
     />
   );
 }

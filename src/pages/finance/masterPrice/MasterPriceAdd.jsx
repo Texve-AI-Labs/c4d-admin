@@ -155,7 +155,7 @@ export function MasterPriceAdd() {
                                     <Field type="time" name="nightHoursTo" className="p-2 rounded border-gray-300" />
                                 </div>
                             </div>
-                            {values?.serviceType === 'DRIVER' &&
+                            {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' &&
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <div className="flex items-center gap-2">

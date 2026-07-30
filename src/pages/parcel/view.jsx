@@ -10,7 +10,7 @@ import {
 } from '@material-tailwind/react';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, CalendarDaysIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import moment from 'moment';
 
@@ -362,12 +362,9 @@ export function ParcelView({ type, ownerName, id }) {
                         <tr key={id}>
                           <td className={className}>
                             
-                              <Link
-                                to={`/dashboard/vendors/account/parcel/allVehicles/details/${id}`}
-                                className="text-xs font-semibold underline cursor-pointer text-blue-600"
-                              >
-                                {name}
-                              </Link>
+                            <Typography className="text-xs font-semibold text-blue-gray-900">{name}</Typography>
+                                
+                              
                             
                           </td>
                           <td className={className}>

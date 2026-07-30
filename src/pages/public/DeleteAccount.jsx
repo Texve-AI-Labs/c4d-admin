@@ -33,7 +33,6 @@ export function DeleteAccount() {
         phoneNumber: phoneNumber
       });
       setLoading(false);
-      // console.log("Session response:", response);
       if (response.sid) {
         setSessionId(response.sid);
       } else {
@@ -77,7 +76,7 @@ export function DeleteAccount() {
         phoneNumber: phoneNumber,
         deviceToken: token
       });
-      console.log("OTP verification response:", response);
+      // console.log("OTP verification response:", response);
       if (response.success || response ==='') {
         setStep(3);
       } 

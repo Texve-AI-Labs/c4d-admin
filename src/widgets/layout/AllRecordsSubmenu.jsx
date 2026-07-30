@@ -23,6 +23,8 @@ function AllRecordsSubmenu({ miniSidenav }) {
         return pathname.startsWith("/dashboard/booking/list/rentals");
       case "Parcel Records":
         return pathname.startsWith("/dashboard/booking/list/parcel");
+      case "All Bike Taxi Records":
+        return pathname.startsWith("/dashboard/bike-taxi");
       default:
         return pathname.startsWith(target);
     }
@@ -35,6 +37,7 @@ function AllRecordsSubmenu({ miniSidenav }) {
     { label: "Local Records", path: "/dashboard/booking/list/rides", icon: "/img/rides.png" },
     { label: "Rentals Records", path: "/dashboard/booking/list/rentals", icon: "/img/rental.png" },
     { label: "Parcel Records", path: "/dashboard/booking/list/Parcel", icon: "/img/Parcel_driver.png" },
+    { label: "All Bike Taxi Records", path: "/dashboard/bike-taxi", icon: "/img/all.png" },
     { label: "Return Trips Booking Records", path: "/dashboard/booking/list/returntrips", icon: "/img/rides.png" },
     ...(pathname.startsWith("/dashboard/booking/list/returntrips") ||
     pathname.startsWith("/dashboard/vendors/driver-return-trips")

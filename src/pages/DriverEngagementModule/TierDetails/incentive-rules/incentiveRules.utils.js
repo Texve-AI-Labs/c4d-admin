@@ -37,3 +37,10 @@ export const getUiServiceType = (condition = {}) => {
 
 export const LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "All", value: "ANY" }];
 export const AUTO_LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "Auto", value: "AUTO" }];
+export const BIKE_LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "Bike", value: "BIKE" }];
+
+export const getLockedServiceTypeOptions = (partnerType = "") => {
+  const normalized = String(partnerType || "").trim().toUpperCase();
+  if (normalized === "BIKE") return BIKE_LOCKED_SERVICE_TYPE_OPTIONS;
+  return AUTO_LOCKED_SERVICE_TYPE_OPTIONS;
+};

@@ -67,16 +67,8 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         then: (schema) => schema.required('Package Type is required'),
         otherwise: (schema) => schema.notRequired(),
     }),
-    rideTime: Yup.string().when('serviceType', {
-        is: (val) => val !== 'RIDES' && val !== 'AUTO',
-        then: (schema) => schema.required('Ride Time is required'),
-        otherwise: (schema) => schema.notRequired(),
-    }),
-    rideDate: Yup.string().when('serviceType', {
-        is: (val) => val !== 'RIDES' && val !== 'AUTO',
-        then: (schema) => schema.required('Ride Date is required'),
-        otherwise: (schema) => schema.notRequired(),
-    }),
+    rideTime: Yup.string().required('Ride Time is required'),
+    rideDate: Yup.string().required('Ride Date is required'),
     customerId: Yup.object().shape({
         id: Yup.string().required('Customer ID is required'),
     }).required('Customer information is required'),
@@ -93,15 +85,15 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         }),
 
     carType: Yup.string().when('serviceType', {
-        is: (val) =>['DRIVER', 'RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
+        is: (val) =>['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
         then: () => Yup.string().required('Please select a car type'),
-        otherwise: () => Yup.string(),
+        otherwise: () => Yup.string().nullable(),
     }),
-    transmissionType: Yup.string().when('serviceType', {
-        is: (val) => val === 'DRIVER',
-        then: () => Yup.string().required('Transmission Type is required'),
-        otherwise: () => Yup.string(),
-    }),
+    // transmissionType: Yup.string().when('serviceType', {
+    //     is: (val) => val === 'DRIVER',
+    //     then: () => Yup.string().required('Transmission Type is required'),
+    //     otherwise: () => Yup.string(),
+    // }),
     tripType: Yup.string().when('serviceType', {
         is: (val) => val == 'DRIVER',
         then: () => Yup.string().required('Trip Type is required'),
@@ -829,7 +821,7 @@ export const VERSION_CONTROL_EDIT=Yup.object({
 
 export const DISCOUNT_ADD_SCHEMA = Yup.object({
     entity: Yup.string()
-        .oneOf(['DRIVER', 'CAB', 'AUTO', 'PARCEL'], 'Invalid entity type')
+        .oneOf(['DRIVER', 'CAB', 'AUTO', 'BIKE', 'PARCEL'], 'Invalid entity type')
         .required('Entity type is required'),
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
@@ -859,8 +851,10 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
             serviceType !== 'PARCEL' &&
+            serviceType !== 'BIKE' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
         otherwise: (schema) => schema.nullable(),
@@ -868,7 +862,9 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'BIKE' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
@@ -920,7 +916,7 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
 export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     discountId: Yup.number().required('Discount ID is required'),
     entity: Yup.string()
-        .oneOf(['DRIVER', 'CAB', 'AUTO', 'PARCEL'], 'Invalid entity type')
+        .oneOf(['DRIVER', 'CAB', 'AUTO','BIKE','PARCEL'], 'Invalid entity type')
         .required('Entity type is required'),
     offerType: Yup.string()
         .oneOf(['GENERAL', 'CUSTOM'], 'Invalid offer type')
@@ -950,7 +946,9 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === false &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'BIKE' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),
@@ -959,7 +957,9 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
         is: (isPremium, serviceType, offerType) =>
             isPremium === true &&
+            serviceType !== 'DRIVER' &&
             serviceType !== 'AUTO' &&
+            serviceType !== 'BIKE' &&
             serviceType !== 'PARCEL' &&
             !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
         then: (schema) => schema.required('Car Type is required'),

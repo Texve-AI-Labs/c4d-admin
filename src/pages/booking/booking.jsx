@@ -105,6 +105,8 @@ const getAdminDiscountUpdatedTs = (item = {}) =>
 const Booking = (props) => {
     const [loading, setLoading] = useState(false);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [selectedPackagePeriod, setSelectedPackagePeriod] = useState('');
+    const [selectedPackageId, setSelectedPackageId] = useState('');
     const [bookingTimes, setBookingTimes] = useState([]);
     const [bookingTimesForDay, setBookingTimesForDay] = useState([]);
     const [range, setRange] = useState({});
@@ -252,7 +254,7 @@ const Booking = (props) => {
   useEffect(() => {
     if (selectedAreaId) {
       const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
-      const newServices = (selectedArea ? selectedArea.services : []);
+      const newServices = (selectedArea ? selectedArea.services : []).filter((service) => service !== 'BIKE');
       setServices(newServices);
     //   console.log('Services for selected area:', newServices);
       setCurrentServiceType('');
@@ -492,6 +494,7 @@ useEffect(() => {
     );
 
 const addQuotationLog = (values, quoteDetails, bookingId = null) => {
+    const adminDiscount = quoteDetails?.adminDiscount || {};
     const newLog = {
         userId: loggedInUserId,
         bookingId: bookingId || 0,
@@ -515,6 +518,14 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             : (quoteDetails?.amount?.estimatedPrice || 0),
         discount: quoteDetails?.discount?.percentage || 0,   
         discountAmount: (quoteDetails.amount?.estimatedPrice) - ( quoteDetails.amount?.estimatedPrice * quoteDetails.discount?.percentage/100) || 0,
+        adminDiscount: adminDiscount ? {
+            status: adminDiscount?.status || '',
+            discountType: adminDiscount?.discountType || '',
+            discountValue: adminDiscount?.discountValue ?? 0,
+            discountAmount: adminDiscount?.discountAmount ?? 0,
+            remarks: adminDiscount?.remarks || '',
+            quoteRef: adminDiscount?.quoteRef || quoteDetails?.quoteRef || '',
+        } : {},
         ...((values?.serviceType != 'RIDES') && {
                startDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString() || '',
            }),
@@ -525,12 +536,13 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
 
          serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'DROP TAXI': values?.serviceType === "RENTAL_HOURLY_PACKAGE"? "HOURLY PACKAGE" : values?.serviceType === "RENTAL"? "OUTSTATION": values?.serviceType || '',
         cabType: values?.carType || '', 
-        	
+        ...((values?.serviceType ==="PARCEL")) && {
 	    parcelVehicleType: values?.parcelVehicleType || '',
         subZoneId: values?.subZoneId || 0,
         // weightRange: values?.weightRange || '',
         orderType: values?.orderType || '',
         orderTypeOther: values?.orderTypeOther || ''
+        }        	    
     };
     setQuotationLogs((prevLogs) => [...prevLogs, newLog]);
 };
@@ -570,15 +582,23 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
           'RENTAL_HOURLY_PACKAGE': 'RENTAL',
         };
         const mappedServiceType = serviceTypeMap[values?.serviceType] || values?.serviceType;
+        const isDriverService = values?.serviceType === 'DRIVER';
+        const driverPackageType = isDriverService
+            ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
+            : 'Outstation';
+        const driverBookingType = isDriverService
+            ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+            : (values?.tripType ? values.tripType.toUpperCase() : '');
+
         const quoteData = {
             serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
             customerId: values?.customerId?.id,
             userId: loggedInUserId || undefined,
             role: loggedInUserRole || undefined,
-            packageType: 'Outstation',
+            packageType: driverPackageType,
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
-             carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
             pickupLat: values?.pickupLocation?.lat,
             pickupLong: values?.pickupLocation?.lng,
             driverStartLat: values?.driverPickUpLocation?.lat,
@@ -592,9 +612,9 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             isPremiumService : values?.isPremiumService ? true : false
         };
         if (values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') {
-            quoteData.bookingType = values?.tripType ? values.tripType.toUpperCase() : '';
+            quoteData.bookingType = driverBookingType;
         }
-        const isDriverOutstation = values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation' && values?.serviceType === 'RENTAL';
+        const isDriverOutstation = isDriverService && values?.packageTypeSelected === 'Outstation';
         const isRoundTripCustom =
             isDriverOutstation &&
             values?.tripType === 'Round Trip' &&
@@ -602,10 +622,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         if (!isDriverOutstation || isRoundTripCustom) {
             quoteData.toDate = moment(`${values?.toDate} ${values?.toTime}`, "YYYY-MM-DD HH:mm:ss").toISOString();
         }
-        if (values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation'  && values?.packageSelected !== 'custom_date') {
-            quoteData.packageType = 'Outstation';
+        if (isDriverService && values?.packageTypeSelected === 'Outstation'  && values?.packageSelected !== 'custom_date') {
             quoteData.packageId = Number(values.packageSelected);
-            quoteData.period = Number(values.packageSelected);
+            const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
+            quoteData.period = selectedPackage?.period ?? selectedPackagePeriod ?? '';
         }
         if (values?.serviceType === 'RENTAL_DROP_TAXI') {
             quoteData.serviceFor = 'RENTAL_DROP_TAXI';
@@ -714,6 +734,14 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
     actualZone = zoneData.serviceArea.name;
     // console.log('Zone changed to', actualZone);
 
+        const isDriverService = val?.serviceType === 'DRIVER';
+        const driverPackageType = isDriverService
+            ? (val?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
+            : 'Local';
+        const driverBookingType = isDriverService
+            ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+            : (val?.tripType ? val.tripType.toUpperCase() : '');
+
         const quoteDate = {
             serviceType: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL' : val.serviceType || mappedServiceType,
             customerId: val?.customerId?.id,
@@ -721,9 +749,9 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             role: loggedInUserRole || undefined,
             // bookingType: val?.tripType ? val.tripType.toUpperCase() : '',
             serviceFor: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : val.serviceType,
-            packageType:'Local',
+            packageType: driverPackageType,
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-            carType: val.serviceType === 'DRIVER' ? 'Mini' : val.carType || '',
+            ...(val.serviceType !== 'DRIVER' ? { carType: val.carType || '' } : {}),
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
             driverStartLat: val?.driverPickUpLocation?.lat,
@@ -736,10 +764,11 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             isPremiumService : val?.isPremiumService ? true : false
         };
         if (val.serviceType === 'RENTAL_HOURLY_PACKAGE' || val?.serviceType === 'DRIVER') {
-            quoteDate.period = packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected))?.period || '';
+            const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected));
+            quoteDate.period = selectedPackage?.period ?? selectedPackagePeriod ?? '';
         }
         if (val?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && val?.serviceType !== 'AUTO' &&  val?.serviceType !== 'RIDES') {
-            quoteDate.bookingType = val?.tripType ? val.tripType.toUpperCase() : '';
+            quoteDate.bookingType = driverBookingType;
         }
         const adminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW ? buildAdminDiscountPayload(val) : null;
         if (adminDiscountPayload) {
@@ -857,10 +886,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         parcelVehicleType: 'BIKE',
         // weightRange: 'W_0_7',
         receiverName: '',
-        receiverPhone: '+91',
+        receiverPhone: '',
         receiverAddress: '',
         senderName: '',
-        senderPhone: '+91',
+        senderPhone: '',
         senderAddress: '',
         orderType: '',
         orderTypeOther: '',
@@ -1307,17 +1336,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             (pkg) => pkg.id === Number(values?.packageSelected)
         );
 
-        const period =
-            values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation'
-                ? (values.packageSelected && values.packageSelected !== 'custom_date' ? Number(values.packageSelected) : '')
-                : (values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'DRIVER'
-                    ? selectedPackage?.period || ''
-                    : '');
+        const isDriverService = values?.serviceType === 'DRIVER';
+        const shouldOmitDriverPackage = isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected === 'custom_date';
+        const driverPackagePeriod = selectedPackage?.period ?? selectedPackagePeriod ?? '';
 
         const bookingData = {
             carId: values?.carSelected?.id,
-            packageId: values?.packageSelected === "0" || values?.packageSelected === "custom_date" ? 0 : Number(values?.packageSelected),
-            packageType: values?.packageTypeSelected,
+            packageType: values.serviceType === 'DRIVER' ? (values?.packageTypeSelected || 'Local') : values?.packageTypeSelected,
             date: values?.rideDate,
             time: values?.rideTime,
             // fromDate: values.fromDate,
@@ -1325,14 +1350,20 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             adminBooking: true,
             serviceType: values.serviceType || "AUTO",
             cabType: values.cabType,
+            ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
+            ...(!shouldOmitDriverPackage && {
+                packageId: values?.packageSelected === "0" ? 0 : Number(values?.packageSelected),
+            }),
             ...((values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') && {
-                bookingType: values?.tripType?.toUpperCase() || '',
+                bookingType: isDriverService
+                    ? (values?.packageTypeSelected === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+                    : (values?.tripType?.toUpperCase() || ''),
             }),
             // acType: values?.acType?.toUpperCase(),
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
-            ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
-            carType: values.serviceType === 'DRIVER' ? 'Mini' : values.carType || '',
+            // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
+            ...(isDriverService ? {} : { carType: values.carType || '' }),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
@@ -1351,7 +1382,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             luggage: values.luggage,
             seaterCapacity:values.seaterCapacity,
             landmark: values.landmark || '',
-            period,
+            ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
             serviceType: values.serviceType || mappedServiceType,
             zone: actualZone,
             isPremiumService : values?.isPremiumService ? true : false
@@ -1538,22 +1569,22 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('parcelVehicleType', 'BIKE');
         // setFieldValue('weightRange', 'W_0_7');
         setFieldValue('receiverName', '');
-        setFieldValue('receiverPhone', '+91');
+        setFieldValue('receiverPhone', '');
         setFieldValue('receiverAddress', '');
         setFieldValue('senderName', '');
-        setFieldValue('senderPhone', '+91');
+        setFieldValue('senderPhone', '');
         setFieldValue('senderAddress', '');
         setFieldValue('orderType', '');
         setFieldValue('orderTypeOther', '');
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        // setFieldValue('carType', '');
+        setFieldValue('carType', newServiceType === 'DRIVER' ? null : '');
         // setFieldValue('cabType', '');
         // setFieldValue('luggage', '');
         // setFieldValue('seaterCapacity', '');
         setFieldValue('acType', '');
-        setFieldValue('transmissionType', '');
+        // setFieldValue('transmissionType', '');
 
         // Clear package selection
         setFieldValue('packageSelected', '');
@@ -1563,6 +1594,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         } else if (newServiceType === 'DRIVER') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
+            setFieldValue('packageTypeSelected', 'Outstation');
+            setFieldValue('tripType', 'Round Trip');
         } else if (newServiceType === 'RENTAL_HOURLY_PACKAGE') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
@@ -1708,13 +1741,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (!val.packageSelected) { return true; } return false;
         }
 
-        if (val.packageTypeSelected === "Local" && val.tripType === "Round Trip") {
+        if (val.packageTypeSelected === "Local" && val.tripType === "Drop Only") {
             if (!val.dropLocation) { return true; } return false;
         }
 
-        if (val.packageTypeSelected === "Outstation" && val.tripType === "Drop Only") {
-            if (!val.dropLocation) { return true; } return false;
-        }
+        // if (val.packageTypeSelected === "Outstation" && val.tripType === "Drop Only") {
+        //     if (!val.dropLocation) { return true; } return false;
+        // }
 
         if (val.packageTypeSelected === "Outstation" && val.tripType === "Round Trip") {
             if (!val.dropLocation || !val.toDate || !val.toTime) { return true; } return false;
@@ -1897,8 +1930,9 @@ const adminDiscountAmountOnTotal =
   String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase() === 'PERCENTAGE'
     ? totalestimationfare * (Number(quoteDetails?.adminDiscount?.discountValue || 0) / 100)
     : Number(quoteDetails?.adminDiscount?.discountAmount || 0);
+const walletAmountApplied = Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0);
 
-const finalEstimatedFare = totalestimationfare - adminDiscountAmountOnTotal;
+const finalEstimatedFare = (totalestimationfare - adminDiscountAmountOnTotal) - walletAmountApplied;
 const adminDiscountType = String(quoteDetails?.adminDiscount?.discountType || '').toUpperCase();
 const adminDiscountValueDisplay = adminDiscountType === 'PERCENTAGE'
     ? `${Math.round(Number(quoteDetails?.adminDiscount?.discountValue || 0))} %`
@@ -1907,9 +1941,9 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
 const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
 const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
 const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
-const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
-    ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
-    : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
+// const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
+//     ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
+//     : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
 const finalTotalAfterDiscounts =
     BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
         ? finalEstimatedFare
@@ -1931,11 +1965,13 @@ const priceDetailsCardClass = isPeakHour
                             <input
                                 type="text"
                                 className="relative w-full py-2 px-8 border  rounded-xl text-sm bg-gray-100 pr-10"
-                                placeholder="Search by customer number or booking ID"
+                                placeholder="Search by booking ID or customer"
                                 value={searchText}
                                 onChange={(e) => {
-                                    setSearchText(e.target.value);
-                                    searchBookings(e.target.value);
+                                    const value = e.target.value;
+                                    setSearchText(value);
+                                    setSearchBookingId('');
+                                    searchBookings(value);
                                 }}
                             />
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -1966,7 +2002,7 @@ const priceDetailsCardClass = isPeakHour
                                 <ul className="absolute top-full left-0 w-full border rounded-lg bg-white mt-2 max-h-60 overflow-y-auto z-10">
                                     {searchResults.map((result, index) => (
                                         <li
-                                            key={index}
+                                            key={result?.bookingNumber || result?.id || [result?.firstName, result?.phoneNumber].filter(Boolean).join('-') || index}
                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                             onClick={() => {
                                                 if (result?.type == 'booking') {
@@ -1980,6 +2016,7 @@ const priceDetailsCardClass = isPeakHour
                                                     setSearchBookingId('');
                                                 }
                                                 setSearchResults([]);
+                                                if (refreshFn) refreshFn();
                                             }}
                                         >
                                             {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
@@ -2037,7 +2074,7 @@ const priceDetailsCardClass = isPeakHour
                                                 setShowQuickCreateCustomer(false);
                                             }
                                         }
-                                        className="rounded-3xl  p-2 bg-surface-muted"
+                                        className="h-8 w-8 rounded-full bg-red-600 text-white shadow-lg flex items-center justify-center border border-red-700 hover:bg-red-700 transition-colors"
                                     >
                                         X
                                     </button>
@@ -2145,6 +2182,32 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental,
                                             });
+                                            const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer);
+                                            // console.log('estimation gate debug', {
+                                            //     serviceType: values.serviceType,
+                                            //     packageTypeSelected: values.packageTypeSelected,
+                                            //     tripType: values.tripType,
+                                            //     rideDate: values.rideDate,
+                                            //     rideTime: values.rideTime,
+                                            //     selectedCustomer,
+                                            //     pickupLocation: values.pickupLocation,
+                                            //     dropLocation: values.dropLocation,
+                                            //     sourceType: values.sourceType,
+                                            //     carType: values.carType,
+                                            //     packageSelected: values.packageSelected,
+                                            //     acType: values.acType,
+                                            //     toDate: values.toDate,
+                                            //     driverPickUpLocation: values.driverPickUpLocation,
+                                            //     driverPickUpAddress: values.driverPickUpAddress,
+                                            //     estimationReady,
+                                            // });
+                                            const continueReady = Utils.isBookingReadyForContinue(
+                                                values,
+                                                selectedCustomer,
+                                                quoteDetails,
+                                                validationCheckForDriver,
+                                                validationCheckForDriverRental
+                                            );
                                                     useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
@@ -2180,7 +2243,7 @@ const priceDetailsCardClass = isPeakHour
                                                         options={customerData} 
                                                         onSelect={(val) => {
                                                             setFieldValue('customerId', val);
-                                                            setSelectedCustomer(val.id);
+                                                            setSelectedCustomer(val?.id || 0);
                                                         }}
                                                     />
 
@@ -2240,6 +2303,8 @@ const priceDetailsCardClass = isPeakHour
                                                                     // console.log('Selected service value:', selectedValue);
                                                                     setFieldValue('serviceType', selectedValue, false);
                                                                     setCurrentServiceType(selectedValue);
+                                                                    setQuoteDetails(null);
+                                                                    setQuoteMeta(null);
                                                                     resetPackageValues(setFieldValue, selectedValue);
                                                                     setFieldValue('serviceType', selectedValue, true);
                                                                 }}
@@ -2287,6 +2352,9 @@ const priceDetailsCardClass = isPeakHour
                                                                             setRange({});
                                                                             setFieldValue('fromDate', '');
                                                                             setFieldValue('toDate', '');
+                                                                            if (values.serviceType === 'DRIVER' && values.packageSelected === 'Outstation') {
+                                                                                setFieldValue('tripType', 'Round Trip');
+                                                                            }
                                                                         }
                                                                     }}
                                                                     disabled={bookingStage === 1}
@@ -2296,7 +2364,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Button>}
                                                         </div>
                                                         {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.packageTypeSelected === 'Local') || (values.serviceType === 'RENTAL_DROP_TAXI' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation')) && (
-                                                            <div className={['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
+                                                            <div className={values.serviceType === 'DRIVER' ? 'hidden' : ['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
                                                                 <Typography className="text-sm font-medium text-black-700">Trip Type</Typography>
                                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                                     {(values.serviceType === 'RENTAL_DROP_TAXI' ||
@@ -2323,8 +2391,8 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                 <div className='flex mt-2 space-x-3'>
-                                                    {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
-                                                        <div className="flex gap-2">
+                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                    <div className="flex gap-2">
                                                         <div>
                                                             <div className="mt-3 flex gap-3">
                                                                 {(values?.isPremiumService ||
@@ -2356,8 +2424,8 @@ const priceDetailsCardClass = isPeakHour
                                                                             </p>
                                                                             {getCurrentPremiumOptions().length > 0 ? (
                                                                 <div className="flex gap-4">
-                                                                                    {getCurrentPremiumOptions().map((premium, index) => (
-                                                                                        <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                        {getCurrentPremiumOptions().map((premium, index) => (
+                                                                            <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                                             <Field
                                                                                                 type="radio"
                                                                                                 name="carType"
@@ -2383,7 +2451,7 @@ const priceDetailsCardClass = isPeakHour
                                                         {!values?.isPremiumService && ( <>
                                                                 <label className="text-sm font-medium text-black-700">Car Type <span className='text-red-500 text-sm'>*</span></label>
                                                                 <div className='pt-3 grid grid-cols-6 gap-3'>
-                                                                {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
                                                                     ['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
                                                                         <label key={carType} className="flex items-center space-x-2">
                                                                             <Field
@@ -2399,7 +2467,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     )))}
                                                                 </div>
-                                                                {['DRIVER', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
+                                                                {['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
                                                                     <div className="text-red-500 text-sm mt-1">
                                                                         {errors.carType}
                                                                     </div>
@@ -2407,7 +2475,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </>)}
                                                             </div>
                                                             </div>
-                                                            {(values.serviceType === 'DRIVER') && (
+                                                            {/* {(values.serviceType === 'DRIVER') && (
                                                                 <div className='pt-4'>
                                                                     <label className="text-sm font-medium text-black-700">Transmission Type</label>
                                                                     <div className="flex gap-2 pt-3">
@@ -2425,7 +2493,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     </div>
                                                                     <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm mt-1" />
                                                                 </div>
-                                                            )}
+                                                            )} */}
                                                                 </div>
                                                         )}
                                                         </div>
@@ -2481,7 +2549,10 @@ const priceDetailsCardClass = isPeakHour
                                                                     );
 
                                                                     if (selectedPackage) {
+                                                                        setSelectedPackageId(String(selectedPackage.id));
+                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
                                                                         const period = Number(selectedPackage.period) || 0;
+                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
 
                                                                         
                                                                         let baseMoment;
@@ -2752,7 +2823,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     {getCurrentPremiumOptions().length > 0 ? (
                                                                         <div className="flex gap-4">
                                                                             {getCurrentPremiumOptions().map((premium, index) => (
-                                                                                <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                                                                                <label key={premium.carType || premium.label || index} className="flex items-center space-x-2 cursor-pointer">
                                                                                     <Field
                                                                                         type="radio"
                                                                                         name="carType"
@@ -2875,9 +2946,9 @@ const priceDetailsCardClass = isPeakHour
                                                     </div>
                                                         {pickupSuggestions.length > 0 && (
                                                             <ul className="border rounded-lg bg-white mt-2">
-                                                                {pickupSuggestions.map((suggestion, index) => (
+                                                            {pickupSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), true, null, setFieldValue,values)}
                                                                 >
@@ -2930,9 +3001,9 @@ const priceDetailsCardClass = isPeakHour
                                                                 </div>
                                                                 {dropSuggestions.length > 0 && (
                                                                     <ul className="border rounded-lg bg-white mt-2">
-                                                                        {dropSuggestions.map((suggestion, index) => (
+                                                            {dropSuggestions.map((suggestion, index) => (
                                                                 <li
-                                                                    key={index}
+                                                                    key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                     className="p-2 cursor-pointer hover:bg-gray-100"
                                                                     onClick={() => {
                                                                                     handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false, null, setFieldValue,values);
@@ -3051,9 +3122,9 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                             {driverSuggestions.length > 0 && (
                                                                 <ul className="border rounded-lg bg-white mt-2">
-                                                                    {driverSuggestions.map((suggestion, index) => (
+                                                            {driverSuggestions.map((suggestion, index) => (
                                                                     <li
-                                                                        key={index}
+                                                                        key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                         className="p-2 cursor-pointer hover:bg-gray-100"
                                                                             onClick={() => handleSelectLocation(getSuggestionText(suggestion), getSuggestionPlaceId(suggestion), false, 'driver', setFieldValue,values)}
                                                                     >
@@ -3142,14 +3213,14 @@ const priceDetailsCardClass = isPeakHour
                                                             <ul className="border rounded-lg bg-white mt-2 max-h-40 overflow-y-auto z-10">
                                                                 {driverEndSuggestions.map((suggestion, index) => (
                                                                         <li
-                                                                            key={index}
+                                                                            key={getSuggestionPlaceId(suggestion) || getSuggestionText(suggestion) || index}
                                                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                                                         onClick={() => {
                                                                             const selectedAddress = getSuggestionText(suggestion);
                                                                             handleSelectLocation(selectedAddress, getSuggestionPlaceId(suggestion), false, 'driverEnd', setFieldValue, values);
                                                                             // Uncheck the "same as start" when user selects different location
                                                                             if (selectedAddress !== values.driverPickUpAddress) {
-                                                                                document.getElementById('sameAsStart').checked = false;
+                                                                                setFieldValue('sameAsStart', false);
                                                                             }
                                                                         }}
                                                                     >
@@ -3170,9 +3241,9 @@ const priceDetailsCardClass = isPeakHour
                                                  {/* Source Type Field for all services */}
                                                 {values.serviceType && (
                                                     <>
-                                                        {/* {values.serviceType === 'PARCEL' && (
-                                                            <div className="p-2 space-y-3  hidden">
-                                                                <label className="text-sm font-medium text-gray-700">
+                                                        {values.serviceType === 'PARCEL' && (
+                                                            <div className="p-2 space-y-3">
+                                                                {/* <label className="text-sm font-medium text-gray-700">
                                                                     Weight Range <span className="text-red-500">*</span>
                                                                 </label>
                                                                 <div className="grid grid-cols-2 gap-3 pt-1">
@@ -3190,11 +3261,11 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     ))}
                                                                 </div>
-                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" />
+                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" /> */}
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Sender Name</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Sender Name <span className="text-red-500">*</span> </label>
                                                                         <Field
                                                                             type="text"
                                                                             name="senderName"
@@ -3203,19 +3274,17 @@ const priceDetailsCardClass = isPeakHour
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Sender Phone</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Sender Phone <span className="text-red-500">*</span></label>
                                                                         <input
                                                                             type="text"
                                                                             name="senderPhone"
                                                                             placeholder="Enter sender phone"
                                                                             className="mt-1 p-2 w-full rounded-md border-2 border-gray-300"
-                                                                            value={values.senderPhone ?? '+91'}
+                                                                            value={values.senderPhone ?? ''}
                                                                             onChange={(e) => {
                                                                                 const raw = String(e.target.value || '');
                                                                                 const digitsOnly = raw.replace(/\D/g, '');
-                                                                                const withoutCountryCode = digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
-                                                                                const localDigits = withoutCountryCode.slice(0, 10);
-                                                                                setFieldValue('senderPhone', `+91${localDigits}`);
+                                                                                setFieldValue('senderPhone', digitsOnly.slice(0, 10));
                                                                             }}
                                                                         />
                                                                     </div>
@@ -3233,7 +3302,7 @@ const priceDetailsCardClass = isPeakHour
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Receiver Name</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Receiver Name <span className="text-red-500">*</span></label>
                                                                         <Field
                                                                             type="text"
                                                                             name="receiverName"
@@ -3242,19 +3311,17 @@ const priceDetailsCardClass = isPeakHour
                                                                         />
                                                                     </div>
                                                                     <div>
-                                                                        <label className="text-sm font-medium text-gray-700">Receiver Phone</label>
+                                                                        <label className="text-sm font-medium text-gray-700">Receiver Phone <span className="text-red-500">*</span></label>
                                                                         <input
                                                                             type="text"
                                                                             name="receiverPhone"
                                                                             placeholder="Enter receiver phone"
                                                                             className="mt-1 p-2 w-full rounded-md border-2 border-gray-300"
-                                                                            value={values.receiverPhone ?? '+91'}
+                                                                            value={values.receiverPhone ?? ''}
                                                                             onChange={(e) => {
                                                                                 const raw = String(e.target.value || '');
                                                                                 const digitsOnly = raw.replace(/\D/g, '');
-                                                                                const withoutCountryCode = digitsOnly.startsWith('91') ? digitsOnly.slice(2) : digitsOnly;
-                                                                                const localDigits = withoutCountryCode.slice(0, 10);
-                                                                                setFieldValue('receiverPhone', `+91${localDigits}`);
+                                                                                setFieldValue('receiverPhone', digitsOnly.slice(0, 10));
                                                                             }}
                                                                         />
                                                                     </div>
@@ -3311,7 +3378,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     />
                                                                 </div>
                                                             </div>
-                                                        )} */}
+                                                        )}
                                                     <div className="p-2 space-y-2 ">
                                                         <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
                                                         <Field as="select" name="sourceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
@@ -3428,12 +3495,12 @@ const priceDetailsCardClass = isPeakHour
                                                                     {Number(quoteDetails.amount?.distanceEstimated).toFixed(2) || 0} kms
                                                                 </Typography>
                                                             </div>
-                                                            <div className="flex justify-between">
+                                                            {/* <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                                 <Typography>
                                                                                     {values.carType || quoteDetails.amount?.carType || ''}
                                                                                 </Typography>
-                                                                            </div>
+                                                                            </div> */}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Base Fare:</Typography>
                                                                 <Typography>
@@ -3569,10 +3636,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                     <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                                 </div>
                                                                             )}
-                                                                            <div className='flex justify-between'>
-                                                                                <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
+                                                                            {/* <div className='flex justify-between'>
+                                                                                <Typography color="gray" variant="h6">{finalTotalLabel} check</Typography>
                                                                                 <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                            </div>
+                                                                            </div> */}
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3728,10 +3795,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </div>
                                                                         )}
-                                                                        <div className='flex justify-between'>
+                                                                        {/* <div className='flex justify-between'>
                                                                             <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
                                                                             <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </div>
+                                                                        </div> */}
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
@@ -3848,10 +3915,10 @@ const priceDetailsCardClass = isPeakHour
                                                                         </>)}
                                                                     {values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation' && (
                                                                         <>
-                                                                            <Typography color="gray" variant="h6">Car Type:</Typography>
+                                                                            {/* <Typography color="gray" variant="h6">Car Type:</Typography>
                                                                             <Typography>
                                                                                 {values.carType || quoteDetails.amount?.carType || ''}
-                                                                            </Typography>
+                                                                            </Typography> */}
                                                                             <Typography color="gray" variant="h6">Base Fare</Typography>
                                                                             <Typography>
                                                                                 ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}
@@ -3919,15 +3986,10 @@ const priceDetailsCardClass = isPeakHour
                                                                             <>                                                                                                                                                                    
                                                                                 <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
                                                                                 <Typography>
-                                                                                    ₹ {Math.round(
-                                                                                        quoteDetails?.walletAmount ||
-                                                                                        quoteDetails?.amount?.walletAmount ||
-                                                                                        quoteDetails?.value?.walletAmount ||
-                                                                                        0
-                                                                                    )}
+                                                                                    ₹ {Math.round(walletAmountApplied)}
                                                                                 </Typography>                                                                                                                                                                                                                                    
                                                                                 <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction :</Typography>
-                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - Number(quoteDetails?.walletAmount || quoteDetails?.amount?.walletAmount || quoteDetails?.value?.walletAmount || 0)))}</Typography>
+                                                                                <Typography>₹ {Math.max(0, Math.round(Number(quoteDetails?.amount?.estimatedPrice || 0) - walletAmountApplied))}</Typography>
                                                                             
                                                                             </>)                                                                                
                                                                             }
@@ -3979,10 +4041,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </>
                                                                         )}
-                                                                        <>
+                                                                        {/* <>
                                                                             <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
                                                                             <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </>
+                                                                        </> */}
                                                                         {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
                                                                         <Typography>
                                                                             ₹ {quoteDetails.amount.extraKmPrice}
@@ -4045,8 +4107,10 @@ const priceDetailsCardClass = isPeakHour
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Toll, parking, permit charges, and state taxes are excluded.
                                                             </Typography>
-                                                            <Typography className=" text-sm text-gray-700">
-                                                                • For every additional 15 minutes after <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours, ₹{(() => {
+                                                                        <Typography className=" text-sm text-gray-700">
+                                                                • The first additional <span className="font-bold text-black">
+                                                                    {quoteDetails.expectedPackageDetails?.freeExtraMinutes}
+                                                                                </span> minutes over customer <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours </span>, trip time are free. After that, customer will be charged <span className="font-bold text-black">₹{(() => {
                                                                     const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
                                                                     return selectedPackage ? (
                                                                         values.carType === 'Mini' ? selectedPackage.additionalMinCharge :
@@ -4054,7 +4118,7 @@ const priceDetailsCardClass = isPeakHour
                                                                                 values.carType === 'SUV' ? selectedPackage.additionalMinChargeSuv :
                                                                                     selectedPackage.additionalMinChargeMVP
                                                                     ) : '';
-                                                                })()}</span> will be charged.
+                                                                })()}</span> per minute.
                                                             </Typography>
                                                             {quoteDetails?.amount?.fareBreakdown?.gst_percentage > 0 && (
                                                                 <>
@@ -4076,6 +4140,9 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Night charge of <span className="font-bold text-black">₹ {packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.nightCharge || ''}</span> will be charged after {convertTimeFormat(packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.nightHoursFrom || '')}.
+                                                            </Typography>
+                                                            <Typography className=" text-sm text-gray-700">
+                                                                • Hourly Packages are available only for Local services.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
@@ -4109,20 +4176,23 @@ const priceDetailsCardClass = isPeakHour
                                                                 • For Every extra kilometer <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraKmPrice || '')}</span> will be charged.
                                                             </Typography> 
                                                              <Typography className="text-sm text-gray-700">
-                                                                • For every additional 15 minutes <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> will be charged.
+                                                                • The first additional <span className="font-bold text-black">
+                                                                                {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
+                                                            {quoteDetails.amount?.driverWithin > 0 && 
                                                             <Typography className="text-sm text-gray-700">
                                                                 • A Driver starting  Points <span className="font-bold text-black">{Number(quoteDetails.amount?.driverWithin).toFixed(2) || ''}</span> Kms.
                                                             </Typography>
+                                                            }
                                                             {quoteDetails.amount?.gst_percentage > 0 && (
                                                             <Typography className="text-sm text-gray-700">
                                                                 • The estimated price includes  <span className="font-bold text-black">{quoteDetails.amount?.gst_percentage|| '0'}%</span> tax.
                                                             </Typography>
                                                             )}
 
-                                                            {quoteDetails.amount?.driverCharge > 0 && (
+                                                            {quoteDetails.expectedPackageDetails?.nightCharge > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.driverCharge || '0')}</span>
+                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.expectedPackageDetails?.nightCharge || '0')}</span>
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.extraNightCharge > 0 && (
@@ -4184,14 +4254,17 @@ const priceDetailsCardClass = isPeakHour
                                                                 • For every extra kilometer <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraKmPrice || '')}</span> will be charged.  
                                                             </Typography>
                                                                <Typography className="text-sm text-gray-700">
-                                                                • For every additional 15 minutes <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> will be charged.
+                                                                The first additional <span className="font-bold text-black">
+                                                                                {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
+                                                            {quoteDetails.amount?.driverWithin > 0 && 
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • A Driver starting  Points <span className="font-bold text-black">{Number(quoteDetails.amount?.driverWithin).toFixed(2)|| '2'}</span> Kms.
                                                             </Typography>
+                                                            }
                                                             {quoteDetails.amount?.driverCharge > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.driverCharge || '0')}</span>.
+                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge || '0')}</span>.
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.gst_percentage > 0 && (
@@ -4199,11 +4272,11 @@ const priceDetailsCardClass = isPeakHour
                                                                 • The estimated price includes  <span className="font-bold text-black">{quoteDetails.amount?.gst_percentage|| '0'}%</span> tax.
                                                             </Typography>
                                                             )}
-                                                            {quoteDetails.amount?.extraNightCharge > 0 && (
+                                                            {/* {quoteDetails.amount?.extraNightCharge > 0 && (
                                                              <Typography className="text-sm text-gray-700">
                                                                 • Night Charge of <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge)}</span> applies if the trip extends past{' '}.
                                                             </Typography>
-                                                            )}
+                                                            )} */}
                                                             {Number(values.luggage) > 0 && (
                                                                 <Typography className=" text-sm text-gray-700">
                                                                     • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
@@ -4229,45 +4302,45 @@ const priceDetailsCardClass = isPeakHour
                                                 )}
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
 
-                                                {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') && values.dropLocation && values.pickupLocation && values.driverPickUpLocation && values.driverEndLocation && values.sourceType && values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
+                                                {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                 {(values?.serviceType=="DRIVER" && values.packageTypeSelected == 'Outstation') && values.dropLocation && values.pickupLocation  && values.sourceType && values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
+                                                 {(values?.serviceType=="DRIVER" && values.packageTypeSelected == 'Outstation') &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                 {values.serviceType == 'RENTAL_DROP_TAXI' && values.dropLocation && values.pickupLocation && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteOutstationDetails(values)}>
-                                                        Check Estimated Price
-                                                    </Button>
-                                                }
-
-                                                {values.serviceType == 'RIDES' && values.dropLocation && values.pickupLocation && values.carType && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                 {values.serviceType == 'RENTAL_DROP_TAXI' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
 
-                                                {values.serviceType == 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation && values.packageSelected && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                {values.serviceType == 'RIDES' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Local' && values.pickupLocation && values.packageSelected && values.sourceType &&  values.carType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+
+                                                {values.serviceType == 'RENTAL_HOURLY_PACKAGE' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                 {values.serviceType == 'AUTO' && values.dropLocation && values.pickupLocation && values.sourceType &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Local' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
-                                                {values.serviceType == 'PARCEL' && values.dropLocation && values.pickupLocation && values.sourceType && values.customerId?.id && values.rideTime &&
-                                                    <Button fullWidth className='my-6 mx-2' onClick={() => getQuoteParcel(values, setFieldValue)}>
+                                                 {values.serviceType == 'AUTO' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                        Check Estimated Price
+                                                    </Button>
+                                                }
+                                                {values.serviceType == 'PARCEL' &&
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteParcel(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
@@ -4351,7 +4424,7 @@ const priceDetailsCardClass = isPeakHour
                                                         setFieldValue("submitType", "default");
                                                         handleSubmit();
                                                     }}
-                                                    disabled={driverContinueDisabled}
+                                                    disabled={!continueReady || driverContinueDisabled}
                                                     className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                 >
                                                     Continue
@@ -4364,7 +4437,7 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "rides");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={ridesContinueDisabled}
+                                                        disabled={!continueReady || ridesContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4378,7 +4451,7 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "auto");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={autoContinueDisabled}
+                                                        disabled={!continueReady || autoContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4392,7 +4465,7 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "parcel");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={parcelContinueDisabled}
+                                                        disabled={!continueReady || parcelContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
                                                         Continue
@@ -4407,7 +4480,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={rentalContinueDisabled}
+                                                            disabled={!continueReady || rentalContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
@@ -4421,7 +4494,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={hourlyContinueDisabled}
+                                                            disabled={!continueReady || hourlyContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue
@@ -4435,7 +4508,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={dropTaxiContinueDisabled}
+                                                            disabled={!continueReady || dropTaxiContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
                                                             Continue

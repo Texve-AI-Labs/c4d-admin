@@ -81,6 +81,7 @@ export function MasterSubscriptionView() {
         if (assignmentType === "DRIVER_ID") return "Driver ID";
         if (assignmentType === "CAB_ID") return "Cab ID";
         if (assignmentType === "AUTO_ID") return "Auto ID";
+        if (assignmentType === "BIKE_ID") return "Bike ID";
         return assignmentType;
     };
 
@@ -139,6 +140,7 @@ export function MasterSubscriptionView() {
                             <option value="ACTING_DRIVER">Driver</option>
                             <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
                             <option value="AUTO">Autos</option>
+                            <option value="BIKE">Bikes</option>
                         </select>
                         <select
                             value={statusFilter}
@@ -148,7 +150,7 @@ export function MasterSubscriptionView() {
                             <option value="">All Status</option>
                             <option value="ACTIVE">Active</option>
                             <option value="INACTIVE">In Active</option>
-                            <option value="SCHEDULED">Scheduled</option>
+                            {/* <option value="SCHEDULED">Scheduled</option> */}
                         </select>
                     </div>
                     <button
@@ -206,7 +208,9 @@ export function MasterSubscriptionView() {
                                                             ? <div>Rides/Rental Cabs</div>
                                                             : group.serviceType === "AUTO"
                                                                 ? <div>Autos</div>
-                                                                : "Acting_Driver"}
+                                                                : group.serviceType === "BIKE"
+                                                                    ? <div>Bikes</div>
+                                                                    : <div>Acting Driver</div>}
                                                     </Link>
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">

@@ -649,7 +649,7 @@ const DriverAdd = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-7xl">
             {alert && (
                 <div className='mb-2'>
                     <Alert
@@ -674,7 +674,7 @@ const DriverAdd = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation</label>
-                                        <Field as="select" name="salutation" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
+                                        <Field as="select" name="salutation" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
                                             <option value="">Select salutation</option>
                                             <option value="Mr">Mr</option>
                                             <option value="Mrs">Mrs</option>
@@ -685,12 +685,12 @@ const DriverAdd = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name</label>
-                                        <Field type="text" name="firstName" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                        <Field type="text" name="firstName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
                                         <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name</label>
-                                        <Field type="text" name="fatherName" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                        <Field type="text" name="fatherName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="fatherName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
@@ -716,7 +716,7 @@ const DriverAdd = () => {
                                     </div>
                                     <div>
                                         <label htmlFor="age" className="text-sm font-medium text-gray-700">Age</label>
-                                        <Field type="text" name="age" className="p-2 w-full rounded-md border-gray-300 shadow-sm" disabled />
+                                        <Field type="text" name="age" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled />
                                         <ErrorMessage name="age" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
 
@@ -728,12 +728,12 @@ const DriverAdd = () => {
 
                                     <div>
                                         <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                        <Field type="tel" name="phoneNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                        <Field type="tel" name="phoneNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                         <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
                                         <label htmlFor="license" className="text-sm font-medium text-gray-700">License Number</label>
-                                        <Field type="text" name="license" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300" maxLength={15} />
+                                        <Field type="text" name="license" disabled={!isEditable} className="p-2 w-full rounded-md  border-2 border-gray-300" maxLength={15} />
                                         <ErrorMessage name="license" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
@@ -793,7 +793,7 @@ const DriverAdd = () => {
                                                 />
                                                 <span className="ml-2">Acting Driver</span>
                                             </label>
-                                            <label className="inline-flex items-center">
+                                            {/* <label className="inline-flex items-center">
                                                 <Field
                                                     type="radio"
                                                     name="serviceType"
@@ -812,7 +812,7 @@ const DriverAdd = () => {
                                                     disabled={!isEditable}
                                                 />
                                                 <span className="ml-2">OWNER</span>
-                                            </label>
+                                            </label> */}
                                         </div>
                                         <ErrorMessage
                                             name="serviceType"
@@ -876,7 +876,7 @@ const DriverAdd = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label htmlFor="streetName" className="text-sm font-medium text-gray-700">Street Name</label>
-                                            <Field type="text" name="streetName" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <Field type="text" name="streetName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             <ErrorMessage name="streetName" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
@@ -888,7 +888,7 @@ const DriverAdd = () => {
                                                 name="thaluk"
                                                 value={values.thaluk}
                                                 onChange={(e) => setFieldValue("thaluk", e.target.value)}
-                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                                className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
                                                 <option value="" disabled>Select Thaluk</option>
@@ -913,7 +913,7 @@ const DriverAdd = () => {
                                                 name="district"
                                                 value={values.district}
                                                 onChange={(e) => setFieldValue("district", e.target.value)}
-                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                                className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
                                                 <option value="" disabled>Select District</option>
@@ -938,7 +938,7 @@ const DriverAdd = () => {
                                                 name="state"
                                                 value={values.state}
                                                 onChange={(e) => setFieldValue("state", e.target.value)}
-                                                className="p-2 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                                className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
                                                 <option value="" disabled>Select State</option>
@@ -956,27 +956,27 @@ const DriverAdd = () => {
                                         </div>
                                         <div>
                                             <label htmlFor="pinCode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                            <Field type="text" name="pinCode" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <Field type="text" name="pinCode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             <ErrorMessage name="pinCode" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
                                             <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>
-                                            <Field type="text" name="reference1" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300" />
+                                            <Field type="text" name="reference1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
                                             <ErrorMessage name="reference1" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
                                             <label htmlFor="phoneNumber1" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                            <Field type="tel" name="phoneNumber1" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                            <Field type="tel" name="phoneNumber1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber1" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
                                             <label htmlFor="reference2" className="text-sm font-medium text-gray-700">Reference 2</label>
-                                            <Field type="text" name="reference2" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300" />
+                                            <Field type="text" name="reference2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
                                             <ErrorMessage name="reference2" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
                                             <label htmlFor="phoneNumber2" className="text-sm font-medium text-gray-700">Phone Number</label>
-                                            <Field type="tel" name="phoneNumber2" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                            <Field type="tel" name="phoneNumber2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber2" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         {/* <div>

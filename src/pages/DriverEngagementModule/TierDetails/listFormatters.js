@@ -94,6 +94,7 @@ export const formatServiceTypeLabel = (value) => {
   if (normalized === "ANY") return "All";
   if (normalized === "RIDES") return "Local";
   if (normalized === "AUTO") return "Auto";
+  if (normalized === "BIKE") return "Bike";
   if (normalized === "RENTAL_HOURLY_PACKAGE") return "Hourly Package";
   if (normalized === "RENTAL_OUTSTATION" || normalized === "RENTAL") return "Round Trip";
   if (normalized === "RENTAL_DROP_TAXI" || normalized === "DROP_TAXI" || normalized === "RENTAL_DROP_ONLY") {

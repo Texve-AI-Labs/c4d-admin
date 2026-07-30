@@ -1,7 +1,7 @@
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, ColorStyles, DISTRICT_LIST } from '@/utils/constants';
 import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
 import { Button } from '@material-tailwind/react';
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ const AddAccountNew = () => {
                 street: "",
                 thaluk: "",
                 district: "",
+                accountDistrict: "",
                 state: "",
                 pincode: "",
                 source: values?.source,

@@ -128,9 +128,21 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
 export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const isReturnTripsList =
-        String(type || "").toUpperCase() === "RETURN_TRIPS" ||
-        String(location.pathname || "").toLowerCase().includes("/booking/list/returntrips");
+    const bookingFeatures = useMemo(() => {
+        const features = [];
+        const normalizedType = String(type || "").toUpperCase();
+        const normalizedPath = String(location.pathname || "").toLowerCase();
+
+        if (normalizedType === "RETURN_TRIPS" || normalizedPath.includes("/booking/list/returntrips")) {
+            features.push("RETURN_TRIPS");
+        }
+        if (normalizedType === "BIKE" || normalizedPath.includes("/dashboard/bike-taxi")) {
+            features.push("BIKE");
+        }
+
+        return features;
+    }, [type, location.pathname]);
+    const hasFeature = (feature) => bookingFeatures.includes(feature);
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
@@ -166,6 +178,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [isManualDateFilter, setIsManualDateFilter] = useState(false);
     const [filtersLoaded, setFiltersLoaded] = useState(false);
     const [effectiveSearchId, setEffectiveSearchId] = useState(searchBookingId);
+    const [searchResetPending, setSearchResetPending] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
     const [onlineDrivers, setOnlineDrivers] = useState([]);
     const [selectedHour, setSelectedHour] = useState(moment().hour()); 
@@ -178,6 +191,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [allUsers, setAllUsers] = useState([]); 
     const latestRequestRef = useRef(0);
     const summaryRequestRef = useRef(0);
+    const previousCustomerIdRef = useRef(customerId);
     const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
 
     const getInquiryTypeFromPath = (pathname = "") => {
@@ -190,6 +204,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
         if (path.startsWith("/dashboard/booking/list/parcel")) return "PARCEL";
         if (path.startsWith("/dashboard/booking/list/returntrips")) return "RETURN_TRIPS";
         if (path.startsWith("/dashboard/auto")) return "AUTO";
+        if (path.startsWith("/dashboard/bike-taxi")) return "BIKE";
         if (path.startsWith("/dashboard/booking/list")) return "ALL_CABS";
         return "";
     };
@@ -327,10 +342,21 @@ useEffect(() => {
         setEffectiveSearchId(newEffective);
         if (newEffective) {
             setItemSafe(bookingSearchKey, newEffective);
+            if (pagination.currentPage !== 1) {
+                setSearchResetPending(true);
+                setPagination((prev) => ({ ...prev, currentPage: 1 }));
+            }
         } else if (!searchBookingId) {
             setItemSafe(bookingSearchKey, '');
         }
-    }, [searchBookingId, bookingSearchKey]);
+    }, [searchBookingId, bookingSearchKey, pagination.currentPage]);
+
+    useEffect(() => {
+        if (previousCustomerIdRef.current !== customerId) {
+            previousCustomerIdRef.current = customerId;
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        }
+    }, [customerId]);
     const handleToggleDriverHours = () => {
   setShowDriverHours(true);
 };
@@ -633,11 +659,15 @@ if (!statusFilter.includes('All')) {
   
              useEffect(() => {
                     if (onRegisterRefresh) {
-                    onRegisterRefresh(() => handleRefresh);
+                    onRegisterRefresh(handleRefresh);
                     }
                 }, [onRegisterRefresh]);
     useEffect(() => {
         if (!filtersLoaded) {
+            return;
+        }
+        if (searchResetPending) {
+            setSearchResetPending(false);
             return;
         }
         // Skip automatic API call if we're in the middle of a manual date filter operation
@@ -668,6 +698,9 @@ if (!statusFilter.includes('All')) {
         }
 
         if (normalizedPath.startsWith("/dashboard/booking/list") || normalizedPath.startsWith("/dashboard/auto")) {
+            updateInquiryTotalPendings(normalizedType, totalPendings);
+        }
+         if (normalizedPath.startsWith("/dashboard/booking/list") || normalizedPath.startsWith("/dashboard/bike-taxi")) {
             updateInquiryTotalPendings(normalizedType, totalPendings);
         }
     }, [counts?.totalPendings, location.pathname, type, updateHomeTotalPendings, updateInquiryTotalPendings]);
@@ -838,14 +871,19 @@ if (!statusFilter.includes('All')) {
     ];
 
     const allTabLabel =
-        type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" : "All Bookings";
-    const tableHeaders = isReturnTripsList
-        ? ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
-        : ["Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
+        type === "" ? "All Bookings" : type === "RENTAL" ? "All Rentals" : type === "RIDES" ? "All Rides" : type === "CAB" ? "All Cab" : type === "DRIVER" ? "All Driver" : type === "AUTO" ? "All Auto" :type === "BIKE" ? 'All Bike Taxi': "All Bookings";
+    const isCompactFeatureList = hasFeature("BIKE");
+    const tableHeaders = isCompactFeatureList
+        ? [
+            // "Service Type", "Booking Type", "Package Type", 
+            "Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status"]
+        : [
+            // "Service Type", "Booking Type", "Package Type", 
+            "Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
 
     const tabs = useMemo(
         () =>
-            isReturnTripsList
+            isCompactFeatureList
         ? [
             { label: allTabLabel, value:'ALL_BOOKINGS'},
             { label: 'Today', value: 'TODAY' },
@@ -857,7 +895,7 @@ if (!statusFilter.includes('All')) {
             { label: 'Future', value: 'REMAINING' },
             { label: 'Custom date', value: 'CUSTOM_DATE' },
                   ],
-        [isReturnTripsList, allTabLabel]
+        [bookingFeatures, allTabLabel, isCompactFeatureList]
     );
     const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
 
@@ -890,7 +928,7 @@ if (!statusFilter.includes('All')) {
     const handleRefresh = () => {
         // Set manual filter flag to prevent useEffect conflicts
         setIsManualDateFilter(true);
-        const refreshedTab = isReturnTripsList ? 'TODAY' : 'ALL_BOOKINGS';
+        const refreshedTab = isCompactFeatureList ? 'TODAY' : 'ALL_BOOKINGS';
         
         // Reset all filters to their default state
         setStatusFilter(['All']);
@@ -1366,6 +1404,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'CONFIRMED', label: 'Booking Confirmed' },
                                                                 { value: 'REQUEST_DRIVER', label: 'Request Driver' },
                                                                 { value: 'STARTED', label: 'Started' },
+                                                                { value: 'END_OTP', label: 'End OTP' },
                                                                 { value: 'ENDED', label: 'Ended' },
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
                                                                 { value: 'SUPPORT_CANCELLED', label: 'Support Cancelled' },
@@ -1579,9 +1618,43 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    // if (data?.status === 'REQUEST_DRIVER' && Number(data?.returnTripId) > 0) {
+                                                    //     console.log('Return trip row debug:', {
+                                                    //         id: data?.id,
+                                                    //         status: data?.status,
+                                                    //         returnTripId: data?.returnTripId,
+                                                    //         pickupLat: data?.pickupLat,
+                                                    //         pickupLong: data?.pickupLong,
+                                                    //         driverId: data?.Driver?.id,
+                                                    //         cabId: data?.Cab?.id,
+                                                    //         serviceType: data?.serviceType,
+                                                    //         userId: data?.userId,
+                                                    //         ownership: data?.ownership,
+                                                    //         hasAssignedDriver,
+                                                    //         hasAssignedVehicle,
+                                                    //         hasAssignedDriverOrCab,
+                                                    //     });
+                                                    // }
+                                                    // const bookingTypeValue = data?.bookingType || data?.type || activeTab || '-';
+                                                    // const packageTypeValue = data?.packageType || data?.packageName || '-';
 
                                                 return (
                                                     <tr key={data?.id} className={className}>
+                                                        {/* <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {data?.serviceType ? data.serviceType : '-'}
+                                                            </Typography>
+                                                        </td>
+                                                        <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {bookingTypeValue}
+                                                            </Typography>
+                                                        </td>
+                                                        <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {packageTypeValue}
+                                                            </Typography>
+                                                        </td> */}
                                                         <td className={className}>
                                                             <div className="flex items-center">
                                                                 <Link
@@ -1700,7 +1773,7 @@ if (!statusFilter.includes('All')) {
                                                             <Chip
                                                                 variant="ghost"
                                                                 // color={"blue"}
-                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED": data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
+                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED" : data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
                                                                 className={`py-0.5 px-2 text-[11px] font-medium w-fit ${
                                                                     data?.status === "QUOTED" ? "bg-yellow-600 text-white ":
                                                                     data?.status === "REQUEST_DRIVER" ? "bg-orange-600 text-white" :
@@ -1719,7 +1792,7 @@ if (!statusFilter.includes('All')) {
                                                                 }`}
                                                             />
                                                         </td>
-                                                       {!isReturnTripsList && (
+                                                       {!isCompactFeatureList && (
                                                     <td className={className}>
                                                             {data?.userId ? (
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
@@ -1741,7 +1814,7 @@ if (!statusFilter.includes('All')) {
                                                             )}
                                                         </td>
                                                         )}
-                                                        {!isReturnTripsList && (
+                                                        {!isCompactFeatureList && (
                                                         <td className={className}>
                                                             <button
                                                                 className={`text-xs font-semibold text-white flex items-center justify-center gap-2 rounded-sm px-2 py-2 ${(data?.followup || 'NONE') === 'NONE'
@@ -1766,7 +1839,7 @@ if (!statusFilter.includes('All')) {
                                                             </button>
                                                             </td>
                                                         )}
-                                                        {!isReturnTripsList && (
+                                                        {!isCompactFeatureList && (
                                                             <td className={className}>
                                                                 {data?.requiresSupportApproval ? (
                                                                     <Button
@@ -1784,7 +1857,7 @@ if (!statusFilter.includes('All')) {
                                                             </td>
                                                         )}
                                                         
-                                                        {!isReturnTripsList && (
+                                                        {!isCompactFeatureList && (
                                                         <td className={className}>
                                                             {/* {data?.status === 'STARTED' &&
                                                                 <Button
@@ -1795,6 +1868,16 @@ if (!statusFilter.includes('All')) {
                                                                     End Trip
                                                                 </Button>
                                                             } */}
+                                                            {data?.serviceType === 'RENTAL' && data?.status === 'REQUEST_DRIVER' && Number(data?.returnTripId) > 0 && data?.pickupLat && data?.pickupLong && data?.pickupLat && data?.pickupLong && 
+                                                                <Button
+                                                                    fullWidth
+                                                                    onClick={() => onAssignDriverHandler(data)}
+                                                                    className={`text-xs font-semibold text-blue-gray-900 flex-wrap ${ColorStyles.bgStatusColor}`}
+                                                                    disabled={data?.User == null}
+                                                                >
+                                                                    Assign return trips
+                                                                </Button>
+                                                            }
                                                                 {['RIDES', 'RENTAL','AUTO'].includes(data?.serviceType) && ([ 'CONFIRMED','REQUEST_DRIVER'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType =="DRIVER"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) && 
                                                                 <Button
                                                                     fullWidth
@@ -1811,7 +1894,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                                {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}
@@ -1825,7 +1908,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
+                                                            {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => {

@@ -28,6 +28,15 @@ const isActivePackage = (option) => {
   return option?.status === "1";
 };
 
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
+
 const VehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
@@ -63,7 +72,13 @@ const VehicleInfoSection = ({
   const getInitialDraft = (section) => {
     const map = {};
     (section?.vehicleDetailsRows || []).forEach((row) => {
-      if (editableLabels.has(row.label)) map[row.label] = row.value === "-" ? "" : row.value;
+      if (!editableLabels.has(row.label)) return;
+      if (row.label === "Address" && row.value && typeof row.value === "object") {
+        map[row.label] = row.value.name || "";
+        map.AddressPlaceId = row.value.placeId || row.value.place_id || row.value.placeID || row.value.id || "";
+        return;
+      }
+      map[row.label] = row.value === "-" ? "" : row.value;
     });
     const rawCarType = String(section?.rawValues?.carType || "").toUpperCase();
     if (["MINI", "SUV", "MUV", "SEDAN"].includes(rawCarType)) {
@@ -77,7 +92,7 @@ const VehicleInfoSection = ({
     map["Insurance Expiry Date"] = section?.rawValues?.insurance
       ? String(section.rawValues.insurance).slice(0, 10)
       : (map["Insurance Expiry Date"] || "");
-    map["Address"] = section?.rawValues?.curAddress || map["Address"] || "";
+    map["Address"] = formatAddressValue(section?.rawValues?.curAddress || map["Address"] || "");
     if (isTravels) {
       const rawAssigned = String(section?.rawValues?.assigned || "").trim();
       map["Assigned To"] =
@@ -420,6 +435,13 @@ const VehicleInfoSection = ({
                                         setDraftValues((prev) => ({
                                           ...prev,
                                           [row.label]: getSuggestionText(suggestion),
+                                          AddressPlaceId:
+                                            suggestion?.placeId ||
+                                            suggestion?.place_id ||
+                                            suggestion?.placeID ||
+                                            suggestion?.id ||
+                                            prev.AddressPlaceId ||
+                                            "",
                                         }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
@@ -446,6 +468,10 @@ const VehicleInfoSection = ({
                           )
                         ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
                           <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                        ) : row.label === "Address" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {formatAddressValue(row.value)}
+                          </Typography>
                         ) : (
                           <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
                         )}

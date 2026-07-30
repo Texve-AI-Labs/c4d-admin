@@ -1,7 +1,7 @@
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, ColorStyles, DISTRICT_LIST } from '@/utils/constants';
 import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
 import { Button } from '@material-tailwind/react';
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ const AddAccountNew = () => {
                 street: "",
                 thaluk: "",
                 district: "",
+                accountDistrict: "",
                 state: "",
                 pincode: "",
                 source: values?.source,
@@ -49,6 +50,7 @@ const AddAccountNew = () => {
         phoneNumber: "",
         email: "",
         source: "",
+        accountDistrict: "",
     };
 
     return (
@@ -72,7 +74,7 @@ const AddAccountNew = () => {
                                     <label htmlFor="type" className="text-sm font-medium text-gray-700">Service Type</label>
                                     <Field as="select" name="type" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                         <option value="">Select Type</option>
-                                        <option value="Parcel">Bike</option>
+                                        <option value="Parcel">Parcel</option>
                                         {/* <option value="Company">Travels</option> */}
                                     </Field>
                                     <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
