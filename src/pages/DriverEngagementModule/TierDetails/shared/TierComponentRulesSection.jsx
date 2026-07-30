@@ -36,6 +36,8 @@ function TierComponentRulesSection({
   allowMetricChange = false,
   allowPeriodChange = false,
   disableServiceType = false,
+  hideMandatory = false,
+  syncPeriodWithPayoutFrequency = false,
   serviceOptions = COMPONENT_RULE_SERVICE_OPTIONS,
 }) {
   const normalizedPartnerType = String(partnerType || "").trim().toUpperCase();
@@ -147,6 +149,8 @@ function TierComponentRulesSection({
   };
 
   useEffect(() => {
+    if (!syncPeriodWithPayoutFrequency) return;
+
     const nextPeriod = componentState?.payoutFrequency || defaultPayoutFrequency;
 
     setComponentState((prev) => ({
@@ -175,7 +179,7 @@ function TierComponentRulesSection({
         })
       ),
     }));
-  }, [componentState?.payoutFrequency, defaultPayoutFrequency]);
+  }, [componentState?.payoutFrequency, defaultPayoutFrequency, syncPeriodWithPayoutFrequency]);
 
   useEffect(() => {
     setComponentState((prev) => {
@@ -589,7 +593,7 @@ function TierComponentRulesSection({
                           placeholder="Amount"
                         />
                       </div>
-                      <div>
+                      <div className={hideMandatory ? "hidden" : ""}>
                         <Typography variant="small" color="blue-gray" className="mb-1 text-xs font-semibold">
                           Mandatory
                         </Typography>

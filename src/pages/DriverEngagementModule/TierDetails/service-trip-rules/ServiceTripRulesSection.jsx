@@ -40,8 +40,10 @@ function ServiceTripRulesSection(props) {
       allowMetricChange
       periodOptions={PERIOD_OPTIONS}
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
+      syncPeriodWithPayoutFrequency
       serviceOptions={serviceOptions}
       disableServiceType={normalizedPartnerType === "PARCEL"}
+      hideMandatory
     />
   );
 }
