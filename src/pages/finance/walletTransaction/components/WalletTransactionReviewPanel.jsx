@@ -69,7 +69,7 @@ const WalletTransactionReviewPanel = ({
                   </span>
                 </div>
               </div>
-              {selectedStatus === "IN_PROGRESS" ? (
+              {/* {selectedStatus === "IN_PROGRESS" ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Eligibility</div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -79,7 +79,7 @@ const WalletTransactionReviewPanel = ({
                     <span className="text-sm text-slate-600">{selectedRow?.paymentEligibilityReason || "-"}</span>
                   </div>
                 </div>
-              ) : null}
+              ) : null} */}
             </div>
 
             <div className="space-y-3">

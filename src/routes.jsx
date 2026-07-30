@@ -1538,7 +1538,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Wallet Transaction",
+        name: "Withdrawal Transaction",
         path: "/finance/wallet-transaction",
         element: <WalletTransactionList />,
         display: false,
