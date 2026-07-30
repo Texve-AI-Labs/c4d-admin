@@ -83,6 +83,9 @@ import NotificationListEdit from "./pages/vendor/notificationEdit";
 import DriverIncentiveList from "./pages/marketing/DriverIncentive/list";
 import DriverIncentiveEdit from "./pages/marketing/DriverIncentive/edit";
 import DriverIncentiveAdd from "./pages/marketing/DriverIncentive/add";
+import DynamicTextList from "./pages/marketing/dynamicText/listDynamicText";
+import DynamicTextAdd from "./pages/marketing/dynamicText/addDynamicText";
+import DynamicTextEdit from "./pages/marketing/dynamicText/editDynamicText";
 import SkipLogs from "./pages/marketing/skipLogs";
 import InstantReward from "./pages/vendor/instantReward";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
@@ -207,6 +210,10 @@ import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscript
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
+import DriverAdsList from "./pages/support/driverAdsList";
+import DriverAdsCreate from "./pages/support/driverAdsCreate";
+import DriverAdsDetail from "./pages/support/driverAdsDetail";
+import DriverAdsEdit from "./pages/support/driverAdsEdit";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -318,6 +325,30 @@ export const routes = [
         path: "/vendors/notificationList",
         element: <NotificationList />,
         display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "dynamic text",
+        path: "/vendors/dynamic-text",
+        element: <DynamicTextList />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "dynamic text add",
+        path: "/vendors/dynamic-text/add",
+        element: <DynamicTextAdd />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "dynamic text edit",
+        path: "/vendors/dynamic-text/edit/:id",
+        element: <DynamicTextEdit />,
+        display: false,
         permission: "Marketing",
       },
       {
@@ -1507,7 +1538,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Wallet Transaction",
+        name: "Withdrawal Transaction",
         path: "/finance/wallet-transaction",
         element: <WalletTransactionList />,
         display: false,
@@ -1782,6 +1813,38 @@ export const routes = [
 
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver Ads",
+        path: "/support/driver-ads",
+        element: <DriverAdsList />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Create",
+        path: "/support/driver-ads/create",
+        element: <DriverAdsCreate />,
+        display: false,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Detail",
+        path: "/support/driver-ads/details/:id",
+        element: <DriverAdsDetail />,
+        display: false,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Edit",
+        path: "/support/driver-ads/edit/:id",
+        element: <DriverAdsEdit />,
+        display: false,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Rate Card",
         path: "/rental-rate-card",
         element: <RentalTariffRateCard />,
@@ -1794,7 +1857,7 @@ export const routes = [
         path: "/support/review-reward-management",
         element: <SupportReviewRewardManagement />,
         display: true,
-        permission: "Users"
+        permission: "Support"
       },
       {
         icon: <UserIcon {...icon} />,

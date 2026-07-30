@@ -17,7 +17,8 @@ function SupportSubmenu({ permissions = [] }) {
     ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
       ? [{ label: "Admin Discount History", path: "/dashboard/support/admin-discount-history", requiredPermission: "Users" }]
       : []),
-    { label: "Support Review & Reward Management", path: "/dashboard/support/review-reward-management", requiredPermission: "Users" },
+    { label: "Driver Ads", path: "/dashboard/support/driver-ads", requiredPermission: "Support" },
+    { label: "Support Review & Reward Management", path: "/dashboard/support/review-reward-management", requiredPermission: "Support" },
     { label: "Customer Cancellation Charge Logs", path: "/dashboard/support/customer-cancellation-charge-logs", requiredPermission: "Users" },
   ];
   const filteredItems = items.filter(({ requiredPermission }) => permissions.includes(requiredPermission));

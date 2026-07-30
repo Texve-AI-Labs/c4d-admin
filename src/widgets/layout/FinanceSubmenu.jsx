@@ -23,7 +23,7 @@ function FinanceSubmenu({ permissions = [] }) {
     { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
     { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
     { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
-    { label: "Wallet Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission:"Users" },
+    { label: "Withdrawal Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission:"Users" },
     { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission:"Users"  },
     { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
@@ -76,7 +76,7 @@ function FinanceSubmenu({ permissions = [] }) {
     if (label === "Withdrawal Rules") {
       return pathname.startsWith("/dashboard/finance/withdrawal-rules");
     }
-    if (label === "Wallet Transaction") {
+    if (label === "Withdrawal Transaction") {
       return pathname.startsWith("/dashboard/finance/wallet-transaction");
     }
     if (label === "Return Trip Driver Master Subscription Table") {

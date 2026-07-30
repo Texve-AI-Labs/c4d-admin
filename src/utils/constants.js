@@ -906,6 +906,10 @@ export const API_ROUTES = {
     'UPDATE_NOTIFICATION': '/update-scheduled-notification',
     'CANCEL_NOTIFICATION': '/cancel-scheduled-notification',
     'GET_NOTIFICATION': '/get-notification',
+    'POST_UI_CONTENT': '/ui-contents',
+    'GET_UI_CONTENT': '/ui-contents',
+    'UPDATE_UI_CONTENT': '/ui-contents',
+    'DELETE_UI_CONTENT': '/ui-contents',
     'INSTANT_REWARD': '/instant-reward',
     'GET_REWARD': '/get-instant-reward',
     'CUSTOMER_WALLET': '/getWalletTransactions',
@@ -1050,6 +1054,10 @@ export const API_ROUTES = {
     'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
     'EXPORT_DALIY_SLOT':'/admin/daily/slot/export',
+    'GET_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'POST_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'GET_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'UPDATE_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
 
 };
 

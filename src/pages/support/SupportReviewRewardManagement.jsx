@@ -34,6 +34,7 @@ function SupportReviewRewardManagement() {
   const [adminRemarks, setAdminRemarks] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [proofOpen, setProofOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const ticketReviewRef = useRef(null);
 
   const selectedRow = useMemo(
@@ -100,6 +101,7 @@ function SupportReviewRewardManagement() {
     const id = item?.ticketId || item?.id;
     if (!id) return;
     setSelectedId(id);
+    setReviewOpen(true);
     requestAnimationFrame(() => {
       ticketReviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -108,6 +110,7 @@ function SupportReviewRewardManagement() {
   const handleRefresh = async () => {
     setError("");
     setSelectedId("");
+    setReviewOpen(false);
     setProofOpen(false);
     setFieldErrors({});
     await fetchTickets(pagination.currentPage);
@@ -119,6 +122,7 @@ function SupportReviewRewardManagement() {
 
   const handleApplyFilters = async () => {
     setSelectedId("");
+    setReviewOpen(false);
     setProofOpen(false);
     setFieldErrors({});
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -136,6 +140,7 @@ function SupportReviewRewardManagement() {
     };
     setFilters(resetFilters);
     setSelectedId("");
+    setReviewOpen(false);
     setProofOpen(false);
     setFieldErrors({});
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -161,7 +166,10 @@ function SupportReviewRewardManagement() {
         key={page}
         size="sm"
         variant={page === pagination.currentPage ? "filled" : "outlined"}
-        onClick={() => handlePageChange(page)}
+        onClick={(e) => {
+          e.stopPropagation();
+          handlePageChange(page);
+        }}
         disabled={loading}
         className={`mx-1 ${page === pagination.currentPage ? "bg-blue-500 text-white" : "border-blue-500 text-blue-500"}`}
       >
@@ -177,6 +185,14 @@ function SupportReviewRewardManagement() {
 
   const handleCloseProof = () => {
     setProofOpen(false);
+  };
+
+  const handleCloseReview = async () => {
+    setReviewOpen(false);
+    setProofOpen(false);
+    setSelectedId("");
+    setFieldErrors({});
+    await fetchTickets(pagination.currentPage);
   };
 
   const handleUpdateStatus = async () => {
@@ -207,6 +223,7 @@ function SupportReviewRewardManagement() {
       if (response?.success) {
         await fetchTickets();
         setSelectedId("");
+        setReviewOpen(false);
         setProofOpen(false);
         setFieldErrors({});
       } else {
@@ -274,8 +291,7 @@ function SupportReviewRewardManagement() {
 
             {error ? <Typography className="mt-4 text-sm text-red-600">{error}</Typography> : null}
 
-            <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(360px,1fr)]">
-              <div>
+            <div className="mt-6">
                 <SupportTicketTable
                   rows={rows}
                   selectedId={selectedId}
@@ -286,12 +302,15 @@ function SupportReviewRewardManagement() {
                   formatDateTime={formatDateTime}
                 />
 
-                <div className="mt-4 flex items-center justify-center">
+              <div className="mt-4 flex items-center justify-center">
                   <Button
                     size="sm"
                     variant="outlined"
                     disabled={pagination.currentPage === 1 || loading}
-                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePageChange(pagination.currentPage - 1);
+                    }}
                     className="mx-1"
                   >
                     {"<"}
@@ -301,7 +320,10 @@ function SupportReviewRewardManagement() {
                     size="sm"
                     variant="outlined"
                     disabled={pagination.currentPage === pagination.totalPages || loading}
-                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePageChange(pagination.currentPage + 1);
+                    }}
                     className="mx-1"
                   >
                     {">"}
@@ -309,6 +331,20 @@ function SupportReviewRewardManagement() {
                 </div>
               </div>
 
+            <Dialog
+              open={reviewOpen}
+              handler={handleCloseReview}
+              size="lg"
+              className="max-h-[90vh] overflow-y-auto"
+              dismiss={{ outsidePress: false, escapeKey: false }}
+            >
+              <DialogHeader className="flex items-center justify-between">
+                <span className="text-lg">Ticket Review</span>
+                <Button size="sm" variant="outlined" onClick={handleCloseReview} className="rounded-full border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700">
+                  Close
+                </Button>
+              </DialogHeader>
+              <DialogBody className="space-y-3">
               <div ref={ticketReviewRef}>
       <SupportTicketDetails
                 ticket={ticket}
@@ -330,11 +366,12 @@ function SupportReviewRewardManagement() {
                 saving={saving}
               />
               </div>
-            </div>
+            </DialogBody>
+            </Dialog>
 
-            <Dialog open={proofOpen} handler={handleCloseProof} size="lg">
-              <DialogHeader className="flex items-center justify-between">
-                <span>Proof Attachment</span>
+            <Dialog open={proofOpen} handler={handleCloseProof} size="md" className="z-[9999]">
+              <DialogHeader className="flex items-center justify-between py-3">
+                <span className="text-base font-semibold">Proof Attachment</span>
                 <div className="flex items-center gap-2">
                   {ticket?.proofUrl ? (
                     <a href={ticket.proofUrl} download target="_blank" rel="noreferrer">
@@ -356,11 +393,9 @@ function SupportReviewRewardManagement() {
                   </Button>
                 </div>
               </DialogHeader>
-              <DialogBody className="space-y-3">
+              <DialogBody className="space-y-2 pt-0">
                 {ticket?.proofUrl ? (
-                  <DocumentPreview
-                    src={ticket.proofUrl}
-                  />
+                  <DocumentPreview src={ticket.proofUrl} />
                 ) : null}
               </DialogBody>
             </Dialog>

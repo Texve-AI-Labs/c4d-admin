@@ -3,7 +3,7 @@ import { Card, CardBody, Typography, Button, Chip, Dialog, DialogHeader, DialogB
 import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, ColorStyles, STATE_LIST, THALUK_LIST } from "@/utils/constants";
+import { API_ROUTES, ColorStyles, DISTRICT_LIST, STATE_LIST, THALUK_LIST } from "@/utils/constants";
 import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from './AccountCreationTabs';
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
@@ -142,6 +142,7 @@ const AccountOnboardingDetails = () => {
     street: "",
     thaluk: "",
     district: "",
+    accountDistrict: "",
     state: "",
     pincode: "",
   });
@@ -200,6 +201,7 @@ const AccountOnboardingDetails = () => {
       street: account?.street || "",
       thaluk: account?.thaluk || "",
       district: account?.district || "",
+      accountDistrict: account?.accountDistrict || "",
       state: account?.state || "",
       pincode: account?.pincode || "",
     });
@@ -219,6 +221,7 @@ const AccountOnboardingDetails = () => {
     account?.street,
     account?.thaluk,
     account?.district,
+    account?.accountDistrict,
     account?.state,
     account?.pincode,
   ]);
@@ -285,6 +288,7 @@ const AccountOnboardingDetails = () => {
     const street = String(addressForm.street || "").trim();
     const thaluk = String(addressForm.thaluk || "").trim();
     const district = String(addressForm.district || "").trim();
+    const accountDistrict = String(addressForm.accountDistrict || "").trim();
     const state = String(addressForm.state || "").trim();
     const pincode = String(addressForm.pincode || "").trim();
 
@@ -294,16 +298,18 @@ const AccountOnboardingDetails = () => {
       thaluk.length > 0 &&
       THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk) &&
       district.length >= 2 &&
+      accountDistrict.length >= 2 &&
       state.length > 0 &&
       STATE_LIST.some((item) => item.value === state || item.label === state) &&
       /^\d{6}$/.test(pincode)
     );
-  }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.state, addressForm.pincode]);
+  }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.accountDistrict, addressForm.state, addressForm.pincode]);
   const missingAddressFields = useMemo(() => {
     const address = String(addressForm.address || "").trim();
     const street = String(addressForm.street || "").trim();
     const thaluk = String(addressForm.thaluk || "").trim();
     const district = String(addressForm.district || "").trim();
+    const accountDistrict = String(addressForm.accountDistrict || "").trim();
     const state = String(addressForm.state || "").trim();
     const pincode = String(addressForm.pincode || "").trim();
     const missing = [];
@@ -311,12 +317,13 @@ const AccountOnboardingDetails = () => {
     if (address.length < 5) missing.push("Current Address");
     if (street.length < 2) missing.push("Street Name");
     if (!thaluk || !THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk)) missing.push("Thaluk");
-    if (district.length < 2) missing.push("District");
+    if (district.length < 2) missing.push("Zone");
+    if (accountDistrict.length < 2) missing.push("Account District");
     if (!state || !STATE_LIST.some((item) => item.value === state || item.label === state)) missing.push("State");
     if (!/^\d{6}$/.test(pincode)) missing.push("Pincode");
 
     return missing;
-  }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.state, addressForm.pincode]);
+  }, [addressForm.address, addressForm.street, addressForm.thaluk, addressForm.district, addressForm.accountDistrict, addressForm.state, addressForm.pincode]);
   const canContinue = shouldShowPreviewAndAddress && isAddressFormComplete && addressSaved;
   const missingAccountDocuments = useMemo(() => {
     return rows
@@ -373,6 +380,7 @@ const AccountOnboardingDetails = () => {
       street: parsed.street || "",
       thaluk: parsed.taluk || "",
       district: parsed.district || "",
+      accountDistrict: parsed.accountDistrict || "",
       state: parsed.state || "",
       pincode: parsed.pincode || "",
     }));
@@ -384,6 +392,7 @@ const AccountOnboardingDetails = () => {
     const street = String(addressForm.street || "").trim();
     const thaluk = String(addressForm.thaluk || "").trim();
     const district = String(addressForm.district || "").trim();
+    const accountDistrict = String(addressForm.accountDistrict || "").trim();
     const state = String(addressForm.state || "").trim();
     const pincode = String(addressForm.pincode || "").trim();
 
@@ -396,8 +405,10 @@ const AccountOnboardingDetails = () => {
     if (!thaluk) nextErrors.thaluk = "Thaluk is required";
     else if (!THALUK_LIST.some((item) => item.value === thaluk || item.label === thaluk)) nextErrors.thaluk = "Please select a valid Thaluk";
 
-    if (!district) nextErrors.district = "District is required";
-    else if (district.length < 2) nextErrors.district = "District must be at least 2 characters";
+    if (!district) nextErrors.district = "Zone is required";
+    else if (district.length < 2) nextErrors.district = "Zone must be at least 2 characters";
+    if (!accountDistrict) nextErrors.accountDistrict = "Account District is required";
+    else if (!DISTRICT_LIST.some((item) => item.value === accountDistrict || item.label === accountDistrict)) nextErrors.accountDistrict = "Please select a valid Account District";
 
     if (!state) nextErrors.state = "State is required";
     else if (!STATE_LIST.some((item) => item.value === state || item.label === state)) nextErrors.state = "Please select a valid State";
@@ -425,6 +436,7 @@ const AccountOnboardingDetails = () => {
         street: String(addressForm.street || "").trim(),
         thaluk: String(addressForm.thaluk || "").trim(),
         district: String(addressForm.district || "").trim(),
+        accountDistrict: String(addressForm.accountDistrict || "").trim(),
         state: String(addressForm.state || "").trim(),
         pincode: String(addressForm.pincode || "").trim(),
       };
@@ -825,14 +837,14 @@ const AccountOnboardingDetails = () => {
                   {addressErrors.thaluk ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.thaluk}</Typography> : null}
                 </div>
                 <div>
-                  <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
+                  <label htmlFor="district" className="text-sm font-medium text-gray-700">Zone</label>
                 <select
                     id="district"
                     value={addressForm.district}
                     onChange={(e) => handleAddressInputChange("district", e.target.value)}
                     className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
-                  <option value="">Select District</option>
+                  <option value="">Select Zone</option>
                   {serviceAreas.map((area) => (
                     <option key={area.id} value={area.name}>
                       {area.name}
@@ -840,6 +852,21 @@ const AccountOnboardingDetails = () => {
                   ))}
                 </select>
                   {addressErrors.district ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.district}</Typography> : null}
+                </div>
+                <div>
+                  <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">Account District</label>
+                  <select
+                    id="accountDistrict"
+                    value={addressForm.accountDistrict}
+                    onChange={(e) => handleAddressInputChange("accountDistrict", e.target.value)}
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                  >
+                    <option value="">Select District</option>
+                    {DISTRICT_LIST.map((district) => (
+                      <option key={district.value} value={district.value}>{district.label}</option>
+                    ))}
+                  </select>
+                  {addressErrors.accountDistrict ? <Typography className="text-red-500 text-xs mt-1">{addressErrors.accountDistrict}</Typography> : null}
                 </div>
                 <div>
                   <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>

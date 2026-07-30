@@ -5,7 +5,7 @@ export const STATUS_OPTIONS = ["OPEN", "UNDER_REVIEW", "APPROVED", "REJECTED", "
 export const STATUS_FLOW = {
   OPEN: ["UNDER_REVIEW"],
   UNDER_REVIEW: ["APPROVED", "REJECTED"],
-  APPROVED: ["REJECTED"],
+  APPROVED: [],
   REJECTED: [],
   RESOLVED: [],
 };
@@ -71,7 +71,7 @@ export const shouldShowReviewFields = (ticketStatus, selectedStatus) => {
   return {
     isRejected,
     showReviewFields: activeStatus === "APPROVED",
-    showAdminRemarks: ["UNDER_REVIEW", "APPROVED", "REJECTED"].includes(activeStatus),
+    showAdminRemarks: isRejected,
   };
 };
 
@@ -81,7 +81,6 @@ export const getTicketReviewValidationRules = (selectedStatus) => {
     return {
       rewardAmount: "Reward amount is required and must be zero or greater.",
       rewardReason: "Reward reason is required.",
-      adminRemarks: "Admin remarks is required.",
     };
   }
 

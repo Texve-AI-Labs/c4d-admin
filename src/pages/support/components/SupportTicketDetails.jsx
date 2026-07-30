@@ -34,18 +34,18 @@ function SupportTicketDetails({
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-5 py-4 text-white">
-        <Typography variant="h6" className="text-black">Ticket Review</Typography>
-        <Typography className="mt-1 text-sm text-black">Selected ticket details and update controls</Typography>
-      </div>
-      <div className="p-5">
+      {/* <div className="border-b border-slate-200 bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-3 text-white">
+        <Typography variant="h6" className="text-sm font-semibold text-black">Ticket Review</Typography>
+        <Typography className="mt-1 text-xs text-black">Selected ticket details and update controls</Typography>
+      </div> */}
+      <div className="p-4">
         {ticket ? (
           <div className="space-y-3">
-            <div className="space-y-3">
+            <div className="space-y-2">
               <InfoCard label="Ticket ID" value={ticket?.ticketId || "-"} />
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <InfoCard label="Category" value={ticket?.category || "-"} />
-                <InfoCard label="Booking ID" value={booking?.bookingNumber || "-"} />
+                {/* <InfoCard label="Booking ID" value={booking?.bookingNumber || "-"} /> */}
                 <InfoCard label="Customer" value={customer?.firstName || customer?.name || "-"} />
                 <InfoCard label="Disputed Amount" value={ticket?.disputedAmount ? `₹ ${Number(ticket?.disputedAmount).toFixed(2)}` : "-"} />
                 <InfoCard label="Proof" value={ticket?.proofUrl ? "Available" : "Not provided"} />
@@ -54,7 +54,7 @@ function SupportTicketDetails({
 
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-2">
-                <Typography className="text-sm font-semibold text-black">Status <span className="text-red-600">*</span></Typography>
+                <Typography className="text-xs font-semibold text-black">Status <span className="text-red-600">*</span></Typography>
                 <Select
                   value={selectedStatus}
                   label=" "
@@ -62,7 +62,7 @@ function SupportTicketDetails({
                   onChange={(value) => onStatusChange(value || "UNDER_REVIEW")}
                   disabled={isTerminalTicket}
                   labelProps={{ className: "hidden" }}
-                  className={statusClassName}
+                  className={`${statusClassName} !min-h-0 !h-11`}
                 >
                   {allowedStatusOptions.map((option) => (
                     <Option key={option} value={option}>{option.replace(/_/g, " ")}</Option>
@@ -73,7 +73,7 @@ function SupportTicketDetails({
               {showReviewFields ? (
                 <>
                   <div className="space-y-2">
-                    <Typography className="text-sm font-semibold text-black">Reward Amount</Typography>
+                    <Typography className="text-xs font-semibold text-black">Reward Amount</Typography>
                     <Input
                       type="number"
                       value={rewardAmount}
@@ -84,7 +84,7 @@ function SupportTicketDetails({
                     <ErrorMessage>{fieldErrors.rewardAmount}</ErrorMessage>
                   </div>
                   <div className="space-y-2">
-                    <Typography className="text-sm font-semibold text-black">Reward Reason</Typography>
+                    <Typography className="text-xs font-semibold text-black">Reward Reason</Typography>
                     <Textarea
                       value={rewardReason}
                       onChange={(e) => onRewardReasonChange(e.target.value)}
@@ -93,21 +93,11 @@ function SupportTicketDetails({
                     />
                     <ErrorMessage>{fieldErrors.rewardReason}</ErrorMessage>
                   </div>
-                  <div className="space-y-2">
-                    <Typography className="text-sm font-semibold text-black">Admin Remarks</Typography>
-                    <Textarea
-                      value={adminRemarks}
-                      onChange={(e) => onAdminRemarksChange(e.target.value)}
-                      disabled={isTerminalTicket}
-                      className="!border-slate-300 !text-black placeholder:!text-black/40"
-                    />
-                    <ErrorMessage>{fieldErrors.adminRemarks}</ErrorMessage>
-                  </div>
                 </>
               ) : isRejected ? (
                 <>
                   <div className="space-y-2">
-                    <Typography className="text-sm font-semibold text-black">Reward Amount</Typography>
+                    <Typography className="text-xs font-semibold text-black">Reward Amount</Typography>
                     <Input
                       type="number"
                       value={rewardAmount}
@@ -117,7 +107,7 @@ function SupportTicketDetails({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Typography className="text-sm font-semibold text-black">Reward Reason</Typography>
+                    <Typography className="text-xs font-semibold text-black">Reward Reason</Typography>
                     <Textarea
                       value={rewardReason}
                       onChange={(e) => onRewardReasonChange(e.target.value)}
@@ -126,7 +116,7 @@ function SupportTicketDetails({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Typography className="text-sm font-semibold text-black">Admin Remarks</Typography>
+                    <Typography className="text-xs font-semibold text-black">Admin Remarks</Typography>
                     <Textarea
                       value={adminRemarks}
                       onChange={(e) => onAdminRemarksChange(e.target.value)}
@@ -140,7 +130,16 @@ function SupportTicketDetails({
             </div>
 
             {ticket?.proofUrl ? (
-              <Button variant="outlined" onClick={onOpenProof} className="w-full rounded-full border-slate-300 px-4 py-3 text-xs font-bold uppercase tracking-wide text-black">Open proof attachment</Button>
+              <Button
+                variant="outlined"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenProof();
+                }}
+                className="w-full rounded-full border-slate-300 px-4 py-3 text-xs font-bold uppercase tracking-wide text-black"
+              >
+                Open proof attachment
+              </Button>
             ) : null}
 
             <Button onClick={onUpdateStatus} disabled={saving} className="w-full rounded-full bg-gradient-to-r from-slate-900 to-slate-700 px-4 py-3 text-xs font-bold uppercase tracking-wide text-white shadow-none disabled:opacity-60">

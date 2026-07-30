@@ -178,6 +178,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [isManualDateFilter, setIsManualDateFilter] = useState(false);
     const [filtersLoaded, setFiltersLoaded] = useState(false);
     const [effectiveSearchId, setEffectiveSearchId] = useState(searchBookingId);
+    const [searchResetPending, setSearchResetPending] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
     const [onlineDrivers, setOnlineDrivers] = useState([]);
     const [selectedHour, setSelectedHour] = useState(moment().hour()); 
@@ -190,6 +191,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [allUsers, setAllUsers] = useState([]); 
     const latestRequestRef = useRef(0);
     const summaryRequestRef = useRef(0);
+    const previousCustomerIdRef = useRef(customerId);
     const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
 
     const getInquiryTypeFromPath = (pathname = "") => {
@@ -340,10 +342,21 @@ useEffect(() => {
         setEffectiveSearchId(newEffective);
         if (newEffective) {
             setItemSafe(bookingSearchKey, newEffective);
+            if (pagination.currentPage !== 1) {
+                setSearchResetPending(true);
+                setPagination((prev) => ({ ...prev, currentPage: 1 }));
+            }
         } else if (!searchBookingId) {
             setItemSafe(bookingSearchKey, '');
         }
-    }, [searchBookingId, bookingSearchKey]);
+    }, [searchBookingId, bookingSearchKey, pagination.currentPage]);
+
+    useEffect(() => {
+        if (previousCustomerIdRef.current !== customerId) {
+            previousCustomerIdRef.current = customerId;
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
+        }
+    }, [customerId]);
     const handleToggleDriverHours = () => {
   setShowDriverHours(true);
 };
@@ -646,11 +659,15 @@ if (!statusFilter.includes('All')) {
   
              useEffect(() => {
                     if (onRegisterRefresh) {
-                    onRegisterRefresh(() => handleRefresh);
+                    onRegisterRefresh(handleRefresh);
                     }
                 }, [onRegisterRefresh]);
     useEffect(() => {
         if (!filtersLoaded) {
+            return;
+        }
+        if (searchResetPending) {
+            setSearchResetPending(false);
             return;
         }
         // Skip automatic API call if we're in the middle of a manual date filter operation

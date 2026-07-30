@@ -4,8 +4,8 @@ import { isPdfFile } from "../supportTicketReviewUtils";
 function DocumentPreview({ src }) {
   if (!src) return null;
   const previewClassName = isPdfFile(src)
-    ? "w-full h-[65vh] border border-gray-200 bg-white overflow-hidden"
-    : "w-full h-[65vh] border border-gray-200 bg-white p-2 overflow-hidden";
+    ? "w-full h-[45vh] border border-gray-200 bg-white overflow-hidden"
+    : "w-full h-[45vh] border border-gray-200 bg-white p-2 overflow-hidden";
 
   return (
     <div className="w-full">
