@@ -345,7 +345,7 @@ const AddBanner = () => {
                   <option value="NEW_CUSTOMER">New Customer</option>
                   <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
                   <option value="INTRO_SLIDES_DRIVER">Intro Slides (Driver)</option>         
-                  <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>         
+                  {/* <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>          */}
                 </Field>
                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
               </div>

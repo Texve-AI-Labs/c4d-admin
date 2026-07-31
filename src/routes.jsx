@@ -211,6 +211,8 @@ import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
+import DriverAdsRegList from "./pages/support/driverAdsRegList";
+import DriverAdsRegistrationDetails from "./pages/support/driverAdsRegistrationDetails";
 import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
@@ -1817,6 +1819,22 @@ export const routes = [
         path: "/support/driver-ads",
         element: <DriverAdsList />,
         display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Reg",
+        path: "/support/driver-ads-reg",
+        element: <DriverAdsRegList />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Reg Detail",
+        path: "/support/driver-ads-reg/details/:id",
+        element: <DriverAdsRegistrationDetails />,
+        display: false,
         permission: "Support"
       },
       {
