@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
+import { isSuperUserRole } from "@/utils/roleUtils";
 import DriverSummaryCards from "./driverAdsRegistrationDetails/DriverSummaryCards";
 import StatusUpdateModal from "./driverAdsRegistrationDetails/StatusUpdateModal";
 import ActivityTabs from "./driverAdsRegistrationDetails/ActivityTabs";
@@ -73,6 +74,7 @@ function DriverAdsRegistrationDetails() {
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const isSuperUser = isSuperUserRole();
 
   const fetchDetail = async () => {
     setLoading(true);
@@ -127,8 +129,9 @@ function DriverAdsRegistrationDetails() {
   };
 
   useEffect(() => {
+    if (!isSuperUser) return;
     if (id) fetchActivityLog();
-  }, [id, activeTab, showDetails]);
+  }, [id, activeTab, showDetails, isSuperUser]);
 
   const handleStatusUpdate = async () => {
     setStatusError("");
@@ -494,6 +497,7 @@ function DriverAdsRegistrationDetails() {
                 notesError={notesError}
                 latestNote={latestNote}
               />
+              {isSuperUser ? (
               <div className="rounded-xl border border-blue-gray-100 p-4">
                 <ActivityTabs
                   activeTab={activeTab}
@@ -503,12 +507,17 @@ function DriverAdsRegistrationDetails() {
                   rowsRenderer={renderActivityTab}
                 />
               </div>
+              ) : null}
              
             </>
           ) : null}
         </CardBody>
         <div className="flex justify-center p-4">
-        <Button  size="sm" className="border-blue-gray-300 text-white bg-primary" onClick={() => navigate(-1)}>
+          <Button
+            size="sm"
+            className="border-blue-gray-300 bg-primary text-white"
+            onClick={() => navigate("/dashboard/support/driver-ads-reg")}
+            >
               Back
             </Button>
       </div>

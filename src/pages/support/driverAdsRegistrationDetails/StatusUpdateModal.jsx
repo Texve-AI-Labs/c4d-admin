@@ -139,7 +139,7 @@ export default function StatusUpdateModal(props) {
           {isCompleted ? (
             <div className="rounded-xl border border-blue-gray-100 p-4">
               <Typography variant="small" className="mb-1 block font-medium text-blue-gray-700">
-                {labelWithOptional("Completion Remarks")}
+                {labelWithRequired("Completion Remarks")}
               </Typography>
               <Textarea value={completionRemarks} onChange={(e) => onCompletionRemarksChange(e.target.value)} placeholder="Enter completion remarks" rows={4} />
             </div>
