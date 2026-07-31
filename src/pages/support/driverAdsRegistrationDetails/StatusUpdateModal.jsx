@@ -35,6 +35,9 @@ export default function StatusUpdateModal(props) {
   const [statusOpen, setStatusOpen] = useState(false);
   const isFollowUpScheduled = selectedStatus === "FOLLOW_UP_SCHEDULED";
   const isCompleted = selectedStatus === "COMPLETED";
+  const isEarlyStatus = ["NEW", "IN_PROGRESS"].includes(String(selectedStatus || "").toUpperCase());
+  const dialogMaxHeightClass = isEarlyStatus ? "max-h-[95vh]" : "max-h-[110vh]";
+  const bodyMaxHeightClass = isEarlyStatus ? "max-h-[calc(95vh-120px)]" : "max-h-[calc(90vh-120px)]";
 
   const labelWithRequired = (label) => (
     <span className="inline-flex items-center gap-1 whitespace-nowrap">
@@ -51,21 +54,20 @@ export default function StatusUpdateModal(props) {
   const selectedStatusLabel = formatStatusLabel(selectedStatus) || "Select status";
 
   return (
-    <Dialog open={open} handler={onClose} size="lg" className="w-[98vw] max-w-5xl max-h-[90vh]" dismiss={{ outsidePress: false, escapeKey: false }}>
+    <Dialog open={open} handler={onClose} size="lg" className={`w-[98vw] max-w-5xl ${dialogMaxHeightClass}`} dismiss={{ outsidePress: false, escapeKey: false }}>
       <DialogHeader className="flex items-center justify-between">
         <Typography variant="h6" className="text-black">
           Status Update
         </Typography>
       </DialogHeader>
-      <DialogBody divider className="max-h-[calc(90vh-120px)] overflow-y-auto">
+      <DialogBody divider className={`${bodyMaxHeightClass} overflow-y-auto`}>
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-blue-gray-100 p-4">
             <Typography variant="small" className="mb-2 font-medium text-blue-gray-700">
               Status
             </Typography>
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
-             
-              <div className="relative flex w-full gap-2 md:max-w-[420px]">
+            <div className={`flex flex-col gap-3 ${isEarlyStatus ? "" : "md:flex-row md:items-end md:gap-4"}`}>
+              <div className={`relative flex w-full gap-2 ${isEarlyStatus ? "md:max-w-none" : "md:max-w-[420px]"}`}>
                 <button
                   type="button"
                   onClick={() => setStatusOpen((prev) => !prev)}
@@ -93,12 +95,12 @@ export default function StatusUpdateModal(props) {
                     ))}
                   </div>
                 ) : null}
-                 {!(selectedStatus === "FOLLOW_UP_SCHEDULED" || selectedStatus === "COMPLETED") ? (
+              </div>
+              {!(selectedStatus === "FOLLOW_UP_SCHEDULED" || selectedStatus === "COMPLETED") ? (
                 <Button className="w-full shrink-0 bg-primary text-white md:w-auto" onClick={onStatusUpdate} disabled={!selectedStatus || updatingStatus}>
                   {updatingStatus ? "Updating..." : "Update"}
                 </Button>
               ) : null}
-              </div>
             </div>
           </div>
           {statusError ? <Alert color="red">{statusError}</Alert> : null}
