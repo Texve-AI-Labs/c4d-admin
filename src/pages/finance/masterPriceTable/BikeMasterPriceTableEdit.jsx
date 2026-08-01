@@ -10,6 +10,7 @@ import { Utils } from '@/utils/utils';
 import MasterPriceLog from "../masterPriceTable/MasterPriceLog";
 import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
 import DemandPriceEdit from './DemandPriceEdit';
+import PeakHourTableEdit from './PeakHourTableEdit';
 
 
 
@@ -46,6 +47,7 @@ const BikeMasterPriceTableEdit = () => {
   const initialPremiumRef = useRef({});
   const [demandRules, setDemandRules] = useState([]);
   const initialDemandPriceRef = useRef([]);
+  const [peakHours, setPeakHours] = useState([]);
 
   useEffect(() => {
     if (id) fetchPriceDetails(id);
@@ -79,7 +81,7 @@ const BikeMasterPriceTableEdit = () => {
         driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) || 0,
         driverFreeCancellationsPerDay:priceData.driverFreeCancellationsPerDay || 0,
         driverCancellationCharge:priceData.driverCancellationCharge || 0,
-        
+        peakHours: priceData.peakHours || [],
         });
 
         const premium = priceData.premiumConfig || [];
@@ -87,6 +89,7 @@ const BikeMasterPriceTableEdit = () => {
         setPremiumConfig(premium);
         setDemandRules(priceData.demandRules || []);
         initialDemandPriceRef.current = priceData.demandRules || [];
+        setPeakHours(priceData.peakHours || []);
       }
     } catch (error) {
       console.error("Error fetching price details:", error);
@@ -98,6 +101,10 @@ const BikeMasterPriceTableEdit = () => {
     }
     const hasDemandPriceChanged = () => {
       return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
+    }
+
+    const hasPeakHoursChanged = () => {
+      return JSON.stringify(peakHours) !== JSON.stringify(initialValues?.peakHours || []);
     }
 
   const convertToTimeFormat = (timeString) => {
@@ -132,6 +139,7 @@ const BikeMasterPriceTableEdit = () => {
         driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay) || 0,
         driverCancellationCharge: Number(values.driverCancellationCharge) || 0,
         demandRules: demandRules,
+        peakHours: peakHours,
       };
 
       const response = await ApiRequestUtils.post(API_ROUTES.BIKE_PRICE_EDIT, reqBody);
@@ -290,11 +298,12 @@ const BikeMasterPriceTableEdit = () => {
                     </div>
             <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
             <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
+            <PeakHourTableEdit title="Peak Hours Table" addLabel="Add Peak Hour" initialPriceData={peakHours} onUpdate={setPeakHours} />
             <div className="flex flex-row">
               <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                 Cancel
               </Button>
-              <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig() || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
+              <Button fullWidth color="blue" type="submit" disabled={!(dirty || hasPremiumConfig() || hasDemandPriceChanged() || hasPeakHoursChanged()) || !isValid} className="my-6 mx-2">
                 Save Changes
               </Button>
             </div>
