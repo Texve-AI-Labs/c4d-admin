@@ -7,20 +7,26 @@ import {
     Card,
     CardBody,
     CardHeader,
+    Spinner,
     Typography,
 } from "@material-tailwind/react";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import FinanceSubscriptionTabs from "@/pages/finance/components/FinanceSubscriptionTabs";
 
 export function MasterSubscriptionView() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchQuery, setSearchQuery] = useState('');
     const [allAccounts, setAllAccounts] = useState([]);
     const [serviceFilter, setServiceFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [expandedGroups, setExpandedGroups] = useState({});
+    const [tabLoadingPath, setTabLoadingPath] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
                 const params = { includePlans: true, includeAssignments: true };
                 if (serviceFilter) {
@@ -36,6 +42,8 @@ export function MasterSubscriptionView() {
                 }
             } catch (error) {
                 console.error("Error fetching subscription data:", error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
@@ -114,9 +122,16 @@ export function MasterSubscriptionView() {
             ? "bg-blue-100 text-blue-700 border-blue-200"
             : "bg-gray-100 text-gray-700 border-gray-200";
     };
+    const handleTabClick = (path) => {
+        if (path === location.pathname) return;
+        setTabLoadingPath(path);
+        navigate(path);
+    };
 
     return (
+        <div className="p-4 bg-white rounded-xl sm:p-6 lg:p-8"> 
         <div className="mb-8 flex flex-col gap-12">
+            <FinanceSubscriptionTabs activePath={location.pathname} loadingPath={tabLoadingPath} onTabClick={handleTabClick} />
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-grow">
@@ -163,7 +178,14 @@ export function MasterSubscriptionView() {
                 </div>
             </div>
             <Card>
-                {masterSubscriptionList.length > 0 ? (
+                {loading ? (
+                    <div className="flex min-h-[240px] items-center justify-center">
+                        <div className="flex flex-col items-center gap-3">
+                            <Spinner className="h-10 w-10 text-primary-600" />
+                            <p className="text-sm text-gray-500">Loading master subscriptions...</p>
+                        </div>
+                    </div>
+                ) : masterSubscriptionList.length > 0 ? (
                     <>
                         <CardHeader variant="gradient" className={`mb-8 p-6 flex-1 justify-between items-center ${ColorStyles.bgColor}`}>
                             <Typography variant="h6" color="white">
@@ -343,6 +365,7 @@ export function MasterSubscriptionView() {
                     </CardHeader>
                 )}
             </Card>
+        </div>
         </div>
     );
 }
