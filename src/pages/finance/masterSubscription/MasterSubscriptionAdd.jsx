@@ -327,6 +327,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                   <div>
                     <label className="text-sm font-medium text-gray-700">Price</label>
                     <Field type="number" name={`plans[${index}].packagePrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                    <ErrorMessage name={`plans[${index}].packagePrice`} component="div" className="text-red-500 text-sm my-1" />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Base Credits</label>
