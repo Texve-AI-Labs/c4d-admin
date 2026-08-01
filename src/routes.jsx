@@ -58,6 +58,9 @@ import { MasterSubscriptionView } from "./pages/finance/masterSubscription/Maste
 import MasterSubscriptionAdd from "./pages/finance/masterSubscription/MasterSubscriptionAdd";
 import MasterSubscriptionDetails from "./pages/finance/masterSubscription/MasterSubscriptionDetails";
 import MasterSubscriptionEdit from "./pages/finance/masterSubscription/MasterSubscriptionEdit";
+import JoiningBonusView from "./pages/finance/joiningBonus/JoiningBonusView";
+import JoiningBonusAdd from "./pages/finance/joiningBonus/JoiningBonusAdd";
+import JoiningBonusEdit from "./pages/finance/joiningBonus/JoiningBonusEdit";
 import { MasterPriceView } from "./pages/finance/masterPrice/MasterPriceView";
 import { MasterPriceAdd } from "./pages/finance/masterPrice/MasterPriceAdd";
 import { ReceiptList } from "./pages/finance/receipt/ReceiptList";
@@ -1223,6 +1226,30 @@ export const routes = [
         name: "Receipt",
         path: "/finance/master-subscription",
         element: <MasterSubscriptionView />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Joining Bonus",
+        path: "/finance/joining-bonus",
+        element: <JoiningBonusView />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Joining Bonus Add",
+        path: "/finance/joining-bonus/add",
+        element: <JoiningBonusAdd />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Joining Bonus Edit",
+        path: "/finance/joining-bonus/edit/:planId",
+        element: <JoiningBonusEdit />,
         display: false,
         permission: "Finance",
       },
