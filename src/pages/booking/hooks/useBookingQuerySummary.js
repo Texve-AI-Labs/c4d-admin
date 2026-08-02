@@ -99,23 +99,63 @@ export const useBookingQuerySummary = ({
 
   const fetchBookingSummary = useCallback(
     async (queryParams) => {
-      const currentSummaryRequestId = ++summaryRequestRef.current;
-      try {
-        const data = await ApiRequestUtils.getWithQueryParam(
-          API_ROUTES.GET_ADMIN_BOOKINGS_SUMMARY,
-          queryParams
-        );
-        if (currentSummaryRequestId !== summaryRequestRef.current) return;
-        if (data?.success) {
-          const summaryCounts = data?.counts || data?.data || DEFAULT_COUNTS;
-          setCounts(summaryCounts);
-        } else {
+      const refValue = summaryRequestRef.current;
+      const state = refValue && typeof refValue === "object"
+        ? refValue
+        : (summaryRequestRef.current = {
+            requestId: Number(refValue || 0),
+            inFlight: null,
+            lastQueryKey: "",
+            lastQueryAt: 0,
+            lastResult: null,
+          });
+      const queryKey = JSON.stringify(queryParams || {});
+      const now = Date.now();
+
+      if (state.inFlight && state.lastQueryKey === queryKey) {
+        return state.inFlight;
+      }
+
+      if (state.lastQueryKey === queryKey && now - (state.lastQueryAt || 0) < 1200) {
+        return state.lastResult;
+      }
+
+      const currentSummaryRequestId = ++state.requestId;
+      state.lastQueryKey = queryKey;
+      state.lastQueryAt = now;
+
+      const requestPromise = (async () => {
+        try {
+          const data = await ApiRequestUtils.getWithQueryParam(
+            API_ROUTES.GET_ADMIN_BOOKINGS_SUMMARY,
+            queryParams
+          );
+          if (currentSummaryRequestId !== state.requestId) return data;
+          if (data?.success) {
+            const summaryCounts = data?.counts || data?.data || DEFAULT_COUNTS;
+            setCounts(summaryCounts);
+            state.lastResult = summaryCounts;
+          } else {
+            setCounts(DEFAULT_COUNTS);
+            state.lastResult = DEFAULT_COUNTS;
+          }
+          return data;
+        } catch (error) {
+          console.error("Error fetching booking summary:", error);
+          if (currentSummaryRequestId !== state.requestId) return null;
           setCounts(DEFAULT_COUNTS);
+          state.lastResult = DEFAULT_COUNTS;
+          return null;
         }
-      } catch (error) {
-        console.error("Error fetching booking summary:", error);
-        if (currentSummaryRequestId !== summaryRequestRef.current) return;
-        setCounts(DEFAULT_COUNTS);
+      })();
+
+      state.inFlight = requestPromise;
+      try {
+        return await requestPromise;
+      } finally {
+        if (currentSummaryRequestId === state.requestId) {
+          state.inFlight = null;
+        }
       }
     },
     [summaryRequestRef, DEFAULT_COUNTS, setCounts]
