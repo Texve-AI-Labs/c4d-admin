@@ -7,12 +7,14 @@ import SupportTicketTable from "./components/SupportTicketTable";
 import SupportTicketDetails from "./components/SupportTicketDetails";
 import {formatBadgeText,formatCurrency,formatDateTime,getAllowedStatusOptions,getStatusTone,isTerminalStatus,buildRoute,normalizeRows,validateTicketReview} from "./supportTicketReviewUtils";
 import DocumentPreview from "./components/DocumentPreview";
+import ConfirmBooking from "@/pages/booking/confirmBooking";
 
 function SupportReviewRewardManagement() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -35,6 +37,7 @@ function SupportReviewRewardManagement() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [proofOpen, setProofOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [bookingModalData, setBookingModalData] = useState(null);
   const ticketReviewRef = useRef(null);
 
   const selectedRow = useMemo(
@@ -105,6 +108,28 @@ function SupportReviewRewardManagement() {
     requestAnimationFrame(() => {
       ticketReviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const handleOpenBookingModal = (item) => {
+    const id = item?.ticketId || item?.id;
+    if (!id) return;
+    setSelectedId(id);
+    setBookingModalData(
+      item?.booking
+        ? {
+            ...item.booking,
+            id: item?.booking?.id || item?.bookingId || item?.booking?.bookingId,
+            bookingId: item?.booking?.id || item?.bookingId || item?.booking?.bookingId,
+            customerId: item?.customer?.id || item?.customerId || item?.booking?.customerId,
+          }
+        : {
+            id: item?.bookingId || item?.booking?.id || "",
+            bookingId: item?.bookingId || item?.booking?.id || "",
+            customerId: item?.customer?.id || item?.customerId || "",
+            serviceType: item?.booking?.serviceType || "",
+          }
+    );
+    setIsOpen(true);
   };
 
   const handleRefresh = async () => {
@@ -296,6 +321,7 @@ function SupportReviewRewardManagement() {
                   rows={rows}
                   selectedId={selectedId}
                   onSelectTicket={handleSelectTicket}
+                  onOpenBooking={handleOpenBookingModal}
                   formatBadgeText={formatBadgeText}
                   getStatusTone={getStatusTone}
                   formatCurrency={formatCurrency}
@@ -399,6 +425,31 @@ function SupportReviewRewardManagement() {
                 ) : null}
               </DialogBody>
             </Dialog>
+            <Dialog open={isOpen} size="xl" className="max-w-6xl w-[95vw]">
+                            <DialogHeader className="flex justify-end items-end">
+                                <button
+                                    onClick={() => setIsOpen(false)}
+                                    className="text-gray-500 hover:text-black text-xl font-bold focus:outline-none"
+                                >
+                                    ×
+                                </button>
+                            </DialogHeader>
+                            <DialogBody className="max-h-[80vh] overflow-y-auto">
+                                {bookingModalData ? (
+                                  <ConfirmBooking
+                                    bookingData={bookingModalData}
+                                    setIsOpen={setIsOpen}
+                                    onConfirm={() => {
+                                      setIsOpen(false);
+                                      setBookingModalData(null);
+                                    }}
+                                    hideBackButton={true}
+                                  />
+                                ) : (
+                                  <Typography className="p-4 text-sm text-slate-600">Loading booking details...</Typography>
+                                )}
+                            </DialogBody>
+                        </Dialog>
           </CardBody>
         </Card>
       </div>
