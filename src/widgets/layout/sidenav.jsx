@@ -22,7 +22,8 @@ import {
   UserGroupIcon,
   MegaphoneIcon,
   UsersIcon,
-  UserIcon
+  UserIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/solid';
 import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -47,6 +48,7 @@ const menuItems = [
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
   { type: "item", name: "Marketing", path: "/dashboard/vendors/notificationList", permission: "Marketing" },
   { type: "item", name: "Reports", path: "/dashboard/driver-ops", permission: "Driver Ops" },
+  { type: "item", name: "Geo Intelligence", path: "/dashboard/geo-intelligence", permission: "Users" },
   {
     type: "item",
     name: "Admin",
@@ -252,6 +254,8 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
         );
       case "Reports":
         return currentPath.startsWith("/dashboard/driver-ops");
+      case "Geo Intelligence":
+        return currentPath.startsWith("/dashboard/geo-intelligence");
       case "Driver Engagement":
         return currentPath.startsWith("/dashboard/driverengagement");
       case "Admin":
@@ -375,6 +379,9 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
 
                         {name === "Reports" ? (
                           <ClipboardDocumentListIcon className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`} />
+                        ) : null}
+                        {name === "Geo Intelligence" ? (
+                          <GlobeAltIcon className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`} />
                         ) : null}
                         {name === "Leads" ? (
                           <UsersIcon className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`} />
