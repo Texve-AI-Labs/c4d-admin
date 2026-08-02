@@ -219,6 +219,7 @@ import DriverAdsRegistrationDetails from "./pages/support/driverAdsRegistrationD
 import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
+import GeoIntelligence from "./pages/geoIntelligence";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -1604,6 +1605,14 @@ export const routes = [
         element: <GeoMarkings />,
         display: true,
         permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "geo-intelligence",
+        path: "/geo-intelligence",
+        element: <GeoIntelligence />,
+        display: true,
+        permission: 'Users',
       },
       {
         icon: <UserIcon {...icon} />,
