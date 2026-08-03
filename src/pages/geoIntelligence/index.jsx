@@ -33,14 +33,14 @@ const GeoIntelligence = () => {
     const iframeWindow = iframeRef.current?.contentWindow;
     const payload = buildPayload();
 
-    console.log("[Geo Intelligence] prepared auth payload", payload);
+    // console.log("[Geo Intelligence] prepared auth payload", payload);
 
     if (!iframeWindow) {
       console.warn("[Geo Intelligence] iframe window is not available");
       return;
     }
 
-    console.log("[Geo Intelligence] sending postMessage to iframe");
+    // console.log("[Geo Intelligence] sending postMessage to iframe");
     iframeWindow.postMessage(payload, "*");
   };
 
@@ -49,7 +49,7 @@ const GeoIntelligence = () => {
     if (!iframe) return undefined;
 
     const handleLoad = () => {
-      console.log("[Geo Intelligence] iframe loaded", GEO_INTELLIGENCE_URL);
+      // console.log("[Geo Intelligence] iframe loaded", GEO_INTELLIGENCE_URL);
       postMessageToIframe();
     };
 
