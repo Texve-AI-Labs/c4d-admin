@@ -1400,6 +1400,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'STARTED', label: 'Started' },
                                                                 { value: 'END_OTP', label: 'End OTP' },
                                                                 { value: 'ENDED', label: 'Ended' },
+                                                                { value: 'DRIVER_NOT_AVAILABLE', label: 'Driver Not Available'},
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
                                                                 { value: 'SUPPORT_CANCELLED', label: 'Support Cancelled' },
                                                                 { value: 'COMPLETED', label: 'Completed' },
@@ -1782,6 +1783,7 @@ if (!statusFilter.includes('All')) {
                                                                     data?.status ===  "DRIVER_ON_THE_WAY" ? "bg-primary   text-white":
                                                                     data?.status === "DRIVER_REACHED" ? "bg-yellow-600  text-white":
                                                                     data?.status === "PAYMENT_REQUESTED" ? "bg-green-600  text-white":
+                                                                    data?.status === "DRIVER_NOT_AVAILABLE" ? "bg-red-600  text-white":
                                                                     "bg-primary  text-white"
                                                                     
                                                                 }`}
