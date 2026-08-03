@@ -68,6 +68,7 @@ const AddBanner = () => {
     fromDate: '',
     toDate: '',
     redirectUrl: '',
+    title: '',
     status: true,
     type: '',
     image: null,
@@ -107,19 +108,24 @@ const AddBanner = () => {
     })),
   ];
 
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER'];
-    // 'TRAINING_VIDEO_DRIVER'
+  const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER';
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
 
   const validationSchema = Yup.object().shape({
     type: Yup.string().required('Type is required'),
-    image: Yup.mixed()
-      .required('Image is required')
-      .test('fileType', 'Only JPEG or PNG or GIF or AVIF or WEBP files are allowed', (value) =>
-        value ? ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'].includes(value.type) : false
-      ),
+    image: Yup.mixed().when('type', {
+      is: (type) => !isTrainingVideoDriver(type),
+      then: (schema) =>
+        schema
+          .required('Image is required')
+          .test('fileType', 'Only JPEG or PNG or GIF or AVIF or WEBP files are allowed', (value) =>
+            value ? ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'].includes(value.type) : false
+          ),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     image2: Yup.mixed().when('type', {
       is: isExternalPromotions,
       then: (schema) =>
@@ -157,8 +163,13 @@ const AddBanner = () => {
     }),
     redirectUrl: Yup.string().when('type', {
       is: isExternalPromotions,
-      then: (schema) => schema.required('Redirect URL is required'),
-      otherwise: (schema) => schema.notRequired(),
+      then: (schema) => schema.trim().required('Redirect URL is required'),
+      otherwise: (schema) =>
+        schema.when('type', {
+          is: isTrainingVideoDriver,
+          then: (nestedSchema) => nestedSchema.trim().required('YouTube Link is required'),
+          otherwise: (nestedSchema) => nestedSchema.notRequired(),
+        }),
     }),
     serviceType: Yup.string().when('type', {
       is: isServiceIntroImage,
@@ -166,9 +177,13 @@ const AddBanner = () => {
       otherwise: (schema) => schema.notRequired(),
     }),
     driverType: Yup.string().when('type', {
-      is: (type) => type === 'INTRO_SLIDES_DRIVER', 
-      // || type === 'TRAINING_VIDEO_DRIVER',
+      is: (type) => type === 'INTRO_SLIDES_DRIVER' || isTrainingVideoDriver(type),
       then: (schema) => schema.required('Driver Type is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    title: Yup.string().when('type', {
+      is: isTrainingVideoDriver,
+      then: (schema) => schema.trim().required('Heading Text is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
   });
@@ -236,34 +251,32 @@ const AddBanner = () => {
   // Submit Handler
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      // console.log('Sending image:', values.image?.name, values.image?.type);
-
       const formData = new FormData();
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER';
-      // || values.type === 'TRAINING_VIDEO_DRIVER';
+      const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
       const isServiceIntro = values.type === "SERVICE_INTRO_IMAGE";
       const mappedServiceDetails = isServiceIntro ? mapServiceDetails(values.serviceType) : null;
-      if (!isNewCustomer && !isIntroType ) {
-        // const fromDateIso = values.fromDate ? new Date(values.fromDate).toISOString() : '';
-        // const toDateIso = values.toDate ? new Date(values.toDate).toISOString() : '';
+
+      if (!isNewCustomer && !isIntroType && !isTrainingVideo) {
         formData.append('fromDate', values.fromDate);
         formData.append('startTime', values.startTime || '');
         formData.append('endTime', values.endTime || '');
         formData.append('toDate', values.toDate);
-      if (!isServiceIntro) {
-        formData.append('redirectUrl', values.redirectUrl.trim());
-      }
-      if (!isServiceIntro && !isExternalPromotions) {
-        formData.append('dropAddress', values.dropAddress || '');
-        formData.append('dropLat', values.dropLocation?.lat || '');
-        formData.append('dropLong', values.dropLocation?.lng || '');
-        formData.append('navigateTo', values.navigateTo.trim());
+        if (!isServiceIntro) {
+          formData.append('redirectUrl', values.redirectUrl.trim());
+        }
+        if (!isServiceIntro && !isExternalPromotions(values.type)) {
+          formData.append('dropAddress', values.dropAddress || '');
+          formData.append('dropLat', values.dropLocation?.lat || '');
+          formData.append('dropLong', values.dropLocation?.lng || '');
+          formData.append('navigateTo', values.navigateTo.trim());
         }
       }
-      // if (values.type === 'TRAINING_VIDEO_DRIVER') {
-      //   formData.append('redirectUrl', values.redirectUrl.trim());
-      // }
+      if (isTrainingVideo) {
+        formData.append('redirectUrl', values.redirectUrl.trim());
+        formData.append('title', values.title.trim());
+      }
       if (isServiceIntro) {
         formData.append('serviceType', mappedServiceDetails?.serviceType || '');
         if (mappedServiceDetails?.bookingType) {
@@ -273,23 +286,22 @@ const AddBanner = () => {
           formData.append('packageType', mappedServiceDetails.packageType);
         }
       }
-      if (isExternalPromotions) {
+      if (isExternalPromotions(values.type) && values.image2) {
         formData.append('image2', values.image2, values.image2.name);
         formData.append('fileTypeImage2', values.image2?.type || '');
         formData.append('extImage2', values.image2?.name?.split('.').pop()?.toLowerCase() || '');
       }
-      if (values.type === 'INTRO_SLIDES_DRIVER')
-        // || values.type === 'TRAINING_VIDEO_DRIVER' 
-      {
+      if (values.type === 'INTRO_SLIDES_DRIVER' || isTrainingVideo) {
         formData.append('driverType', values.driverType);
       }
       formData.append('status', values.status === 'true' || values.status === true);
       formData.append('type', values.type.trim());
-      formData.append('zone', isNewCustomer || isIntroType  ? 'All' : values.zone);
-      formData.append('image', values.image, values.image.name);
-      formData.append('fileTypeImage', values.image?.type || '');
-      formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
-      // console.log("Responce:-------> ", values)
+      formData.append('zone', isNewCustomer || isIntroType || isTrainingVideo ? 'All' : values.zone);
+      if (!isTrainingVideo && values.image) {
+        formData.append('image', values.image, values.image.name);
+        formData.append('fileTypeImage', values.image?.type || '');
+        formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
+      }
 
       const response = await ApiRequestUtils.postDocs(API_ROUTES.POST_BANNER, formData);
       if (response?.success === false) {
@@ -342,9 +354,9 @@ const AddBanner = () => {
       >
         {({ isSubmitting, values,setFieldValue }) => {
           const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER'; 
-          // || values.type === 'TRAINING_VIDEO_DRIVER'
+          const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
           const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
-          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType;
+          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType || isTrainingVideo;
           return (
           <Form className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -358,38 +370,35 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER'  || selectedType === 'SERVICE_INTRO_IMAGE') // || selectedType === 'TRAINING_VIDEO_DRIVER'
-                    {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER') {
                       setFieldValue('zone', 'All');
                     }
-                    if (selectedType !== 'INTRO_SLIDES_DRIVER' ) { // && selectedType !== 'TRAINING_VIDEO_DRIVER'
+                    if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
                       setFieldValue('driverType', '');
+                    }
+                    if (selectedType === 'TRAINING_VIDEO_DRIVER') {
+                      setFieldValue('image', null);
+                      setFieldValue('image2', null);
+                      setImagePreview(null);
+                      setImage2Preview(null);
                     }
                   }}
                 >
                   <option value="">select the Type</option>
-                  {/* <option value="TOP">Top</option> */}
-                  {/* <option value="BOTTOM">Bottom</option> */}
-                  {/* <option value="YOUTUBE">YouTube</option> */} 
-                  {/* <option value="BACKGROUND">Background</option> */}
                   <option value="BANNER">Customer Banner First App</option>
                   <option value="BANNER_DRIVER">Banner Driver</option>
                   <option value="ONTRIP_BANNER">On Trip Banner</option>
-                  {/* <option value="STATS">Stats</option> */}
                   <option value="TOP_NEW">Top New</option>
                   <option value="EXTERNAL_PROMOTIONS">External Promotions</option>
                   <option value="SERVICE_INTRO_IMAGE">Service Intro Image (customer)</option>                  
-                  {/* <option value="MIDCAROUSEL">MidCarousel</option> */}
-                  {/* <option value="PROMOTION">Promotion</option> */}
-                  {/* <option value="BOTTOM_NEW">Bottom New</option> */}
                   <option value="NEW_CUSTOMER">New Customer</option>
                   <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
                   <option value="INTRO_SLIDES_DRIVER">Intro Slides (Driver)</option>         
-                  {/* <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>          */}
+                  <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>
                 </Field>
                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
               </div>
-              {(values.type === 'INTRO_SLIDES_DRIVER' ) && ( // || values.type === 'TRAINING_VIDEO_DRIVER'
+              {(values.type === 'INTRO_SLIDES_DRIVER' || isTrainingVideo) && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Driver Type</label>
                   <Field
@@ -408,19 +417,30 @@ const AddBanner = () => {
                   <ErrorMessage name="driverType" component="div" className="text-red-500 text-sm" />
                 </div>
               )}
-              {/* {values.type === 'TRAINING_VIDEO_DRIVER' && (
-                <>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Redirect URL</label>
-                    <Field
-                      name="redirectUrl"
-                      type="text"
-                      className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
-                    />
-                    <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
-                  </div>
-                </>
-              )} */}
+              {isTrainingVideo && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Heading Text</label>
+                  <Field
+                    name="title"
+                    type="text"
+                    placeholder="Enter heading text"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                  />
+                  <ErrorMessage name="title" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
+              {isTrainingVideo && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">YouTube Link</label>
+                  <Field
+                    name="redirectUrl"
+                    type="text"
+                    placeholder="Paste YouTube video link"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                  />
+                  <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
               {isServiceIntro && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Service Type</label>
@@ -567,22 +587,24 @@ const AddBanner = () => {
               {/* Image Upload */}
 
               
-              <div>
-                <label htmlFor="image" className="text-sm font-medium text-gray-700">
-                 {values.type === 'EXTERNAL_PROMOTIONS' ? 'Only Square Image' : 'Image'}
-                </label>
-                {imagePreview && (
-                  <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover mb-2 border" />
-                )}
-                <input
-                  name="image"
-                  type="file"
-                  accept="image/*"
-                  className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
-                  onChange={(e) => handleImageUpload(e.currentTarget.files[0], setFieldValue)}
-                />
-                <ErrorMessage name="image" component="div" className="text-red-500 text-sm" />
-              </div>
+              {!isTrainingVideo && (
+                <div>
+                  <label htmlFor="image" className="text-sm font-medium text-gray-700">
+                   {values.type === 'EXTERNAL_PROMOTIONS' ? 'Only Square Image' : 'Image'}
+                  </label>
+                  {imagePreview && (
+                    <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover mb-2 border" />
+                  )}
+                  <input
+                    name="image"
+                    type="file"
+                    accept="image/*"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                    onChange={(e) => handleImageUpload(e.currentTarget.files[0], setFieldValue)}
+                  />
+                  <ErrorMessage name="image" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
               {values.type === 'EXTERNAL_PROMOTIONS' && (
                 <div>
                   <label htmlFor="image2" className="text-sm font-medium text-gray-700">

@@ -259,7 +259,7 @@ const BannerView = () => {
   { value: 'NEW_CUSTOMER', label: 'New Customer' },
   { value: 'INTRO_SLIDES', label: 'Intro Slides (customer)'},
   { value: 'INTRO_SLIDES_DRIVER', label: 'Intro Slides (Driver)' },
-  // { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' }
+  { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' }
 ] ;
 
   // Client-side filtering remains as a fallback
@@ -358,11 +358,15 @@ const BannerView = () => {
                   filteredBannerList.map((item, index) => (
                     <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-5">
-                        <img
-                          src={item.imageUrl}
-                          alt="banner"
-                          className="w-8 h-auto rounded-xl"
-                        />
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt="banner"
+                            className="w-8 h-auto rounded-xl"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">No image</span>
+                        )}
                       </td>
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>
                       <td className="py-3 px-5 break-words max-w-xs">{item.redirectUrl || '-'}</td>
@@ -429,8 +433,8 @@ const BannerView = () => {
                                   if ((b.zone || '') !== (item.zone || '')) return false;
 
                                   if (
-                                    item.type === 'INTRO_SLIDES_DRIVER' 
-                                    // || item.type === 'TRAINING_VIDEO_DRIVER'
+                                    item.type === 'INTRO_SLIDES_DRIVER' ||
+                                    item.type === 'TRAINING_VIDEO_DRIVER'
                                   ) {
                                     return (b.driverType || '') === (item.driverType || '');
                                   }
@@ -443,7 +447,7 @@ const BannerView = () => {
                                     ...prev,
                                     [item.id]:
                                       item.type === 'INTRO_SLIDES_DRIVER' 
-                                    //  || item.type === 'TRAINING_VIDEO_DRIVER'
+                                      || item.type === 'TRAINING_VIDEO_DRIVER'
                                         ? `Another ${item.type} (${item.driverType || 'N/A'}) banner in ${item.zone || 'N/A'} already uses position ${newPosition}`
                                         : `Another ${item.type} banner in ${item.zone || 'N/A'} already uses position ${newPosition}`,
                                   }));
