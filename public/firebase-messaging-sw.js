@@ -22,12 +22,25 @@ importScripts(
     appId: "1:494826851721:web:466a0b430ec6b0ba20a558"
   });
   const messaging = firebase.messaging();
+  const normalizeText = (value) => {
+    if (value == null) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    if (typeof value === "object") {
+      return value?.name || value?.address || value?.label || value?.title || "";
+    }
+    return String(value);
+  };
+
   const buildNotificationMessage = (payload) => {
     const notification = payload?.notification || {};
     const data = payload?.data || {};
     const title = notification.title || data.title || "New Notification";
-    let body = notification.body || data.body || "";
+    let body = normalizeText(notification.body || data.body || "");
     if (!body) body = "You have a new message";
+    if (body.includes("[object Object]")) {
+      body = body.replace(/\[object Object\]/g, "Not specified");
+    }
 
     return {
       title,

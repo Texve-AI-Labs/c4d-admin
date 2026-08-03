@@ -1063,7 +1063,10 @@ export const API_ROUTES = {
     'UPDATE_DRIVER_ADS_REGISTRATION_NOTES':'/admin/driver-advertisement-registrations/:registrationId/notes',
     'POST_FOLLOW_UP':'/admin/driver-advertisement-registrations/:registrationId/follow-up',
     'STATUS_COMPLETE_REMARKS':'/admin/driver-advertisement-registrations/:registrationId/complete',
-    'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity'
+    'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity',
+    'MASTER_JOINS_BOUNCE':'/admin/free-plan',
+    'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
+    'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
 
 };
 

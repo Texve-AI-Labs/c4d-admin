@@ -190,7 +190,13 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [followupLoading, setFollowupLoading] = useState({});
     const [allUsers, setAllUsers] = useState([]); 
     const latestRequestRef = useRef(0);
-    const summaryRequestRef = useRef(0);
+    const summaryRequestRef = useRef({
+        requestId: 0,
+        inFlight: null,
+        lastQueryKey: "",
+        lastQueryAt: 0,
+        lastResult: null,
+    });
     const previousCustomerIdRef = useRef(customerId);
     const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
 

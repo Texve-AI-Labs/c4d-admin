@@ -26,6 +26,16 @@ const canUsePushMessaging = () => {
   );
 };
 
+const normalizeText = (value) => {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "object") {
+    return value?.name || value?.address || value?.label || value?.title || "";
+  }
+  return String(value);
+};
+
 
 // Separate function to request FCM token
 export const requestToken = async () => {
@@ -83,7 +93,11 @@ export const requestToken = async () => {
 onMessage(FirebaseMessaging, (payload) => {
   // console.log("📩 Message received:", payload);
   const notificationTitle = payload.notification?.title || 'New Message';
-  const notificationBody = payload.notification?.body || 'You have a new message.';
+  let notificationBody = normalizeText(payload.notification?.body || payload.data?.body || '');
+  if (!notificationBody) notificationBody = 'You have a new message.';
+  if (notificationBody.includes("[object Object]")) {
+    notificationBody = notificationBody.replace(/\[object Object\]/g, "Not specified");
+  }
   const notificationOptions = {
     body: notificationBody,
     icon: '/firebase-logo.png'

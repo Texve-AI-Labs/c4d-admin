@@ -724,8 +724,17 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
         .required("Service Type is required"),
     packagePrice: Yup.number()
         .typeError("Package Price Amount must be a number")
-
-        .required("Package Price Amount is required"),
+        .when("type", {
+            is: "FREE",
+            then: (schema) =>
+                schema
+                    .oneOf([0], "Package Price must be 0 when Type is Free")
+                    .required("Package Price Amount is required"),
+            otherwise: (schema) =>
+                schema
+                    .moreThan(0, "Package Price must be greater than 0 when Type is Paid")
+                    .required("Package Price Amount is required"),
+        }),
     price: Yup.number()
         .typeError("Price must be a number")
 
@@ -765,8 +774,17 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
         .required("Service Type is required"),
     packagePrice: Yup.number()
         .typeError("Package Price Amount must be a number")
-
-        .required("Package Price Amount is required"),
+        .when("type", {
+            is: "FREE",
+            then: (schema) =>
+                schema
+                    .oneOf([0], "Package Price must be 0 when Type is Free")
+                    .required("Package Price Amount is required"),
+            otherwise: (schema) =>
+                schema
+                    .moreThan(0, "Package Price must be greater than 0 when Type is Paid")
+                    .required("Package Price Amount is required"),
+        }),
     price: Yup.number()
         .typeError("Price must be a number")
 
