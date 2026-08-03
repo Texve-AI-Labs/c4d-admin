@@ -26,7 +26,7 @@ const SERVICE_OPTIONS = [
 function ServiceTripRulesSection(props) {
   const normalizedPartnerType = String(props?.partnerType || "").trim().toUpperCase();
   const serviceOptions =
-    normalizedPartnerType === "CAB" ? [{ label: "All", value: "ANY" }, ...SERVICE_OPTIONS] : SERVICE_OPTIONS;
+    normalizedPartnerType === "CAB" ? [{ label: "All", value: "ANY" }, ...SERVICE_OPTIONS.filter((option) => !["AUTO", "PARCEL"].includes(option.value))] : SERVICE_OPTIONS;
   return (
     <TierComponentRulesSection
       {...props}
