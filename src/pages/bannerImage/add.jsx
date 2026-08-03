@@ -19,6 +19,7 @@ const debounce = (func, delay) => {
 const AddBanner = () => {
   const navigate = useNavigate();
   const [imagePreview, setImagePreview] = useState(null);
+  const [image2Preview, setImage2Preview] = useState(null);
   const [error, setError] = useState(null);
   const [serviceAreas, setServiceAreas] = useState([]);
   const [dropSuggestions, setDropSuggestions] = useState([]);
@@ -70,6 +71,7 @@ const AddBanner = () => {
     status: true,
     type: '',
     image: null,
+    image2: null,
     zone: '',
     dropAddress: '',        
     dropLocation: null,     
@@ -118,6 +120,16 @@ const AddBanner = () => {
       .test('fileType', 'Only JPEG or PNG or GIF or AVIF or WEBP files are allowed', (value) =>
         value ? ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'].includes(value.type) : false
       ),
+    image2: Yup.mixed().when('type', {
+      is: isExternalPromotions,
+      then: (schema) =>
+        schema
+          .required('Image 2 is required')
+          .test('fileType2', 'Only JPEG or PNG or GIF or AVIF or WEBP files are allowed', (value) =>
+            value ? ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'].includes(value.type) : false
+          ),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     fromDate: Yup.string().when('type', {
       is: requiresStandardFields,
       then: (schema) => schema.required('Start Date is required'),
@@ -143,6 +155,11 @@ const AddBanner = () => {
       then: (schema) => schema.required('End Time is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
+    redirectUrl: Yup.string().when('type', {
+      is: isExternalPromotions,
+      then: (schema) => schema.required('Redirect URL is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
     serviceType: Yup.string().when('type', {
       is: isServiceIntroImage,
       then: (schema) => schema.required('Service Type is required'),
@@ -165,6 +182,17 @@ const AddBanner = () => {
 
     setFieldValue('image', file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImage2Upload = (file, setFieldValue) => {
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'];
+    if (!file || !validTypes.includes(file.type)) {
+      alert('Only JPEG, PNG, GIF, and AVIF, WEBP images are allowed.');
+      return;
+    }
+
+    setFieldValue('image2', file);
+    setImage2Preview(URL.createObjectURL(file));
   };
 
   // Search Locations (same as Booking page)
@@ -244,6 +272,11 @@ const AddBanner = () => {
         if (mappedServiceDetails?.packageType) {
           formData.append('packageType', mappedServiceDetails.packageType);
         }
+      }
+      if (isExternalPromotions) {
+        formData.append('image2', values.image2, values.image2.name);
+        formData.append('fileTypeImage2', values.image2?.type || '');
+        formData.append('extImage2', values.image2?.name?.split('.').pop()?.toLowerCase() || '');
       }
       if (values.type === 'INTRO_SLIDES_DRIVER')
         // || values.type === 'TRAINING_VIDEO_DRIVER' 
@@ -536,7 +569,7 @@ const AddBanner = () => {
               
               <div>
                 <label htmlFor="image" className="text-sm font-medium text-gray-700">
-                  Image
+                 {values.type === 'EXTERNAL_PROMOTIONS' ? 'Only Square Image' : 'Image'}
                 </label>
                 {imagePreview && (
                   <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover mb-2 border" />
@@ -550,6 +583,24 @@ const AddBanner = () => {
                 />
                 <ErrorMessage name="image" component="div" className="text-red-500 text-sm" />
               </div>
+              {values.type === 'EXTERNAL_PROMOTIONS' && (
+                <div>
+                  <label htmlFor="image2" className="text-sm font-medium text-gray-700">
+                    Only Landscape Image
+                  </label>
+                  {image2Preview && (
+                    <img src={image2Preview} alt="Preview 2" className="w-32 h-32 object-cover mb-2 border" />
+                  )}
+                  <input
+                    name="image2"
+                    type="file"
+                    accept="image/*"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                    onChange={(e) => handleImage2Upload(e.currentTarget.files[0], setFieldValue)}
+                  />
+                  <ErrorMessage name="image2" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
               
             </div>
 
