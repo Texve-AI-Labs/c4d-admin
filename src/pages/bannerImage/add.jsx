@@ -105,7 +105,8 @@ const AddBanner = () => {
     })),
   ];
 
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER'];
+    // 'TRAINING_VIDEO_DRIVER'
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
@@ -148,7 +149,8 @@ const AddBanner = () => {
       otherwise: (schema) => schema.notRequired(),
     }),
     driverType: Yup.string().when('type', {
-      is: (type) => type === 'INTRO_SLIDES_DRIVER' || type === 'TRAINING_VIDEO_DRIVER',
+      is: (type) => type === 'INTRO_SLIDES_DRIVER', 
+      // || type === 'TRAINING_VIDEO_DRIVER',
       then: (schema) => schema.required('Driver Type is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
@@ -209,7 +211,8 @@ const AddBanner = () => {
       // console.log('Sending image:', values.image?.name, values.image?.type);
 
       const formData = new FormData();
-      const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
+      const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER';
+      // || values.type === 'TRAINING_VIDEO_DRIVER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
       const isServiceIntro = values.type === "SERVICE_INTRO_IMAGE";
       const mappedServiceDetails = isServiceIntro ? mapServiceDetails(values.serviceType) : null;
@@ -230,9 +233,9 @@ const AddBanner = () => {
         formData.append('navigateTo', values.navigateTo.trim());
         }
       }
-      if (values.type === 'TRAINING_VIDEO_DRIVER') {
-        formData.append('redirectUrl', values.redirectUrl.trim());
-      }
+      // if (values.type === 'TRAINING_VIDEO_DRIVER') {
+      //   formData.append('redirectUrl', values.redirectUrl.trim());
+      // }
       if (isServiceIntro) {
         formData.append('serviceType', mappedServiceDetails?.serviceType || '');
         if (mappedServiceDetails?.bookingType) {
@@ -242,7 +245,9 @@ const AddBanner = () => {
           formData.append('packageType', mappedServiceDetails.packageType);
         }
       }
-      if (values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER') {
+      if (values.type === 'INTRO_SLIDES_DRIVER')
+        // || values.type === 'TRAINING_VIDEO_DRIVER' 
+      {
         formData.append('driverType', values.driverType);
       }
       formData.append('status', values.status === 'true' || values.status === true);
@@ -303,7 +308,8 @@ const AddBanner = () => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, values,setFieldValue }) => {
-          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER';
+          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER'; 
+          // || values.type === 'TRAINING_VIDEO_DRIVER'
           const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
           const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType;
           return (
@@ -319,10 +325,11 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER'  || selectedType === 'SERVICE_INTRO_IMAGE') // || selectedType === 'TRAINING_VIDEO_DRIVER'
+                    {
                       setFieldValue('zone', 'All');
                     }
-                    if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
+                    if (selectedType !== 'INTRO_SLIDES_DRIVER' ) { // && selectedType !== 'TRAINING_VIDEO_DRIVER'
                       setFieldValue('driverType', '');
                     }
                   }}
@@ -349,7 +356,7 @@ const AddBanner = () => {
                 </Field>
                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
               </div>
-              {(values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'TRAINING_VIDEO_DRIVER') && (
+              {(values.type === 'INTRO_SLIDES_DRIVER' ) && ( // || values.type === 'TRAINING_VIDEO_DRIVER'
                 <div>
                   <label className="text-sm font-medium text-gray-700">Driver Type</label>
                   <Field
@@ -368,7 +375,7 @@ const AddBanner = () => {
                   <ErrorMessage name="driverType" component="div" className="text-red-500 text-sm" />
                 </div>
               )}
-              {values.type === 'TRAINING_VIDEO_DRIVER' && (
+              {/* {values.type === 'TRAINING_VIDEO_DRIVER' && (
                 <>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Redirect URL</label>
@@ -380,7 +387,7 @@ const AddBanner = () => {
                     <ErrorMessage name="redirectUrl" component="div" className="text-red-500 text-sm" />
                   </div>
                 </>
-              )}
+              )} */}
               {isServiceIntro && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Service Type</label>

@@ -429,8 +429,8 @@ const BannerView = () => {
                                   if ((b.zone || '') !== (item.zone || '')) return false;
 
                                   if (
-                                    item.type === 'INTRO_SLIDES_DRIVER' ||
-                                    item.type === 'TRAINING_VIDEO_DRIVER'
+                                    item.type === 'INTRO_SLIDES_DRIVER' 
+                                    // || item.type === 'TRAINING_VIDEO_DRIVER'
                                   ) {
                                     return (b.driverType || '') === (item.driverType || '');
                                   }
@@ -442,8 +442,8 @@ const BannerView = () => {
                                   setPositionErrorById(prev => ({
                                     ...prev,
                                     [item.id]:
-                                      item.type === 'INTRO_SLIDES_DRIVER' ||
-                                      item.type === 'TRAINING_VIDEO_DRIVER'
+                                      item.type === 'INTRO_SLIDES_DRIVER' 
+                                    //  || item.type === 'TRAINING_VIDEO_DRIVER'
                                         ? `Another ${item.type} (${item.driverType || 'N/A'}) banner in ${item.zone || 'N/A'} already uses position ${newPosition}`
                                         : `Another ${item.type} banner in ${item.zone || 'N/A'} already uses position ${newPosition}`,
                                   }));
