@@ -185,6 +185,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [selectedDriver, setSelectedDriver] = useState(null); 
     const [selectedTime, setSelectedTime] = useState(moment().format(' hh:mm A')); 
     const [totalDriverCount, setTotalDriverCount] = useState(0);
+    const [todayOnlineDrivers, setTodayOnlineDrivers] = useState(0);
     const [showDriverHours, setShowDriverHours] = useState(false);
     const [isCustomDatePopoverOpen, setIsCustomDatePopoverOpen] = useState(false);
     const [followupLoading, setFollowupLoading] = useState({});
@@ -604,6 +605,7 @@ if (!statusFilter.includes('All')) {
                 setCounts(data?.counts || { endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount: "0", uniqueCustomerPerDayBookingCount:"0" });
                 setOnlineDrivers(data?.onlineDrivers || []);
                 setTotalDriverCount(data?.totalDrivers || 0);
+                setTodayOnlineDrivers(data?.todayOnlineDrivers || 0);
                 setSelectedBookingId(null);
             } 
             else {
@@ -1149,27 +1151,13 @@ if (!statusFilter.includes('All')) {
                         <div className="bg-gradient-to-r from-blue-100 to-blue-100 text-blue-900 p-2 rounded-lg shadow-md flex flex-col items-center justify-center min-w-[120px]">
                             <div className="flex items-center justify-center mb-1 w-full">
                             <Typography variant="small" className="font-bold text-xs text-blue-900">
-                                    Total Drivers
+                                    Current Online Drivers
                             </Typography>
                         </div>
                             <div className='flex gap-2 items-center'>
-                                <Typography variant="h3" className="font-bold text-2xl text-blue-900">{totalDriverCount}</Typography>
+                                <Typography variant="h3" className="font-bold text-2xl text-blue-900">{todayOnlineDrivers}</Typography>
                                 {/* <FaUsers className="w-5 h-5 mr-2 text-blue-900" /> */}
                             </div>
-                            
-                    {/* Hourly Online Drivers Section */}
-                    {/* <div className="bg-white p-4 rounded-2xl shadow-2xl">
-                        <div className="flex justify-between items-center mb-2">
-                            <Typography variant="h6" className="text-gray-900 text-sm">
-                                Hourly Online Drivers
-                            </Typography>
-                            <Button
-                                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm"
-                                onClick={handleToggleDriverHours}
-                            >
-                                Select Slot
-                            </Button>
-                        </div> */}
                         </div>
                         <div className="bg-gradient-to-r from-green-100 to-green-100 text-green-900 p-2 rounded-lg text-center flex flex-col items-end min-w-[120px]">
                             <div className="flex items-center justify-center w-full">
@@ -1412,6 +1400,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'STARTED', label: 'Started' },
                                                                 { value: 'END_OTP', label: 'End OTP' },
                                                                 { value: 'ENDED', label: 'Ended' },
+                                                                { value: 'DRIVER_NOT_AVAILABLE', label: 'Driver Not Available'},
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
                                                                 { value: 'SUPPORT_CANCELLED', label: 'Support Cancelled' },
                                                                 { value: 'COMPLETED', label: 'Completed' },
@@ -1794,6 +1783,7 @@ if (!statusFilter.includes('All')) {
                                                                     data?.status ===  "DRIVER_ON_THE_WAY" ? "bg-primary   text-white":
                                                                     data?.status === "DRIVER_REACHED" ? "bg-yellow-600  text-white":
                                                                     data?.status === "PAYMENT_REQUESTED" ? "bg-green-600  text-white":
+                                                                    data?.status === "DRIVER_NOT_AVAILABLE" ? "bg-red-600  text-white":
                                                                     "bg-primary  text-white"
                                                                     
                                                                 }`}

@@ -287,18 +287,23 @@ const ConfirmBooking = (props) => {
         }
         return 'Outstation';
     };
-    const formatStatus = (status = '') => {
+    const formatStatus = (status = '', assignmentStatus = '') => {
          if (status === 'BOOKING_ACCEPTED') {
                 return 'Driver Accepted';
             }
- 
+        if (assignmentStatus === 'DRIVER_NOT_AVAILABLE') {
+            return 'Driver Not Available';
+        }
 
         if (status === 'ENDED' &&  bookingDetails?.tripStatus === true) {
             return (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold">
-                    Completed
+                    Completed {assignmentStatus ? `(${assignmentStatus})` : ''}
                 </span>
             );
+        }
+        if (status === 'ENDED' && assignmentStatus) {
+            return `Ended (${assignmentStatus})`;
         }
         return status
             .toLowerCase()
@@ -1101,8 +1106,14 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
 
 
                         {bookingDetails?.status && (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                                {formatStatus(bookingDetails?.status)}
+                            <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                                    bookingDetails?.assignmentStatus
+                                        ? "bg-red-600 text-white"
+                                        : "bg-blue-100 text-blue-800"
+                                }`}
+                            >
+                                {formatStatus(bookingDetails?.status, bookingDetails?.assignmentStatus)}
                             </span>
                         )}
                         {bookingDetails?.serviceType && (
