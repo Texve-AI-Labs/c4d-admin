@@ -1068,6 +1068,9 @@ export const API_ROUTES = {
     'MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
+    'GET_REFERRAL_RULE': '/referral-rules',
+    'POST_REFERRAL_RULE': '/referral-rules',
+    'UPDATE_REFERRAL_RULE': '/referral-rules/:settingId',
 
 };
 

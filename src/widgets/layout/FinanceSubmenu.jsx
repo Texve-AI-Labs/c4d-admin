@@ -24,6 +24,7 @@ const FINANCE_GROUPS = [
     title: "Rewards",
     items: [
       { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
+      { label: "Referral Rules", path: "/dashboard/finance/referral-rules/list", requiredPermission: "Users" },
       { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
       { label: "Driver KM Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
       { label: "Discount Module", path: "/dashboard/finance/discountModuleList", requiredPermission: "Users" },
@@ -57,50 +58,61 @@ function FinanceSubmenu({ permissions = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname.toLowerCase();
+  const financePathname = pathname.startsWith("/dashboard/finance")
+    ? pathname.replace("/dashboard", "") : pathname;
+
+  const matchesFinancePath = (targetPath) => {
+    const normalizedTarget = targetPath.toLowerCase();
+    return financePathname.startsWith(normalizedTarget.replace("/dashboard", "")) || pathname.startsWith(normalizedTarget);
+  };
+
   const isMainItemActive = (label, path, navActive) => {
     if (navActive) return true;
 
     if (label === "Booking Invoice") {
-      return pathname.startsWith("/dashboard/finance/bookinginvoice");
+      return matchesFinancePath("/finance/bookingInvoiceList");
     }
     if (label === "Cash Back") {
-      return pathname.startsWith("/dashboard/finance/cash-back");
+      return matchesFinancePath("/finance/cash-back");
     }
     if (label === "Driver KM Bonus") {
-      return pathname.startsWith("/dashboard/finance/driver-bonus");
+      return matchesFinancePath("/finance/driver-bonus");
     }
     if (label === "Discount Module") {
-      return pathname.startsWith("/dashboard/finance/discountmodule");
+      return matchesFinancePath("/finance/discountModuleList");
     }
     if (label === "Custom Discount") {
-      return pathname.startsWith("/dashboard/finance/custom-discount");
+      return matchesFinancePath("/finance/custom-discount");
+    }
+    if (label === "Referral Rules") {
+      return matchesFinancePath("/finance/referral-rules");
     }
     if (label === "Settings") {
-      return pathname.startsWith("/dashboard/finance/gst");
+      return matchesFinancePath("/finance/GSTList");
     }
     if(label === "Parcel Commission") {
-      return pathname.startsWith("/dashboard/finance/parcel-commission");
+      return matchesFinancePath("/finance/parcel-commission");
     }
     if (label === "Parcel Slot Config") {
-      return pathname.startsWith("/dashboard/finance/parcel-slot-config");
+      return matchesFinancePath("/finance/parcel-slot-config");
     }
     if (label === "Parcel Daily Slots") {
-      return pathname.startsWith("/dashboard/finance/parcel-daily-slots");
+      return matchesFinancePath("/finance/parcel-daily-slots");
     }
     if (label === "Master Subscription Table") {
-      return pathname === "/dashboard/finance/master-subscription";
+      return matchesFinancePath("/finance/master-subscription");
     }
     if (label === "Withdrawal Rules") {
-      return pathname.startsWith("/dashboard/finance/withdrawal-rules");
+      return matchesFinancePath("/finance/withdrawal-rules");
     }
     if (label === "Withdrawal Transaction") {
-      return pathname.startsWith("/dashboard/finance/wallet-transaction");
+      return matchesFinancePath("/finance/wallet-transaction");
     }
     if (label === "Return Trip Driver Master Subscription Table") {
-      return pathname.startsWith("/dashboard/finance/master-subscription/return-trip-driver");
+      return matchesFinancePath("/finance/master-subscription/return-trip-driver");
     }
 
-    return pathname.startsWith(path.toLowerCase());
+    return matchesFinancePath(path);
   };
 
   const getItemClasses = (isActive) =>
@@ -135,13 +147,9 @@ function FinanceSubmenu({ permissions = [] }) {
   }, [pathname, visibleGroups]);
 
   const [openGroup, setOpenGroup] = useState(routeGroupTitle);
-  const previousPathRef = useRef(pathname);
 
   useEffect(() => {
-    if (previousPathRef.current !== pathname) {
-      setOpenGroup(routeGroupTitle);
-      previousPathRef.current = pathname;
-    }
+    setOpenGroup(routeGroupTitle);
   }, [pathname, routeGroupTitle]);
 
   const renderItems = (menuItems) =>

@@ -91,6 +91,9 @@ import DynamicTextAdd from "./pages/marketing/dynamicText/addDynamicText";
 import DynamicTextEdit from "./pages/marketing/dynamicText/editDynamicText";
 import SkipLogs from "./pages/marketing/skipLogs";
 import InstantReward from "./pages/vendor/instantReward";
+import ReferralRuleList from "./pages/finance/referralRules/list";
+import ReferralRuleAdd from "./pages/finance/referralRules/add";
+import ReferralRuleEdit from "./pages/finance/referralRules/edit";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
@@ -1300,6 +1303,30 @@ export const routes = [
         path: "/finance/instant-reward",
         element: <InstantReward />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule List",
+        path: "/finance/referral-rules/list",
+        element: <ReferralRuleList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule Add",
+        path: "/finance/referral-rules/add",
+        element: <ReferralRuleAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule Edit",
+        path: "/finance/referral-rules/edit/:settingId",
+        element: <ReferralRuleEdit />,
+        display: false,
         permission: "Users",
       },
       {
