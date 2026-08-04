@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Button, Typography } from "@material-tailwind/react";
 import { NAV_UI } from "@/utils/constants";
@@ -16,6 +16,7 @@ const FINANCE_GROUPS = [
     title: "Pricing",
     items: [
       { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
+      { label: "Joining Bonus", path: "/finance/joining-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     ],
@@ -62,15 +63,36 @@ function FinanceSubmenu({ permissions = [] }) {
     ? pathname.replace("/dashboard", "") : pathname;
 
   const matchesFinancePath = (targetPath) => {
-    const normalizedTarget = targetPath.toLowerCase();
-    return financePathname.startsWith(normalizedTarget.replace("/dashboard", "")) || pathname.startsWith(normalizedTarget);
+    const normalizedTarget = targetPath.toLowerCase().replace("/dashboard", "");
+    return financePathname.startsWith(normalizedTarget) || pathname.startsWith(normalizedTarget);
   };
 
   const isMainItemActive = (label, path, navActive) => {
     if (navActive) return true;
 
+    if (label === "Subscription Invoice") {
+      return matchesFinancePath("/finance/invoice");
+    }
+    if (label === "Booking Receipt") {
+      return matchesFinancePath("/finance/receipt");
+    }
     if (label === "Booking Invoice") {
       return matchesFinancePath("/finance/bookingInvoiceList");
+    }
+    if (label === "Master Subscription Table") {
+      return matchesFinancePath("/finance/master-subscription");
+    }
+    if (label === "Joining Bonus") {
+      return matchesFinancePath("/finance/joining-bonus");
+    }
+    if (label === "Master Price Table") {
+      return matchesFinancePath("/finance/master-price");
+    }
+    if (label === "Instant Reward") {
+      return matchesFinancePath("/finance/instant-reward");
+    }
+    if (label === "Referral Rules") {
+      return matchesFinancePath("/finance/referral-rules");
     }
     if (label === "Cash Back") {
       return matchesFinancePath("/finance/cash-back");
@@ -84,13 +106,10 @@ function FinanceSubmenu({ permissions = [] }) {
     if (label === "Custom Discount") {
       return matchesFinancePath("/finance/custom-discount");
     }
-    if (label === "Referral Rules") {
-      return matchesFinancePath("/finance/referral-rules");
-    }
     if (label === "Settings") {
       return matchesFinancePath("/finance/GSTList");
     }
-    if(label === "Parcel Commission") {
+    if (label === "Parcel Commission") {
       return matchesFinancePath("/finance/parcel-commission");
     }
     if (label === "Parcel Slot Config") {
@@ -98,9 +117,6 @@ function FinanceSubmenu({ permissions = [] }) {
     }
     if (label === "Parcel Daily Slots") {
       return matchesFinancePath("/finance/parcel-daily-slots");
-    }
-    if (label === "Master Subscription Table") {
-      return matchesFinancePath("/finance/master-subscription");
     }
     if (label === "Withdrawal Rules") {
       return matchesFinancePath("/finance/withdrawal-rules");
@@ -150,7 +166,7 @@ function FinanceSubmenu({ permissions = [] }) {
 
   useEffect(() => {
     setOpenGroup(routeGroupTitle);
-  }, [pathname, routeGroupTitle]);
+  }, [routeGroupTitle]);
 
   const renderItems = (menuItems) =>
     menuItems.map(({ label, path }) => (
