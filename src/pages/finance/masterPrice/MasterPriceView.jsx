@@ -410,7 +410,7 @@ export function MasterPriceView() {
                                     "Base Hours",
                                     "Base KM",
                                     "Base Fare",
-                                    "Extra hour charge",
+                                    "Extra Minute Charge",
                                     "Extra KM rate",
                                     "Food Charges",
                                     "Night Charges",
