@@ -259,7 +259,8 @@ const BannerView = () => {
   { value: 'NEW_CUSTOMER', label: 'New Customer' },
   { value: 'INTRO_SLIDES', label: 'Intro Slides (customer)'},
   { value: 'INTRO_SLIDES_DRIVER', label: 'Intro Slides (Driver)' },
-  { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' }
+  { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' },
+  { value: 'QR_PAGE_BANNER', label: 'QR Page Banner' }
 ] ;
 
   // Client-side filtering remains as a fallback

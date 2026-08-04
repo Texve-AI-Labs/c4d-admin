@@ -109,7 +109,7 @@ const AddBanner = () => {
   ];
 
   const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER';
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER', 'QR_PAGE_BANNER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
@@ -254,11 +254,12 @@ const AddBanner = () => {
       const formData = new FormData();
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER';
       const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
+      const isQrPageImageType = values.type === 'QR_PAGE_BANNER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
       const isServiceIntro = values.type === "SERVICE_INTRO_IMAGE";
       const mappedServiceDetails = isServiceIntro ? mapServiceDetails(values.serviceType) : null;
 
-      if (!isNewCustomer && !isIntroType && !isTrainingVideo) {
+      if (!isNewCustomer && !isIntroType && !isTrainingVideo && !isQrPageImageType) {
         formData.append('fromDate', values.fromDate);
         formData.append('startTime', values.startTime || '');
         formData.append('endTime', values.endTime || '');
@@ -276,6 +277,9 @@ const AddBanner = () => {
       if (isTrainingVideo) {
         formData.append('redirectUrl', values.redirectUrl.trim());
         formData.append('title', values.title.trim());
+      }
+      if (isQrPageImageType) {
+      formData.append('title', values.title.trim());
       }
       if (isServiceIntro) {
         formData.append('serviceType', mappedServiceDetails?.serviceType || '');
@@ -296,7 +300,7 @@ const AddBanner = () => {
       }
       formData.append('status', values.status === 'true' || values.status === true);
       formData.append('type', values.type.trim());
-      formData.append('zone', isNewCustomer || isIntroType || isTrainingVideo ? 'All' : values.zone);
+      formData.append('zone', isNewCustomer || isIntroType || isTrainingVideo || isQrPageImageType ? 'All' : values.zone);
       if (!isTrainingVideo && values.image) {
         formData.append('image', values.image, values.image.name);
         formData.append('fileTypeImage', values.image?.type || '');
@@ -356,7 +360,8 @@ const AddBanner = () => {
           const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER'; 
           const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
           const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
-          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType || isTrainingVideo;
+          const isQrPageImageType = values.type === 'QR_PAGE_BANNER';
+          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType || isTrainingVideo || isQrPageImageType;
           return (
           <Form className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -370,7 +375,7 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'QR_PAGE_BANNER') {
                       setFieldValue('zone', 'All');
                     }
                     if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
@@ -395,6 +400,7 @@ const AddBanner = () => {
                   <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
                   <option value="INTRO_SLIDES_DRIVER">Intro Slides (Driver)</option>         
                   <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>
+                  <option value="QR_PAGE_BANNER">QR Page Banner</option>
                 </Field>
                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
               </div>
@@ -415,6 +421,18 @@ const AddBanner = () => {
                     <option value="ALL">All</option>
                   </Field>
                   <ErrorMessage name="driverType" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
+                {isQrPageImageType && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Title</label>
+                  <Field
+                    name="title"
+                    type="text"
+                    placeholder="Enter Title text"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                  />
+                  <ErrorMessage name="title" component="div" className="text-red-500 text-sm" />
                 </div>
               )}
               {isTrainingVideo && (
@@ -518,7 +536,7 @@ const AddBanner = () => {
               </div>
 
               {/* Drop Location (New Field) */}
-              {!hideStandardFields && !isServiceIntro && !isExternalPromotions && (
+              {!hideStandardFields && !isServiceIntro && !isExternalPromotions && !isQrPageImageType && (
                 <>              
               <div>
                 <label className="text-sm font-medium text-gray-700">Drop Location </label>
