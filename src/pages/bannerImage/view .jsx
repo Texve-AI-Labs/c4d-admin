@@ -99,6 +99,16 @@ const BannerView = () => {
     return moment(timeValue, ['HH:mm:ss', 'HH:mm']).format('hh:mm A');
   };
 
+  const getPrimaryBannerImage = (item) => {
+    if (!item) return '';
+    return item.imageUrl || item.secondaryImageUrl || '';
+  };
+
+  const getSecondaryBannerImage = (item) => {
+    if (!item) return '';
+    return item.secondaryImageUrl || '';
+  };
+
   useEffect(() => {
     const loadZoneOptions = async () => {
       const options = await fetchZoneOptions();
@@ -322,6 +332,7 @@ const BannerView = () => {
               <thead>
                 <tr className=" text-black">
                   <th className="py-3 px-5 text-left text-gray-700">Image</th>
+                  <th className="py-3 px-5 text-left text-gray-700">Image 2</th>
                  <th className="py-3 px-5 text-left">
                     <FilterPopover
                       title={<span className="text-base font-semibold text-gray-700 mr-1">Type</span>}
@@ -353,7 +364,7 @@ const BannerView = () => {
               <tbody>
                 {filteredBannerList.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-center py-4">
+                  <td colSpan="13" className="text-center py-4">
                       No Banner Records Found
                     </td>
                   </tr>
@@ -361,14 +372,25 @@ const BannerView = () => {
                   filteredBannerList.map((item, index) => (
                     <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-5">
-                        {item.imageUrl ? (
+                        {getPrimaryBannerImage(item) ? (
                           <img
-                            src={item.imageUrl}
+                            src={getPrimaryBannerImage(item)}
                             alt="banner"
                             className="w-8 h-auto rounded-xl"
                           />
                         ) : (
                           <span className="text-xs text-gray-500">No image</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-5">
+                        {getSecondaryBannerImage(item) ? (
+                          <img
+                            src={getSecondaryBannerImage(item)}
+                            alt="banner 2"
+                            className="w-8 h-auto rounded-xl"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">-</span>
                         )}
                       </td>
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>

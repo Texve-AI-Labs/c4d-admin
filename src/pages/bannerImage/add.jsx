@@ -182,7 +182,7 @@ const AddBanner = () => {
       otherwise: (schema) => schema.notRequired(),
     }),
     title: Yup.string().when('type', {
-      is: (type) => type === 'QR_DRIVER_TO_DRIVER' || type === 'QR_DRIVER_TO_CUSTOMER' || type === 'QR_CUSTOMER_TO_CUSTOMER' ||isTrainingVideoDriver,
+      is: (type) => type === 'QR_DRIVER_TO_DRIVER' || type === 'QR_DRIVER_TO_CUSTOMER' || type === 'QR_CUSTOMER_TO_CUSTOMER' || isTrainingVideoDriver(type),
       then: (schema) => schema.trim().required('Heading Text is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
