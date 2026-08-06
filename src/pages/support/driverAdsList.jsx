@@ -183,7 +183,7 @@ function DriverAdsList() {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <DriverAdsZone
               label="Zone"
               value={selectedServiceArea}
@@ -255,9 +255,12 @@ function DriverAdsList() {
                   "Name",
                   "Zone",
                   "Sub Zone",
+                  "Place",
                   "Is Active",
                   "Created At",
-                  "Launch At",
+                  "Contract Period",
+                  "Payment Frequency",
+                  "Payment Amount",
                 ].map((heading) => (
                   <th key={heading} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                     <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
@@ -270,7 +273,7 @@ function DriverAdsList() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 px-5">
+                  <td colSpan={10} className="py-8 px-5">
                     <div className="flex justify-center items-center">
                       <Spinner className="h-12 w-12" />
                     </div>
@@ -282,6 +285,7 @@ function DriverAdsList() {
                   const className = `py-3 px-5 ${index === rows.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                   const zoneName = resolveGeoName(row?.zone, serviceAreas);
                   const subZoneName = resolveGeoName(row?.subZoneId, zones);
+                  const placeName = row?.config?.placements?.[0]?.place || row?.config?.placements?.[0]?.slot?.place || "-";
                   return (
                     <tr key={key} className="border-b border-blue-gray-50">
                       <td className={className}>
@@ -315,6 +319,11 @@ function DriverAdsList() {
                         </Link>
                       </td>
                       <td className={className}>
+                        <Typography className="text-xs font-semibold text-black">
+                          {placeName}
+                        </Typography>
+                      </td>
+                      <td className={className}>
                         <span
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
                             row?.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -329,18 +338,20 @@ function DriverAdsList() {
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-black">
-                          {moment(resolveValue(row, ["launchAt"])).isValid()
-                            ? moment(resolveValue(row, ["launchAt"])).format("DD-MM-YYYY")
-                            : resolveValue(row, ["launchAt"])}
-                        </Typography>
+                        <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["contractPeriod"])}</Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["paymentFrequency"])}</Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-black">₹{resolveValue(row, ["paymentAmount"])}</Typography>
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 px-5 text-center">
+                  <td colSpan={10} className="py-8 px-5 text-center">
                     <Typography className="text-sm font-medium text-blue-gray-600">
                       No driver advertisements found.
                     </Typography>

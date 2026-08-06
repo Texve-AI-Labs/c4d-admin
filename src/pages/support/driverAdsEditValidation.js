@@ -5,25 +5,20 @@ export const driverAdsEditValidationSchema = Yup.object({
   description: Yup.string().trim().required("Description is required"),
   zone: Yup.string().trim().required("Zone is required"),
   subZoneId: Yup.string().trim().required("Sub Zone is required"),
+  contractPeriod: Yup.number().oneOf([30, 60, 90], "Contract period must be 30, 60, or 90").required("Contract period is required"),
+  paymentFrequency: Yup.string().oneOf(["MONTHLY", "WEEKLY"], "Payment frequency is required").required("Payment frequency is required"),
+  paymentAmount: Yup.number().typeError("Payment amount must be a number").positive("Payment amount must be greater than 0").required("Payment amount is required"),
   imageFile: Yup.mixed().nullable(),
-  launchAt: Yup.string()
-    .required("Launch At is required")
-    .test("future-launch-at", "Launch At must be a future datetime.", (value) => {
-      if (!value) return false;
-      const parsed = new Date(value);
-      return !Number.isNaN(parsed.getTime()) && parsed > new Date();
-    }),
   isActive: Yup.boolean().required(),
-  timeSlots: Yup.array()
+  placements: Yup.array()
     .of(
       Yup.object({
+        place: Yup.string().trim().required("Place is required"),
         from: Yup.string().trim().required("From time is required"),
         to: Yup.string().trim().required("To time is required"),
-      }).test("time-range", "To time must be after From time", function (slot) {
-        if (!slot?.from || !slot?.to) return true;
-        return slot.to > slot.from;
       })
     )
-    .min(1, "Add at least one time slot")
+    .min(1, "Add at least one placement")
     .required(),
+  claimRequest: Yup.boolean().required(),
 });

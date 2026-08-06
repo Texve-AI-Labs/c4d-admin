@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, Button, Card, CardBody, IconButton, Input, Switch, Textarea, Typography } from "@material-tailwind/react";
+import { Alert, Button, Card, CardBody, IconButton, Input, Option, Select, Switch, Textarea, Typography } from "@material-tailwind/react";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { Formik, FieldArray } from "formik";
@@ -7,6 +7,7 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import DriverAdsZone from "@/components/driverAdsZone";
 import { driverAdsValidationSchema } from "./driverAdsValidation";
+import { appendFormFields, mapPlacementsToConfig, normalizeSubZoneId } from "./driverAdsPayload";
 
 
 const RequiredLabel = ({ children }) => (
@@ -25,10 +26,13 @@ function DriverAdsCreate() {
     description: "",
     zone: "",
     subZoneId: "",
+    contractPeriod: 30,
+    paymentFrequency: "MONTHLY",
+    paymentAmount: "",
+    claimRequest: false,
     imageFile: null,
-    timeSlots: [{ from: "", to: "" }],
-    launchAt: "",
     isActive: true,
+    placements: [{ place: "", from: "", to: "" }],
   };
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -36,21 +40,19 @@ function DriverAdsCreate() {
     setSuccess("");
     try {
       const formData = new FormData();
-      formData.append("name", values.name.trim());
-      formData.append("description", values.description.trim());
-      formData.append("zone", values.zone);
-      if (values.subZoneId) formData.append("subZoneId", String(values.subZoneId));
-      formData.append("launchAt", values.launchAt);
-      formData.append("isActive", String(values.isActive));
-      formData.append(
-        "config",
-        JSON.stringify({
-          timeSlots: values.timeSlots.map((slot) => ({
-            from: slot.from,
-            to: slot.to,
-          })),
-        })
-      );
+      const subZoneId = normalizeSubZoneId(values.subZoneId);
+      appendFormFields(formData, {
+        name: values.name.trim(),
+        description: values.description.trim(),
+        zone: values.zone,
+        subZoneId,
+        contractPeriod: values.contractPeriod,
+        paymentFrequency: values.paymentFrequency,
+        paymentAmount: values.paymentAmount,
+        claimRequest: values.claimRequest,
+        isActive: values.isActive,
+      });
+      formData.append("config", JSON.stringify(mapPlacementsToConfig(values.placements)));
       if (values.imageFile) {
         formData.append("image1", values.imageFile);
         formData.append("extImage1", values.imageFile.name.split(".").pop());
@@ -115,13 +117,14 @@ function DriverAdsCreate() {
                 </div>
 
                 <DriverAdsZone
-                  label="Zone *"
+                  label="Zone"
                   placeholder="Select Zone"
                   value={values.zone}
                   error={errors.zone}
                   touched={touched.zone}
                   refreshKey={0}
                   showAll={false}
+                  returnLabel
                   onChange={(value) => {
                     setFieldValue("zone", value);
                     setFieldValue("subZoneId", "");
@@ -129,11 +132,7 @@ function DriverAdsCreate() {
                 />
 
                 <DriverAdsZone
-                  label={
-                    <>
-                      Sub Zone <span className="text-red-500">*</span>
-                    </>
-                  }
+                  label="Sub Zone"
                   placeholder="Select Sub Zone"
                   value={values.subZoneId}
                   error={errors.subZoneId}
@@ -146,16 +145,25 @@ function DriverAdsCreate() {
                 />
 
                 <div>
-                  <RequiredLabel>Launch At</RequiredLabel>
-                  <Input
-                    type="date"
-                    name="launchAt"
-                    value={values.launchAt}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className="w-full"
-                  />
-                  {touched.launchAt && errors.launchAt ? <p className="mt-1 text-xs text-red-600">{errors.launchAt}</p> : null}
+                  <RequiredLabel>Contract Period</RequiredLabel>
+                  <Select value={String(values.contractPeriod)} onChange={(value) => setFieldValue("contractPeriod", Number(value))}>
+                    {[30, 60, 90].map((item) => <Option key={item} value={String(item)}>{item}</Option>)}
+                  </Select>
+                  {touched.contractPeriod && errors.contractPeriod ? <p className="mt-1 text-xs text-red-600">{errors.contractPeriod}</p> : null}
+                </div>
+
+                <div>
+                  <RequiredLabel>Payment Frequency</RequiredLabel>
+                  <Select value={values.paymentFrequency} onChange={(value) => setFieldValue("paymentFrequency", value)}>
+                    <Option value="MONTHLY">Monthly</Option>
+                    <Option value="WEEKLY">Weekly</Option>
+                  </Select>
+                  {touched.paymentFrequency && errors.paymentFrequency ? <p className="mt-1 text-xs text-red-600">{errors.paymentFrequency}</p> : null}
+                </div>
+                <div>
+                  <RequiredLabel>Payment Amount</RequiredLabel>
+                  <Input type="number" min="0" name="paymentAmount" value={values.paymentAmount} onChange={handleChange} onBlur={handleBlur} className="w-full" />
+                  {touched.paymentAmount && errors.paymentAmount ? <p className="mt-1 text-xs text-red-600">{errors.paymentAmount}</p> : null}
                 </div>
 
                 <div>
@@ -164,7 +172,6 @@ function DriverAdsCreate() {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setFieldValue("imageFile", e.currentTarget.files?.[0] || null)}
-                    onBlur={handleBlur}
                     className="w-full"
                   />
                   {touched.imageFile && errors.imageFile ? <p className="mt-1 text-xs text-red-600">{errors.imageFile}</p> : null}
@@ -189,49 +196,54 @@ function DriverAdsCreate() {
                   <Typography className="text-sm font-medium text-blue-gray-700">Active <span className="text-red-500">*</span></Typography>
                 </div>
 
+                <div className="flex items-center gap-3 md:pt-6">
+                  <Switch
+                    checked={values.claimRequest}
+                    onChange={(e) => setFieldValue("claimRequest", e.target.checked)}
+                  />
+                  <Typography className="text-sm font-medium text-blue-gray-700">Claim Request</Typography>
+                </div>
+
                 <div className="md:col-span-2 rounded-xl border border-blue-gray-100 p-4">
                   <div className="mb-4 flex items-center justify-between">
-                    <Typography className="text-sm font-medium text-black">Time Slots</Typography>
+                    <Typography className="text-sm font-medium text-black">Placements</Typography>
 
                     <Button
                       type="button"
                       size="sm"
                       className={`${ColorStyles.bgColor} inline-flex items-center text-white`}
-                      onClick={() => setFieldValue("timeSlots", [...values.timeSlots, { from: "", to: "" }])}
+                      onClick={() => setFieldValue("placements", [...values.placements, { place: "", from: "", to: "" }])}
                     >
                       <span className="mr-2 inline-flex items-center">
                         <PlusIcon className="h-4 w-4" />
                       </span>
-                      Add Slot
+                      Add Placement
                     </Button>
                   </div>
-                  <FieldArray name="timeSlots">
+                  <FieldArray name="placements">
                     {({ remove }) => (
                       <div className="space-y-3">
-                        {values.timeSlots.map((slot, index) => (
+                        {values.placements.map((slot, index) => (
                           <div key={index} className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
                             <div className="flex-1">
+                              <RequiredLabel>Place</RequiredLabel>
+                              <Input value={slot.place} onChange={(e) => setFieldValue(`placements[${index}].place`, e.target.value)} className="w-full" />
+                              {touched.placements?.[index]?.place && errors.placements?.[index]?.place ? (
+                                <p className="mt-1 text-xs text-red-600">{errors.placements[index].place}</p>
+                              ) : null}
+                            </div>
+                            <div className="flex-1">
                               <RequiredLabel>From</RequiredLabel>
-                              <Input
-                                type="time"
-                                value={slot.from}
-                                onChange={(e) => setFieldValue(`timeSlots[${index}].from`, e.target.value)}
-                                className="w-full"
-                              />
-                              {touched.timeSlots?.[index]?.from && errors.timeSlots?.[index]?.from ? (
-                                <p className="mt-1 text-xs text-red-600">{errors.timeSlots[index].from}</p>
+                              <Input type="time" value={slot.from} onChange={(e) => setFieldValue(`placements[${index}].from`, e.target.value)} className="w-full" />
+                              {touched.placements?.[index]?.from && errors.placements?.[index]?.from ? (
+                                <p className="mt-1 text-xs text-red-600">{errors.placements[index].from}</p>
                               ) : null}
                             </div>
                             <div className="flex-1">
                               <RequiredLabel>To</RequiredLabel>
-                              <Input
-                                type="time"
-                                value={slot.to}
-                                onChange={(e) => setFieldValue(`timeSlots[${index}].to`, e.target.value)}
-                                className="w-full"
-                              />
-                              {touched.timeSlots?.[index]?.to && errors.timeSlots?.[index]?.to ? (
-                                <p className="mt-1 text-xs text-red-600">{errors.timeSlots[index].to}</p>
+                              <Input type="time" value={slot.to} onChange={(e) => setFieldValue(`placements[${index}].to`, e.target.value)} className="w-full" />
+                              {touched.placements?.[index]?.to && errors.placements?.[index]?.to ? (
+                                <p className="mt-1 text-xs text-red-600">{errors.placements[index].to}</p>
                               ) : null}
                             </div>
                             <div className="flex items-end">
@@ -239,7 +251,7 @@ function DriverAdsCreate() {
                                 variant="text"
                                 color="red"
                                 onClick={() => remove(index)}
-                                disabled={values.timeSlots.length === 0}
+                                disabled={values.placements.length === 0}
                               >
                                 <TrashIcon className="h-5 w-5" />
                               </IconButton>

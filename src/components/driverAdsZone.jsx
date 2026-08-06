@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Option, Select, Spinner, Typography } from "@material-tailwind/react";
+import { Option, Select, Typography } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 
@@ -15,6 +15,7 @@ function DriverAdsZone({
   parentValue = "",
   showAll = true,
   disabled = false,
+  returnLabel = false,
 }) {
   const [serviceAreas, setServiceAreas] = useState([]);
   const [zones, setZones] = useState([]);
@@ -35,7 +36,11 @@ function DriverAdsZone({
   };
 
   const fetchZones = async () => {
-    if (!parentValue) {
+    const parentId = serviceAreas.find(
+      (item) => String(item?.id) === String(parentValue) || String(item?.name) === String(parentValue)
+    )?.id;
+
+    if (!parentId) {
       setZones([]);
       return;
     }
@@ -43,7 +48,7 @@ function DriverAdsZone({
       setIsLoading(true);
       const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {
         type: "Zone",
-        parent_id: parentValue,
+        parent_id: parentId,
       });
       if (response?.success) {
         setZones(response.data || []);
@@ -66,12 +71,6 @@ function DriverAdsZone({
   }, [parentValue, refreshKey, isSubZone]);
 
   const options = isSubZone ? zones : serviceAreas;
-  const selectedLabel =
-    value === ""
-      ? showAll
-        ? "All"
-        : placeholder || "Select"
-      : options.find((item) => String(item?.id) === String(value))?.name || (showAll ? "All" : placeholder || "Select");
   const selectOptions = [
     ...(showAll ? [<Option key="All" value="">All</Option>] : []),
     ...options.map((item) => (
@@ -80,7 +79,22 @@ function DriverAdsZone({
       </Option>
     )),
   ];
-
+  const selectedLabel =
+    value === ""
+      ? showAll
+        ? "All"
+        : placeholder || "Select"
+      : options.find((item) => String(item?.id) === String(value))?.name
+        || options.find((item) => String(item?.name) === String(value))?.name
+        || placeholder || "Select";
+  const resolveNextValue = (nextValue) => {
+    if (nextValue === "" || nextValue === null || nextValue === undefined) return "";
+    if (returnLabel) {
+      const matched = options.find((item) => String(item?.id) === String(nextValue));
+      return matched?.name || "";
+    }
+    return nextValue;
+  };
   return (
     <div>
       <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
@@ -89,7 +103,7 @@ function DriverAdsZone({
       <Select
         value={value}
         selected={() => selectedLabel}
-        onChange={(nextValue) => onChange(nextValue || "")}
+        onChange={(nextValue) => onChange(resolveNextValue(nextValue))}
         disabled={isLoading || disabled}
       >
         {selectOptions}
