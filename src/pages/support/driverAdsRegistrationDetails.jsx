@@ -6,8 +6,12 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { isSuperUserRole } from "@/utils/roleUtils";
 import DriverSummaryCards from "./driverAdsRegistrationDetails/DriverSummaryCards";
+import RegistrationSummary from "./driverAdsRegistrationDetails/RegistrationSummary";
+import CycleReviewDialog from "./driverAdsRegistrationDetails/CycleReviewDialog";
+import ClaimProofDialog from "./driverAdsRegistrationDetails/ClaimProofDialog";
 import StatusUpdateModal from "./driverAdsRegistrationDetails/StatusUpdateModal";
 import ActivityTabs from "./driverAdsRegistrationDetails/ActivityTabs";
+import ActivityLogTable from "./driverAdsRegistrationDetails/ActivityLogTable";
 import { STATUS_FLOW } from "./driverAdsRegistrationDetails/constants";
 import { formatStatusLabel, getStatusBadgeClass, getStatusOptions } from "./driverAdsRegistrationDetails/utils";
 
@@ -41,6 +45,15 @@ function DriverAdsRegistrationDetails() {
   const [followUpRemarks, setFollowUpRemarks] = useState("");
   const [notes, setNotes] = useState("");
   const [completionRemarks, setCompletionRemarks] = useState("");
+  const [selectedCycle, setSelectedCycle] = useState(null);
+  const [cycleDetail, setCycleDetail] = useState(null);
+  const [cycleStatus, setCycleStatus] = useState("");
+  const [cycleRemarks, setCycleRemarks] = useState("");
+  const [cycleOpen, setCycleOpen] = useState(false);
+  const [cycleLoading, setCycleLoading] = useState(false);
+  const [cycleSaving, setCycleSaving] = useState(false);
+  const [cycleError, setCycleError] = useState("");
+  const [proofOpen, setProofOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("timeline");
   const [showDetails, setShowDetails] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,6 +94,32 @@ function DriverAdsRegistrationDetails() {
     }
   };
 
+  const fetchCycleDetail = async (cycleId, cycleRow = null) => {
+    if (!cycleId) return;
+    setCycleLoading(true);
+    setCycleError("");
+    try {
+      const route = API_ROUTES.GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID.replace(":cycleId", cycleId);
+      const response = await ApiRequestUtils.get(route);
+      setSelectedCycle(cycleRow);
+      setCycleDetail(response?.data || cycleRow || null);
+      setCycleStatus(response?.data?.status || cycleRow?.status || "");
+      setCycleRemarks(response?.data?.remarks || "");
+      setProofOpen(false);
+      setCycleOpen(true);
+    } catch (err) {
+      console.error("Failed to load cycle detail:", err);
+      setCycleError("Failed to load cycle detail.");
+    } finally {
+      setCycleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!cycleOpen) return;
+    setCycleRemarks("");
+  }, [cycleStatus, cycleOpen]);
+
   useEffect(() => {
     if (id) fetchDetail();
   }, [id]);
@@ -110,7 +149,7 @@ function DriverAdsRegistrationDetails() {
 
   useEffect(() => {
     if (!showDetails) return;
-    const normalizedStatus = String(selectedStatus || registration?.status || "").toUpperCase();
+    const normalizedStatus = String(selectedStatus || "").toUpperCase();
     setStatusRemarks("");
     setNotes("");
     setFollowUpDate("");
@@ -213,6 +252,37 @@ function DriverAdsRegistrationDetails() {
     return true;
   };
 
+  const handleUpdateCycleStatus = async () => {
+    const cycleId = cycleDetail?.id || selectedCycle?.id || selectedCycle?._id;
+    if (!cycleId) return;
+    setCycleError("");
+    if (!cycleStatus) {
+      setCycleError("Please select a cycle status.");
+      return;
+    }
+    try {
+      setCycleSaving(true);
+      const route = API_ROUTES.UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS.replace(":cycleId", cycleId);
+      const response = await ApiRequestUtils.update(route, {
+        status: cycleStatus,
+        remarks: cycleRemarks.trim() || undefined,
+      });
+      if (!response?.success) {
+        setCycleError(response?.message || "Failed to update cycle status.");
+        return;
+      }
+      await fetchDetail();
+      if (isSuperUser) await fetchActivityLog();
+      setCycleDetail((prev) => (prev ? { ...prev, status: cycleStatus, remarks: cycleRemarks } : prev));
+      setCycleOpen(false);
+    } catch (err) {
+      console.error("Failed to update cycle status:", err);
+      setCycleError("Failed to update cycle status.");
+    } finally {
+      setCycleSaving(false);
+    }
+  };
+
   const handlePrimaryUpdate = async () => {
     setActionError("");
     const statusUpdated = await handleUpdateStatus();
@@ -228,45 +298,24 @@ function DriverAdsRegistrationDetails() {
     if (isSuperUser) await fetchActivityLog();
   };
 
-  const renderTable = (rows, headings, renderRow) => {
-    const normalizedRows = Array.isArray(rows) ? rows : [];
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] table-auto">
-          <thead className="bg-primary">
-            <tr>
-              {headings.map((heading) => (
-                <th key={heading} className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left">
-                  <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
-                    {heading}
-                  </Typography>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {normalizedRows.length ? (
-              normalizedRows.map((row, index) => (
-                <tr key={`${row?.id || row?._id || index}`} className="border-b border-blue-gray-50">
-                  {renderRow(row).map((cell, cellIndex) => (
-                    <td key={`${index}-${cellIndex}`} className="whitespace-nowrap py-3 px-5">
-                      {typeof cell === "string" || typeof cell === "number" ? <Typography className="text-xs font-semibold text-black">{cell}</Typography> : cell}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={headings.length} className="py-6 text-center text-sm text-blue-gray-600">
-                  No records found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
+  const getHistoryBadgeClass = (type, value) => {
+    const normalized = String(value || "").toUpperCase();
+    if (type === "action") {
+      if (normalized === "REGISTERED") return "inline-flex items-center rounded-full bg-blue-gray-200 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "CYCLE_STATUS_UPDATED") return "inline-flex items-center rounded-full bg-fuchsia-800 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "CYCLE_CLAIM_SUBMITTED") return "inline-flex items-center rounded-full bg-rose-800 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "STATUS_UPDATED") return "inline-flex items-center rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "COMPLETED") return "inline-flex items-center rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-white";
+      return "inline-flex items-center rounded-full border border-slate-400 bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700";
+    }
+    if (type === "previous") {
+      return "inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700";
+    }
+    if (type === "current") {
+      return "inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700";
+    }
+    return "inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700";
+  }
 
   const registration = record || {};
   const advertisement = registration?.advertisement || {};
@@ -332,7 +381,7 @@ function DriverAdsRegistrationDetails() {
                 })}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            {/* <div className="flex flex-wrap gap-2">
               <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(registration?.status)}`}>
                 {formatStatusLabel(registration?.status)}
               </span>
@@ -342,7 +391,7 @@ function DriverAdsRegistrationDetails() {
               <span className="inline-flex items-center rounded-full border border-blue-gray-200 bg-blue-gray-50 px-3 py-1 text-xs font-semibold text-blue-gray-700">
                 Current Cycle: {registration?.currentCycleNumber ?? "-"}
               </span>
-            </div>
+            </div> */}
           </div>
 
           {error ? <Alert color="red">{error}</Alert> : null}
@@ -356,103 +405,57 @@ function DriverAdsRegistrationDetails() {
             onStatusUpdate={() => setShowDetails(true)}
           />
 
-          <div className="grid grid-cols-1 gap-4">
-            <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
-              <Typography variant="small" className="mb-3 font-medium text-blue-gray-700">
-                Registration Summary
-              </Typography>
-              <div className="mb-4 rounded-xl border border-blue-gray-100 bg-gradient-to-r from-blue-gray-50 to-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <Typography variant="small" className="font-medium text-blue-gray-600">
-                      Cycle Progress
-                    </Typography>
-                    <Typography className="text-lg font-bold text-blue-gray-900">
-                      {completedCycles}/{totalCycles || "-"} completed
-                    </Typography>
-                  </div>
-                  <div className="text-right">
-                    <Typography variant="small" className="font-medium text-blue-gray-600">
-                      Current Cycle
-                    </Typography>
-                    <Typography className="text-lg font-bold text-blue-gray-900">
-                      {currentCycleNumber || "-"}
-                    </Typography>
-                  </div>
-                </div>
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-blue-gray-100">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-300"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-semibold text-blue-gray-600">
-                  <span>{progressPercent}% complete</span>
-                  <span>Claimable cycle: {registration?.claimableCycleNumber ?? "-"}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <InfoRow label="Start Date" value={formatValue(registration?.startDate)} />
-                <InfoRow label="End Date" value={formatValue(registration?.endDate)} />
-                <InfoRow label="Total Cycles" value={registration?.totalCycles ?? "-"} />
-                <InfoRow label="Completed Cycles" value={registration?.completedCycles ?? "-"} />
-                <InfoRow label="Pending Cycles" value={registration?.pendingCycles ?? "-"} />
-                <InfoRow label="Claimable Cycle" value={registration?.claimableCycleNumber ?? "-"} />
-                <InfoRow label="Current Cycle Status" value={formatStatusLabel(registration?.currentCycleStatus)} />
-                <InfoRow label="Advertisement Active" value={advertisement?.isActive ? "Yes" : "No"} />
-              </div>
-            </div>
-          </div>
+          <RegistrationSummary
+            completedCycles={completedCycles}
+            totalCycles={totalCycles}
+            currentCycleNumber={currentCycleNumber}
+            progressPercent={progressPercent}
+            claimableCycleNumber={registration?.claimableCycleNumber}
+            summaryCards={[
+              <InfoRow key="start-date" label="Start Date" value={formatValue(registration?.startDate)} />,
+              <InfoRow key="end-date" label="End Date" value={formatValue(registration?.endDate)} />,
+              <InfoRow key="total-cycles" label="Total Cycles" value={registration?.totalCycles ?? "-"} />,
+              <InfoRow key="completed-cycles" label="Completed Cycles" value={registration?.completedCycles ?? "-"} />,
+              <InfoRow key="pending-cycles" label="Pending Cycles" value={registration?.pendingCycles ?? "-"} />,
+              <InfoRow key="claimable-cycle" label="Claimable Cycle" value={registration?.claimableCycleNumber ?? "-"} />,
+              <InfoRow key="current-cycle-status" label="Current Cycle Status" value={formatStatusLabel(registration?.currentCycleStatus)} />,
+              <InfoRow key="advertisement-active" label="Advertisement Active" value={advertisement?.isActive ? "Yes" : "No"} />,
+            ]}
+          />
 
           <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
-            <Typography variant="small" className="mb-3 font-medium text-blue-gray-700">
-              Selected Placements
-            </Typography>
-            {placements.length ? (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {placements.map((item, index) => (
-                  <div key={`${item?.place || "place"}-${index}`} className="rounded-lg border border-blue-gray-100 bg-blue-gray-50 p-3">
-                    <div className="font-semibold text-blue-gray-900">{item?.place || "-"}</div>
-                    <div className="text-sm text-blue-gray-700">
-                      {item?.slot?.from || "--"} - {item?.slot?.to || "--"}
+            
+            {cycles.length ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {cycles.map((cycle, index) => (
+                  <div key={`${cycle?.cycleNumber || index}`} className="rounded-xl border border-blue-gray-100 bg-blue-gray-50 p-4 shadow-sm">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <Typography variant="small" className="font-medium text-blue-gray-600">
+                      Cycle {cycle?.cycleNumber ?? "-"}
+                    </Typography>
+                  </div>
+                      <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getHistoryBadgeClass("current", cycle?.status)}`}>
+                        {formatStatusLabel(cycle?.status)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 text-sm text-blue-gray-700">
+                      <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                        <span className="text-xs font-semibold uppercase text-blue-gray-500">Start</span>
+                        <span className="font-medium text-blue-gray-900">{formatValue(cycle?.cycleStartDate)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                        <span className="text-xs font-semibold uppercase text-blue-gray-500">End</span>
+                        <span className="font-medium text-blue-gray-900">{formatValue(cycle?.cycleEndDate)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                      <Button size="sm" className="bg-primary text-white" onClick={() => fetchCycleDetail(cycle?.id || cycle?._id, cycle)}>
+                        Review
+                      </Button>
                     </div>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <Typography className="text-sm text-blue-gray-600">No placements found.</Typography>
-            )}
-          </div>
-
-          <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
-            <Typography variant="small" className="mb-3 font-medium text-blue-gray-700">
-              Cycles
-            </Typography>
-            {cycles.length ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] table-auto">
-                  <thead className="bg-primary">
-                    <tr>
-                      {["Cycle", "Start Date", "End Date", "Status"].map((heading) => (
-                        <th key={heading} className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left">
-                          <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
-                            {heading}
-                          </Typography>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cycles.map((cycle, index) => (
-                      <tr key={`${cycle?.cycleNumber || index}`} className="border-b border-blue-gray-50">
-                        <td className="whitespace-nowrap py-3 px-5 text-sm font-semibold text-black">{cycle?.cycleNumber ?? "-"}</td>
-                        <td className="whitespace-nowrap py-3 px-5 text-sm font-semibold text-black">{formatValue(cycle?.cycleStartDate)}</td>
-                        <td className="whitespace-nowrap py-3 px-5 text-sm font-semibold text-black">{formatValue(cycle?.cycleEndDate)}</td>
-                        <td className="whitespace-nowrap py-3 px-5 text-sm font-semibold text-black">{formatStatusLabel(cycle?.status)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             ) : (
               <Typography className="text-sm text-blue-gray-600">No cycles created yet.</Typography>
@@ -476,33 +479,51 @@ function DriverAdsRegistrationDetails() {
                 error={activityError}
                 rowsRenderer={(tab) => {
                   if (tab === "notes") {
-                    return renderTable(notesRows, ["Note", "Added By", "Created At"], (row) => [row?.note || "-", renderUser(row?.addedByUser), formatValue(row?.created_at)]);
+                    return <ActivityLogTable rows={notesRows} headings={["Note", "Added By", "Created At"]} renderRow={(row) => [row?.note || "-", renderUser(row?.addedByUser), formatValue(row?.created_at)]} />;
                   }
                   if (tab === "followUps") {
-                    return renderTable(followUpRows, ["Follow Up Date", "Follow Up Time", "Follow Up Remarks", "Updated By", "Created At"], (row) => [
+                    return (
+                      <ActivityLogTable
+                        rows={followUpRows}
+                        headings={["Follow Up Date", "Follow Up Time", "Follow Up Remarks", "Updated By", "Created At"]}
+                        renderRow={(row) => [
                       formatDateOnly(row?.followUpDate),
                       row?.followUpTime || "-",
                       row?.followUpRemarks || "-",
                       renderUser(row?.updatedByUser),
                       formatValue(row?.created_at),
-                    ]);
+                    ]}
+                      />
+                    );
                   }
                   if (tab === "history") {
-                    return renderTable(historyRows, ["Action", "Previous Status", "Current Status", "Remarks", "Performed By", "Created At"], (row) => [
-                      <Chip value={formatStatusLabel(row?.actionPerformed)} className={getStatusBadgeClass(row?.actionPerformed)} />,
-                      <Chip value={formatStatusLabel(row?.previousStatus)} className={getStatusBadgeClass(row?.previousStatus)} />,
-                      <Chip value={formatStatusLabel(row?.currentStatus)} className={getStatusBadgeClass(row?.currentStatus)} />,
+                    return (
+                      <ActivityLogTable
+                        rows={historyRows}
+                        headings={["Action", "Previous Status", "Current Status", "Remarks", "Performed By", "Created At"]}
+                        renderRow={(row) => [
+                      <Chip value={formatStatusLabel(row?.actionPerformed)} className={`${getHistoryBadgeClass("action", row?.actionPerformed)} whitespace-nowrap`} />,
+                      <Chip value={formatStatusLabel(row?.previousStatus)} className={`${getHistoryBadgeClass("previous", row?.previousStatus)} whitespace-nowrap`} />,
+                      <Chip value={formatStatusLabel(row?.currentStatus)} className={`${getHistoryBadgeClass("current", row?.currentStatus)} whitespace-nowrap`} />,
                       row?.remarks || "-",
                       renderUser(row?.performedByUser),
                       formatValue(row?.created_at),
-                    ]);
+                    ]}
+                      />
+                    );
                   }
-                  return renderTable(timelineRows, ["Kind", "Action", "Remarks", "Performed At"], (row) => [
+                  return (
+                    <ActivityLogTable
+                      rows={timelineRows}
+                      headings={["Kind", "Action", "Remarks", "Performed At"]}
+                      renderRow={(row) => [
                     row?.kind || "-",
                     formatStatusLabel(row?.actionPerformed || row?.note || row?.followUpRemarks || "-"),
                     row?.remarks || row?.note || row?.followUpRemarks || "-",
                     formatValue(row?.performedAt || row?.addedAt || row?.updatedAt),
-                  ]);
+                  ]}
+                    />
+                  );
                 }}
               />
             </div>
@@ -537,6 +558,42 @@ function DriverAdsRegistrationDetails() {
         notes={notes}
         onNotesChange={setNotes}
         latestNote={latestNote}
+      />
+
+      <CycleReviewDialog
+        open={cycleOpen}
+        onClose={() => setCycleOpen(false)}
+        cycleNumber={cycleDetail?.cycleNumber || selectedCycle?.cycleNumber || "-"}
+        cycleLoading={cycleLoading}
+        cycleError={cycleError}
+        infoRows={[
+          <InfoRow key="status" label="Status" value={formatStatusLabel(cycleDetail?.status || selectedCycle?.status)} />,
+          <InfoRow key="cycle-number" label="Cycle Number" value={cycleDetail?.cycleNumber || selectedCycle?.cycleNumber || "-"} />,
+          <InfoRow key="start-date" label="Start Date" value={formatValue(cycleDetail?.cycleStartDate || selectedCycle?.cycleStartDate)} />,
+          <InfoRow key="end-date" label="End Date" value={formatValue(cycleDetail?.cycleEndDate || selectedCycle?.cycleEndDate)} />,
+          <InfoRow key="submitted-at" label="Submitted At" value={formatValue(cycleDetail?.claimSubmittedAt)} />,
+          <InfoRow key="registration-id" label="Registration ID" value={cycleDetail?.registrationId || registration?.id || "-"} />,
+        ]}
+        claimImages={Array.isArray(cycleDetail?.claimPayload?.claimImages) ? cycleDetail.claimPayload.claimImages : []}
+        onOpenProof={() => setProofOpen(true)}
+        cycleStatus={cycleStatus}
+        onCycleStatusChange={(value) => {
+          setCycleStatus(value);
+          setCycleRemarks("");
+        }}
+        cycleRemarks={cycleRemarks}
+        onCycleRemarksChange={setCycleRemarks}
+        statusOptions={["CLAIM_SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "PAID", "COMPLETED"]}
+        formatStatusLabel={formatStatusLabel}
+        onSave={handleUpdateCycleStatus}
+        cycleSaving={cycleSaving}
+      />
+
+      <ClaimProofDialog
+        open={proofOpen}
+        onClose={() => setProofOpen(false)}
+        cycleNumber={cycleDetail?.cycleNumber || selectedCycle?.cycleNumber || "-"}
+        claimImages={Array.isArray(cycleDetail?.claimPayload?.claimImages) ? cycleDetail.claimPayload.claimImages : []}
       />
     </div>
   );

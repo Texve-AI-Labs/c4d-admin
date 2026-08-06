@@ -1066,6 +1066,8 @@ export const API_ROUTES = {
     'POST_FOLLOW_UP':'/admin/driver-advertisement-registrations/:registrationId/follow-up',
     'STATUS_COMPLETE_REMARKS':'/admin/driver-advertisement-registrations/:registrationId/complete',
     'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity',
+    'GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID':'/admin/driver-advertisement-registration-cycles/:cycleId',
+    'UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS':'/admin/driver-advertisement-registration-cycles/:cycleId/status',
     'MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
