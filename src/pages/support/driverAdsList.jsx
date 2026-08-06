@@ -338,7 +338,7 @@ function DriverAdsList() {
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["contractPeriod"])}</Typography>
+                        <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["contractPeriod"])} Days</Typography>
                       </td>
                       <td className={className}>
                         <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["paymentFrequency"])}</Typography>

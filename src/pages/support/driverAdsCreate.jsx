@@ -47,7 +47,7 @@ function DriverAdsCreate() {
         zone: values.zone,
         subZoneId,
         contractPeriod: values.contractPeriod,
-        paymentFrequency: values.paymentFrequency,
+        paymentFrequency: values.paymentFrequency || "MONTHLY",
         paymentAmount: values.paymentAmount,
         claimRequest: values.claimRequest,
         isActive: values.isActive,
@@ -154,9 +154,8 @@ function DriverAdsCreate() {
 
                 <div>
                   <RequiredLabel>Payment Frequency</RequiredLabel>
-                  <Select value={values.paymentFrequency} onChange={(value) => setFieldValue("paymentFrequency", value)}>
-                    <Option value="MONTHLY">Monthly</Option>
-                    <Option value="WEEKLY">Weekly</Option>
+                  <Select value={values.paymentFrequency} selected={() => values.paymentFrequency || "MONTHLY"} onChange={(value) => setFieldValue("paymentFrequency", value)}>
+                    <Option value="MONTHLY">MONTHLY</Option>
                   </Select>
                   {touched.paymentFrequency && errors.paymentFrequency ? <p className="mt-1 text-xs text-red-600">{errors.paymentFrequency}</p> : null}
                 </div>

@@ -6,7 +6,7 @@ export const driverAdsEditValidationSchema = Yup.object({
   zone: Yup.string().trim().required("Zone is required"),
   subZoneId: Yup.string().trim().required("Sub Zone is required"),
   contractPeriod: Yup.number().oneOf([30, 60, 90], "Contract period must be 30, 60, or 90").required("Contract period is required"),
-  paymentFrequency: Yup.string().oneOf(["MONTHLY", "WEEKLY"], "Payment frequency is required").required("Payment frequency is required"),
+  paymentFrequency: Yup.string().required("Payment frequency is required"),
   paymentAmount: Yup.number().typeError("Payment amount must be a number").positive("Payment amount must be greater than 0").required("Payment amount is required"),
   imageFile: Yup.mixed().nullable(),
   isActive: Yup.boolean().required(),

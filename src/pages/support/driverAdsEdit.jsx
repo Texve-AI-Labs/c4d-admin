@@ -137,9 +137,8 @@ function DriverAdsEdit() {
                 </div>
                 <div>
                   <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Payment Frequency <span className="text-red-500">*</span></Typography>
-                  <Select value={values.paymentFrequency} onChange={(value) => setFieldValue("paymentFrequency", value)}>
+                  <Select value={values.paymentFrequency} selected={() => values.paymentFrequency || "MONTHLY"} onChange={(value) => setFieldValue("paymentFrequency", value)}>
                     <Option value="MONTHLY">MONTHLY</Option>
-                    <Option value="WEEKLY">WEEKLY</Option>
                   </Select>
                   {touched.paymentFrequency && errors.paymentFrequency ? <p className="mt-1 text-xs text-red-600">{errors.paymentFrequency}</p> : null}
                 </div>
