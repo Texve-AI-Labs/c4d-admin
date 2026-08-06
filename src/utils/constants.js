@@ -1072,6 +1072,7 @@ export const API_ROUTES = {
     'GET_REFERRAL_RULE': '/referral-rules',
     'POST_REFERRAL_RULE': '/referral-rules',
     'UPDATE_REFERRAL_RULE': '/referral-rules/:settingId',
+    'GET_REFERRAL_CREDIT_LOGS': '/getReferralCreditLogs'
 
 };
 

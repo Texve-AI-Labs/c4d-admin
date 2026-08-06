@@ -65,13 +65,31 @@ const ReferralRuleList = () => {
 
   return (
     <div className="mb-8 flex flex-col gap-6 mt-8 bg-white pb-2 rounded-xl">
-      <div className="flex justify-end mb-8 mt-2">
+      <div className="flex justify-end mb-2 mt-2">
         <Button
           size="sm"
           className={`rounded-xl p-4 ${ColorStyles.continueButtonColor}`}
           onClick={() => navigate("/dashboard/finance/referral-rules/add")}
         >
           Add Referral Rule
+        </Button>
+      </div>
+      <div className="flex w-full overflow-hidden rounded-xl bg-slate-100 p-1 mb-2 mt-2 gap-2">
+        <Button
+          size="sm"
+          variant="filled"
+          className={`w-1/2 rounded-lg px-4 py-2 ${ColorStyles.continueButtonColor}`}
+          onClick={() => navigate("/dashboard/finance/referral-rules/list")}
+        >
+          Rules
+        </Button>
+        <Button
+          size="sm"
+          variant="outlined"
+          className="w-1/2 rounded-lg px-4 py-2"
+          onClick={() => navigate("/dashboard/finance/referral-rules/logs")}
+        >
+          Log
         </Button>
       </div>
       <Card>

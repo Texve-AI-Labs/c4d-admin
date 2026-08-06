@@ -94,6 +94,7 @@ import InstantReward from "./pages/vendor/instantReward";
 import ReferralRuleList from "./pages/finance/referralRules/list";
 import ReferralRuleAdd from "./pages/finance/referralRules/add";
 import ReferralRuleEdit from "./pages/finance/referralRules/edit";
+import ReferralCreditLogsList from "./pages/finance/referralRules/logs";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
@@ -1326,6 +1327,14 @@ export const routes = [
         name: "Referral Rule Edit",
         path: "/finance/referral-rules/edit/:settingId",
         element: <ReferralRuleEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Credit Logs",
+        path: "/finance/referral-rules/logs",
+        element: <ReferralCreditLogsList />,
         display: false,
         permission: "Users",
       },
