@@ -216,6 +216,7 @@ import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/
 import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
+import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
 import DriverAdsRegList from "./pages/support/driverAdsRegList";
@@ -1962,6 +1963,14 @@ export const routes = [
         name: "Leads",
         path: "/leads",
         element: <LeadsView/>,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Payment Failed Records",
+        path: "/support/payment-failed-records",
+        element: <PaymentFailedRecords />,
         display: true,
         permission: "Support"
       },
