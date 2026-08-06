@@ -1060,6 +1060,7 @@ export const API_ROUTES = {
     'GET_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'UPDATE_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'GET_DRIVER_ADS_LIST':'/admin/driver-advertisement-registrations',
+    'GET_DRIVER_ADS_REGISTRATION_BY_ID':'/admin/driver-advertisement-registrations/:registrationId',
     'UPDATE_DRIVER_ADS_REGISTRATION_STATUS':'/admin/driver-advertisement-registrations/:registrationId/status',
     'UPDATE_DRIVER_ADS_REGISTRATION_NOTES':'/admin/driver-advertisement-registrations/:registrationId/notes',
     'POST_FOLLOW_UP':'/admin/driver-advertisement-registrations/:registrationId/follow-up',

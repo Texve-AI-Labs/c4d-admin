@@ -2,16 +2,18 @@ import React from "react";
 import { Button, Typography } from "@material-tailwind/react";
 import { formatStatusLabel, getStatusBadgeClass } from "./utils";
 
-export default function DriverSummaryCards({ driver, status, advertisement, onStatusUpdate }) {
-  const timeSlots = Array.isArray(advertisement?.config?.timeSlots) ? advertisement.config.timeSlots : [];
-  const firstTimeSlot = timeSlots[0] || {};
+export default function DriverSummaryCards({ driver, status, advertisement, registration, onStatusUpdate }) {
+  const placements = Array.isArray(registration?.selectedPlacements) ? registration.selectedPlacements : [];
+  const firstPlacement = placements[0] || {};
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {[
         ["First Name", driver?.firstName],
         ["Phone Number", driver?.phoneNumber],
         ["Service Type", driver?.serviceType],
         ["Status", formatStatusLabel(status)],
+        ["Advertisement", advertisement?.name],
+        ["Contract Period", advertisement?.contractPeriod ? `${advertisement.contractPeriod} days` : "-"],
       ].map(([label, value]) => (
         <div key={label} className="rounded-xl border border-blue-gray-100 bg-white p-4">
           <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
@@ -28,11 +30,12 @@ export default function DriverSummaryCards({ driver, status, advertisement, onSt
       ))}
       <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
         <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
-          From - To
+          Selected Placement
         </Typography>
-        <span className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-          {firstTimeSlot?.from || "--"} - {firstTimeSlot?.to || "--"}
-        </span>
+        <Typography className="text-sm font-semibold text-black">{firstPlacement?.place || "-"}</Typography>
+        <Typography className="text-xs text-blue-gray-600">
+          {firstPlacement?.slot?.from || "--"} - {firstPlacement?.slot?.to || "--"}
+        </Typography>
       </div>
       <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
         <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">

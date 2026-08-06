@@ -205,7 +205,7 @@ function DriverAdsRegList() {
           <table className="w-full table-auto">
             <thead className="bg-primary">
               <tr>
-                {["Name", "Zone", "Sub Zone", "Ads Status", "Registration Status", "Driver Name", "Created At", "View"].map((heading) => (
+                {["Name", "Zone", "Sub Zone", "Ads Status", "Registration Status", "Driver Name", "Phone Number", "Created At", "View"].map((heading) => (
                   <th
                     key={heading}
                     className={`border-b border-blue-gray-50 py-3 px-5 text-left ${
@@ -268,6 +268,11 @@ function DriverAdsRegList() {
                        <td className={className}>
                         <Typography className="text-xs font-semibold text-black">
                           {row?.driver?.firstName || row?.driver?.name || row?.driverName || "-"}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-black">
+                          {row?.driver?.phoneNumber || '-'}
                         </Typography>
                       </td>
                       <td className={`${className} whitespace-nowrap`}>
