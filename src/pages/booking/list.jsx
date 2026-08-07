@@ -178,6 +178,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [isManualDateFilter, setIsManualDateFilter] = useState(false);
     const [filtersLoaded, setFiltersLoaded] = useState(false);
     const [effectiveSearchId, setEffectiveSearchId] = useState(searchBookingId);
+    const previousSearchBookingIdRef = useRef(searchBookingId || '');
     const [searchResetPending, setSearchResetPending] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
     const [onlineDrivers, setOnlineDrivers] = useState([]);
@@ -345,25 +346,23 @@ useEffect(() => {
 
     useEffect(() => {
         const stored = getItemSafe(bookingSearchKey) || getItemSafe(LEGACY_BOOKING_SEARCH_KEY) || '';
-        const newEffective = searchBookingId || stored;
-        setEffectiveSearchId(newEffective);
-        if (newEffective) {
-            setItemSafe(bookingSearchKey, newEffective);
-            if (pagination.currentPage !== 1) {
+        const resolvedSearchId = String(searchBookingId || stored || '').trim();
+        const previousSearchId = String(previousSearchBookingIdRef.current || '').trim();
+        const hasSearchChanged = resolvedSearchId !== previousSearchId;
+
+        previousSearchBookingIdRef.current = resolvedSearchId;
+        setEffectiveSearchId(resolvedSearchId);
+
+        if (resolvedSearchId) {
+            setItemSafe(bookingSearchKey, resolvedSearchId);
+            if (hasSearchChanged && pagination.currentPage !== 1) {
                 setSearchResetPending(true);
                 setPagination((prev) => ({ ...prev, currentPage: 1 }));
             }
         } else if (!searchBookingId) {
             setItemSafe(bookingSearchKey, '');
         }
-    }, [searchBookingId, bookingSearchKey, pagination.currentPage]);
-
-    useEffect(() => {
-        if (previousCustomerIdRef.current !== customerId) {
-            previousCustomerIdRef.current = customerId;
-            setPagination((prev) => ({ ...prev, currentPage: 1 }));
-        }
-    }, [customerId]);
+    }, [searchBookingId, bookingSearchKey]);
     const handleToggleDriverHours = () => {
   setShowDriverHours(true);
 };
@@ -667,15 +666,11 @@ if (!statusFilter.includes('All')) {
   
              useEffect(() => {
                     if (onRegisterRefresh) {
-                    onRegisterRefresh(handleRefresh);
+                    onRegisterRefresh(() => handleRefresh);
                     }
                 }, [onRegisterRefresh]);
     useEffect(() => {
         if (!filtersLoaded) {
-            return;
-        }
-        if (searchResetPending) {
-            setSearchResetPending(false);
             return;
         }
         // Skip automatic API call if we're in the middle of a manual date filter operation
