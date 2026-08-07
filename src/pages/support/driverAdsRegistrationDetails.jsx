@@ -422,7 +422,8 @@ function DriverAdsRegistrationDetails() {
               <InfoRow key="advertisement-active" label="Advertisement Active" value={advertisement?.isActive ? "Yes" : "No"} />,
             ]}
           />
-
+          {registration?.status === "COMPLETED" && (
+            <>
           <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
             
             {cycles.length ? (
@@ -461,6 +462,8 @@ function DriverAdsRegistrationDetails() {
               <Typography className="text-sm text-blue-gray-600">No cycles created yet.</Typography>
             )}
           </div>
+          </>
+          )}
 
           {isSuperUser ? (
             <div className="rounded-xl border border-blue-gray-100 p-4">

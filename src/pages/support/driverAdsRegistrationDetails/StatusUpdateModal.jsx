@@ -26,9 +26,6 @@ export default function StatusUpdateModal(props) {
     onNotesChange,
   } = props;
   const [statusOpen, setStatusOpen] = useState(false);
-  const isFollowUpScheduled = selectedStatus === "FOLLOW_UP_SCHEDULED";
-  const isCompleted = selectedStatus === "COMPLETED";
-
   const labelWithRequired = (label) => (
     <span className="inline-flex items-center gap-1 whitespace-nowrap">
       <span>{label}</span>
@@ -45,6 +42,7 @@ export default function StatusUpdateModal(props) {
   const statusLocked = !selectedStatus || updatingStatus;
   const showFollowUpFields = selectedStatus === "FOLLOW_UP_SCHEDULED";
   const showCompletedFields = selectedStatus === "COMPLETED";
+  const showCancelledFields = selectedStatus === "CANCELLED";
   const showSimpleRemarks = selectedStatus && !showFollowUpFields && !showCompletedFields;
 
   return (
@@ -99,6 +97,14 @@ export default function StatusUpdateModal(props) {
                 {labelWithOptional("Status Remarks")}
               </Typography>
               <Textarea value={statusRemarks} onChange={(e) => onStatusRemarksChange(e.target.value)} placeholder="Enter status remarks" />
+            </div>
+          ) : null}
+          {showCancelledFields ? (
+            <div className="rounded-xl border border-blue-gray-100 p-4">
+              <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
+                {labelWithOptional("Cancellation Remarks")}
+              </Typography>
+              <Textarea value={statusRemarks} onChange={(e) => onStatusRemarksChange(e.target.value)} placeholder="Enter cancellation remarks" />
             </div>
           ) : null}
           {showFollowUpFields ? (
@@ -161,7 +167,7 @@ export default function StatusUpdateModal(props) {
           onClick={onStatusUpdate}
           disabled={
             statusLocked ||
-            (selectedStatus === "FOLLOW_UP_SCHEDULED" && (!followUpDate || !followUpTime || !followUpRemarks.trim())) ||
+            (selectedStatus === "FOLLOW_UP_SCHEDULED" && (!followUpDate || !followUpTime)) ||
             (selectedStatus === "COMPLETED" && !completionRemarks.trim())
           }
         >
