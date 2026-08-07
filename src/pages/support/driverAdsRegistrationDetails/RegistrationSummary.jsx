@@ -32,7 +32,7 @@ export default function RegistrationSummary({
             <Typography className="text-lg font-bold text-blue-gray-900">{currentCycleNumber || "-"}</Typography>
           </div>
         </div>
-        <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200">
+        <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-200 border-2">
           <div className="h-full rounded-full bg-green-600 transition-all duration-300" style={{ width: `${progressPercent}%` }} />
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs font-semibold text-blue-gray-600">

@@ -254,7 +254,7 @@ function DriverAdsRegList() {
                           {row?.advertisement?.tier || "-"}
                         </span>
                       </td>
-                      <td className={className}>
+                      <td className={`${className} whitespace-nowrap`}>
                         <Typography className="text-xs font-semibold text-black">{row?.advertisement?.name || "-"}</Typography>
                       </td>
                      
