@@ -100,6 +100,7 @@ import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
 import DriverNotificationListEdit from "./pages/vendor/driverNotificationEdit";
 import DriverReturnTripsList from "./pages/vendor/driverReturnTripsList";
+import RootWebRegistrationList from "./pages/vendor/rootWebRegistrationList";
 import VersionControlList from "./pages/versionControl/VersionControlList";
 import VersionControlEdit from "./pages/versionControl/VersionControlEdit";
 import DiscountView from "./pages/discountModule/view";
@@ -791,6 +792,14 @@ export const routes = [
         name: "Account List",
         path: "/vendors/account/owner-onboarding-cab",
         element: <AccountList />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Root Web Reg",
+        path: "/vendors/root-web-reg",
+        element: <RootWebRegistrationList />,
         display: true,
         permission: "Vendors",
       },
