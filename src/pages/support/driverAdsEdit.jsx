@@ -27,11 +27,13 @@ function DriverAdsEdit() {
         setInitialValues({
           name: data.name || "",
           description: data.description || "",
+          termsAndConditions: data.termsAndConditions || "",
           zone: data.zone || "",
           subZoneId: String(data.subZoneId || ""),
           contractPeriod: data.contractPeriod || 30,
           paymentFrequency: data.paymentFrequency || "MONTHLY",
           paymentAmount: data.paymentAmount ?? "",
+          tier: data.tier || "SILVER",
           claimRequest: Boolean(data.claimRequest),
           imageFile: null,
           image: data.image || "",
@@ -62,10 +64,12 @@ function DriverAdsEdit() {
       const payload = {
         name: values.name.trim(),
         description: values.description.trim(),
+        termsAndConditions: values.termsAndConditions.trim(),
         zone: values.zone,
         contractPeriod: values.contractPeriod,
         paymentFrequency: values.paymentFrequency,
         paymentAmount: values.paymentAmount,
+        tier: values.tier,
         claimRequest: values.claimRequest,
         isActive: values.isActive,
       };
@@ -126,6 +130,11 @@ function DriverAdsEdit() {
                   <Textarea name="description" value={values.description} onChange={handleChange} onBlur={handleBlur} className="w-full" />
                   {touched.description && errors.description ? <p className="mt-1 text-xs text-red-600">{errors.description}</p> : null}
                 </div>
+                <div>
+                  <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Terms And Conditions <span className="text-red-500">*</span></Typography>
+                  <Textarea name="termsAndConditions" value={values.termsAndConditions} onChange={handleChange} onBlur={handleBlur} className="w-full" />
+                  {touched.termsAndConditions && errors.termsAndConditions ? <p className="mt-1 text-xs text-red-600">{errors.termsAndConditions}</p> : null}
+                </div>
                 <DriverAdsZone label="Zone" placeholder="Select Zone" value={values.zone} error={errors.zone} touched={touched.zone} showAll={false} returnLabel onChange={(value) => { setFieldValue("zone", value); setFieldValue("subZoneId", ""); }} />
                 <DriverAdsZone label="Sub Zone" placeholder="Select Sub Zone" value={values.subZoneId} error={errors.subZoneId} touched={touched.subZoneId} showAll={false} isSubZone parentValue={values.zone} onChange={(value) => setFieldValue("subZoneId", value)} />
                 <div>
@@ -146,6 +155,15 @@ function DriverAdsEdit() {
                   <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Payment Amount <span className="text-red-500">*</span></Typography>
                   <Input type="number" min="0" name="paymentAmount" value={values.paymentAmount} onChange={handleChange} onBlur={handleBlur} className="w-full" />
                   {touched.paymentAmount && errors.paymentAmount ? <p className="mt-1 text-xs text-red-600">{errors.paymentAmount}</p> : null}
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Tier <span className="text-red-500">*</span></Typography>
+                  <Select value={values.tier} onChange={(value) => setFieldValue("tier", value)}>
+                    <Option value="SILVER">Silver</Option>
+                    <Option value="GOLD">Gold</Option>
+                    <Option value="ELITE">Elite</Option>
+                  </Select>
+                  {touched.tier && errors.tier ? <p className="mt-1 text-xs text-red-600">{errors.tier}</p> : null}
                 </div>
                 <div>
                   <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Image <span className="text-red-500">*</span></Typography>

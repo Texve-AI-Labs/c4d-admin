@@ -24,11 +24,13 @@ function DriverAdsCreate() {
   const initialValues = {
     name: "",
     description: "",
+    termsAndConditions: "",
     zone: "",
     subZoneId: "",
     contractPeriod: 30,
     paymentFrequency: "MONTHLY",
     paymentAmount: "",
+    tier: "SILVER",
     claimRequest: false,
     imageFile: null,
     isActive: true,
@@ -44,11 +46,13 @@ function DriverAdsCreate() {
       appendFormFields(formData, {
         name: values.name.trim(),
         description: values.description.trim(),
+        termsAndConditions: values.termsAndConditions.trim(),
         zone: values.zone,
         subZoneId,
         contractPeriod: values.contractPeriod,
         paymentFrequency: values.paymentFrequency || "MONTHLY",
         paymentAmount: values.paymentAmount,
+        tier: values.tier,
         claimRequest: values.claimRequest,
         isActive: values.isActive,
       });
@@ -116,6 +120,18 @@ function DriverAdsCreate() {
                   {touched.description && errors.description ? <p className="mt-1 text-xs text-red-600">{errors.description}</p> : null}
                 </div>
 
+                <div>
+                  <RequiredLabel>Terms And Conditions</RequiredLabel>
+                  <Textarea
+                    name="termsAndConditions"
+                    value={values.termsAndConditions}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full"
+                  />
+                  {touched.termsAndConditions && errors.termsAndConditions ? <p className="mt-1 text-xs text-red-600">{errors.termsAndConditions}</p> : null}
+                </div>
+
                 <DriverAdsZone
                   label="Zone"
                   placeholder="Select Zone"
@@ -163,6 +179,16 @@ function DriverAdsCreate() {
                   <RequiredLabel>Payment Amount</RequiredLabel>
                   <Input type="number" min="0" name="paymentAmount" value={values.paymentAmount} onChange={handleChange} onBlur={handleBlur} className="w-full" />
                   {touched.paymentAmount && errors.paymentAmount ? <p className="mt-1 text-xs text-red-600">{errors.paymentAmount}</p> : null}
+                </div>
+
+                <div>
+                  <RequiredLabel>Tier</RequiredLabel>
+                  <Select value={values.tier} onChange={(value) => setFieldValue("tier", value)}>
+                    <Option value="SILVER">Silver</Option>
+                    <Option value="GOLD">Gold</Option>
+                    <Option value="ELITE">Elite</Option>
+                  </Select>
+                  {touched.tier && errors.tier ? <p className="mt-1 text-xs text-red-600">{errors.tier}</p> : null}
                 </div>
 
                 <div>

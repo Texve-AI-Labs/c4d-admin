@@ -8,6 +8,8 @@ export const driverAdsValidationSchema = Yup.object({
   contractPeriod: Yup.number().oneOf([30, 60, 90], "Contract period must be 30, 60, or 90").required("Contract period is required"),
   paymentFrequency: Yup.string().required("Payment frequency is required"),
   paymentAmount: Yup.number().typeError("Payment amount must be a number").positive("Payment amount must be greater than 0").required("Payment amount is required"),
+  tier: Yup.string().oneOf(["SILVER", "GOLD", "ELITE"], "Tier is required").required("Tier is required"),
+  termsAndConditions: Yup.string().trim().required("Terms and conditions are required"),
   imageFile: Yup.mixed().required("Image is required"),
   isActive: Yup.boolean().required(),
   placements: Yup.array()

@@ -75,6 +75,10 @@ function DriverAdsDetail() {
                 <Input value={data.description || ""} disabled className="w-full" />
               </div>
               <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Terms And Conditions</Typography>
+                <Input value={data.termsAndConditions || ""} disabled className="w-full" />
+              </div>
+              <div>
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Contract Period</Typography>
                 <Input value={String(data.contractPeriod || "")} disabled className="w-full" />
               </div>
@@ -85,6 +89,10 @@ function DriverAdsDetail() {
               <div>
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Payment Amount</Typography>
                 <Input value={String(data.paymentAmount ?? "")} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Tier</Typography>
+                <Input value={data.tier || ""} disabled className="w-full" />
               </div>
               <div>
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Zone</Typography>

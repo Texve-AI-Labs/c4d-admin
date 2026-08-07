@@ -68,7 +68,7 @@ function DriverAdsZone({
 
   useEffect(() => {
     if (isSubZone) fetchZones();
-  }, [parentValue, refreshKey, isSubZone]);
+  }, [parentValue, refreshKey, isSubZone, serviceAreas]);
 
   const options = isSubZone ? zones : serviceAreas;
   const selectOptions = [
