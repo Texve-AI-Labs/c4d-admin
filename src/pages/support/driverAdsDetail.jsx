@@ -106,6 +106,10 @@ function DriverAdsDetail() {
                 <Switch checked={Boolean(data.isActive)} disabled />
                 <Typography className="text-sm font-medium text-blue-gray-700">Active</Typography>
               </div>
+              <div className="flex items-center gap-3 md:pt-6">
+                <Switch checked={Boolean(data.claimRequest)} disabled />
+                <Typography className="text-sm font-medium text-blue-gray-700">Claim Request</Typography>
+              </div>
               <div className="md:col-span-2">
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Image</Typography>
                 {data.image ? (
