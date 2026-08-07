@@ -490,7 +490,7 @@ export default function ParcelMasterPriceForm({
                   />
                 </div>
                 <div className="min-w-0">
-                  <label className="text-xs font-semibold text-gray-500 uppercase">Waiting Charge</label>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Waiting Charges Apply After</label>
                   <UiInput
                     className={inputClass}
                     type="number"

@@ -333,7 +333,7 @@ const BikeMasterPriceTableAdd = () => {
                             {/* Waiting Charge */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">
-                                    Waiting Charge
+                                    Waiting Charges Apply After
                                 </label>
                                 <Field
                                     type="number"

@@ -267,7 +267,7 @@ export function MasterPriceView() {
                                         "Additional Mins Price",
                                         "Extra KM Price",
                                         "Free Extra (mins)",
-                                        "Waiting Charge",
+                                        "Waiting Charges Apply After",
                                         "Night Charge",
                                         "Cancellation Mins",
                                         "Cancellation Charge",

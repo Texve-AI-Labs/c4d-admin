@@ -357,7 +357,7 @@ const RentalsMasterPriceEdit = () => {
                                 <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
                                 <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
                             </div>
