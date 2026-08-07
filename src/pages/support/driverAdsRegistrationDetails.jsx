@@ -422,7 +422,7 @@ function DriverAdsRegistrationDetails() {
               <InfoRow key="advertisement-active" label="Advertisement Active" value={advertisement?.isActive ? "Yes" : "No"} />,
             ]}
           />
-          {registration?.status === "COMPLETED" && (
+          {registration?.status === "ACTIVE" && (
             <>
           <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
             
