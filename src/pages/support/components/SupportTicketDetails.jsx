@@ -27,9 +27,6 @@ function SupportTicketDetails({
   saving,
 }) {
   const { isRejected, showReviewFields } = shouldShowReviewFields(selectedStatus, selectedStatus);
-  const statusClassName = isTerminalTicket
-    ? "!rounded-full !border !border-slate-300 !bg-slate-200 !text-slate-500 !cursor-not-allowed"
-    : "!rounded-full !border !border-slate-300 !bg-white !text-slate-900";
   const visibleStatusOptions = allowedStatusOptions.filter(
     (option) => String(option || "").toUpperCase() !== String(selectedStatus || "").toUpperCase()
   );
@@ -64,7 +61,6 @@ function SupportTicketDetails({
                   onChange={(value) => onStatusChange(value || "UNDER_REVIEW")}
                   disabled={isTerminalTicket}
                   labelProps={{ className: "hidden" }}
-                  className={`${statusClassName} !min-h-0 !h-11`}
                 >
                   {visibleStatusOptions.map((option) => (
                     <Option key={option} value={option}>
