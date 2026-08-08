@@ -1,6 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Input, Option, Select, Textarea, Typography } from "@material-tailwind/react";
 import { getStatusTone, shouldShowReviewFields } from "../supportTicketReviewUtils";
+const ADMIN_REMARK_OPTIONS = [
+  "Reviewed and rejected",
+  "Invalid proof",
+  "Policy not applicable",
+  "Need further investigation",
+  "Other",
+];
 
 const ErrorMessage = ({ children }) => {
   if (!children) return null;
@@ -27,10 +34,19 @@ function SupportTicketDetails({
   saving,
 }) {
   const { isRejected, showReviewFields } = shouldShowReviewFields(selectedStatus, selectedStatus);
+  const [adminRemarkMode, setAdminRemarkMode] = useState(
+    adminRemarks && !ADMIN_REMARK_OPTIONS.includes(adminRemarks) ? "Other" : adminRemarks || ""
+  );
+
+  useEffect(() => {
+    setAdminRemarkMode(adminRemarks && !ADMIN_REMARK_OPTIONS.includes(adminRemarks) ? "Other" : adminRemarks || "");
+  }, [adminRemarks]);
+
   const statusTone = getStatusTone(selectedStatus);
   const statusClassName = isTerminalTicket
     ? "!rounded-full !border-0 !bg-slate-200 !text-slate-500 !cursor-not-allowed"
     : `!rounded-full !border-0 transition-colors ${statusTone} !text-white`;
+  const selectClassName = "w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-none outline-none transition focus:border-blue-500";
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
@@ -62,7 +78,7 @@ function SupportTicketDetails({
                   onChange={(value) => onStatusChange(value || "UNDER_REVIEW")}
                   disabled={isTerminalTicket}
                   labelProps={{ className: "hidden" }}
-                  className={`${statusClassName} !min-h-0 !h-11`}
+                  className={`${statusClassName} ${isTerminalTicket ? statusClassName : ""}`}
                 >
                   {allowedStatusOptions.map((option) => (
                     <Option key={option} value={option}>{option.replace(/_/g, " ")}</Option>
@@ -117,12 +133,41 @@ function SupportTicketDetails({
                   </div>
                   <div className="space-y-2">
                     <Typography className="text-xs font-semibold text-black">Admin Remarks</Typography>
+                    <div className="relative">
+                      <select
+                        value={adminRemarkMode}
+                        onChange={(e) => {
+                          const nextValue = e.target.value || "";
+                          setAdminRemarkMode(nextValue);
+                          if (nextValue !== "Other") {
+                            onAdminRemarksChange(nextValue);
+                          }
+                        }}
+                        disabled={isTerminalTicket}
+                        className={`${selectClassName} w-full appearance-none pr-10`}
+                      >
+                        <option value="" disabled>
+                          Select admin remarks
+                        </option>
+                        {ADMIN_REMARK_OPTIONS.map((remark) => (
+                          <option key={remark} value={remark}>
+                            {remark}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500">
+                        ▾
+                      </span>
+                    </div>
+                    {adminRemarkMode === "Other" ? (
                     <Textarea
                       value={adminRemarks}
                       onChange={(e) => onAdminRemarksChange(e.target.value)}
                       disabled={isTerminalTicket}
+                      placeholder="Enter support reason manually"
                       className="!border-slate-300 !text-black placeholder:!text-black/40"
                     />
+                    ) : null}
                     <ErrorMessage>{fieldErrors.adminRemarks}</ErrorMessage>
                   </div>
                 </>
