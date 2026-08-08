@@ -28,7 +28,7 @@ function SupportTicketDetails({
 }) {
   const { isRejected, showReviewFields } = shouldShowReviewFields(selectedStatus, selectedStatus);
   const statusClassName = isTerminalTicket
-    ? "!rounded-full !border-0 !bg-slate-200 !text-slate-500 !cursor-not-allowed"
+    ? "!rounded-full !border !border-slate-300 !bg-slate-200 !text-slate-500 !cursor-not-allowed"
     : "!rounded-full !border !border-slate-300 !bg-white !text-slate-900";
   const visibleStatusOptions = allowedStatusOptions.filter(
     (option) => String(option || "").toUpperCase() !== String(selectedStatus || "").toUpperCase()
