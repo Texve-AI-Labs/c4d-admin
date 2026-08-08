@@ -27,6 +27,11 @@ function SupportTicketDetails({
   saving,
 }) {
   const { isRejected, showReviewFields } = shouldShowReviewFields(selectedStatus, selectedStatus);
+  const formatStatusLabel = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   const visibleStatusOptions = allowedStatusOptions.filter(
     (option) => String(option || "").toUpperCase() !== String(selectedStatus || "").toUpperCase()
   );
@@ -57,14 +62,14 @@ function SupportTicketDetails({
                 <Select
                   value={selectedStatus}
                   label=" "
-                  selected={(element) => element?.props?.children || selectedStatus}
+                  selected={(element) => element?.props?.children || formatStatusLabel(selectedStatus)}
                   onChange={(value) => onStatusChange(value || "UNDER_REVIEW")}
                   disabled={isTerminalTicket}
                   labelProps={{ className: "hidden" }}
                 >
                   {visibleStatusOptions.map((option) => (
                     <Option key={option} value={option}>
-                      {option.replace(/_/g, " ")}
+                      {formatStatusLabel(option)}
                     </Option>
                   ))}
                 </Select>
@@ -116,7 +121,7 @@ function SupportTicketDetails({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Typography className="text-xs font-semibold text-black">Admin Remarks</Typography>
+                    <Typography className="text-xs font-semibold text-black">Admin Remarks <span className="text-red-500">*</span></Typography>
                     <Textarea
                       value={adminRemarks}
                       onChange={(e) => onAdminRemarksChange(e.target.value)}
