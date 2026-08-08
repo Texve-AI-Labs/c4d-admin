@@ -109,7 +109,7 @@ const AddBanner = () => {
   ];
 
   const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER';
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER'];
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER','FUTURE_BOOKING_INTRO_DRIVER','RETURN_TRIP_INTRO_DRIVER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
@@ -252,7 +252,7 @@ const AddBanner = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       const formData = new FormData();
-      const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER';
+      const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'FUTURE_BOOKING_INTRO_DRIVER' || values.type === 'RETURN_TRIP_INTRO_DRIVER';
       const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
       const isQrPageImageType = values.type === 'QR_DRIVER_TO_DRIVER' || values.type === 'QR_DRIVER_TO_CUSTOMER' || values.type === 'QR_CUSTOMER_TO_CUSTOMER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
@@ -357,7 +357,7 @@ const AddBanner = () => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, values,setFieldValue }) => {
-          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER'; 
+          const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'FUTURE_BOOKING_INTRO_DRIVER' || values.type === 'RETURN_TRIP_INTRO_DRIVER'; 
           const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
           const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
           const isQrPageImageType = values.type === 'QR_DRIVER_TO_DRIVER' || values.type === 'QR_DRIVER_TO_CUSTOMER' || values.type === 'QR_CUSTOMER_TO_CUSTOMER';
@@ -375,7 +375,7 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'QR_DRIVER_TO_DRIVER' || selectedType === 'QR_DRIVER_TO_CUSTOMER' || selectedType === 'QR_CUSTOMER_TO_CUSTOMER') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'QR_DRIVER_TO_DRIVER' || selectedType === 'QR_DRIVER_TO_CUSTOMER' || selectedType === 'QR_CUSTOMER_TO_CUSTOMER' || selectedType === 'FUTURE_BOOKING_INTRO_DRIVER' || selectedType === 'RETURN_TRIP_INTRO_DRIVER') {
                       setFieldValue('zone', 'All');
                     }
                     if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
@@ -399,6 +399,8 @@ const AddBanner = () => {
                   <option value="NEW_CUSTOMER">New Customer</option>
                   <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
                   <option value="INTRO_SLIDES_DRIVER">Intro Slides (Driver)</option>         
+                  <option value="FUTURE_BOOKING_INTRO_DRIVER">Future Booking Intro (Driver)</option>
+                  <option value="RETURN_TRIP_INTRO_DRIVER">Return Trip Intro (Driver)</option>         
                   <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>
                   <option value="QR_DRIVER_TO_DRIVER">Qr Driver To Driver</option>
                   <option value="QR_DRIVER_TO_CUSTOMER">QR Driver To Customer</option>
