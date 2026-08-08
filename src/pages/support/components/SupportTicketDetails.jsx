@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Input, Option, Select, Textarea, Typography } from "@material-tailwind/react";
-import { getStatusTone, shouldShowReviewFields } from "../supportTicketReviewUtils";
+import { shouldShowReviewFields } from "../supportTicketReviewUtils";
 
 const ErrorMessage = ({ children }) => {
   if (!children) return null;
@@ -27,10 +27,12 @@ function SupportTicketDetails({
   saving,
 }) {
   const { isRejected, showReviewFields } = shouldShowReviewFields(selectedStatus, selectedStatus);
-  const statusTone = getStatusTone(selectedStatus);
   const statusClassName = isTerminalTicket
     ? "!rounded-full !border-0 !bg-slate-200 !text-slate-500 !cursor-not-allowed"
-    : `!rounded-full !border-0 transition-colors ${statusTone} !text-white`;
+    : "!rounded-full !border !border-slate-300 !bg-white !text-slate-900";
+  const visibleStatusOptions = allowedStatusOptions.filter(
+    (option) => String(option || "").toUpperCase() !== String(selectedStatus || "").toUpperCase()
+  );
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
@@ -64,8 +66,10 @@ function SupportTicketDetails({
                   labelProps={{ className: "hidden" }}
                   className={`${statusClassName} !min-h-0 !h-11`}
                 >
-                  {allowedStatusOptions.map((option) => (
-                    <Option key={option} value={option}>{option.replace(/_/g, " ")}</Option>
+                  {visibleStatusOptions.map((option) => (
+                    <Option key={option} value={option}>
+                      {option.replace(/_/g, " ")}
+                    </Option>
                   ))}
                 </Select>
               </div>
