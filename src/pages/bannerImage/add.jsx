@@ -402,9 +402,9 @@ const AddBanner = () => {
                   <option value="FUTURE_BOOKING_INTRO_DRIVER">Future Booking Intro (Driver)</option>
                   <option value="RETURN_TRIP_INTRO_DRIVER">Return Trip Intro (Driver)</option>         
                   <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>
-                  <option value="QR_DRIVER_TO_DRIVER">Qr Driver To Driver</option>
+                  {/* <option value="QR_DRIVER_TO_DRIVER">Qr Driver To Driver</option>
                   <option value="QR_DRIVER_TO_CUSTOMER">QR Driver To Customer</option>
-                  <option value="QR_CUSTOMER_TO_CUSTOMER">QR Customer To Customer</option>
+                  <option value="QR_CUSTOMER_TO_CUSTOMER">QR Customer To Customer</option> */}
                 </Field>
                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
               </div>

@@ -272,9 +272,9 @@ const BannerView = () => {
   { value: 'FUTURE_BOOKING_INTRO_DRIVER', label: 'Future Booking Intro (Driver)' },
   { value: 'RETURN_TRIP_INTRO_DRIVER', label: 'Return Trip Intro (Driver)' },
   { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' },
-  { value: 'QR_DRIVER_TO_DRIVER', label: 'QR Driver To Driver' },
-  { value: 'QR_DRIVER_TO_CUSTOMER', label: 'QR Driver To Customer' },
-  { value: 'QR_CUSTOMER_TO_CUSTOMER', label: 'QR Customer To Customer' }
+  // { value: 'QR_DRIVER_TO_DRIVER', label: 'QR Driver To Driver' },
+  // { value: 'QR_DRIVER_TO_CUSTOMER', label: 'QR Driver To Customer' },
+  // { value: 'QR_CUSTOMER_TO_CUSTOMER', label: 'QR Customer To Customer' }
 ] ;
 
   // Client-side filtering remains as a fallback
