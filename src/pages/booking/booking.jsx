@@ -4156,7 +4156,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Typography>
                                                             )}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                Waiting beyond <span className='font-bold text-black'>{quoteDetails?.amount?.packageDetails?.waitingMins}</span> will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.amount?.packageDetails?.waitingCharge}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.amount?.packageDetails?.waitingMins}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.amount?.packageDetails?.waitingCharge}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
@@ -4220,7 +4220,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Typography>
                                                             )}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
@@ -4300,7 +4300,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
-                                                                Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> Mins  will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
