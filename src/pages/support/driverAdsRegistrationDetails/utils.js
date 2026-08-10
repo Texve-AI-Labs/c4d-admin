@@ -23,4 +23,6 @@ export const getStatusBadgeClass = (value) => {
 };
 
 export const getStatusOptions = (status, statusFlow) =>
-  [status, ...(statusFlow[status] || [])].filter((value, index, array) => array.indexOf(value) === index);
+  [String(status || "").toUpperCase(), ...((statusFlow && statusFlow[String(status || "").toUpperCase()]) || [])].filter(
+    (value, index, array) => array.indexOf(value) === index
+  );

@@ -7,6 +7,15 @@ export const STATUS_FLOW = {
   CANCELLED: [],
 };
 
+export const CYCLE_STATUS_FLOW = {
+  CLAIM_SUBMITTED: ["UNDER_REVIEW"],
+  UNDER_REVIEW: ["APPROVED", "REJECTED"],
+  APPROVED: ["PAID"],
+  REJECTED: [],
+  PAID: ["COMPLETED"],
+  COMPLETED: [],
+};
+
 export const STATUS_LABELS = {
   NEW: "New",
   IN_PROGRESS: "In Progress",

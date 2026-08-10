@@ -19,6 +19,8 @@ export default function CycleReviewDialog({
   onSave,
   cycleSaving,
 }) {
+  const normalizedCycleStatus = String(cycleStatus || "").toUpperCase();
+  const filteredStatusOptions = Array.isArray(statusOptions) ? statusOptions.filter((option) => option !== normalizedCycleStatus) : [];
   return (
     <Dialog open={open} handler={onClose} size="lg" className="w-[98vw] max-w-5xl" dismiss={{ outsidePress: false, escapeKey: false }}>
       <DialogHeader className="flex items-center justify-between">
@@ -75,7 +77,12 @@ export default function CycleReviewDialog({
                     onChange={(e) => onCycleStatusChange(e.target.value)}
                     className="w-full rounded-lg border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 focus:border-black focus:outline-none"
                   >
-                    {statusOptions.map((status) => (
+                    {cycleStatus ? (
+                      <option value={cycleStatus} hidden>
+                        {formatStatusLabel(cycleStatus)}
+                      </option>
+                    ) : null}
+                    {filteredStatusOptions.map((status) => (
                       <option key={status} value={status}>
                         {formatStatusLabel(status)}
                       </option>

@@ -12,7 +12,7 @@ import ClaimProofDialog from "./driverAdsRegistrationDetails/ClaimProofDialog";
 import StatusUpdateModal from "./driverAdsRegistrationDetails/StatusUpdateModal";
 import ActivityTabs from "./driverAdsRegistrationDetails/ActivityTabs";
 import ActivityLogTable from "./driverAdsRegistrationDetails/ActivityLogTable";
-import { STATUS_FLOW } from "./driverAdsRegistrationDetails/constants";
+import { STATUS_FLOW, CYCLE_STATUS_FLOW } from "./driverAdsRegistrationDetails/constants";
 import { formatStatusLabel, getStatusBadgeClass, getStatusOptions } from "./driverAdsRegistrationDetails/utils";
 
 const formatValue = (value) => {
@@ -586,7 +586,7 @@ function DriverAdsRegistrationDetails() {
         }}
         cycleRemarks={cycleRemarks}
         onCycleRemarksChange={setCycleRemarks}
-        statusOptions={["CLAIM_SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "PAID", "COMPLETED"]}
+        statusOptions={getStatusOptions(cycleStatus || cycleDetail?.status || selectedCycle?.status || "CLAIM_SUBMITTED", CYCLE_STATUS_FLOW)}
         formatStatusLabel={formatStatusLabel}
         onSave={handleUpdateCycleStatus}
         cycleSaving={cycleSaving}

@@ -44,6 +44,7 @@ export default function StatusUpdateModal(props) {
   const showCompletedFields = selectedStatus === "COMPLETED";
   const showCancelledFields = selectedStatus === "CANCELLED";
   const showSimpleRemarks = selectedStatus && !showFollowUpFields && !showCompletedFields;
+  const filteredStatusOptions = Array.isArray(statusOptions) ? statusOptions.filter((option) => option !== selectedStatus) : [];
 
   return (
     <Dialog open={open} handler={onClose} size="lg" className="w-[98vw] max-w-5xl" dismiss={{ outsidePress: false, escapeKey: false }}>
@@ -70,7 +71,12 @@ export default function StatusUpdateModal(props) {
                 </button>
                 {statusOpen ? (
                   <div className="relative z-[10000] mt-2 w-full max-h-60 overflow-y-auto overflow-x-hidden rounded-lg border border-blue-gray-100 bg-white shadow-xl md:absolute md:left-0 md:top-full md:mt-2">
-                    {statusOptions.map((statusOption) => (
+                    {selectedStatus ? (
+                      <div className="cursor-default border-b border-blue-gray-100 px-4 py-3 text-left text-sm font-semibold text-blue-gray-400">
+                       {selectedStatusLabel}
+                      </div>
+                    ) : null}
+                    {filteredStatusOptions.map((statusOption) => (
                       <button
                         key={statusOption}
                         type="button"
