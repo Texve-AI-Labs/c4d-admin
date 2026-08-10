@@ -4134,10 +4134,10 @@ const priceDetailsCardClass = isPeakHour
                                                                     const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
                                                                 if (!selectedPackage) return '';
                                                                 const price =
-                                                                        values.carType === 'Mini' ? selectedPackage.extraKmPrice :
-                                                                            values.carType === 'Sedan' ? selectedPackage.extraKmPrice :
-                                                                                values.carType === 'SUV' ? selectedPackage.extraKmPrice :
-                                                                                    selectedPackage.extraKmPrice;
+                                                                        values.carType === 'Mini' ? selectedPackage.kilometerPrice :
+                                                                            values.carType === 'Sedan' ? selectedPackage.kilometerPriceSedan :
+                                                                                values.carType === 'SUV' ? selectedPackage.kilometerPriceSuv :
+                                                                                    selectedPackage.kilometerPriceMVP;
                                                                 return Math.round(Number(price || 0));
                                                                 })()}</span> will be charged.
                                                             </Typography>
