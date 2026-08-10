@@ -171,7 +171,7 @@ const RentalsMasterPriceEdit = () => {
                 nightCharge: Number(values.nightCharge),
                 tollCharge: Number(values.tollCharge),
                 driverCharge: Number(values.driverCharge),
-                extraKmPrice: Number(values.extraKmPrice),
+                extraKmPrice: Number(values.extraKmPrice) || 0,
                 cancelMins: Utils.convertMinutesToTimeFormat(values.cancelMins),
                 cancelCharge: Number(values.cancelCharge),
                 waitingMins: Utils.convertMinutesToTimeFormat(values.waitingMins),
@@ -280,11 +280,11 @@ const RentalsMasterPriceEdit = () => {
                                     <ErrorMessage name="kilometer" component="div" className="text-red-500 text-sm" />
                                 </div>
                             
-                            <div>
+                            {/* <div>
                                 <label className="text-sm font-medium text-gray-700">Additional KM Rate</label>
                                 <Field type="number" name="extraKmPrice" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="extraKmPrice" component="div" className="text-red-500 text-sm" />
-                            </div>
+                            </div> */}
                             </>)}
                              <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
