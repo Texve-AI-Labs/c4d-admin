@@ -15,7 +15,7 @@ const AccountSearch = ({ onSearch, initialValue = '' }) => {
     const trimmed = searchQuery.trim();
     const debounceTimer = setTimeout(() => {
       onSearch(trimmed);
-    }, 600);
+    }, 300); // Debounce for 300ms
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, onSearch]);
