@@ -48,7 +48,7 @@ const menuItems = [
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
   { type: "item", name: "Marketing", path: "/dashboard/vendors/notificationList", permission: "Marketing" },
   { type: "item", name: "Reports", path: "/dashboard/driver-ops", permission: "Driver Ops" },
-  { type: "item", name: "Geo Intelligence", path: "/dashboard/geo-intelligence", permission: "Users" },
+  { type: "item", name: "Geo Int & Ops", path: "/dashboard/geo-intelligence", permission: "Users" },
   {
     type: "item",
     name: "Admin",
@@ -254,7 +254,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
         );
       case "Reports":
         return currentPath.startsWith("/dashboard/driver-ops");
-      case "Geo Intelligence":
+      case "Geo Int & Ops":
         return currentPath.startsWith("/dashboard/geo-intelligence");
       case "Driver Engagement":
         return currentPath.startsWith("/dashboard/driverengagement");
@@ -380,7 +380,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                         {name === "Reports" ? (
                           <ClipboardDocumentListIcon className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`} />
                         ) : null}
-                        {name === "Geo Intelligence" ? (
+                        {name === "Geo Int & Ops" ? (
                           <GlobeAltIcon className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`} />
                         ) : null}
                         {name === "Leads" ? (

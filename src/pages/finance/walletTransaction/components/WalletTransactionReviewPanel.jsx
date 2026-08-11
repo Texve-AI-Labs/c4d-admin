@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Input, Option, Select, Textarea, Typography } from "@material-tailwind/react";
-import { badgeClassByValue, formatCurrency } from "../utils";
+import { badgeClassByValue, formatCurrency, formatDisplayLabel } from "../utils";
 
 const WalletTransactionReviewPanel = ({
   open,
@@ -65,7 +65,7 @@ const WalletTransactionReviewPanel = ({
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</div>
                 <div className="mt-2">
                   <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(selectedRow?.status)}`}>
-                    {selectedRow?.status || "-"}
+                    {formatDisplayLabel(selectedRow?.status || "-")}
                   </span>
                 </div>
               </div>
@@ -84,8 +84,8 @@ const WalletTransactionReviewPanel = ({
 
             <div className="space-y-3">
               <div className="space-y-2">
-                <Typography className="text-sm font-semibold text-slate-700">Status</Typography>
-                <Select value={selectedStatus} label="Status" onChange={(value) => onStatusChange(value || "IN_PROGRESS")} disabled={isTerminalStatus || isNotEligible}>
+                <Select value={selectedStatus || "IN_PROGRESS"} label="Status" onChange={(value) => onStatusChange(value || "IN_PROGRESS")} disabled={isTerminalStatus || isNotEligible}>
+                  <Option value="IN_PROGRESS">In Progress</Option>
                   <Option value="PAID">Paid</Option>
                   <Option value="REJECTED">Rejected</Option>
                 </Select>
@@ -93,7 +93,7 @@ const WalletTransactionReviewPanel = ({
 
               {selectedStatus === "PAID" && !isNotEligible ? (
                 <div className="space-y-2">
-                  <Typography className="text-sm font-semibold text-slate-700">Payment Transaction ID</Typography>
+                  <Typography className="text-sm font-semibold text-slate-700">Payment Transaction ID <span className="text-red-500">*</span></Typography>
                   <Input
                     type="text"
                     value={paymentTransactionId}
@@ -105,7 +105,10 @@ const WalletTransactionReviewPanel = ({
               ) : null}
 
               <div className="space-y-2">
-                <Typography className="text-sm font-semibold text-slate-700">Admin Reason</Typography>
+                <Typography className="text-sm font-semibold text-slate-700">
+                  Admin Reason
+                  {String(selectedStatus || "").toUpperCase() === "IN_PROGRESS" ? null : <span className="text-red-500">*</span>}
+                </Typography>
                 <Textarea
                   value={adminReason}
                   onChange={(e) => onAdminReasonChange(e.target.value)}

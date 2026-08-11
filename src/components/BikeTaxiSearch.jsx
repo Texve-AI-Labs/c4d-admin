@@ -16,7 +16,7 @@ const BikeTaxiSearch = ({ onSearch, initialValue = '', hideAddNewButton=false })
     const trimmed = searchQuery.trim();
     const debounceTimer = setTimeout(() => {
       onSearch(trimmed);
-    }, 600);
+    }, 300);
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, onSearch]);

@@ -30,7 +30,7 @@ const MasterPriceLog = ({ id }) => {
         "base_fare": "Base Fare",
         "kilometer": "Kilometer",
         "extra_km_price": "Extra Kilometer Price",
-        "waiting_charge": "Waiting Charges",
+        "waiting_charge": "Waiting Charges Apply After",
         "drop_price": "Drop Only",
         "additional_mins": "Additional Mins",
         "extra_hours": "Extra Hours",

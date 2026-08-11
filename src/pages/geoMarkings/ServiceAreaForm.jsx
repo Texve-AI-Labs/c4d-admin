@@ -147,6 +147,7 @@ const ServiceAreaForm = ({
     { value: "CABS", label: "Root Cabs" },
     { value: "FOOD", label: "Root Food" },
     { value: "PARCEL", label: "Root Parcel" },
+    { value: "SHOP", label: "Root Shop" },
     { value: "STAY", label: "Root Stay" },
   ];
 
@@ -657,9 +658,9 @@ const ServiceAreaForm = ({
                 {/* Image */}
                 {!(
                   (service.name || "").toString().trim().toUpperCase() ===
-                    "CABS" ||
+                    "CABS" || "PARCEL" || "FOOD" || "SHOP" || "STAY" ||
                   (service.name || "").toString().trim().toUpperCase() ===
-                    "ROOT CABS"
+                    "ROOT CABS" || "ROOT PARCEL" || "ROOT FOOD" || "ROOT SHOP" || "ROOT STAY"
                 ) && (
                   <div>
                     <Typography

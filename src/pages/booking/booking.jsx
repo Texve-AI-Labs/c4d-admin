@@ -4134,10 +4134,10 @@ const priceDetailsCardClass = isPeakHour
                                                                     const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
                                                                 if (!selectedPackage) return '';
                                                                 const price =
-                                                                        values.carType === 'Mini' ? selectedPackage.extraKmPrice :
-                                                                            values.carType === 'Sedan' ? selectedPackage.extraKmPrice :
-                                                                                values.carType === 'SUV' ? selectedPackage.extraKmPrice :
-                                                                                    selectedPackage.extraKmPrice;
+                                                                        values.carType === 'Mini' ? selectedPackage.kilometerPrice :
+                                                                            values.carType === 'Sedan' ? selectedPackage.kilometerPriceSedan :
+                                                                                values.carType === 'SUV' ? selectedPackage.kilometerPriceSuv :
+                                                                                    selectedPackage.kilometerPriceMVP;
                                                                 return Math.round(Number(price || 0));
                                                                 })()}</span> will be charged.
                                                             </Typography>
@@ -4155,6 +4155,9 @@ const priceDetailsCardClass = isPeakHour
                                                                     • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
                                                                 </Typography>
                                                             )}
+                                                            <Typography className=" text-sm text-gray-700">
+                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.amount?.packageDetails?.waitingMins}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.amount?.packageDetails?.waitingCharge}</span> per minute,
+                                                            </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
                                                             <Typography
@@ -4216,6 +4219,9 @@ const priceDetailsCardClass = isPeakHour
                                                                     • Only {values.luggage} Additional luggage is allowed; extra luggage may incur additional charges.
                                                                 </Typography>
                                                             )}
+                                                            <Typography className=" text-sm text-gray-700">
+                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
+                                                            </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
                                                             <Typography
@@ -4292,6 +4298,9 @@ const priceDetailsCardClass = isPeakHour
                                                             )}
                                                              <Typography className=" text-sm text-gray-700">
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
+                                                            </Typography>
+                                                            <Typography className=" text-sm text-gray-700">
+                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> Mins  will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">

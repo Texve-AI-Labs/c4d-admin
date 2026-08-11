@@ -119,33 +119,6 @@ const ServiceAreasTab = () => {
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
-  const handleDeleteClick = (area) => {              
-    const hasZone = zones.some(
-      (zone) => zone.parent_id === area.id
-    );
-
-     if (hasZone) {
-    setZoneAlertOpen(true); 
-    return;
-  }
-
-    setDeleteDialog({ open: true, item: area });
-  };
-
-  const handleDelete = async () => {
-    try {
-      const response = await ApiRequestUtils.delete(`${API_ROUTES.GEO_MARKINGS_DELETE}/${deleteDialog.item.id}`);
-      if (response?.success) {
-        await fetchServiceAreas(); // Refresh the list
-      } else {
-        throw new Error(response?.message || 'Failed to delete service area');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setDeleteDialog({ open: false, item: null });
-    }
-  };
 
   const handlePolygonComplete = (coords) => {
     setCoordinates(Array.isArray(coords) ? [...coords] : coords);
@@ -273,14 +246,7 @@ const ServiceAreasTab = () => {
                     onClick={() => handleEdit(area)}
                   >
                     <PencilIcon className="h-4 w-4" />
-                  </IconButton>
-                  <IconButton
-                    color="red"
-                    variant="text"
-                    onClick={() => handleDeleteClick(area)} 
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </IconButton>
+                  </IconButton>                
                 </div>
               </div>
             </div>
@@ -306,7 +272,7 @@ const ServiceAreasTab = () => {
 </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
+      {/* <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
         <DialogHeader>Confirm Deletion</DialogHeader>
         <DialogBody>
           Are you sure you want to delete the service area "{deleteDialog.item?.name}"? This action cannot be undone.
@@ -324,7 +290,7 @@ const ServiceAreasTab = () => {
             Delete
           </Button>
         </DialogFooter>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };

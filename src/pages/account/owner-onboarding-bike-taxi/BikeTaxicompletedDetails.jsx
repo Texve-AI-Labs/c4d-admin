@@ -227,44 +227,6 @@ const BikeTaxiCompletedOnboardingDetails = () => {
       const stateCabs = Array.isArray(location?.state?.prefetchedCabs) ? location.state.prefetchedCabs : [];
       let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : base;
 
-      // Try to enrich `cabs` from onboarding list API shape when available.
-      try {
-        let page = 1;
-        const limit = 50;
-        let totalPages = 1;
-        let matched = null;
-
-        do {
-          const listRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
-            page,
-            limit,
-            accountId: id,
-            serviceType,
-          });
-
-          const listRows = Array.isArray(listRes?.data) ? listRes.data : [];
-          matched = listRows.find((row) => String(row?.id) === String(id)) || null;
-          totalPages = Number(listRes?.pagination?.totalPages || 1);
-
-          if (matched || listRows.length === 0) break;
-          page += 1;
-        } while (page <= totalPages);
-
-        if (matched && Array.isArray(matched?.bikes)) {
-          const strictCabs = matched.bikes.filter(
-            (bike) =>
-              bike &&
-              bike.id !== null &&
-              bike.id !== undefined &&
-              String(bike?.accountId ?? bike?.AccountId) === String(id)
-          );
-          const baseCabs = Array.isArray(base?.cabs) ? base.cabs : [];
-          nextData = { ...base, cabs: strictCabs.length > 0 ? strictCabs : baseCabs };
-        }
-      } catch (_err) {
-        // Ignore list enrichment failure; base details are already loaded.
-      }
-
       setOnboardingData(nextData);
     } catch (err) {
       console.error("Failed to load completed onboarding details", err);

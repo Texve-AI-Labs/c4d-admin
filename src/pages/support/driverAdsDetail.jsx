@@ -18,6 +18,8 @@ function DriverAdsDetail() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
+  const [serviceAreas, setServiceAreas] = useState([]);
+  const [zones, setZones] = useState([]);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -36,6 +38,25 @@ function DriverAdsDetail() {
     fetchDetail();
   }, [id]);
 
+  useEffect(() => {
+    const fetchGeoMarkings = async () => {
+      try {
+        const [serviceAreaRes, zoneRes] = await Promise.all([
+          ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" }),
+          ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Zone" }),
+        ]);
+        if (serviceAreaRes?.success) setServiceAreas(serviceAreaRes.data || []);
+        if (zoneRes?.success) setZones(zoneRes.data || []);
+      } catch (err) {
+        console.error("Failed to load geo markings for driver ads detail:", err);
+      }
+    };
+    fetchGeoMarkings();
+  }, []);
+
+  const zoneName = serviceAreas.find((item) => String(item?.id) === String(data?.zone))?.name || data?.zone || "";
+  const subZoneName = zones.find((item) => String(item?.id) === String(data?.subZoneId))?.name || data?.subZoneId || "";
+
   return (
     <div className="mb-8 mt-8">
       <Card>
@@ -53,15 +74,41 @@ function DriverAdsDetail() {
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Description</Typography>
                 <Input value={data.description || ""} disabled className="w-full" />
               </div>
-              <DriverAdsZone label="Zone" placeholder="Select Zone" value={data.zone || ""} disabled showAll={false} />
-              <DriverAdsZone label="Sub Zone" placeholder="Select Sub Zone" value={String(data.subZoneId || "")} disabled showAll={false} isSubZone parentValue={data.zone || ""} />
               <div>
-                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Launch At</Typography>
-                <Input value={formatDate(data.launchAt)} disabled className="w-full" />
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Terms And Conditions</Typography>
+                <Input value={data.termsAndConditions || ""} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Contract Period</Typography>
+                <Input value={String(data.contractPeriod || "")} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Payment Frequency</Typography>
+                <Input value={data.paymentFrequency || ""} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Payment Amount</Typography>
+                <Input value={String(data.paymentAmount ?? "")} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Tier</Typography>
+                <Input value={data.tier || ""} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Zone</Typography>
+                <Input value={zoneName} disabled className="w-full" />
+              </div>
+              <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Sub Zone</Typography>
+                <Input value={subZoneName} disabled className="w-full" />
               </div>
               <div className="flex items-center gap-3 md:pt-6">
                 <Switch checked={Boolean(data.isActive)} disabled />
                 <Typography className="text-sm font-medium text-blue-gray-700">Active</Typography>
+              </div>
+              <div className="flex items-center gap-3 md:pt-6">
+                <Switch checked={Boolean(data.claimRequest)} disabled />
+                <Typography className="text-sm font-medium text-blue-gray-700">Claim Request</Typography>
               </div>
               <div className="md:col-span-2">
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Image</Typography>
@@ -72,20 +119,27 @@ function DriverAdsDetail() {
                 )}
               </div>
               <div className="md:col-span-2">
-                <Typography variant="small" className="mb-2 font-medium text-blue-gray-700">Time Slots</Typography>
+                <Typography variant="small" className="mb-2 font-medium text-blue-gray-700">Placements</Typography>
                 <div className="space-y-3">
-                  {(data?.config?.timeSlots || []).map((slot, index) => (
-                    <div key={index} className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
-                      <div className="flex-1">
-                        <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">From</Typography>
-                        <Input value={slot.from || ""} disabled className="w-full" />
+                  {(data?.config?.placements || []).map((placement, index) => (
+                    <div key={index} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                      <div>
+                        <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Place</Typography>
+                        <Input value={placement.place || ""} disabled className="w-full" />
                       </div>
-                      <div className="flex-1">
+                      <div>
+                        <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">From</Typography>
+                        <Input value={placement?.slot?.from || ""} disabled className="w-full" />
+                      </div>
+                      <div>
                         <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">To</Typography>
-                        <Input value={slot.to || ""} disabled className="w-full" />
+                        <Input value={placement?.slot?.to || ""} disabled className="w-full" />
                       </div>
                     </div>
                   ))}
+                  {!data?.config?.placements?.length ? (
+                    <Typography className="text-sm text-blue-gray-600">No placements available</Typography>
+                  ) : null}
                 </div>
               </div>
             </div>

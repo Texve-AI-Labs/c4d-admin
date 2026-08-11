@@ -117,6 +117,18 @@ export const formatConditionServiceTypeLabel = (condition = {}) => {
   return formatServiceTypeLabel(serviceType);
 };
 
+export const formatOnlineHoursSlots = (slots = []) =>
+  (Array.isArray(slots) ? slots : [])
+    .filter((slot) => slot?.start || slot?.end)
+    .map((slot, index) => ({
+      label: `Slot ${index + 1}: ${safeText(slot?.start, "--:--")} - ${safeText(slot?.end, "--:--")}`,
+      start: safeText(slot?.start, "--:--"),
+      end: safeText(slot?.end, "--:--"),
+    }));
+
+export const formatOnlineHoursSlotText = (slots = []) =>
+  formatOnlineHoursSlots(slots).map((slot) => slot.label);
+
 export const formatBoolLabel = (value) => {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   return safeText(value, "-");

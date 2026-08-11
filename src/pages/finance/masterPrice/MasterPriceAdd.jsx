@@ -197,7 +197,7 @@ export function MasterPriceAdd() {
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting (mins)</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting Charge</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting Charges Apply After</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Night Charge</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Charge</th>
@@ -258,10 +258,10 @@ export function MasterPriceAdd() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra hour charge</th>
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Minute Charge</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th>
                                     <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting (mins)</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting Charge</th>
+                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
                                     <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Mins</th>
                                     <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Charge</th>
                                    

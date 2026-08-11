@@ -1,11 +1,135 @@
-import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Button, Typography } from "@material-tailwind/react";
 import { NAV_UI } from "@/utils/constants";
 
+const FINANCE_GROUPS = [
+  {
+    title: "Billing",
+    items: [
+      { label: "Subscription Invoice", path: "/dashboard/finance/invoice" },
+      { label: "Booking Receipt", path: "/dashboard/finance/receipt" },
+      { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
+    ],
+  },
+  {
+    title: "Pricing",
+    items: [
+      { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
+      { label: "Joining Bonus", path: "/finance/joining-bonus" },
+      { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
+      { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
+    ],
+  },
+  {
+    title: "Rewards",
+    items: [
+      { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
+      { label: "Referral Rules", path: "/dashboard/finance/referral-rules/list", requiredPermission: "Users" },
+      { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
+      { label: "Driver KM Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
+      { label: "Discount Module", path: "/dashboard/finance/discountModuleList", requiredPermission: "Users" },
+      { label: "Custom Discount", path: "/dashboard/finance/custom-discount/list", requiredPermission: "Users" },
+    ],
+  },
+  {
+    title: "Operations",
+    items: [
+      { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
+      { label: "Parcel Slot Config", path: "/dashboard/finance/parcel-slot-config", requiredPermission: "Users" },
+      { label: "Parcel Daily Slots", path: "/dashboard/finance/parcel-daily-slots", requiredPermission: "Users" },
+      { label: "Withdrawal Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission: "Users" },
+      { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission: "Users" },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
+    ],
+  },
+];
+
+const getFinanceGroupForPath = (groups, pathname, isMainItemActive) =>
+  groups.find((group) =>
+    group.items.some(({ label, path }) => isMainItemActive(label, path, pathname === path.toLowerCase()))
+  );
+
 function FinanceSubmenu({ permissions = [] }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const pathname = location.pathname.toLowerCase();
+  const financePathname = pathname.startsWith("/dashboard/finance")
+    ? pathname.replace("/dashboard", "") : pathname;
+
+  const matchesFinancePath = (targetPath) => {
+    const normalizedTarget = targetPath.toLowerCase().replace("/dashboard", "");
+    return financePathname.startsWith(normalizedTarget) || pathname.startsWith(normalizedTarget);
+  };
+
+  const isMainItemActive = (label, path, navActive) => {
+    if (navActive) return true;
+
+    if (label === "Subscription Invoice") {
+      return matchesFinancePath("/finance/invoice");
+    }
+    if (label === "Booking Receipt") {
+      return matchesFinancePath("/finance/receipt");
+    }
+    if (label === "Booking Invoice") {
+      return matchesFinancePath("/finance/bookingInvoiceList");
+    }
+    if (label === "Master Subscription Table") {
+      return matchesFinancePath("/finance/master-subscription");
+    }
+    if (label === "Joining Bonus") {
+      return matchesFinancePath("/finance/joining-bonus");
+    }
+    if (label === "Master Price Table") {
+      return matchesFinancePath("/finance/master-price");
+    }
+    if (label === "Instant Reward") {
+      return matchesFinancePath("/finance/instant-reward");
+    }
+    if (label === "Referral Rules") {
+      return matchesFinancePath("/finance/referral-rules");
+    }
+    if (label === "Cash Back") {
+      return matchesFinancePath("/finance/cash-back");
+    }
+    if (label === "Driver KM Bonus") {
+      return matchesFinancePath("/finance/driver-bonus");
+    }
+    if (label === "Discount Module") {
+      return matchesFinancePath("/finance/discountModuleList");
+    }
+    if (label === "Custom Discount") {
+      return matchesFinancePath("/finance/custom-discount");
+    }
+    if (label === "Settings") {
+      return matchesFinancePath("/finance/GSTList");
+    }
+    if (label === "Parcel Commission") {
+      return matchesFinancePath("/finance/parcel-commission");
+    }
+    if (label === "Parcel Slot Config") {
+      return matchesFinancePath("/finance/parcel-slot-config");
+    }
+    if (label === "Parcel Daily Slots") {
+      return matchesFinancePath("/finance/parcel-daily-slots");
+    }
+    if (label === "Withdrawal Rules") {
+      return matchesFinancePath("/finance/withdrawal-rules");
+    }
+    if (label === "Withdrawal Transaction") {
+      return matchesFinancePath("/finance/wallet-transaction");
+    }
+    if (label === "Return Trip Driver Master Subscription Table") {
+      return matchesFinancePath("/finance/master-subscription/return-trip-driver");
+    }
+
+    return matchesFinancePath(path);
+  };
 
   const getItemClasses = (isActive) =>
     `${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} ${
@@ -14,77 +138,35 @@ function FinanceSubmenu({ permissions = [] }) {
         : `${NAV_UI.colors.topnavInactiveText} ${NAV_UI.topnav.buttonHover}`
     }`;
 
-  const items = [
-    { label: "Subscription Invoice", path: "/dashboard/finance/invoice" },
-    { label: "Booking Receipt", path: "/dashboard/finance/receipt" },
-    { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
-    { label: "Parcel Slot Config", path: "/dashboard/finance/parcel-slot-config", requiredPermission: "Users" },
-    { label: "Parcel Daily Slots", path: "/dashboard/finance/parcel-daily-slots", requiredPermission: "Users" },
-    { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
-    { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
-    { label: "Booking Invoice", path: "/dashboard/finance/bookingInvoiceList" },
-    { label: "Withdrawal Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission:"Users" },
-    { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission:"Users"  },
-    { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
-    { label: "Instant Reward", path: "/dashboard/finance/instant-reward", requiredPermission: "Users" },
-    { label: "Discount Module", path: "/dashboard/finance/discountModuleList", requiredPermission: "Users" },
-    { label: "Custom Discount", path: "/dashboard/finance/custom-discount/list", requiredPermission: "Users" },
-    { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
-    { label: "Cash Back", path: "/dashboard/finance/cash-back/list", requiredPermission: "Users" },
-    { label: "Driver KM Bonus", path: "/dashboard/finance/driver-bonus/list", requiredPermission: "Users" },
-  ];
-  const filteredItems = items.filter(({ requiredPermission }) => {
-    if (!requiredPermission) return true;
-    return permissions.includes(requiredPermission);
-  });
-  const firstRowItems = filteredItems.slice(0, 5);
-  const secondRowItems = filteredItems.slice(5, 10);
-  const thirdRowItems = filteredItems.slice(10);
-  const isMainItemActive = (label, path, navActive) => {
-    if (navActive) return true;
+  const visibleGroups = useMemo(
+    () =>
+      FINANCE_GROUPS
+        .map((group) => ({
+          ...group,
+          items: group.items.filter(({ requiredPermission }) => {
+            if (!requiredPermission) return true;
+            return permissions.includes(requiredPermission);
+          }),
+        }))
+        .filter((group) => group.items.length > 0),
+    [permissions]
+  );
 
-    if (label === "Booking Invoice") {
-      return pathname.startsWith("/dashboard/finance/bookinginvoice");
-    }
-    if (label === "Cash Back") {
-      return pathname.startsWith("/dashboard/finance/cash-back");
-    }
-    if (label === "Driver KM Bonus") {
-      return pathname.startsWith("/dashboard/finance/driver-bonus");
-    }
-    if (label === "Discount Module") {
-      return pathname.startsWith("/dashboard/finance/discountmodule");
-    }
-    if (label === "Custom Discount") {
-      return pathname.startsWith("/dashboard/finance/custom-discount");
-    }
-    if (label === "Settings") {
-      return pathname.startsWith("/dashboard/finance/gst");
-    }
-    if(label === "Parcel Commission") {
-      return pathname.startsWith("/dashboard/finance/parcel-commission");
-    }
-    if (label === "Parcel Slot Config") {
-      return pathname.startsWith("/dashboard/finance/parcel-slot-config");
-    }
-    if (label === "Parcel Daily Slots") {
-      return pathname.startsWith("/dashboard/finance/parcel-daily-slots");
-    }
-    if (label === "Master Subscription Table") {
-      return pathname === "/dashboard/finance/master-subscription";
-    }
-    if (label === "Withdrawal Rules") {
-      return pathname.startsWith("/dashboard/finance/withdrawal-rules");
-    }
-    if (label === "Withdrawal Transaction") {
-      return pathname.startsWith("/dashboard/finance/wallet-transaction");
-    }
-    if (label === "Return Trip Driver Master Subscription Table") {
-      return pathname.startsWith("/dashboard/finance/master-subscription/return-trip-driver");
-    }
-
-    return pathname.startsWith(path.toLowerCase());
+  const getGroupDefaultPath = (groupTitle) => {
+    const group = visibleGroups.find((item) => item.title === groupTitle);
+    return group?.items?.[0]?.path || "/dashboard/finance/invoice";
   };
+
+  const routeGroupTitle = useMemo(() => {
+    const matchedGroup = getFinanceGroupForPath(visibleGroups, pathname, isMainItemActive);
+    return matchedGroup?.title || visibleGroups[0]?.title || "Billing";
+  }, [pathname, visibleGroups]);
+
+  const [openGroup, setOpenGroup] = useState(routeGroupTitle);
+
+  useEffect(() => {
+    setOpenGroup(routeGroupTitle);
+  }, [routeGroupTitle]);
 
   const renderItems = (menuItems) =>
     menuItems.map(({ label, path }) => (
@@ -108,14 +190,36 @@ function FinanceSubmenu({ permissions = [] }) {
     ));
 
   return (
-    <div>
-      <ul className={NAV_UI.topnav.list}>{renderItems(firstRowItems)}</ul>
-      {secondRowItems.length > 0 ? (
-        <ul className={NAV_UI.topnav.secondaryList}>{renderItems(secondRowItems)}</ul>
-      ) : null}
-      {thirdRowItems.length > 0 ? (
-        <ul className={NAV_UI.topnav.secondaryList}>{renderItems(thirdRowItems)}</ul>
-      ) : null}
+    <div className="w-full">
+      <div className="flex w-full flex-nowrap gap-2 overflow-x-auto pb-1 bg-blue-gray-50 rounded-md">
+        {visibleGroups.map((group) => (
+          <Button
+            key={group.title}
+            variant="text"
+            type="button"
+            className={`${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} inline-flex flex-1 basis-0 justify-center rounded-xl px-4 py-2 transition-colors duration-150 ${
+              openGroup === group.title
+                ? "bg-primary text-white"
+              : "bg-slate-100 text-slate-700"
+            }`}
+            onClick={() => {
+              setOpenGroup(group.title);
+              navigate(getGroupDefaultPath(group.title));
+            }}
+          >
+            {group.title}
+          </Button>
+        ))}
+      </div>
+      <div className="mt-2 w-full overflow-x-auto whitespace-nowrap">
+        {visibleGroups
+          .filter((group) => group.title === openGroup)
+          .map((group) => (
+            <ul key={group.title} className={`${NAV_UI.topnav.list} w-max flex-nowrap`}>
+              {renderItems(group.items)}
+            </ul>
+          ))}
+      </div>
     </div>
   );
 }

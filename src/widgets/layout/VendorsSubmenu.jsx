@@ -48,6 +48,8 @@ function VendorsSubmenu({ miniSidenav }) {
         return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi");
       case "All Bike-Taxi List":
         return pathname.startsWith("/dashboard/vendors/account/biketaxilist");
+      case "Root Web Reg":
+        return pathname.startsWith("/dashboard/vendors/root-web-reg");
       case "All Document Verification":
         return pathname.startsWith("/dashboard/doc-verification");
       case "All Pending Documents":
@@ -69,6 +71,7 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
     { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
     { label: "All Bike-Taxi List", path: "/dashboard/vendors/account/bikeTaxiList", icon: "/img/Parcel_driver.png" },
+    { label: "Root Web Reg", path: "/dashboard/vendors/root-web-reg", icon: "/img/all.png" },
     ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
       ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]
       : []),
@@ -76,7 +79,7 @@ function VendorsSubmenu({ miniSidenav }) {
       ? [{ label: "All Pending Documents", path: "/dashboard/doc-verification/pending", icon: "/img/pending_doc.png" }]
       : []),
   ];
-  const rowSize = 5;
+  const rowSize = 6;
   const rows = [];
   for (let i = 0; i < items.length; i += rowSize) {
     rows.push(items.slice(i, i + rowSize));

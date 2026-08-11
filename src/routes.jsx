@@ -91,11 +91,16 @@ import DynamicTextAdd from "./pages/marketing/dynamicText/addDynamicText";
 import DynamicTextEdit from "./pages/marketing/dynamicText/editDynamicText";
 import SkipLogs from "./pages/marketing/skipLogs";
 import InstantReward from "./pages/vendor/instantReward";
+import ReferralRuleList from "./pages/finance/referralRules/list";
+import ReferralRuleAdd from "./pages/finance/referralRules/add";
+import ReferralRuleEdit from "./pages/finance/referralRules/edit";
+import ReferralCreditLogsList from "./pages/finance/referralRules/logs";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
 import DriverNotificationListEdit from "./pages/vendor/driverNotificationEdit";
 import DriverReturnTripsList from "./pages/vendor/driverReturnTripsList";
+import RootWebRegistrationList from "./pages/vendor/rootWebRegistrationList";
 import VersionControlList from "./pages/versionControl/VersionControlList";
 import VersionControlEdit from "./pages/versionControl/VersionControlEdit";
 import DiscountView from "./pages/discountModule/view";
@@ -212,6 +217,7 @@ import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/
 import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
+import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
 import DriverAdsRegList from "./pages/support/driverAdsRegList";
@@ -791,6 +797,14 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Root Web Reg",
+        path: "/vendors/root-web-reg",
+        element: <RootWebRegistrationList />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Account Onboarding Details",
         path: "/vendors/account/owner-onboarding-cab/details/account/:id",
         element: <AccountOnboardingDetails />,
@@ -1300,6 +1314,38 @@ export const routes = [
         path: "/finance/instant-reward",
         element: <InstantReward />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule List",
+        path: "/finance/referral-rules/list",
+        element: <ReferralRuleList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule Add",
+        path: "/finance/referral-rules/add",
+        element: <ReferralRuleAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule Edit",
+        path: "/finance/referral-rules/edit/:settingId",
+        element: <ReferralRuleEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Credit Logs",
+        path: "/finance/referral-rules/logs",
+        element: <ReferralCreditLogsList />,
+        display: false,
         permission: "Users",
       },
       {
@@ -1926,6 +1972,14 @@ export const routes = [
         name: "Leads",
         path: "/leads",
         element: <LeadsView/>,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Payment Failed Records",
+        path: "/support/payment-failed-records",
+        element: <PaymentFailedRecords />,
         display: true,
         permission: "Support"
       },

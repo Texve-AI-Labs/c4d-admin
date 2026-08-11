@@ -50,6 +50,7 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const getSuggestionText = (suggestion) => {
     if (typeof suggestion === "string") return suggestion;
     if (suggestion && typeof suggestion === "object") {
@@ -191,6 +192,7 @@ const VehicleInfoSection = ({
                         onClick={() => {
                           setEditingSectionId(section.id);
                           setDraftValues(getInitialDraft(section));
+                          setFieldErrors({});
                         }}
                       >
                         <PencilIcon className="h-4 w-4" />
@@ -317,11 +319,21 @@ const VehicleInfoSection = ({
                                   setDraftValues((prev) => ({
                                     ...prev,
                                     [row.label]: value,
+                                    AddressPlaceId: String(value || "").trim() ? prev.AddressPlaceId || "" : "",
+                                  }));
+                                  setFieldErrors((prev) => ({
+                                    ...prev,
+                                    AddressPlaceId: String(value || "").trim() ? prev.AddressPlaceId || "" : "",
                                   }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
                               />
+                              {fieldErrors.AddressPlaceId ? (
+                                <Typography className="mt-1 text-xs text-red-500">
+                                  {fieldErrors.AddressPlaceId}
+                                </Typography>
+                              ) : null}
                               {(getVehicleAddressSuggestionsBySection?.(section.id) || []).length > 0 ? (
                                 <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
                                   {(getVehicleAddressSuggestionsBySection?.(section.id) || []).map((suggestion, idx) => (
@@ -341,6 +353,7 @@ const VehicleInfoSection = ({
                                             prev.AddressPlaceId ||
                                             "",
                                         }));
+                                        setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "" }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
                                     >
@@ -405,9 +418,14 @@ const VehicleInfoSection = ({
                         className="h-8 px-3 text-xs normal-case bg-primary"
                         disabled={vehicleDetailsSavingId === section.id}
                         onClick={() => {
+                          if (!String(draftValues?.AddressPlaceId || "").trim()) {
+                            setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "Address place id is required." }));
+                            return;
+                          }
                           onSaveVehicleDetails?.(section.id, draftValues, () => {
                             setEditingSectionId(null);
                             setDraftValues({});
+                            setFieldErrors({});
                           });
                         }}
                       >

@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Chip } from "@material-tailwind/react";
-import { badgeClassByValue, formatCurrency, formatDateTime, formatProcessedBy } from "../utils";
+import { badgeClassByValue, formatCurrency, formatDateTime, formatDisplayLabel, formatProcessedBy } from "../utils";
 
 const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) => (
   <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm">
@@ -38,14 +38,14 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
             const processedByLabel = processedByRecord ? formatProcessedBy(processedByRecord) : String(item?.processedBy ?? "-");
             return (
               <tr key={`${id || "row"}-${index}`} className={`border-b border-slate-100 align-top transition ${isSelected ? "bg-sky-50" : "hover:bg-slate-50"}`}>
-                <td className="p-3 text-sm whitespace-nowrap">{item?.entityType || "-"}</td>
+                <td className="p-3 text-sm whitespace-nowrap">{formatDisplayLabel(item?.entityType)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">{item?.entityName || "-"}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
-                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.tier)}`}>{item?.tier || "-"}</span>
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.tier)}`}>{formatDisplayLabel(item?.tier)}</span>
                 </td>
-                <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.amount)}</td>
+                <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.amount)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
-                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.status)}`}>{item?.status || "-"}</span>
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.status)}`}>{formatDisplayLabel(item?.status)}</span>
                 </td>
                 {/* <td className="p-3 text-sm whitespace-nowrap">
                   {isInProgress ? (
@@ -57,9 +57,9 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
                   )}
                 </td>
                 <td className="p-3 text-sm whitespace-nowrap">{isInProgress ? (item?.paymentEligibilityReason ?? "-") : "-"}</td> */}
-                <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceBefore)}</td>
-                <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.amount)}</td>
-                <td className="p-3 text-sm whitespace-nowrap">{formatCurrency(item?.walletBalanceAfter)}</td>
+                <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.walletBalanceBefore)}</td>
+                <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.amount)}</td>
+                <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.walletBalanceAfter)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.createdAt)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
                   <span className='inline-flex rounded-full border px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold'>{processedByLabel}</span>

@@ -36,7 +36,21 @@ const getStatusBadgeClass = (value) => {
   if (normalized === "IN_PROGRESS") return "bg-blue-100 text-blue-800";
   if (normalized === "FOLLOW_UP_SCHEDULED") return "bg-orange-100 text-orange-800";
   if (normalized === "COMPLETED") return "bg-green-100 text-green-800";
+  if (normalized === "CANCELLED") return "bg-red-100 text-red-800";
   return "bg-blue-gray-100 text-blue-gray-700";
+};
+
+const getTierBadgeClass = (tier) => {
+  switch (String(tier || "").toUpperCase()) {
+    case "SILVER":
+      return "bg-slate-300 text-slate-700 border-slate-200";
+    case "GOLD":
+      return "bg-amber-300 text-amber-800 border-amber-200";
+    case "ELITE":
+      return "bg-indigo-300 text-indigo-800 border-indigo-200";
+    default:
+      return "bg-blue-gray-100 text-blue-gray-700 border-blue-gray-200";
+  }  
 };
 
 const STATUS_FILTERS = ["ALL", "NEW", "IN_PROGRESS", "FOLLOW_UP_SCHEDULED", "COMPLETED"];
@@ -205,7 +219,7 @@ function DriverAdsRegList() {
           <table className="w-full table-auto">
             <thead className="bg-primary">
               <tr>
-                {["Name", "Zone", "Sub Zone", "Ads Status", "Registration Status", "Driver Name", "Created At", "View"].map((heading) => (
+                {["Tier","Name", "Zone", "Sub Zone", "Ads Status", "Registration Status", "Driver Name", "Phone Number", "Created At", "View"].map((heading) => (
                   <th
                     key={heading}
                     className={`border-b border-blue-gray-50 py-3 px-5 text-left ${
@@ -236,6 +250,11 @@ function DriverAdsRegList() {
                   return (
                     <tr key={key} className="border-b border-blue-gray-50">
                       <td className={className}>
+                        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getTierBadgeClass(row?.advertisement?.tier)}`}>
+                          {row?.advertisement?.tier || "-"}
+                        </span>
+                      </td>
+                      <td className={`${className} whitespace-nowrap`}>
                         <Typography className="text-xs font-semibold text-black">{row?.advertisement?.name || "-"}</Typography>
                       </td>
                      
@@ -268,6 +287,11 @@ function DriverAdsRegList() {
                        <td className={className}>
                         <Typography className="text-xs font-semibold text-black">
                           {row?.driver?.firstName || row?.driver?.name || row?.driverName || "-"}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-black">
+                          {row?.driver?.phoneNumber || '-'}
                         </Typography>
                       </td>
                       <td className={`${className} whitespace-nowrap`}>

@@ -18,6 +18,29 @@ const getOptionValue = (option) =>
 const getOptionLabel = (option) =>
   typeof option === "string" ? option : option?.label || option?.value || "";
 
+const createEmptySlot = () => ({ start: "", end: "" });
+
+const toMinutes = (time = "") => {
+  const [hours, minutes] = String(time || "")
+    .trim()
+    .split(":")
+    .map((part) => Number(part));
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+const getSlotError = (slot = {}) => {
+  const start = String(slot?.start || "").trim();
+  const end = String(slot?.end || "").trim();
+  if (!start || !end) return "";
+  const startMinutes = toMinutes(start);
+  const endMinutes = toMinutes(end);
+  if (startMinutes === null || endMinutes === null) return "Invalid time format.";
+  if (endMinutes <= startMinutes) return "End time must be later than start time.";
+  if (endMinutes > 22 * 60) return "End time cannot be later than 22:00.";
+  return "";
+};
+
 function TierComponentRulesSection({
   registerBuilder,
   initialConfig = {},
@@ -96,6 +119,7 @@ function TierComponentRulesSection({
                   amount: String(rule?.amount ?? ""),
                   isMandatory:
                     typeof condition?.isMandatory === "boolean" ? condition.isMandatory : true,
+                  slots: Array.isArray(condition?.slots) ? condition.slots : [],
                 });
               }),
             },
@@ -279,6 +303,7 @@ function TierComponentRulesSection({
               op: ">=",
               value: "1",
               amount: "0",
+              slots: defaultMetric === "onlineHours" ? [createEmptySlot()] : [],
             }),
           ],
         },
@@ -345,6 +370,7 @@ function TierComponentRulesSection({
                         serviceType: mappedCondition.serviceType,
                         parcelVehicleType:
                           normalizedPartnerType === "PARCEL" ? normalizedParcelVehicleType : null,
+                        slots: Array.isArray(mappedCondition.slots) ? mappedCondition.slots : undefined,
                       },
                     };
                   }),
@@ -610,6 +636,113 @@ function TierComponentRulesSection({
                         </label>
                       </div>
                     </div>
+
+                    {rule.metric === "onlineHours" && (
+                      <div className="mt-4 rounded-md border border-dashed border-blue-gray-200 bg-blue-gray-50/40 p-3">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <Typography variant="small" color="blue-gray" className="font-semibold">
+                              Slots
+                            </Typography>
+                            
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outlined"
+                            color="blue"
+                            onClick={() =>
+                              onRuleChange(
+                                tierKey,
+                                index,
+                                "slots",
+                                [...(Array.isArray(rule.slots) ? rule.slots : []), createEmptySlot()]
+                              )
+                            }
+                          >
+                            Add Slot
+                          </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {(Array.isArray(rule.slots) && rule.slots.length ? rule.slots : [createEmptySlot()]).map(
+                            (slot, slotIndex) => (
+                              <div
+                                key={`${tierKey}-${index}-slot-${slotIndex}`}
+                                className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto]"
+                              >
+                                <div>
+                                  <Typography variant="small" color="blue-gray" className="mb-1 text-xs font-semibold">
+                                    Start
+                                  </Typography>
+                                  <input
+                                    type="time"
+                                    value={slot?.start || ""}
+                                    onChange={(event) => {
+                                      const currentSlots = Array.isArray(rule.slots) && rule.slots.length
+                                        ? rule.slots
+                                        : [createEmptySlot()];
+                                      const nextSlots = currentSlots.map((currentSlot, currentIndex) =>
+                                        currentIndex === slotIndex
+                                          ? { ...currentSlot, start: event.target.value }
+                                          : currentSlot
+                                      );
+                                      onRuleChange(tierKey, index, "slots", nextSlots);
+                                    }}
+                                    className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
+                                  />
+                                  {getSlotError(slot) && (
+                                    <Typography variant="small" color="red" className="mt-1 text-xs">
+                                      {getSlotError(slot)}
+                                    </Typography>
+                                  )}
+                                </div>
+                                <div>
+                                  <Typography variant="small" color="blue-gray" className="mb-1 text-xs font-semibold">
+                                    End
+                                  </Typography>
+                                  <input
+                                    type="time"
+                                    value={slot?.end || ""}
+                                    onChange={(event) => {
+                                      const currentSlots = Array.isArray(rule.slots) && rule.slots.length
+                                        ? rule.slots
+                                        : [createEmptySlot()];
+                                      const nextSlots = currentSlots.map((currentSlot, currentIndex) =>
+                                        currentIndex === slotIndex
+                                          ? { ...currentSlot, end: event.target.value }
+                                          : currentSlot
+                                      );
+                                      onRuleChange(tierKey, index, "slots", nextSlots);
+                                    }}
+                                    className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
+                                  />
+                                 
+                                </div>
+                                <div className="flex items-end">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="text"
+                                    color="red"
+                                    disabled={(Array.isArray(rule.slots) ? rule.slots.length : 0) <= 1}
+                                    onClick={() => {
+                                      const currentSlots = Array.isArray(rule.slots) && rule.slots.length
+                                        ? rule.slots
+                                        : [createEmptySlot()];
+                                      const nextSlots = currentSlots.filter((_, currentIndex) => currentIndex !== slotIndex);
+                                      onRuleChange(tierKey, index, "slots", nextSlots.length ? nextSlots : [createEmptySlot()]);
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}

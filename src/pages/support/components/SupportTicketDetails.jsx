@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Input, Option, Select, Textarea, Typography } from "@material-tailwind/react";
-import { getStatusTone, shouldShowReviewFields } from "../supportTicketReviewUtils";
+import { shouldShowReviewFields } from "../supportTicketReviewUtils";
 
 const ErrorMessage = ({ children }) => {
   if (!children) return null;
@@ -27,10 +27,14 @@ function SupportTicketDetails({
   saving,
 }) {
   const { isRejected, showReviewFields } = shouldShowReviewFields(selectedStatus, selectedStatus);
-  const statusTone = getStatusTone(selectedStatus);
-  const statusClassName = isTerminalTicket
-    ? "!rounded-full !border-0 !bg-slate-200 !text-slate-500 !cursor-not-allowed"
-    : `!rounded-full !border-0 transition-colors ${statusTone} !text-white`;
+  const formatStatusLabel = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  const visibleStatusOptions = allowedStatusOptions.filter(
+    (option) => String(option || "").toUpperCase() !== String(selectedStatus || "").toUpperCase()
+  );
 
   return (
     <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-white shadow-sm">
@@ -58,14 +62,15 @@ function SupportTicketDetails({
                 <Select
                   value={selectedStatus}
                   label=" "
-                  selected={(element) => element?.props?.children || selectedStatus}
+                  selected={(element) => element?.props?.children || formatStatusLabel(selectedStatus)}
                   onChange={(value) => onStatusChange(value || "UNDER_REVIEW")}
                   disabled={isTerminalTicket}
                   labelProps={{ className: "hidden" }}
-                  className={`${statusClassName} !min-h-0 !h-11`}
                 >
-                  {allowedStatusOptions.map((option) => (
-                    <Option key={option} value={option}>{option.replace(/_/g, " ")}</Option>
+                  {visibleStatusOptions.map((option) => (
+                    <Option key={option} value={option}>
+                      {formatStatusLabel(option)}
+                    </Option>
                   ))}
                 </Select>
               </div>
@@ -116,7 +121,7 @@ function SupportTicketDetails({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Typography className="text-xs font-semibold text-black">Admin Remarks</Typography>
+                    <Typography className="text-xs font-semibold text-black">Admin Remarks <span className="text-red-500">*</span></Typography>
                     <Textarea
                       value={adminRemarks}
                       onChange={(e) => onAdminRemarksChange(e.target.value)}

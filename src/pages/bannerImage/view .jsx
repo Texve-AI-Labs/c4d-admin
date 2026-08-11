@@ -99,6 +99,16 @@ const BannerView = () => {
     return moment(timeValue, ['HH:mm:ss', 'HH:mm']).format('hh:mm A');
   };
 
+  const getPrimaryBannerImage = (item) => {
+    if (!item) return '';
+    return item.imageUrl || item.secondaryImageUrl || '';
+  };
+
+  const getSecondaryBannerImage = (item) => {
+    if (!item) return '';
+    return item.secondaryImageUrl || '';
+  };
+
   useEffect(() => {
     const loadZoneOptions = async () => {
       const options = await fetchZoneOptions();
@@ -259,7 +269,12 @@ const BannerView = () => {
   { value: 'NEW_CUSTOMER', label: 'New Customer' },
   { value: 'INTRO_SLIDES', label: 'Intro Slides (customer)'},
   { value: 'INTRO_SLIDES_DRIVER', label: 'Intro Slides (Driver)' },
-  // { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' }
+  { value: 'FUTURE_BOOKING_INTRO_DRIVER', label: 'Future Booking Intro (Driver)' },
+  { value: 'RETURN_TRIP_INTRO_DRIVER', label: 'Return Trip Intro (Driver)' },
+  { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' },
+  // { value: 'QR_DRIVER_TO_DRIVER', label: 'QR Driver To Driver' },
+  // { value: 'QR_DRIVER_TO_CUSTOMER', label: 'QR Driver To Customer' },
+  // { value: 'QR_CUSTOMER_TO_CUSTOMER', label: 'QR Customer To Customer' }
 ] ;
 
   // Client-side filtering remains as a fallback
@@ -319,6 +334,7 @@ const BannerView = () => {
               <thead>
                 <tr className=" text-black">
                   <th className="py-3 px-5 text-left text-gray-700">Image</th>
+                  <th className="py-3 px-5 text-left text-gray-700">Image 2</th>
                  <th className="py-3 px-5 text-left">
                     <FilterPopover
                       title={<span className="text-base font-semibold text-gray-700 mr-1">Type</span>}
@@ -350,7 +366,7 @@ const BannerView = () => {
               <tbody>
                 {filteredBannerList.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-center py-4">
+                  <td colSpan="13" className="text-center py-4">
                       No Banner Records Found
                     </td>
                   </tr>
@@ -358,11 +374,26 @@ const BannerView = () => {
                   filteredBannerList.map((item, index) => (
                     <tr key={item.id || index} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-5">
-                        <img
-                          src={item.imageUrl}
-                          alt="banner"
-                          className="w-8 h-auto rounded-xl"
-                        />
+                        {getPrimaryBannerImage(item) ? (
+                          <img
+                            src={getPrimaryBannerImage(item)}
+                            alt="banner"
+                            className="w-8 h-auto rounded-xl"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">No image</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-5">
+                        {getSecondaryBannerImage(item) ? (
+                          <img
+                            src={getSecondaryBannerImage(item)}
+                            alt="banner 2"
+                            className="w-8 h-auto rounded-xl"
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-500">-</span>
+                        )}
                       </td>
                       <td className="py-3 px-5">{formatTypeText(item.type)}</td>
                       <td className="py-3 px-5 break-words max-w-xs">{item.redirectUrl || '-'}</td>
@@ -429,8 +460,8 @@ const BannerView = () => {
                                   if ((b.zone || '') !== (item.zone || '')) return false;
 
                                   if (
-                                    item.type === 'INTRO_SLIDES_DRIVER' 
-                                    // || item.type === 'TRAINING_VIDEO_DRIVER'
+                                    item.type === 'INTRO_SLIDES_DRIVER' ||
+                                    item.type === 'TRAINING_VIDEO_DRIVER'
                                   ) {
                                     return (b.driverType || '') === (item.driverType || '');
                                   }
@@ -443,7 +474,7 @@ const BannerView = () => {
                                     ...prev,
                                     [item.id]:
                                       item.type === 'INTRO_SLIDES_DRIVER' 
-                                    //  || item.type === 'TRAINING_VIDEO_DRIVER'
+                                      || item.type === 'TRAINING_VIDEO_DRIVER'
                                         ? `Another ${item.type} (${item.driverType || 'N/A'}) banner in ${item.zone || 'N/A'} already uses position ${newPosition}`
                                         : `Another ${item.type} banner in ${item.zone || 'N/A'} already uses position ${newPosition}`,
                                   }));

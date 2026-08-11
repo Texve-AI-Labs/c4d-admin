@@ -141,7 +141,7 @@ const PriceDetails = () => {
                                 <Field type="number" name="waitingMins" disabled className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                             </div>
                             <div>
-                                <label className="text-sm font-medium text-gray-700">Waiting Charge</label>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
                                 <Field type="number" name="waitingCharge" disabled className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
                             </div>
                         </div>

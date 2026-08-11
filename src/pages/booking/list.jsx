@@ -12,7 +12,7 @@ import {
     IconButton,
     Spinner,
 } from "@material-tailwind/react";
-import { FaArrowRight, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser } from 'react-icons/fa';
+import { FaArrowRight, FaArrowUp, FaArrowDown, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser } from 'react-icons/fa';
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, BOOKING_STATUS, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -1786,10 +1786,29 @@ if (!statusFilter.includes('All')) {
                                                         </td>
                                                        {!isCompactFeatureList && (
                                                     <td className={className}>
-                                                            {data?.userId ? (
+                                                        {data?.userId ? (
+                                                        <div className="flex items-center justify-center gap-1">
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.User?.name}
                                                                 </Typography>
+                                                            {String(data?.supportSlaStatus || '').toUpperCase() === 'SLA_MET' &&
+                                                            data?.supportAssignmentSlaBreached === false ? (
+                                                                <div className="flex items-center">
+                                                                    <FaArrowUp className="text-green-600 text-sm" title="SLA met" />
+                                                                    {/* <FaArrowUp className="text-green-600 text-sm" title="SLA met" /> */}
+                                                                </div>
+                                                            ) : String(data?.supportSlaStatus || '').toUpperCase() === 'SLA_BREACHED' &&
+                                                                data?.supportAssignmentSlaBreached === true ? (
+                                                                <div className="flex items-center">
+                                                                    <FaArrowDown className="text-red-600 text-sm" title="SLA breached" />
+                                                                    {/* <FaArrowDown className="text-red-600 text-sm" title="SLA breached" /> */}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center">
+                                                                    <FaArrowDown className="text-gray-400 text-sm" title="SLA unknown" />
+                                                                </div>
+                                                            )}
+                                                        </div>                                                                                                                        
                                                             ) : (
                                                                 <Button
                                                                 fullWidth

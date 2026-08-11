@@ -1,15 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { Alert, Button, Card, CardBody, Dialog, DialogBody, DialogFooter, DialogHeader, Input, Spinner, Textarea, Typography } from "@material-tailwind/react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, CardBody, Chip, Spinner, Typography } from "@material-tailwind/react";
 import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import { isSuperUserRole } from "@/utils/roleUtils";
 import DriverSummaryCards from "./driverAdsRegistrationDetails/DriverSummaryCards";
+import RegistrationSummary from "./driverAdsRegistrationDetails/RegistrationSummary";
+import CycleReviewDialog from "./driverAdsRegistrationDetails/CycleReviewDialog";
+import ClaimProofDialog from "./driverAdsRegistrationDetails/ClaimProofDialog";
 import StatusUpdateModal from "./driverAdsRegistrationDetails/StatusUpdateModal";
 import ActivityTabs from "./driverAdsRegistrationDetails/ActivityTabs";
-import { STATUS_FLOW } from "./driverAdsRegistrationDetails/constants";
-import { getStatusOptions } from "./driverAdsRegistrationDetails/utils";
+import ActivityLogTable from "./driverAdsRegistrationDetails/ActivityLogTable";
+import { STATUS_FLOW, CYCLE_STATUS_FLOW } from "./driverAdsRegistrationDetails/constants";
+import { formatStatusLabel, getStatusBadgeClass, getStatusOptions } from "./driverAdsRegistrationDetails/utils";
 
 const formatValue = (value) => {
   if (!value) return "-";
@@ -17,74 +21,56 @@ const formatValue = (value) => {
   return parsed.isValid() ? parsed.format("DD-MM-YYYY hh:mm A") : String(value);
 };
 
-const resolveGeoName = (value, collection) =>
-  collection.find((item) => String(item?.id) === String(value))?.name || value || "-";
-
-const formatStatusLabel = (value) => {
+const formatDateOnly = (value) => {
   if (!value) return "-";
-  const normalized = String(value).toUpperCase();
-  const STATUS_LABELS = {
-    NEW: "New",
-    IN_PROGRESS: "In Progress",
-    FOLLOW_UP_SCHEDULED: "Follow Up Scheduled",
-    COMPLETED: "Completed",
-  };
-  if (STATUS_LABELS[normalized]) return STATUS_LABELS[normalized];
-  return String(value)
-    .toLowerCase()
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  const parsed = moment(value);
+  return parsed.isValid() ? parsed.format("DD-MM-YYYY") : String(value);
 };
-const getStatusBadgeClass = (value) => {
-  const normalized = String(value || "").toUpperCase();
-  if (normalized === "NEW") return "bg-blue-gray-100 text-blue-gray-800 border-blue-gray-200";
-  if (normalized === "IN_PROGRESS") return "bg-blue-50 text-blue-700 border-blue-200";
-  if (normalized === "FOLLOW_UP_SCHEDULED") return "bg-orange-50 text-orange-700 border-orange-200";
-  if (normalized === "COMPLETED") return "bg-green-50 text-green-700 border-green-200";
-  return "bg-blue-gray-50 text-blue-gray-700 border-blue-gray-200";
+
+const renderUser = (user) => {
+  if (!user) return "-";
+  const name = user?.name || "-";
+  return user?.phoneNumber ? `${name} (${user.phoneNumber})` : name;
 };
 
 function DriverAdsRegistrationDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
   const [record, setRecord] = useState(null);
-  const [driver, setDriver] = useState(null);
+  const [activityLog, setActivityLog] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [statusError, setStatusError] = useState("");
+  const [statusRemarks, setStatusRemarks] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
   const [followUpTime, setFollowUpTime] = useState("");
   const [followUpRemarks, setFollowUpRemarks] = useState("");
-  const [updatingFollowUp, setUpdatingFollowUp] = useState(false);
-  const [followUpError, setFollowUpError] = useState("");
   const [notes, setNotes] = useState("");
-  const [updatingNotes, setUpdatingNotes] = useState(false);
-  const [notesError, setNotesError] = useState("");
   const [completionRemarks, setCompletionRemarks] = useState("");
-  const [updatingCompletionRemarks, setUpdatingCompletionRemarks] = useState(false);
-  const [completionRemarksError, setCompletionRemarksError] = useState("");
-  const [activityLog, setActivityLog] = useState(null);
+  const [selectedCycle, setSelectedCycle] = useState(null);
+  const [cycleDetail, setCycleDetail] = useState(null);
+  const [cycleStatus, setCycleStatus] = useState("");
+  const [cycleRemarks, setCycleRemarks] = useState("");
+  const [cycleOpen, setCycleOpen] = useState(false);
+  const [cycleLoading, setCycleLoading] = useState(false);
+  const [cycleSaving, setCycleSaving] = useState(false);
+  const [cycleError, setCycleError] = useState("");
+  const [proofOpen, setProofOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("timeline");
-  const [activityLoading, setActivityLoading] = useState(false);
-  const [activityError, setActivityError] = useState("");
   const [showDetails, setShowDetails] = useState(false);
-  const [serviceAreas, setServiceAreas] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [activityError, setActivityError] = useState("");
+  const [actionError, setActionError] = useState("");
   const isSuperUser = isSuperUserRole();
 
   const fetchDetail = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await ApiRequestUtils.get(`${API_ROUTES.GET_DRIVER_ADS_LIST}/${id}`);
+      const response = await ApiRequestUtils.get(`${API_ROUTES.GET_DRIVER_ADS_REGISTRATION_BY_ID.replace(":registrationId", id)}`);
       setRecord(response?.data || null);
-      setDriver(response?.data?.driver || null);
       setSelectedStatus(response?.data?.status || "");
-      setData(response?.data?.advertisement || response?.data || null);
     } catch (err) {
       console.error("Failed to load driver ad registration details:", err);
       setError("Failed to load driver ad registration details.");
@@ -92,26 +78,6 @@ function DriverAdsRegistrationDetails() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchDetail();
-  }, [id]);
-
-  useEffect(() => {
-    const fetchGeoMarkings = async () => {
-      try {
-        const [serviceAreaRes, zoneRes] = await Promise.all([
-          ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" }),
-          ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Zone" }),
-        ]);
-        if (serviceAreaRes?.success) setServiceAreas(serviceAreaRes.data || []);
-        if (zoneRes?.success) setZones(zoneRes.data || []);
-      } catch (err) {
-        console.error("Error fetching geo markings for driver ad details:", err);
-      }
-    };
-    fetchGeoMarkings();
-  }, []);
 
   const fetchActivityLog = async () => {
     setActivityLoading(true);
@@ -128,317 +94,244 @@ function DriverAdsRegistrationDetails() {
     }
   };
 
+  const fetchCycleDetail = async (cycleId, cycleRow = null) => {
+    if (!cycleId) return;
+    setCycleLoading(true);
+    setCycleError("");
+    try {
+      const route = API_ROUTES.GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID.replace(":cycleId", cycleId);
+      const response = await ApiRequestUtils.get(route);
+      setSelectedCycle(cycleRow);
+      setCycleDetail(response?.data || cycleRow || null);
+      setCycleStatus(response?.data?.status || cycleRow?.status || "");
+      setCycleRemarks(response?.data?.remarks || "");
+      setProofOpen(false);
+      setCycleOpen(true);
+    } catch (err) {
+      console.error("Failed to load cycle detail:", err);
+      setCycleError("Failed to load cycle detail.");
+    } finally {
+      setCycleLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isSuperUser) return;
-    if (id) fetchActivityLog();
+    if (!cycleOpen) return;
+    setCycleRemarks("");
+  }, [cycleStatus, cycleOpen]);
+
+  useEffect(() => {
+    if (id) fetchDetail();
+  }, [id]);
+
+  useEffect(() => {
+    if (!isSuperUser || !id) return;
+    fetchActivityLog();
   }, [id, activeTab, showDetails, isSuperUser]);
 
-  const handleStatusUpdate = async () => {
-    setStatusError("");
+  const latestNote = useMemo(() => {
+    const rows = Array.isArray(activityLog?.notes) ? [...activityLog.notes] : [];
+    rows.sort((a, b) => new Date(b?.created_at || b?.updated_at || 0) - new Date(a?.created_at || a?.updated_at || 0));
+    return rows[0]?.note || "";
+  }, [activityLog]);
+
+  const latestFollowUp = useMemo(() => {
+    const rows = Array.isArray(activityLog?.followUps) ? [...activityLog.followUps] : [];
+    rows.sort((a, b) => new Date(b?.created_at || b?.updated_at || 0) - new Date(a?.created_at || a?.updated_at || 0));
+    return rows[0] || null;
+  }, [activityLog]);
+
+  const latestCompletionRemark = useMemo(() => {
+    const rows = Array.isArray(activityLog?.history) ? [...activityLog.history] : [];
+    rows.sort((a, b) => new Date(b?.created_at || b?.updated_at || 0) - new Date(a?.created_at || a?.updated_at || 0));
+    return rows.find((row) => String(row?.currentStatus || "").toUpperCase() === "COMPLETED" && row?.remarks) || null;
+  }, [activityLog]);
+
+  useEffect(() => {
+    if (!showDetails) return;
+    const normalizedStatus = String(selectedStatus || "").toUpperCase();
+    setStatusRemarks("");
+    setNotes("");
+    setFollowUpDate("");
+    setFollowUpTime("");
+    setFollowUpRemarks("");
+    setCompletionRemarks("");
+
+    if (normalizedStatus === "FOLLOW_UP_SCHEDULED" && latestFollowUp) {
+      setFollowUpDate(latestFollowUp?.followUpDate || "");
+      setFollowUpTime((latestFollowUp?.followUpTime || "").slice(0, 5));
+      setFollowUpRemarks(latestFollowUp?.followUpRemarks || "");
+      setNotes(latestNote || "");
+    }
+
+    if (normalizedStatus === "COMPLETED" && latestCompletionRemark?.remarks) {
+      setCompletionRemarks(latestCompletionRemark.remarks || "");
+    }
+
+    if (normalizedStatus !== "FOLLOW_UP_SCHEDULED" && normalizedStatus !== "COMPLETED") {
+      setStatusRemarks(latestNote || "");
+    }
+  }, [showDetails, latestNote, latestFollowUp, latestCompletionRemark]);
+
+  const handleUpdateStatus = async () => {
+    setActionError("");
     if (!selectedStatus) {
-      setStatusError("Please select a status.");
+      setActionError("Please select a status.");
+      return false;
+    }
+    if (selectedStatus === "FOLLOW_UP_SCHEDULED" && (!followUpDate || !followUpTime)) {
+      setActionError("Follow up date and time are required.");
+      return false;
+    }
+    if (selectedStatus === "COMPLETED" && !completionRemarks.trim()) {
+      setActionError("Completion remarks are required.");
       return false;
     }
     try {
-      setUpdatingStatus(true);
+      setSaving(true);
       const route = API_ROUTES.UPDATE_DRIVER_ADS_REGISTRATION_STATUS.replace(":registrationId", id);
-      const response = await ApiRequestUtils.update(route, { status: selectedStatus });
-      if (response?.success) {
-        setRecord((prev) => (prev ? { ...prev, status: selectedStatus } : prev));
-        return true;
-      } else {
-        setStatusError(response?.message || "Failed to update status.");
+      const response = await ApiRequestUtils.update(route, {
+        status: selectedStatus,
+        remarks: statusRemarks.trim() || undefined,
+      });
+      if (!response?.success) {
+        setActionError(response?.message || "Failed to update status.");
         return false;
       }
+      setRecord((prev) => (prev ? { ...prev, status: selectedStatus } : prev));
+      return true;
     } catch (err) {
       console.error("Failed to update registration status:", err);
-      setStatusError("Failed to update status.");
+      setActionError("Failed to update status.");
       return false;
     } finally {
-      setUpdatingStatus(false);
+      setSaving(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!notes.trim()) return true;
+    try {
+      const route = API_ROUTES.UPDATE_DRIVER_ADS_REGISTRATION_NOTES.replace(":registrationId", id);
+      const response = await ApiRequestUtils.post(route, { note: notes.trim() });
+      if (!response?.success) {
+        setActionError(response?.message || "Failed to update notes.");
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Failed to update registration notes:", err);
+      setActionError("Failed to update notes.");
+      return false;
+    }
+  };
+
+  const handleAddFollowUp = async () => {
+    if (selectedStatus !== "FOLLOW_UP_SCHEDULED") return true;
+    const route = API_ROUTES.POST_FOLLOW_UP.replace(":registrationId", id);
+    const response = await ApiRequestUtils.post(route, {
+      followUpDate,
+      followUpTime,
+      followUpRemarks: followUpRemarks.trim() || undefined,
+    });
+    if (!response?.success) {
+      setActionError(response?.message || "Failed to save follow up.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleAddCompletion = async () => {
+    if (selectedStatus !== "COMPLETED") return true;
+    const route = API_ROUTES.STATUS_COMPLETE_REMARKS.replace(":registrationId", id);
+    const response = await ApiRequestUtils.post(route, { completionRemarks: completionRemarks.trim() });
+    if (!response?.success) {
+      setActionError(response?.message || "Failed to save completion remarks.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleUpdateCycleStatus = async () => {
+    const cycleId = cycleDetail?.id || selectedCycle?.id || selectedCycle?._id;
+    if (!cycleId) return;
+    setCycleError("");
+    if (!cycleStatus) {
+      setCycleError("Please select a cycle status.");
+      return;
+    }
+    try {
+      setCycleSaving(true);
+      const route = API_ROUTES.UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS.replace(":cycleId", cycleId);
+      const response = await ApiRequestUtils.update(route, {
+        status: cycleStatus,
+        remarks: cycleRemarks.trim() || undefined,
+      });
+      if (!response?.success) {
+        setCycleError(response?.message || "Failed to update cycle status.");
+        return;
+      }
+      await fetchDetail();
+      if (isSuperUser) await fetchActivityLog();
+      setCycleDetail((prev) => (prev ? { ...prev, status: cycleStatus, remarks: cycleRemarks } : prev));
+      setCycleOpen(false);
+    } catch (err) {
+      console.error("Failed to update cycle status:", err);
+      setCycleError("Failed to update cycle status.");
+    } finally {
+      setCycleSaving(false);
     }
   };
 
   const handlePrimaryUpdate = async () => {
-    setStatusError("");
-    if (!selectedStatus) {
-      setStatusError("Please select a status.");
-      return;
-    }
-
-    if (selectedStatus === "FOLLOW_UP_SCHEDULED" && (!followUpDate || !followUpTime || !followUpRemarks.trim())) {
-      setStatusError("Follow up date, time, and remarks are required for Follow Up Scheduled.");
-      return;
-    }
-
-    if (selectedStatus === "COMPLETED" && !completionRemarks.trim()) {
-      setStatusError("Completion remarks are required for Completed.");
-      return;
-    }
-
-    const statusUpdated = await handleStatusUpdate();
-    if (!statusUpdated) {
-      return;
-    }
-
-    const notesUpdated = notes.trim() ? await handleNotesUpdate() : true;
-    if (!notesUpdated) {
-      return;
-    }
-
-    if (selectedStatus !== "FOLLOW_UP_SCHEDULED" && selectedStatus !== "COMPLETED") {
-      setShowDetails(false);
-      await fetchDetail();
-      await fetchActivityLog();
-      return;
-    }
-
-    if (selectedStatus === "FOLLOW_UP_SCHEDULED") {
-      const followUpUpdated = await handleFollowUpUpdate();
-      if (!followUpUpdated) return;
-      setShowDetails(false);
-      await fetchDetail();
-      await fetchActivityLog();
-    }
-
-    if (selectedStatus === "COMPLETED" && completionRemarks.trim()) {
-      const completionUpdated = await handleCompletionRemarksUpdate();
-      if (!completionUpdated) return;
-      setShowDetails(false);
-      await fetchDetail();
-      await fetchActivityLog();
-    }
-  };
-
-  const handleFollowUpUpdate = async () => {
-    setFollowUpError("");
-    if (!followUpDate || !followUpTime || !followUpRemarks.trim()) {
-      setFollowUpError("Follow up date, time, and remarks are required.");
-      return false;
-    }
-    try {
-      setUpdatingFollowUp(true);
-      const route = API_ROUTES.POST_FOLLOW_UP.replace(":registrationId", id);
-      const response = await ApiRequestUtils.post(route, {
-        followUpDate,
-        followUpTime,
-        followUpRemarks: followUpRemarks.trim(),
-      });
-      if (response?.success) {
-        setFollowUpDate("");
-        setFollowUpTime("");
-        setFollowUpRemarks("");
-        return true;
-      } else {
-        setFollowUpError(response?.message || "Failed to save follow up.");
-        return false;
-      }
-    } catch (err) {
-      console.error("Failed to save follow up:", err);
-      setFollowUpError("Failed to save follow up.");
-      return false;
-    } finally {
-      setUpdatingFollowUp(false);
-    }
-  };
-
-  const handleNotesUpdate = async () => {
-    setNotesError("");
-    if (!notes.trim()) {
-      setNotesError("Please enter notes.");
-      return false;
-    }
-    try {
-      setUpdatingNotes(true);
-      const route = API_ROUTES.UPDATE_DRIVER_ADS_REGISTRATION_NOTES.replace(":registrationId", id);
-      const response = await ApiRequestUtils.post(route, { note: notes.trim() });
-      if (response?.success) {
-        setNotes("");
-        return true;
-      } else {
-        setNotesError(response?.message || "Failed to update notes.");
-        return false;
-      }
-    } catch (err) {
-      console.error("Failed to update registration notes:", err);
-      setNotesError("Failed to update notes.");
-      return false;
-    } finally {
-      setUpdatingNotes(false);
-    }
-  };
-
-  const handleCompletionRemarksUpdate = async () => {
-    setCompletionRemarksError("");
-    if (!completionRemarks.trim()) {
-      setCompletionRemarksError("Please enter completion remarks.");
-      return false;
-    }
-    try {
-      setUpdatingCompletionRemarks(true);
-      const route = API_ROUTES.STATUS_COMPLETE_REMARKS.replace(":registrationId", id);
-      const response = await ApiRequestUtils.post(route, { completionRemarks: completionRemarks.trim() });
-      if (response?.success) {
-        setCompletionRemarks("");
-        return true;
-      } else {
-        setCompletionRemarksError(response?.message || "Failed to save completion remarks.");
-        return false;
-      }
-    } catch (err) {
-      console.error("Failed to save completion remarks:", err);
-      setCompletionRemarksError("Failed to save completion remarks.");
-      return false;
-    } finally {
-      setUpdatingCompletionRemarks(false);
-    }
-  };
-
-  const renderActivityRows = (rows, headings, renderRow) => {
-    const normalizedRows = Array.isArray(rows) ? rows : [];
-    if (!normalizedRows.length) {
-      return <div className="py-6 text-center text-sm text-blue-gray-600">No records found.</div>;
-    }
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] table-auto">
-          <thead className="bg-primary">
-            <tr>
-              {headings.map((heading) => (
-                <th key={heading} className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left">
-                  <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
-                    {heading}
-                  </Typography>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {normalizedRows.map((row, index) => (
-              <tr
-                key={`${row?.kind || row?.actionPerformed || row?.currentStatus || row?.previousStatus || row?.id || row?._id || "row"}-${index}`}
-                className="border-b border-blue-gray-50"
-              >
-                {renderRow(row).map((cell, cellIndex) => (
-                  <td key={`${index}-${cellIndex}`} className="whitespace-nowrap py-3 px-5">
-                    <Typography className="text-xs font-semibold text-black">{cell}</Typography>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  const renderUser = (user) => {
-    if (!user) return "-";
-    const name = user?.name || "-";
-    return user?.phoneNumber ? `${name} (${user.phoneNumber})` : name;
-  };
-
-  const renderActivityTab = () => {
-    const notesRows = Array.isArray(activityLog?.notes) ? [...activityLog.notes] : [];
-    notesRows.sort((a, b) => new Date(a?.created_at || 0) - new Date(b?.created_at || 0));
-
-    const statusBadge = (value, tone = "neutral") => {
-      const text = formatStatusLabel(value);
-      const normalized = String(value || "").toUpperCase();
-      const classes =
-        normalized === "NEW"
-          ? "bg-blue-gray-100 text-blue-gray-800 border-blue-gray-200"
-          : normalized === "IN_PROGRESS"
-            ? "bg-blue-50 text-blue-700 border-blue-200"
-            : normalized === "FOLLOW_UP_SCHEDULED"
-              ? "bg-orange-50 text-orange-700 border-orange-200"
-              : normalized === "COMPLETED"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : tone === "action"
-                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                  : "bg-blue-gray-50 text-blue-gray-700 border-blue-gray-200";
-      return (
-        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap ${classes}`}>
-          {text}
-        </span>
-      );
-    };
-
-    const sections = {
-      notes: renderActivityRows(notesRows, ["Note", "Added By", "Created At"], (row) => [
-        row?.note || "-",
-        renderUser(row?.addedByUser),
-        formatValue(row?.created_at),
-      ]),
-      followUps: renderActivityRows(
-        activityLog?.followUps || [],
-        ["Follow Up Date", "Follow Up Time", "Follow Up Remarks", "Updated By", "Created At"],
-        (row) => [
-          formatValue(row?.followUpDate),
-          row?.followUpTime || "-",
-          row?.followUpRemarks || "-",
-          renderUser(row?.updatedByUser),
-          formatValue(row?.created_at),
-        ]
-      ),
-      history: renderActivityRows(
-        activityLog?.history || [],
-        ["Action", "Previous Status", "Current Status", "Remarks", "Performed By", "Created At"],
-        (row) => [
-          statusBadge(row?.actionPerformed, "action"),
-          statusBadge(row?.previousStatus),
-          statusBadge(row?.currentStatus),
-          row?.remarks || "-",
-          renderUser(row?.performedByUser),
-          formatValue(row?.created_at),
-        ]
-      ),
-      timeline: renderActivityRows(activityLog?.timeline || [], ["Kind", "Action", "Remarks", "Performed At"], (row) => [
-        row?.kind || "-",
-        statusBadge(row?.actionPerformed || row?.note || row?.followUpRemarks || "-"),
-        row?.remarks || row?.note || row?.followUpRemarks || "-",
-        formatValue(row?.performedAt || row?.addedAt || row?.updatedAt),
-      ]),
-    };
-
-    return sections[activeTab] || sections.notes;
-  };
-
-  const handleShowDetails = () => {
-    setShowDetails(true);
-  };
-
-  const latestNote =
-    Array.isArray(activityLog?.notes) && activityLog.notes.length
-      ? [...activityLog.notes].sort((a, b) => new Date(b?.created_at || b?.updated_at || 0) - new Date(a?.created_at || a?.updated_at || 0))[0]?.note || ""
-      : "";
-  const latestFollowUp =
-    Array.isArray(activityLog?.followUps) && activityLog.followUps.length
-      ? [...activityLog.followUps].sort((a, b) => new Date(b?.created_at || b?.updated_at || 0) - new Date(a?.created_at || a?.updated_at || 0))[0]
-      : null;
-  const latestCompletionRemark =
-    Array.isArray(activityLog?.history) && activityLog.history.length
-      ? [...activityLog.history]
-          .sort((a, b) => new Date(b?.created_at || b?.updated_at || 0) - new Date(a?.created_at || a?.updated_at || 0))
-          .find((row) => String(row?.currentStatus || "").toUpperCase() === "COMPLETED" && row?.remarks)
-      : null;
-
-  useEffect(() => {
-    if (!showDetails) return;
-    if (latestNote) setNotes(latestNote);
-    if (selectedStatus === "FOLLOW_UP_SCHEDULED" && latestFollowUp) {
-      setFollowUpDate(latestFollowUp?.followUpDate || "");
-      setFollowUpTime((latestFollowUp?.followUpTime || "").slice(0, 5));
-      setFollowUpRemarks(latestFollowUp?.followUpRemarks || "");
-    }
-    if (selectedStatus === "COMPLETED" && latestCompletionRemark?.remarks) {
-      setCompletionRemarks(latestCompletionRemark.remarks || "");
-    }
-  }, [showDetails, selectedStatus, latestNote, latestFollowUp, latestCompletionRemark, activityLog]);
-
-  const handleCloseDetails = () => {
+    setActionError("");
+    const statusUpdated = await handleUpdateStatus();
+    if (!statusUpdated) return;
+    const noteUpdated = await handleAddNote();
+    if (!noteUpdated) return;
+    const followUpUpdated = await handleAddFollowUp();
+    if (!followUpUpdated) return;
+    const completionUpdated = await handleAddCompletion();
+    if (!completionUpdated) return;
     setShowDetails(false);
+    await fetchDetail();
+    if (isSuperUser) await fetchActivityLog();
   };
+
+  const getHistoryBadgeClass = (type, value) => {
+    const normalized = String(value || "").toUpperCase();
+    if (type === "action") {
+      if (normalized === "REGISTERED") return "inline-flex items-center rounded-full bg-blue-gray-200 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "CYCLE_STATUS_UPDATED") return "inline-flex items-center rounded-full bg-fuchsia-800 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "CYCLE_CLAIM_SUBMITTED") return "inline-flex items-center rounded-full bg-rose-800 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "STATUS_UPDATED") return "inline-flex items-center rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-white";
+      if (normalized === "COMPLETED") return "inline-flex items-center rounded-full bg-emerald-400 px-3 py-1 text-xs font-semibold text-white";
+      return "inline-flex items-center rounded-full border border-slate-400 bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700";
+    }
+    if (type === "previous") {
+      return "inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700";
+    }
+    if (type === "current") {
+      return "inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700";
+    }
+    return "inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700";
+  }
+
+  const registration = record || {};
+  const advertisement = registration?.advertisement || {};
+  const driver = registration?.driver || {};
+  const statusSteps = ["NEW", "IN_PROGRESS", "FOLLOW_UP_SCHEDULED", "COMPLETED"];
+  const placements = Array.isArray(registration?.selectedPlacements) ? registration.selectedPlacements : [];
+  const cycles = Array.isArray(registration?.cycles) ? registration.cycles : [];
+  const totalCycles = Number(registration?.totalCycles || 0);
+  const completedCycles = Number(registration?.completedCycles || 0);
+  const currentCycleNumber = Number(registration?.currentCycleNumber || 0);
+  const progressPercent = totalCycles > 0 ? Math.min(100, Math.round((completedCycles / totalCycles) * 100)) : 0;
+  const notesRows = Array.isArray(activityLog?.notes) ? [...activityLog.notes] : [];
+  notesRows.sort((a, b) => new Date(a?.created_at || 0) - new Date(b?.created_at || 0));
+  const followUpRows = Array.isArray(activityLog?.followUps) ? activityLog.followUps : [];
+  const historyRows = Array.isArray(activityLog?.history) ? activityLog.history : [];
+  const timelineRows = Array.isArray(activityLog?.timeline) ? activityLog.timeline : [];
 
   if (loading) {
     return (
@@ -456,75 +349,267 @@ function DriverAdsRegistrationDetails() {
 
   return (
     <div className="mb-8 mt-8">
-      <Card>
-        <CardBody className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <Typography variant="h5" className="text-black">
-              Driver Ads Registration Details
-            </Typography>
-          </div>
-          {error ? <Alert color="red">{error}</Alert> : null}
-          {data ? (
-            <>
-              <DriverSummaryCards driver={driver} status={record?.status} advertisement={data} onStatusUpdate={handleShowDetails} />
-              <StatusUpdateModal
-                open={showDetails}
-                onClose={handleCloseDetails}
-                statusOptions={getStatusOptions(selectedStatus || "NEW", STATUS_FLOW)}
-                selectedStatus={selectedStatus}
-                onStatusChange={setSelectedStatus}
-                onStatusUpdate={handlePrimaryUpdate}
-                updatingStatus={updatingStatus}
-                statusError={statusError}
-                completionRemarks={completionRemarks}
-                onCompletionRemarksChange={setCompletionRemarks}
-                onCompletionRemarksUpdate={handleCompletionRemarksUpdate}
-                updatingCompletionRemarks={updatingCompletionRemarks}
-                completionRemarksError={completionRemarksError}
-                followUpDate={followUpDate}
-                followUpTime={followUpTime}
-                followUpRemarks={followUpRemarks}
-                onFollowUpDateChange={setFollowUpDate}
-                onFollowUpTimeChange={setFollowUpTime}
-                onFollowUpRemarksChange={setFollowUpRemarks}
-                onFollowUpUpdate={handleFollowUpUpdate}
-                updatingFollowUp={updatingFollowUp}
-                followUpError={followUpError}
-                notes={notes}
-                onNotesChange={setNotes}
-                onNotesUpdate={handleNotesUpdate}
-                updatingNotes={updatingNotes}
-                notesError={notesError}
-                latestNote={latestNote}
-              />
-              {isSuperUser ? (
-              <div className="rounded-xl border border-blue-gray-100 p-4">
-                <ActivityTabs
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                  loading={activityLoading}
-                  error={activityError}
-                  rowsRenderer={renderActivityTab}
-                />
+      <Card className="border border-blue-gray-100">
+        <CardBody className="flex flex-col gap-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <Typography variant="h5" className="text-black">
+                Driver Ads Registration Details
+              </Typography>
+              <Typography variant="small" className="text-blue-gray-600">
+                Registration ID: {registration?.id || id}
+              </Typography>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {statusSteps.map((step, index) => {
+                  const currentIndex = statusSteps.indexOf(String(registration?.status));
+                  const isCurrent = String(step) === String(registration?.status);
+                  const isPassed = currentIndex > index;
+                  return (
+                    <span
+                      key={step}
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                        isCurrent
+                          ? "border-primary bg-primary text-white"
+                          : isPassed
+                            ? "border-green-200 bg-green-50 text-green-700"
+                            : "border-blue-gray-200 bg-blue-gray-50 text-blue-gray-600"
+                      }`}
+                    >
+                      {formatStatusLabel(step)}
+                    </span>
+                  );
+                })}
               </div>
-              ) : null}
-             
-            </>
+            </div>
+            {/* <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(registration?.status)}`}>
+                {formatStatusLabel(registration?.status)}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-blue-gray-200 bg-blue-gray-50 px-3 py-1 text-xs font-semibold text-blue-gray-700">
+                Can Claim: {registration?.canClaim ? "Yes" : "No"}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-blue-gray-200 bg-blue-gray-50 px-3 py-1 text-xs font-semibold text-blue-gray-700">
+                Current Cycle: {registration?.currentCycleNumber ?? "-"}
+              </span>
+            </div> */}
+          </div>
+
+          {error ? <Alert color="red">{error}</Alert> : null}
+          {actionError ? <Alert color="red">{actionError}</Alert> : null}
+
+          <DriverSummaryCards
+            driver={driver}
+            status={registration?.status}
+            advertisement={advertisement}
+            registration={registration}
+            onStatusUpdate={() => setShowDetails(true)}
+          />
+
+          <RegistrationSummary
+            completedCycles={completedCycles}
+            totalCycles={totalCycles}
+            currentCycleNumber={currentCycleNumber}
+            progressPercent={progressPercent}
+            claimableCycleNumber={registration?.claimableCycleNumber}
+            summaryCards={[
+              <InfoRow key="start-date" label="Start Date" value={formatValue(registration?.startDate)} />,
+              <InfoRow key="end-date" label="End Date" value={formatValue(registration?.endDate)} />,
+              <InfoRow key="total-cycles" label="Total Cycles" value={registration?.totalCycles ?? "-"} />,
+              <InfoRow key="completed-cycles" label="Completed Cycles" value={registration?.completedCycles ?? "-"} />,
+              <InfoRow key="pending-cycles" label="Pending Cycles" value={registration?.pendingCycles ?? "-"} />,
+              <InfoRow key="claimable-cycle" label="Claimable Cycle" value={registration?.claimableCycleNumber ?? "-"} />,
+              <InfoRow key="current-cycle-status" label="Current Cycle Status" value={formatStatusLabel(registration?.currentCycleStatus)} />,
+              <InfoRow key="advertisement-active" label="Advertisement Active" value={advertisement?.isActive ? "Yes" : "No"} />,
+            ]}
+          />
+          {["ACTIVE", "COMPLETED"].includes(registration?.status) && (
+            <>
+          <div className="rounded-xl border border-blue-gray-100 bg-white p-4">
+            
+            {cycles.length ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {cycles.map((cycle, index) => (
+                  <div key={`${cycle?.cycleNumber || index}`} className="rounded-xl border border-blue-gray-100 bg-blue-gray-50 p-4 shadow-sm">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <Typography variant="small" className="font-medium text-blue-gray-600">
+                      Cycle {cycle?.cycleNumber ?? "-"}
+                    </Typography>
+                  </div>
+                      <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getHistoryBadgeClass("current", cycle?.status)}`}>
+                        {formatStatusLabel(cycle?.status)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 text-sm text-blue-gray-700">
+                      <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                        <span className="text-xs font-semibold uppercase text-blue-gray-500">Start</span>
+                        <span className="font-medium text-blue-gray-900">{formatValue(cycle?.cycleStartDate)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2">
+                        <span className="text-xs font-semibold uppercase text-blue-gray-500">End</span>
+                        <span className="font-medium text-blue-gray-900">{formatValue(cycle?.cycleEndDate)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                      <Button size="sm" className="bg-primary text-white" onClick={() => fetchCycleDetail(cycle?.id || cycle?._id, cycle)}>
+                        Review
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Typography className="text-sm text-blue-gray-600">No cycles created yet.</Typography>
+            )}
+          </div>
+          </>
+          )}
+
+          {isSuperUser ? (
+            <div className="rounded-xl border border-blue-gray-100 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <Typography variant="small" className="font-medium text-blue-gray-700">
+                  Activity Log
+                </Typography>
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                  Super User only
+                </span>
+              </div>
+              <ActivityTabs
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                loading={activityLoading}
+                error={activityError}
+                rowsRenderer={(tab) => {
+                  if (tab === "notes") {
+                    return <ActivityLogTable rows={notesRows} headings={["Note", "Added By", "Created At"]} renderRow={(row) => [row?.note || "-", renderUser(row?.addedByUser), formatValue(row?.created_at)]} />;
+                  }
+                  if (tab === "followUps") {
+                    return (
+                      <ActivityLogTable
+                        rows={followUpRows}
+                        headings={["Follow Up Date", "Follow Up Time", "Follow Up Remarks", "Updated By", "Created At"]}
+                        renderRow={(row) => [
+                      formatDateOnly(row?.followUpDate),
+                      row?.followUpTime || "-",
+                      row?.followUpRemarks || "-",
+                      renderUser(row?.updatedByUser),
+                      formatValue(row?.created_at),
+                    ]}
+                      />
+                    );
+                  }
+                  if (tab === "history") {
+                    return (
+                      <ActivityLogTable
+                        rows={historyRows}
+                        headings={["Action", "Previous Status", "Current Status", "Remarks", "Performed By", "Created At"]}
+                        renderRow={(row) => [
+                      <Chip value={formatStatusLabel(row?.actionPerformed)} className={`${getHistoryBadgeClass("action", row?.actionPerformed)} whitespace-nowrap`} />,
+                      <Chip value={formatStatusLabel(row?.previousStatus)} className={`${getHistoryBadgeClass("previous", row?.previousStatus)} whitespace-nowrap`} />,
+                      <Chip value={formatStatusLabel(row?.currentStatus)} className={`${getHistoryBadgeClass("current", row?.currentStatus)} whitespace-nowrap`} />,
+                      row?.remarks || "-",
+                      renderUser(row?.performedByUser),
+                      formatValue(row?.created_at),
+                    ]}
+                      />
+                    );
+                  }
+                  return (
+                    <ActivityLogTable
+                      rows={timelineRows}
+                      headings={["Kind", "Action", "Remarks", "Performed At"]}
+                      renderRow={(row) => [
+                    row?.kind || "-",
+                    formatStatusLabel(row?.actionPerformed || row?.note || row?.followUpRemarks || "-"),
+                    row?.remarks || row?.note || row?.followUpRemarks || "-",
+                    formatValue(row?.performedAt || row?.addedAt || row?.updatedAt),
+                  ]}
+                    />
+                  );
+                }}
+              />
+            </div>
           ) : null}
         </CardBody>
         <div className="flex justify-center p-4">
-          <Button
-            size="sm"
-            className="border-blue-gray-300 bg-primary text-white"
-            onClick={() => navigate("/dashboard/support/driver-ads-reg")}
-            >
-              Back
-            </Button>
-      </div>
+          <Button size="sm" className="border-blue-gray-300 bg-primary text-white" onClick={() => navigate("/dashboard/support/driver-ads-reg")}>
+            Back
+          </Button>
+        </div>
       </Card>
-      
+
+      <StatusUpdateModal
+        open={showDetails}
+        onClose={() => setShowDetails(false)}
+        statusOptions={getStatusOptions(selectedStatus || "NEW", STATUS_FLOW)}
+        selectedStatus={selectedStatus}
+        onStatusChange={setSelectedStatus}
+        onStatusUpdate={handlePrimaryUpdate}
+        updatingStatus={saving}
+        statusError={actionError}
+        statusRemarks={statusRemarks}
+        onStatusRemarksChange={setStatusRemarks}
+        completionRemarks={completionRemarks}
+        onCompletionRemarksChange={setCompletionRemarks}
+        followUpDate={followUpDate}
+        followUpTime={followUpTime}
+        followUpRemarks={followUpRemarks}
+        onFollowUpDateChange={setFollowUpDate}
+        onFollowUpTimeChange={setFollowUpTime}
+        onFollowUpRemarksChange={setFollowUpRemarks}
+        notes={notes}
+        onNotesChange={setNotes}
+        latestNote={latestNote}
+      />
+
+      <CycleReviewDialog
+        open={cycleOpen}
+        onClose={() => setCycleOpen(false)}
+        cycleNumber={cycleDetail?.cycleNumber || selectedCycle?.cycleNumber || "-"}
+        cycleLoading={cycleLoading}
+        cycleError={cycleError}
+        infoRows={[
+          <InfoRow key="status" label="Status" value={formatStatusLabel(cycleDetail?.status || selectedCycle?.status)} />,
+          <InfoRow key="cycle-number" label="Cycle Number" value={cycleDetail?.cycleNumber || selectedCycle?.cycleNumber || "-"} />,
+          <InfoRow key="start-date" label="Start Date" value={formatValue(cycleDetail?.cycleStartDate || selectedCycle?.cycleStartDate)} />,
+          <InfoRow key="end-date" label="End Date" value={formatValue(cycleDetail?.cycleEndDate || selectedCycle?.cycleEndDate)} />,
+          <InfoRow key="submitted-at" label="Submitted At" value={formatValue(cycleDetail?.claimSubmittedAt)} />,
+          <InfoRow key="registration-id" label="Registration ID" value={cycleDetail?.registrationId || registration?.id || "-"} />,
+        ]}
+        claimImages={Array.isArray(cycleDetail?.claimPayload?.claimImages) ? cycleDetail.claimPayload.claimImages : []}
+        onOpenProof={() => setProofOpen(true)}
+        cycleStatus={cycleStatus}
+        onCycleStatusChange={(value) => {
+          setCycleStatus(value);
+          setCycleRemarks("");
+        }}
+        cycleRemarks={cycleRemarks}
+        onCycleRemarksChange={setCycleRemarks}
+        statusOptions={getStatusOptions(cycleStatus || cycleDetail?.status || selectedCycle?.status || "CLAIM_SUBMITTED", CYCLE_STATUS_FLOW)}
+        formatStatusLabel={formatStatusLabel}
+        onSave={handleUpdateCycleStatus}
+        cycleSaving={cycleSaving}
+      />
+
+      <ClaimProofDialog
+        open={proofOpen}
+        onClose={() => setProofOpen(false)}
+        cycleNumber={cycleDetail?.cycleNumber || selectedCycle?.cycleNumber || "-"}
+        claimImages={Array.isArray(cycleDetail?.claimPayload?.claimImages) ? cycleDetail.claimPayload.claimImages : []}
+      />
     </div>
-    
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div className="rounded-lg border border-blue-gray-100 bg-blue-gray-50 p-3">
+      <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-500">
+        {label}
+      </Typography>
+      <Typography className="text-sm font-semibold text-blue-gray-900">{value}</Typography>
+    </div>
   );
 }
 

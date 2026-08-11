@@ -187,9 +187,7 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
         formData.append('minCompletedTrips', values.minCompletedTrips === '' || values.minCompletedTrips === null || values.minCompletedTrips === undefined ? 0 : Number(values.minCompletedTrips));
         formData.append('maxCompletedTrips', values.maxCompletedTrips === '' || values.maxCompletedTrips === null || values.maxCompletedTrips === undefined ? 0 : Number(values.maxCompletedTrips));
       }
-      if (!isCustomSegment) {
       formData.append('couponCode', values.couponCode);
-      }
       formData.append('discountType', discountType);
       if ((discountType || '').toLowerCase() === 'percentage') {
         formData.append('percentage', values.percentage || '');
