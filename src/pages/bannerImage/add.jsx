@@ -71,6 +71,7 @@ const AddBanner = () => {
     title: '',
     status: true,
     type: '',
+    mode: 'GENERAL',
     image: null,
     image2: null,
     zone: '',
@@ -81,6 +82,7 @@ const AddBanner = () => {
     startTime: '',
     endTime: '',
     serviceType: '',
+    eligibilityConfig: {},
   };
 
   const fetchGeoData = async () => {
@@ -113,6 +115,20 @@ const AddBanner = () => {
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isExternalPromotions = (type) => type === 'EXTERNAL_PROMOTIONS';
+  const isBannerTargetedMode = (type, mode) => type === 'BANNER' && mode === 'TARGETED';
+  const TARGETED_SERVICE_OPTIONS = ['RIDES', 'AUTO', 'BIKE', 'PARCEL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'RENTAL_OUTSTATION'];
+  const getTargetedServiceLabel = (service) => {
+    switch (service) {
+      case 'RIDES': return 'Rides';
+      case 'AUTO': return 'Auto';
+      case 'BIKE': return 'Bike';
+      case 'PARCEL': return 'Parcel';
+      case 'RENTAL_HOURLY_PACKAGE': return 'Hourly Package';
+      case 'RENTAL_DROP_TAXI': return 'Drop Taxi';
+      case 'RENTAL_OUTSTATION': return 'Outstation';
+      default: return service;
+    }
+  };
 
   const validationSchema = Yup.object().shape({
     type: Yup.string().required('Type is required'),
@@ -174,6 +190,11 @@ const AddBanner = () => {
     serviceType: Yup.string().when('type', {
       is: isServiceIntroImage,
       then: (schema) => schema.required('Service Type is required'),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    eligibilityConfig: Yup.object().when(['type', 'mode'], {
+      is: (type, mode) => isBannerTargetedMode(type, mode),
+      then: (schema) => schema.required('Eligibility config is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
     driverType: Yup.string().when('type', {
@@ -290,6 +311,15 @@ const AddBanner = () => {
           formData.append('packageType', mappedServiceDetails.packageType);
         }
       }
+      if (isBannerTargetedMode(values.type, values.mode)) {
+        const eligibilityConfig = TARGETED_SERVICE_OPTIONS.reduce((acc, service) => {
+          const count = Number(values.eligibilityConfig?.[service] || 0);
+          if (!count) return acc;
+          acc[service] = Number.isFinite(count) && count > 0 ? count : 1;
+          return acc;
+        }, {});
+        formData.append('eligibilityConfig', JSON.stringify(eligibilityConfig));
+      }
       if (isExternalPromotions(values.type) && values.image2) {
         formData.append('image2', values.image2, values.image2.name);
         formData.append('fileTypeImage2', values.image2?.type || '');
@@ -375,6 +405,12 @@ const AddBanner = () => {
                   onChange={(e) => {
                     const selectedType = e.target.value;
                     setFieldValue('type', selectedType);
+                    if (selectedType === 'BANNER') {
+                      setFieldValue('mode', values.mode || 'GENERAL');
+                    } else {
+                      setFieldValue('mode', 'GENERAL');
+                      setFieldValue('eligibilityConfig', {});
+                    }
                     if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'QR_DRIVER_TO_DRIVER' || selectedType === 'QR_DRIVER_TO_CUSTOMER' || selectedType === 'QR_CUSTOMER_TO_CUSTOMER' || selectedType === 'FUTURE_BOOKING_INTRO_DRIVER' || selectedType === 'RETURN_TRIP_INTRO_DRIVER') {
                       setFieldValue('zone', 'All');
                     }
@@ -408,6 +444,24 @@ const AddBanner = () => {
                 </Field>
                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
               </div>
+              {values.type === 'BANNER' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Mode</label>
+                  <Field
+                    as="select"
+                    name="mode"
+                    className="p-2 w-full rounded-md border border-gray-300 shadow-sm"
+                    onChange={(e) => {
+                      const selectedMode = e.target.value;
+                      setFieldValue('mode', selectedMode);
+                      setFieldValue('eligibilityConfig', {});
+                    }}                    
+                  >
+                    <option value="GENERAL">General</option>
+                    <option value="TARGETED">Targeted</option>
+                  </Field>
+                </div>
+              )}
               {(values.type === 'INTRO_SLIDES_DRIVER' || isTrainingVideo) && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Driver Type</label>
@@ -470,6 +524,57 @@ const AddBanner = () => {
                     <option value="BIKE">Bike</option>
                   </Field>
                   <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
+                </div>
+              )}
+              {values.type === 'BANNER' && values.mode === 'TARGETED' && (
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Targeted Services</label>
+                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-md border border-gray-300 p-3">
+                    {TARGETED_SERVICE_OPTIONS.map((service) => {
+                      const checked = Boolean(values.eligibilityConfig?.[service]);
+                      const serviceCount = values.eligibilityConfig?.[service] ?? '';
+                      return (
+                        <label key={service} className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2">
+                          <span className="text-sm text-gray-800">{getTargetedServiceLabel(service)}</span>
+                          <span className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked && !values.eligibilityConfig?.[service]) {
+                                  setFieldValue('eligibilityConfig', {
+                                    ...(values.eligibilityConfig || {}),
+                                    [service]: 1,
+                                  });
+                                }
+                                if (!e.target.checked) {
+                                  const nextCounts = { ...(values.eligibilityConfig || {}) };
+                                  delete nextCounts[service];
+                                  setFieldValue('eligibilityConfig', nextCounts);
+                                }
+                              }}
+                            />
+                            {checked && (
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder="Count"
+                                value={serviceCount}
+                                onChange={(e) =>
+                                  setFieldValue('eligibilityConfig', {
+                                    ...(values.eligibilityConfig || {}),
+                                    [service]: e.target.value,
+                                  })
+                                }
+                                className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                              />
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <ErrorMessage name="eligibilityConfig" component="div" className="text-red-500 text-sm" />
                 </div>
               )}
               {!hideStandardFields && (
