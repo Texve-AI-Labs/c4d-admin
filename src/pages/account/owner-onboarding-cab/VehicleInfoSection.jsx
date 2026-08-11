@@ -59,6 +59,7 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [activeLogTabBySection, setActiveLogTabBySection] = useState({});
   const [activeVehicleSectionId, setActiveVehicleSectionId] = useState(null);
 
@@ -92,6 +93,7 @@ const VehicleInfoSection = ({
     map["Insurance Expiry Date"] = section?.rawValues?.insurance
       ? String(section.rawValues.insurance).slice(0, 10)
       : (map["Insurance Expiry Date"] || "");
+    map.AddressPlaceId = section?.rawValues?.curAddress?.placeId || section?.rawValues?.curAddress?.place_id || section?.rawValues?.curAddress?.placeID || section?.rawValues?.curAddress?.id || map.AddressPlaceId || "";
     map["Address"] = formatAddressValue(section?.rawValues?.curAddress || map["Address"] || "");
     if (isTravels) {
       const rawAssigned = String(section?.rawValues?.assigned || "").trim();
@@ -256,6 +258,7 @@ const VehicleInfoSection = ({
                         onClick={() => {
                           setEditingSectionId(section.id);
                           setDraftValues(getInitialDraft(section));
+                          setFieldErrors({});
                         }}
                       >
                         <PencilIcon className="h-4 w-4" />
@@ -419,11 +422,17 @@ const VehicleInfoSection = ({
                                 value={draftValues[row.label] || ""}
                                 onChange={(e) => {
                                   const value = e.target.value;
-                                  setDraftValues((prev) => ({ ...prev, [row.label]: value }));
+                                  setDraftValues((prev) => ({ ...prev, [row.label]: value, AddressPlaceId: "" }));
+                                  setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "" }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
                               />
+                              {fieldErrors.AddressPlaceId ? (
+                                <Typography className="mt-1 text-xs text-red-500">
+                                  {fieldErrors.AddressPlaceId}
+                                </Typography>
+                              ) : null}
                               {(getVehicleAddressSuggestionsBySection?.(section.id) || []).length > 0 ? (
                                 <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
                                   {(getVehicleAddressSuggestionsBySection?.(section.id) || []).map((suggestion, idx) => (
@@ -443,6 +452,7 @@ const VehicleInfoSection = ({
                                             prev.AddressPlaceId ||
                                             "",
                                         }));
+                                        setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "" }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
                                     >
@@ -624,9 +634,14 @@ const VehicleInfoSection = ({
                               window.alert("Please select a valid Car Type.");
                               return;
                             }
+                            if (!String(draftValues?.AddressPlaceId || "").trim()) {
+                              setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "Address place id is required." }));
+                              return;
+                            }
                             onSaveVehicleDetails?.(section.id, draftValues, () => {
                               setEditingSectionId(null);
                               setDraftValues({});
+                              setFieldErrors({});
                             });
                           }}
                         >
