@@ -41,6 +41,21 @@ const getSlotError = (slot = {}) => {
   return "";
 };
 
+const getOnlineHoursSlotHours = (slots = []) =>
+  (Array.isArray(slots) ? slots : []).reduce((total, slot) => {
+    if (getSlotError(slot)) return total;
+    const startMinutes = toMinutes(slot?.start);
+    const endMinutes = toMinutes(slot?.end);
+    if (startMinutes === null || endMinutes === null) return total;
+    return total + (endMinutes - startMinutes) / 60;
+  }, 0);
+
+const getOnlineHoursComputedValue = (rule = {}, period = "DAILY") => {
+  const baseHours = getOnlineHoursSlotHours(rule?.slots);
+  const normalizedPeriod = String(period || "").trim().toUpperCase();
+  return normalizedPeriod === "WEEKLY" ? baseHours * 7 : baseHours;
+};
+
 function TierComponentRulesSection({
   registerBuilder,
   initialConfig = {},
@@ -279,6 +294,14 @@ function TierComponentRulesSection({
     }));
   };
 
+  const hasOnlineHoursSlots = (rule = {}) =>
+    rule?.metric === "onlineHours" && Array.isArray(rule?.slots) && rule.slots.some((slot) => slot?.start || slot?.end);
+
+  const getRuleDisplayValue = (rule = {}) =>
+    rule?.metric === "onlineHours" && hasOnlineHoursSlots(rule)
+      ? String(getOnlineHoursComputedValue(rule, rule?.period || defaultPeriod) || "")
+      : String(rule?.value ?? "");
+
   const addRule = (tierKey) => {
     setComponentState((prev) => ({
       ...prev,
@@ -343,6 +366,7 @@ function TierComponentRulesSection({
                   enabled: Boolean(tierConfig?.enabled),
                   payoutFrequency: tierConfig?.payoutFrequency || componentState.payoutFrequency || defaultPayoutFrequency,
                   rules: (Array.isArray(tierConfig?.rules) ? tierConfig.rules : []).map((rule) => {
+                    const computedValue = rule?.metric === "onlineHours" && Array.isArray(rule?.slots) && rule.slots.length > 0 ? getOnlineHoursComputedValue(rule, rule?.period || defaultPeriod) : Number(rule?.value || 0);
                     const mappedCondition = buildComponentRuleConditionPayload({
                       ...rule,
                       serviceType:
@@ -361,7 +385,7 @@ function TierComponentRulesSection({
                       amount: Number(rule?.amount || 0),
                       condition: {
                         op: rule?.op || ">=",
-                        value: Number(rule?.value || 0),
+                        value: Number(computedValue || 0),
                         metric: rule?.metric || defaultMetric,
                         period: rule?.period || defaultPeriod,
                         isMandatory: Boolean(rule?.isMandatory),
@@ -600,11 +624,17 @@ function TierComponentRulesSection({
                         <input
                           type="number"
                           step="any"
-                          value={rule.value}
+                          value={getRuleDisplayValue(rule)}
+                          disabled={hasOnlineHoursSlots(rule)}
                           onChange={(event) => onRuleChange(tierKey, index, "value", event.target.value)}
-                          className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
+                          className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 disabled:bg-blue-gray-50"
                           placeholder="Value"
                         />
+                        {/* {hasOnlineHoursSlots(rule) && (
+                          <Typography variant="small" color="gray" className="mt-1 text-xs">
+                            Value is locked when online-hours slots are configured.
+                          </Typography>
+                        )} */}
                       </div>
                       <div>
                         <Typography variant="small" color="blue-gray" className="mb-1 text-xs font-semibold">
