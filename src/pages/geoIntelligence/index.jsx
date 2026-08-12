@@ -16,7 +16,6 @@ const FULLSCREEN_EXIT = "geo-intelligence:fullscreen-exit";
  
 const GeoIntelligence = () => {
   const frameShellRef = useRef(null);
-  const iframeRef = useRef(null);
   const isEmbeddedRef = useRef(false);
  
   const tabs = useMemo(
@@ -36,47 +35,6 @@ const GeoIntelligence = () => {
   const maxZoom = 1.4;
   const zoomStep = 0.1;
   const activeSource = tabs.find((tab) => tab.key === activeTab)?.url || GEO_INTELLIGENCE_URL;
-
-  const getStoredUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem("loggedInUser") || "{}");
-    } catch {
-      return {};
-    }
-  };
-
-  const buildHandshakePayload = () => {
-    const user = getStoredUser();
-    const token = localStorage.getItem("token") || "";
-
-    return {
-      type: "C4D_PORTAL_AUTH",
-      source: "c4d-admin-portal",
-      token,
-      session: token,
-      userId: user?.id != null ? String(user.id) : "",
-      userName: user?.name || user?.email || "",
-      username: user?.name || user?.email || "",
-      email: user?.email || "",
-      role: user?.role || user?.userType || "",
-      deviceToken: user?.deviceToken || "",
-    };
-  };
-
-  const postMessageToIframe = () => {
-    const iframeWindow = iframeRef.current?.contentWindow;
-    const payload = buildHandshakePayload();
-
-    console.log("[Geo Intelligence] prepared auth payload", payload);
-
-    if (!iframeWindow) {
-      console.warn("[Geo Intelligence] iframe window is not ready");
-      return;
-    }
-
-    console.log("[Geo Intelligence] sending auth payload to iframe");
-    iframeWindow.postMessage(payload, "*");
-  };
  
   useEffect(() => {
     try {
@@ -173,29 +131,6 @@ const GeoIntelligence = () => {
       "*"
     );
   };
-
-  useEffect(() => {
-    const handleLoad = () => {
-      console.log("[Geo Intelligence] iframe loaded", activeSource);
-      postMessageToIframe();
-    };
-
-    const iframe = iframeRef.current;
-    if (!iframe) return undefined;
-
-    iframe.addEventListener("load", handleLoad);
-
-    const retryTimer = window.setTimeout(() => {
-      console.log("[Geo Intelligence] retrying auth payload postMessage");
-      postMessageToIframe();
-    }, 800);
-
-    return () => {
-      iframe.removeEventListener("load", handleLoad);
-      window.clearTimeout(retryTimer);
-    };
-  }, [activeSource]);
- 
   const isFullscreenView = isNativeFullscreen || isExpanded;
  
   return (
@@ -280,7 +215,6 @@ const GeoIntelligence = () => {
  
         <div className="h-[calc(100vh-12.5rem)] w-full overflow-auto bg-slate-50 lg:h-[calc(100vh-11rem)]">
           <iframe
-            ref={iframeRef}
             title={activeTab === "ops" ? "Operational" : "Geo Intelligence"}
             src={activeSource}
             className="h-full w-full origin-top-left border-0"
