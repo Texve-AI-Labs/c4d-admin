@@ -3,18 +3,44 @@ import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography } fr
 import DocumentPreview from "../components/DocumentPreview";
 
 export default function ClaimProofDialog({ open, onClose, cycleNumber, claimImages }) {
-  const firstImage = claimImages?.[0];
+  const normalizedImages = Array.isArray(claimImages) ? claimImages : [];
+  const firstImage = normalizedImages?.[0];
+  const firstCapturedAt = firstImage?.capturedAt || "";
 
-  const handleDownload = () => {
-    if (!firstImage) return;
+  const handleDownloadImage = (src, index) => {
+    if (!src) return;
     const link = document.createElement("a");
-    link.href = firstImage;
-    link.download = `cycle-${cycleNumber || "proof"}-${Date.now()}`;
+    link.href = src;
+    link.download = `cycle-${cycleNumber || "proof"}-${index + 1}`;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
     link.remove();
+  };
+
+  const handleDownloadAll = () => {
+    normalizedImages.forEach((item, index) => {
+      const src = typeof item === "string" ? item : item?.url || "";
+      if (src) handleDownloadImage(src, index);
+    });
+  };
+
+  const formatCapturedAt = (value) => {
+    if (!value) return "-";
+    const text = String(value);
+    const dateTime = new Date(text);
+    if (!Number.isNaN(dateTime.getTime())) {
+      const date = dateTime.toLocaleDateString("en-GB", { timeZone: "UTC" });
+      const time = dateTime.toLocaleTimeString("en-GB", {
+        timeZone: "UTC",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      return `${date} ${time}`;
+    }
+    return text;
   };
 
   return (
@@ -28,30 +54,49 @@ export default function ClaimProofDialog({ open, onClose, cycleNumber, claimImag
             Cycle {cycleNumber || "-"}
           </Typography>
         </div>
-        {firstImage ? (
-          <Button
+        {normalizedImages.length ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
             size="sm"
-            variant="outlined"
-            className="rounded-full border-slate-300 bg-red-600 text-white px-4 py-2 text-xs font-semibold hover:bg-red-700"
-            onClick={handleDownload}
-          >
-            Download
-          </Button>
+            className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800" onClick={handleDownloadAll}>
+              Download All
+            </Button>
+          </div>
         ) : null}
       </DialogHeader>
-      <DialogBody className="pt-0">
-        {claimImages.length ? (
-          <div className="w-full space-y-4">
-            {claimImages.map((src, index) => (
-              <DocumentPreview key={`${src}-${index}`} src={src} />
-            ))}
+      <DialogBody className="max-h-[72vh] overflow-y-auto pt-0">
+        {normalizedImages.length ? (
+          <div className="w-full overflow-x-auto">
+            <div className="flex min-w-max gap-4 pb-2">
+              {normalizedImages.map((item, index) => {
+                const src = typeof item === "string" ? item : item?.url || "";
+                const meta = typeof item === "string" ? {} : item || {};
+                return (
+                  <div key={`${src}-${index}`} className="w-[320px] flex-none rounded-xl border border-blue-gray-100 bg-white p-3">
+                    <DocumentPreview src={src} />
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <Typography variant="small" className="text-[11px] font-medium text-blue-gray-600">
+                        Captured: {formatCapturedAt(meta?.capturedAt || firstCapturedAt)}
+                      </Typography>
+                      <Button
+                        size="sm"
+                        className='rounded-full px-3 py-1 text-[11px] font-semibold text-white bg-primary'
+                        onClick={() => handleDownloadImage(src, index)}
+                      >
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <Typography className="text-sm text-blue-gray-600">No claim images submitted.</Typography>
         )}
       </DialogBody>
       <DialogFooter className="justify-end">
-        <Button size="sm" variant="outlined" onClick={onClose} className="rounded-full border-slate-300 px-4 py-2 text-xs font-semibold text-blue-gray-700">
+        <Button size="sm" variant="outlined" onClick={onClose} className="rounded-full border-slate-300 px-4 py-2 text-xs font-semibold text-white bg-red-500">
           Close
         </Button>
       </DialogFooter>
