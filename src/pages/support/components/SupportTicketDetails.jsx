@@ -49,7 +49,7 @@ function SupportTicketDetails({
               <InfoCard label="Ticket ID" value={ticket?.ticketId || "-"} />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <InfoCard label="Category" value={ticket?.category || "-"} />
-                {/* <InfoCard label="Booking ID" value={booking?.bookingNumber || "-"} /> */}
+                <InfoCard label="Description" value={ticket?.description || "-"} />
                 <InfoCard label="Customer" value={customer?.firstName || customer?.name || "-"} />
                 <InfoCard label="Disputed Amount" value={ticket?.disputedAmount ? `₹ ${Number(ticket?.disputedAmount).toFixed(2)}` : "-"} />
                 <InfoCard label="Proof" value={ticket?.proofUrl ? "Available" : "Not provided"} />
