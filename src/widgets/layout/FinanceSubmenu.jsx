@@ -16,7 +16,7 @@ const FINANCE_GROUPS = [
     title: "Pricing",
     items: [
       { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
-      { label: "Joining Bonus", path: "/finance/joining-bonus" },
+      { label: "Joining Bonus", path: "/dashboard/finance/joining-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     ],
@@ -50,92 +50,51 @@ const FINANCE_GROUPS = [
   },
 ];
 
-const getFinanceGroupForPath = (groups, pathname, isMainItemActive) =>
-  groups.find((group) =>
-    group.items.some(({ label, path }) => isMainItemActive(label, path, pathname === path.toLowerCase()))
-  );
+const ROUTE_MATCHERS = {
+  "Subscription Invoice": ["/finance/invoice"],
+  "Booking Receipt": ["/finance/receipt"],
+  "Booking Invoice": ["/finance/bookinginvoicelist", "/finance/bookinginvoice/details"],
+  "Master Subscription Table": ["/finance/master-subscription"],
+  "Joining Bonus": ["/dashboard/finance/joining-bonus"],
+  "Master Price Table": ["/finance/master-price"],
+  "Instant Reward": ["/finance/instant-reward"],
+  "Referral Rules": ["/finance/referral-rules"],
+  "Cash Back": ["/finance/cash-back"],
+  "Driver KM Bonus": ["/finance/driver-bonus"],
+  "Discount Module": ["/finance/discountmodulelist", "/finance/discountmodule/add", "/finance/discountmodule/edit"],
+  "Custom Discount": ["/finance/custom-discount", "/finance/custom-discount/add", "/finance/custom-discount/edit"],
+  "Settings": ["/finance/gstlist", "/finance/gst/add", "/finance/gst/edit"],
+  "Parcel Commission": ["/finance/parcel-commission"],
+  "Parcel Slot Config": ["/finance/parcel-slot-config", "/finance/parcel-slot-config/add", "/finance/parcel-slot-config/edit", "/finance/parcel-slot-config/details"],
+  "Parcel Daily Slots": ["/finance/parcel-daily-slots", "/finance/parcel-daily-slots/details"],
+  "Withdrawal Rules": ["/finance/withdrawal-rules", "/finance/withdrawal-rules/add", "/finance/withdrawal-rules/edit"],
+  "Withdrawal Transaction": ["/finance/wallet-transaction"],
+  "Return Trip Driver Master Subscription Table": ["/finance/master-subscription/return-trip-driver", "/finance/master-subscription/return-trip-driver/add", "/finance/master-subscription/return-trip-driver/edit", "/finance/master-subscription/return-trip-driver/details"],
+};
+
+const normalizePath = (value) => String(value || "").toLowerCase().replace("/dashboard", "");
+
+const matchesRouteFamily = (pathname, label, path) => {
+  const normalizedPath = normalizePath(path);
+  const families = ROUTE_MATCHERS[label] || [normalizedPath];
+  return families.some((familyPath) => pathname.startsWith(normalizePath(familyPath)));
+};
+
+const getFinanceGroupForPath = (groups, pathname) =>
+  groups.find((group) => group.items.some(({ label, path }) => matchesRouteFamily(pathname, label, path)));
 
 function FinanceSubmenu({ permissions = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname.toLowerCase();
-  const financePathname = pathname.startsWith("/dashboard/finance")
-    ? pathname.replace("/dashboard", "") : pathname;
 
-  const matchesFinancePath = (targetPath) => {
-    const normalizedTarget = targetPath.toLowerCase().replace("/dashboard", "");
-    return financePathname.startsWith(normalizedTarget) || pathname.startsWith(normalizedTarget);
-  };
-
-  const isMainItemActive = (label, path, navActive) => {
-    if (navActive) return true;
-
-    if (label === "Subscription Invoice") {
-      return matchesFinancePath("/finance/invoice");
-    }
-    if (label === "Booking Receipt") {
-      return matchesFinancePath("/finance/receipt");
-    }
-    if (label === "Booking Invoice") {
-      return matchesFinancePath("/finance/bookingInvoiceList");
-    }
-    if (label === "Master Subscription Table") {
-      return matchesFinancePath("/finance/master-subscription");
-    }
-    if (label === "Joining Bonus") {
-      return matchesFinancePath("/finance/joining-bonus");
-    }
-    if (label === "Master Price Table") {
-      return matchesFinancePath("/finance/master-price");
-    }
-    if (label === "Instant Reward") {
-      return matchesFinancePath("/finance/instant-reward");
-    }
-    if (label === "Referral Rules") {
-      return matchesFinancePath("/finance/referral-rules");
-    }
-    if (label === "Cash Back") {
-      return matchesFinancePath("/finance/cash-back");
-    }
-    if (label === "Driver KM Bonus") {
-      return matchesFinancePath("/finance/driver-bonus");
-    }
-    if (label === "Discount Module") {
-      return matchesFinancePath("/finance/discountModuleList");
-    }
-    if (label === "Custom Discount") {
-      return matchesFinancePath("/finance/custom-discount");
-    }
-    if (label === "Settings") {
-      return matchesFinancePath("/finance/GSTList");
-    }
-    if (label === "Parcel Commission") {
-      return matchesFinancePath("/finance/parcel-commission");
-    }
-    if (label === "Parcel Slot Config") {
-      return matchesFinancePath("/finance/parcel-slot-config");
-    }
-    if (label === "Parcel Daily Slots") {
-      return matchesFinancePath("/finance/parcel-daily-slots");
-    }
-    if (label === "Withdrawal Rules") {
-      return matchesFinancePath("/finance/withdrawal-rules");
-    }
-    if (label === "Withdrawal Transaction") {
-      return matchesFinancePath("/finance/wallet-transaction");
-    }
-    if (label === "Return Trip Driver Master Subscription Table") {
-      return matchesFinancePath("/finance/master-subscription/return-trip-driver");
-    }
-
-    return matchesFinancePath(path);
-  };
+  const isMainItemActive = (label, path, navActive) => navActive || matchesRouteFamily(pathname, label, path);
 
   const getItemClasses = (isActive) =>
     `${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} ${
       isActive
-        ? `${NAV_UI.colors.topnavActiveBg} ${NAV_UI.colors.topnavActiveText}`
-        : `${NAV_UI.colors.topnavInactiveText} ${NAV_UI.topnav.buttonHover}`
+        ? "bg-primary text-white hover:bg-primary hover:text-white"
+        : `${NAV_UI.colors.topnavInactiveText} hover:bg-transparent hover:text-slate-600`
     }`;
 
   const visibleGroups = useMemo(
@@ -158,7 +117,7 @@ function FinanceSubmenu({ permissions = [] }) {
   };
 
   const routeGroupTitle = useMemo(() => {
-    const matchedGroup = getFinanceGroupForPath(visibleGroups, pathname, isMainItemActive);
+    const matchedGroup = getFinanceGroupForPath(visibleGroups, pathname);
     return matchedGroup?.title || visibleGroups[0]?.title || "Billing";
   }, [pathname, visibleGroups]);
 
@@ -197,10 +156,10 @@ function FinanceSubmenu({ permissions = [] }) {
             key={group.title}
             variant="text"
             type="button"
-            className={`${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} inline-flex flex-1 basis-0 justify-center rounded-xl px-4 py-2 transition-colors duration-150 ${
+            className={`${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} inline-flex flex-1 basis-0 justify-center rounded-xl px-4 py-2 ${
               openGroup === group.title
-                ? "bg-primary text-white"
-              : "bg-slate-100 text-slate-700"
+                ? "bg-primary text-white hover:bg-primary hover:text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-100 hover:text-slate-700"
             }`}
             onClick={() => {
               setOpenGroup(group.title);
