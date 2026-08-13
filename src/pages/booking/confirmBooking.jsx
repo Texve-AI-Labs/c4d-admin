@@ -722,6 +722,7 @@ const handleSaveDriverEndLocation = async () => {
     const paymentAdminDiscount = bookingDetails?.paymentDetails?.adminDiscount || {};
     const visibleAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
         ? (
+            bookingDetails?.currentAdminDiscount ||
             bookingDetails?.paymentDetails?.adminDiscount ||
             bookingDetails?.adminDiscount ||
             adminDiscountMeta ||
