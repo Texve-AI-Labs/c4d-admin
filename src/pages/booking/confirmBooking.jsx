@@ -773,11 +773,9 @@ const handleSaveDriverEndLocation = async () => {
     const visibleAdminDiscountType = String(visibleAdminDiscount?.discountType || "").toUpperCase();
     const visibleAdminDiscountValue = Number(visibleAdminDiscount?.discountValue || 0);
     const visibleAdminDiscountAmount = Number(visibleAdminDiscount?.discountAmount || 0);
-    const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountType === "PERCENTAGE"
-        ? (visibleAdminDiscountAmount > 0
-            ? visibleAdminDiscountAmount
-            : totalEstimatedFareAfterSystemDiscount * (visibleAdminDiscountValue / 100))
-        : Number(visibleAdminDiscount?.discountAmount || 0);
+    const adminDiscountBaseAmount = Number(bookingDetails?.value?.fareBreakdown?.total ?? bookingDetails?.estimatedFareBreakdown?.total ?? bookingDetails?.value?.estimatedPrice ?? quoteEstimatedPrice ?? 0);
+    const adminDiscountAmountFallback = visibleAdminDiscountType === "PERCENTAGE" && visibleAdminDiscountValue > 0 ? adminDiscountBaseAmount * (visibleAdminDiscountValue / 100) : 0;
+    const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountAmount > 0 ? visibleAdminDiscountAmount : adminDiscountAmountFallback;
     const finalEstimatedFareAfterAdminDiscount = Math.max(
         0,
         totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal
@@ -2311,14 +2309,14 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         </>)}
 
                                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
-                                            adminDiscountEffective &&
+                                            visibleAdminDiscountStatus &&
                                             visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex flex-col-2 gap-2">
                                                     <span className="text-gray-500 font-semibold">Admin Discount Applied</span>
                                                     <span className="text-gray-900 font-medium">
                                                         {shouldHideDashFallback ? "-" : `(${visibleAdminDiscountType === "PERCENTAGE"
-                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Math.round(Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2))}`
                                                             : `₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
                                                         })`}
                                                     </span>
@@ -2800,7 +2798,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 }
                                 {(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW || quoteCancelChargeApplicable) && (
                                     <>
-                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountValue > 0 && (
+                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountStatus && visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex justify-between my-1">
                                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Percentage:</Typography>

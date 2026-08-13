@@ -1340,7 +1340,7 @@ if (!statusFilter.includes('All')) {
 
                                                 <th
                                                     key={el}
-                                                    className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}
+                                                    className={`border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap ${ColorStyles.bgColor}`}
                                                 >
                                                     {el === "Service Type" && type === "" ? (
                                                         <FilterPopover
@@ -1357,7 +1357,7 @@ if (!statusFilter.includes('All')) {
                                                     ) : el === "Created Date" ? (
                                                         <th
                                                             onClick={() => handleSort('created_at')}
-                                                            className="border-blue-gray-50 py-3 text-left cursor-pointer flex items-center"
+                                                            className="border-blue-gray-50 py-3 text-left cursor-pointer flex items-center whitespace-nowrap"
                                                         >
                                                             <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
                                                                 Created Date
@@ -1698,13 +1698,13 @@ if (!statusFilter.includes('All')) {
                                                                 {data?.sourceType ? data?.sourceType : '-'}
                                                             </Typography>
                                                         </td> */}
-                                                        <td className={className}>
+                                                        <td className={`${className} whitespace-nowrap`}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {/* {formatDate(data?.fromDate) HH:mm:ss.SSSZ} */}
                                                                 {moment(data?.fromDate).format('DD-MM-YYYY / hh:mm A')}
                                                             </Typography>
                                                         </td>
-                                                        <td className={className}>
+                                                        <td className={`${className} whitespace-nowrap`}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {moment(data?.created_at).format('DD-MM-YYYY / hh:mm A')}
                                                             </Typography>
