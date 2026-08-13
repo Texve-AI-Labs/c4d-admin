@@ -7,7 +7,7 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import FinanceSubscriptionTabs from "@/pages/finance/components/FinanceSubscriptionTabs";
 
 const SERVICE_TYPE_LABELS = {
-  DRIVER: "Driver",
+  ACTING_DRIVER: "Driver",
   RIDES_RENTAL_CABS: "Rides/Rental Cabs",
   AUTO: "Auto",
   BIKE: "Bike",
