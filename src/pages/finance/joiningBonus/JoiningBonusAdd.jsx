@@ -16,7 +16,7 @@ const initialValues = {
 };
 
 const SERVICE_TYPE_OPTIONS = [
-  { value: "DRIVER", label: "Driver" },
+  { value: "ACTING_DRIVER", label: "Driver" },
   { value: "RIDES_RENTAL_CABS", label: "Rides/Rental Cabs" },
   { value: "AUTO", label: "Auto" },
   { value: "BIKE", label: "Bike" },
