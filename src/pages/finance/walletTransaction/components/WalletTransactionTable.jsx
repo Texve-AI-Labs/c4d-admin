@@ -59,7 +59,9 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
                 <td className="p-3 text-sm whitespace-nowrap">{isInProgress ? (item?.paymentEligibilityReason ?? "-") : "-"}</td> */}
                 <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.walletBalanceBefore)}</td>
                 <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.amount)}</td>
+                {(item.status === 'PAID') ? (
                 <td className="p-3 text-sm whitespace-nowrap font-bold">{formatCurrency(item?.walletBalanceAfter)}</td>
+                ) : '-'}
                 <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.createdAt)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
                   <span className='inline-flex rounded-full border px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold'>{processedByLabel}</span>
