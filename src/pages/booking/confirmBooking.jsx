@@ -20,6 +20,7 @@ import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import {fetchAdminDiscountStatusSafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
+import { shouldAutoFetchAdminDiscountStatus } from "./utils/adminDiscountFetch";
 
 const ADMIN_PENDING_STATUS = "PENDING";
 const ADMIN_EFFECTIVE_STATUSES = ["APPROVED", "AUTO_APPROVED"];
@@ -891,16 +892,24 @@ const handleSaveDriverEndLocation = async () => {
 
     useEffect(() => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
-        const quoteRef = bookingDetails?.quoteRef || paramsPassed?.quoteRef;
-        const bookingId = bookingDetails?.id || paramsPassed?.bookingId;
-        const hasVisibleStatus =
-            String(bookingDetails?.paymentDetails?.adminDiscount?.status || "").trim() ||
-            String(bookingDetails?.adminDiscount?.status || "").trim() ||
-            String(adminDiscountMeta?.status || "").trim();
-        if ((quoteRef || bookingId) && !hasVisibleStatus) {
+        if (shouldAutoFetchAdminDiscountStatus({
+            bookingDetails,
+            paramsPassed,
+            adminDiscountMetaStatus: adminDiscountMeta?.status,
+            paymentAdminDiscountStatus: bookingDetails?.paymentDetails?.adminDiscount?.status,
+            adminDiscountStatus: bookingDetails?.adminDiscount?.status,
+        })) {
             fetchAdminDiscountStatus({ silent: true });
         }
-    }, [bookingDetails?.quoteRef, bookingDetails?.id]);
+    }, [
+        bookingDetails?.quoteRef,
+        bookingDetails?.id,
+        bookingDetails?.status,
+        bookingDetails?.serviceType,
+        bookingDetails?.paymentDetails?.adminDiscount?.status,
+        bookingDetails?.adminDiscount?.status,
+        adminDiscountMeta?.status,
+    ]);
     const cancelTripFare = Number(bookingDetails?.paymentDetails?.details?.cancelCharge || 0);
     const gstAmount = Number(
         bookingDetails?.paymentDetails?.details?.gstAmount ??
