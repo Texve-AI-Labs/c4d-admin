@@ -20,6 +20,7 @@ import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import {fetchAdminDiscountStatusSafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
+import { shouldAutoFetchAdminDiscountStatus } from "./utils/adminDiscountFetch";
 
 const ADMIN_PENDING_STATUS = "PENDING";
 const ADMIN_EFFECTIVE_STATUSES = ["APPROVED", "AUTO_APPROVED"];
@@ -721,6 +722,7 @@ const handleSaveDriverEndLocation = async () => {
     const paymentAdminDiscount = bookingDetails?.paymentDetails?.adminDiscount || {};
     const visibleAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
         ? (
+            bookingDetails?.currentAdminDiscount ||
             bookingDetails?.paymentDetails?.adminDiscount ||
             bookingDetails?.adminDiscount ||
             adminDiscountMeta ||
@@ -771,11 +773,9 @@ const handleSaveDriverEndLocation = async () => {
     const visibleAdminDiscountType = String(visibleAdminDiscount?.discountType || "").toUpperCase();
     const visibleAdminDiscountValue = Number(visibleAdminDiscount?.discountValue || 0);
     const visibleAdminDiscountAmount = Number(visibleAdminDiscount?.discountAmount || 0);
-    const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountType === "PERCENTAGE"
-        ? (visibleAdminDiscountAmount > 0
-            ? visibleAdminDiscountAmount
-            : totalEstimatedFareAfterSystemDiscount * (visibleAdminDiscountValue / 100))
-        : Number(visibleAdminDiscount?.discountAmount || 0);
+    const adminDiscountBaseAmount = Number(bookingDetails?.value?.fareBreakdown?.total ?? bookingDetails?.estimatedFareBreakdown?.total ?? bookingDetails?.value?.estimatedPrice ?? quoteEstimatedPrice ?? 0);
+    const adminDiscountAmountFallback = visibleAdminDiscountType === "PERCENTAGE" && visibleAdminDiscountValue > 0 ? adminDiscountBaseAmount * (visibleAdminDiscountValue / 100) : 0;
+    const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountAmount > 0 ? visibleAdminDiscountAmount : adminDiscountAmountFallback;
     const finalEstimatedFareAfterAdminDiscount = Math.max(
         0,
         totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal
@@ -891,16 +891,24 @@ const handleSaveDriverEndLocation = async () => {
 
     useEffect(() => {
         if (!BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW) return;
-        const quoteRef = bookingDetails?.quoteRef || paramsPassed?.quoteRef;
-        const bookingId = bookingDetails?.id || paramsPassed?.bookingId;
-        const hasVisibleStatus =
-            String(bookingDetails?.paymentDetails?.adminDiscount?.status || "").trim() ||
-            String(bookingDetails?.adminDiscount?.status || "").trim() ||
-            String(adminDiscountMeta?.status || "").trim();
-        if ((quoteRef || bookingId) && !hasVisibleStatus) {
+        if (shouldAutoFetchAdminDiscountStatus({
+            bookingDetails,
+            paramsPassed,
+            adminDiscountMetaStatus: adminDiscountMeta?.status,
+            paymentAdminDiscountStatus: bookingDetails?.paymentDetails?.adminDiscount?.status,
+            adminDiscountStatus: bookingDetails?.adminDiscount?.status,
+        })) {
             fetchAdminDiscountStatus({ silent: true });
         }
-    }, [bookingDetails?.quoteRef, bookingDetails?.id]);
+    }, [
+        bookingDetails?.quoteRef,
+        bookingDetails?.id,
+        bookingDetails?.status,
+        bookingDetails?.serviceType,
+        bookingDetails?.paymentDetails?.adminDiscount?.status,
+        bookingDetails?.adminDiscount?.status,
+        adminDiscountMeta?.status,
+    ]);
     const cancelTripFare = Number(bookingDetails?.paymentDetails?.details?.cancelCharge || 0);
     const gstAmount = Number(
         bookingDetails?.paymentDetails?.details?.gstAmount ??
@@ -1030,9 +1038,8 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
     const extraHoursCharge = Number(bookingDetails?.finalFareBreakdown?.extraHours?.charge || bookingDetails?.extraPrice || 0);
     const isDropTaxiBooking = (booking) => (booking?.serviceType === 'RENTAL' && booking?.bookingType === 'DROP ONLY' && booking?.packageType ==='Outstation') || booking?.serviceType === 'RENTAL_DROP_TAXI';
     const isOutstationBooking = (booking) => booking?.serviceType === 'RENTAL' && booking?.packageType === 'Outstation' && booking?.bookingType === 'ROUND TRIP';
-    const isQuotedWithoutCarType = (booking) => booking?.status === BOOKING_STATUS.QUOTED && (booking?.carType === '' || booking?.carType == null);
-    const shouldShowQuotePricing = (booking) => !isQuotedWithoutCarType(booking);
     const isHourlyShowingPrice = (booking) => booking?.serviceType === 'RENTAL' && booking?.packageType === 'Local';
+    const shouldHideDashFallback = (bookingDetails?.status === BOOKING_STATUS.QUOTED && String(bookingDetails?.source) === "Mobile App" && (bookingDetails?.carType === null));
     const hasPreferredBaseFare = bookingDetails?.finalFareBreakdown?.baseFare !== undefined && bookingDetails?.finalFareBreakdown?.baseFare !== null;
     const preferredBaseFare = Number(bookingDetails?.finalFareBreakdown?.baseFare || 0);
     const fallbackBaseFare = Number(bookingDetails?.value?.fareBreakdown?.baseFare || 0);
@@ -1055,8 +1062,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
         (
             bookingDetails?.serviceType === 'AUTO' ||
             bookingDetails?.serviceType === 'RIDES' ||
-            bookingDetails?.serviceType === 'BIKE' ||
-            shouldShowQuotePricing(bookingDetails)
+            bookingDetails?.serviceType === 'BIKE'
         );
     const hourlyPackageBaseFare = isHourlyShowingPrice(bookingDetails)
         // ? Number(bookingDetails?.estimatedFareBreakdown?.distanceFare?.rate || 0)
@@ -1790,7 +1796,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Per Km Rate:</span>
                                 <span className="text-gray-900 font-medium">
-                                    {bookingDetails?.estimatedFareBreakdown?.ratePerKm ? `₹${bookingDetails?.estimatedFareBreakdown?.ratePerKm}` : 'N/A'}
+                                    {shouldHideDashFallback ? "-" : bookingDetails?.estimatedFareBreakdown?.ratePerKm ? `₹${bookingDetails?.estimatedFareBreakdown?.ratePerKm}` : 'N/A'}
                                 </span>
                             </div>
                             }
@@ -1854,26 +1860,26 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                               {baseFareToShow > 0 &&  bookingDetails?.serviceType === 'AUTO' &&  (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Base Fare:</span>
-                                    <span className="text-gray-900 font-medium">₹ {baseFareToShow}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${baseFareToShow}`}</span>
                                 </div>
                             )}
                              {baseFareToShow > 0 &&  bookingDetails?.serviceType === 'BIKE' &&  (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Base Fare:</span>
-                                    <span className="text-gray-900 font-medium">₹ {baseFareToShow}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${baseFareToShow}`}</span>
                                 </div>
                             )}
                                     {isHourlyShowingPrice(bookingDetails) && hourlyPackagePerKm !== null && hourlyPackagePerKm !== undefined && (
                                         <div className="flex gap-2">
                                             <span className="text-gray-500 font-semibold">Per KM Rate:</span>
-                                            <span className="text-gray-900 font-medium">₹ {Number(hourlyPackagePerKm).toFixed(2)}</span>
+                                            <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${Number(hourlyPackagePerKm).toFixed(2)}`}</span>
                                         </div>
                                     )}
                             
                               {shouldShowPerKmRate && (
                              <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Per KM Rate:</span>
-                                    <span className="text-gray-900 font-medium">₹ {perKmShow}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${perKmShow}`}</span>
                                 </div>
                                 )}
                                  
@@ -1932,16 +1938,16 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 </div>
                             }
                            
-                            {baseFareToShow > 0 && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && shouldShowQuotePricing(bookingDetails) && !isHourlyShowingPrice(bookingDetails) && (
+                            {baseFareToShow > 0 && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Base Fare:</span>
-                                    <span className="text-gray-900 font-medium">₹ {baseFareToShow}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${baseFareToShow}`}</span>
                                 </div>
                             )}
                             {isHourlyShowingPrice(bookingDetails) && hourlyPackageBaseFare > 0 && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Base Fare:</span>
-                                    <span className="text-gray-900 font-medium">₹ {hourlyPackageBaseFare}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${hourlyPackageBaseFare}`}</span>
                                 </div>
                             )}
                         
@@ -1976,7 +1982,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     
                              <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-medium">₹ {getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}`}</span>
                                 </div>
                                 
                                 )}
@@ -1984,7 +1990,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Estimated Price:</span>
                                 <span className="text-gray-900 font-medium">
-                                    {bookingDetails?.estimatedFareBreakdown?.total ? `₹${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || 0)).toFixed(2)}` : 'N/A'}
+                                    {shouldHideDashFallback ? "-" : bookingDetails?.estimatedFareBreakdown?.total ? `₹${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || 0)).toFixed(2)}` : 'N/A'}
                                 </span>
                             </div>
                             }
@@ -1992,64 +1998,64 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     
                              <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-medium">₹ {getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}`}</span>
                                 </div>
                                 
                                 )}
-                                 {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'AUTO' &&  bookingDetails?.status !== "END_OTP" && bookingDetails?.status !== "ENDED"  && shouldShowQuotePricing(bookingDetails)  &&(
+                                 {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'AUTO' &&  bookingDetails?.status !== "END_OTP" && bookingDetails?.status !== "ENDED"  &&(
                                         <div className="flex flex-col-2 gap-2">
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                            <span className="text-gray-900 font-medium">{bookingDetails?.discount?.percentage} %</span>
+                                            <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${bookingDetails?.discount?.percentage}`} %</span>
                                         </div>
                                         )}
-                                {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !== "END_OTP" && bookingDetails?.status !== "ENDED"  && shouldShowQuotePricing(bookingDetails)  &&(                  
+                                {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !== "END_OTP" && bookingDetails?.status !== "ENDED"  &&(                  
                                         <div className="flex flex-col-2 gap-2">
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                            <span className="text-gray-900 font-medium">{bookingDetails?.discount?.percentage} %</span>
+                                            <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `${bookingDetails?.discount?.percentage}`} %</span>
                                         </div>
                                         )}
-                                         {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'AUTO' && bookingDetails?.status !=="DRIVER_ON_THE_WAY"&& bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP" && shouldShowQuotePricing(bookingDetails) &&(
+                                         {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'AUTO' && bookingDetails?.status !=="DRIVER_ON_THE_WAY"&& bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP" &&(
                                           <div className="flex flex-col-2 gap-2">  
                                         <span className="text-gray-500 font-semibold">Total estimated Fare:</span>
-                                                <span className="text-gray-900 font-medium">₹ {Number(
+                                                <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Number(
                                                     (bookingDetails?.value?.estimatedPrice || 0) -
                                                     ((bookingDetails?.value?.estimatedPrice || 0) * (bookingDetails?.discount?.percentage || 0) / 100)
                                                 ).toFixed(2)}</span>
                                             </div>
                                         )}
-                                         {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !=="DRIVER_ON_THE_WAY"&& bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP" && shouldShowQuotePricing(bookingDetails) &&(
+                                         {bookingDetails?.discount?.percentage > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !=="DRIVER_ON_THE_WAY"&& bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP" &&(
                                           <div className="flex flex-col-2 gap-2">  
                                         <span className="text-gray-500 font-semibold">Total estimated Fare:</span>
-                                                <span className="text-gray-900 font-medium">₹ {Number(
+                                                <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Number(
                                                     (bookingDetails?.value?.estimatedPrice || 0) -
                                                     ((bookingDetails?.value?.estimatedPrice || 0) * (bookingDetails?.discount?.percentage || 0) / 100)
                                                 ).toFixed(2)}</span>
                                             </div>
                                         )}
-                                         {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'AUTO' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"  && shouldShowQuotePricing(bookingDetails)  &&(
+                                         {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'AUTO' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"  &&(
                                              <div  className="flex flex-col-2 gap-2">                                                                       
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                            <span className="text-gray-900 font-medium">₹ {bookingDetails?.discount?.amount} </span>
+                                            <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : bookingDetails?.discount?.amount} </span>
                                             </div>
                                         )}
-                                         {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"  && shouldShowQuotePricing(bookingDetails)  &&(
+                                         {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"  &&(
                                              <div  className="flex flex-col-2 gap-2">                                                                       
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                            <span className="text-gray-900 font-medium">₹ {bookingDetails?.discount?.amount} </span>
+                                            <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : bookingDetails?.discount?.amount} </span>
                                             </div>
                                         )}
-                                        {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'AUTO' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"&& shouldShowQuotePricing(bookingDetails) &&(
+                                        {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'AUTO' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"&&(
                                           <div className="flex flex-col-2 gap-2">  
                                         <span className="text-gray-500 font-semibold">Total estimated Fare:</span>
-                                                <span className="text-gray-900 font-medium">₹ {Number(
+                                                <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Number(
                                                     (bookingDetails?.value?.estimatedPrice || 0) - (bookingDetails?.discount?.amount || 0)
                                                 ).toFixed(2)}</span>
                                             </div>
                                         )}
-                                {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"&& shouldShowQuotePricing(bookingDetails) &&(
+                                {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType === 'BIKE' && bookingDetails?.status !== "ENDED" && bookingDetails?.status !== "END_OTP"&&(
                                           <div className="flex flex-col-2 gap-2">  
                                         <span className="text-gray-500 font-semibold">Total estimated Fare:</span>
-                                                <span className="text-gray-900 font-medium">₹ {Number(
+                                                <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Number(
                                                     (bookingDetails?.value?.estimatedPrice || 0) - (bookingDetails?.discount?.amount || 0)
                                                 ).toFixed(2)}</span>
                                             </div>
@@ -2063,7 +2069,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             {bookingDetails?.estimatedFareBreakdown?.primeLocation?.charge > 0 && 
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Prime Location Charge:</span>
-                                    <span className="text-gray-900 font-medium">₹ {(Number(bookingDetails?.estimatedFareBreakdown?.primeLocation?.charge)).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" :(Number(bookingDetails?.estimatedFareBreakdown?.primeLocation?.charge)).toFixed(2)}</span>
                                 </div>
                             }
                             {/* {bookingDetails?.serviceType === 'RIDES' && bookingDetails?.value?.distanceEstimated > 0 && (
@@ -2087,11 +2093,11 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     {/* </div> */}
                             {/* need to add logic for price */}
                     {/* <div className="grid sm:grid-cols-2 gap-4 text-sm">                                         */}
-                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.serviceType !== 'PARCEL' && shouldShowQuotePricing(bookingDetails)  && (                            
+                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.serviceType !== 'PARCEL' && (                            
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
-                                        ₹ {getSafePremiumEstimatedPrice(Number(
+                                        {shouldHideDashFallback ? "-" : `₹ ${getSafePremiumEstimatedPrice(Number(
                                             (bookingDetails?.serviceType === 'DRIVER' && bookingDetails?.packageType === 'Local'
                                                 ? bookingDetails?.carType === "Sedan"
                                                     ? bookingDetails?.Package?.price
@@ -2111,7 +2117,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                                     : bookingDetails?.Package?.price 
                                                     )
                                                     : bookingDetails?.value?.fareBreakdown?.total) || 0
-                                        )).toFixed(2)}
+                                        )).toFixed(2)}`}
                                     </span>
                                 </div>
                             )}
@@ -2126,13 +2132,13 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Wallet Amount:</span>
-                                    <span className="text-gray-900 font-medium">₹ {displayWalletAmount.toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayWalletAmount.toFixed(2)}`}</span>
                                 </div>
                             )}
                             {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total After Wallet:</span>
-                                    <span className="text-gray-900 font-medium">₹ {displayQuoteTotalAfterWallet.toFixed(2)}</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayQuoteTotalAfterWallet.toFixed(2)}`}</span>
                                 </div>
                             )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
@@ -2141,7 +2147,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
-                                        ₹ {getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}
+                                        {shouldHideDashFallback ? "-" : `₹ ${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}`}
                                     </span>
                                 </div>
                             )}
@@ -2158,21 +2164,21 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                         <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.totalPrice || 0).toFixed(2)}</span>
                                     </div>
                                 )}
-                                {bookingDetails?.discount?.percentage > 0 && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && shouldShowQuotePricing(bookingDetails) && (
+                                {bookingDetails?.discount?.percentage > 0 && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && (
                                     <>
                                     {bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' && (
                                         <div className="flex flex-col-2 gap-2">
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                            <span className="text-gray-900 font-medium">{bookingDetails?.discount?.percentage} %</span>
+                                            <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `${bookingDetails?.discount?.percentage}`} %</span>
                                         </div>
                                     )}
                                     {bookingDetails?.status !== 'PAYMENT_REQUESTED'&&bookingDetails?.status !== 'ENDED'&&bookingDetails?.status !== 'END_OTP' && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && (
                                         bookingDetails?.serviceType !== 'RIDES' ||  ( bookingDetails?.serviceType === 'RIDES' && !['END_OTP', 'ENDED'].includes(bookingDetails?.status) )
-                                        )  && shouldShowQuotePricing(bookingDetails) && (
+                                        )  && (
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Total estimated Fare:</span>
                                                 <span className="text-gray-900 font-medium">
-                                                    ₹ {(() => {
+                                                    {shouldHideDashFallback ? "-" : (() => {
                                                         let basePrice;
                                                         const discountPercentage = bookingDetails?.discount?.percentage || 0;
 
@@ -2204,17 +2210,17 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Total{inclTaxLabel}:</span>
                                                 <span className="text-gray-900 font-medium">
-                                                    ₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0))}
+                                                    {shouldHideDashFallback ? "-" : `₹ ${Math.round(Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0))}`}
                                                 </span>
                                             </div>
                                         )}
                                     </>
                                 )}
                               
-                                {bookingDetails?.paymentDetails?.details?.discountAmount > 0 && bookingDetails?.status !=="ENDED" && bookingDetails?.status !== 'END_OTP' && shouldShowQuotePricing(bookingDetails) &&(
+                                {bookingDetails?.paymentDetails?.details?.discountAmount > 0 && bookingDetails?.status !=="ENDED" && bookingDetails?.status !== 'END_OTP' &&(
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                        <span className="text-gray-900 font-medium">  ₹ {bookingDetails?.paymentDetails?.details?.discountAmount} </span>
+                                        <span className="text-gray-900 font-medium">  {shouldHideDashFallback ? "-" : `₹ ${bookingDetails?.paymentDetails?.details?.discountAmount}`} </span>
                                 </div>
                                 )} 
                                 {bookingDetails?.status === BOOKING_STATUS.ENDED && (
@@ -2223,19 +2229,19 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {bookingDetails?.totalPrice > 0  && bookingDetails?.serviceType !== 'DRIVER' && (
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold"> Trip Fare:</span>
-                                        <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.totalPrice || 0).toFixed(2)}</span>
+                                        <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Number(bookingDetails?.totalPrice || 0).toFixed(2)}</span>
                                     </div>
                                 )}
                                  {bookingDetails?.totalPrice > 0 && bookingDetails?.serviceType === 'DRIVER' && (
                                     <div className="flex flex-col-2 gap-2">
                                        <span className="text-gray-500 font-semibold"> {bookingDetails?.toDate ? 'Price:' : 'Package Price:'}</span>
-                                        <span className="text-gray-900 font-medium">₹ {Number(bookingDetails?.totalPrice || 0).toFixed(2)}</span>
+                                        <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Number(bookingDetails?.totalPrice || 0).toFixed(2)}</span>
                                     </div>
                                 )}
                                  {bookingDetails?.paymentDetails?.details?.walletAmountUsed !== 0 && bookingDetails?.paymentDetails?.details?.walletAmountUsed &&
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Wallet Points Used:</span>
-                                        <span className="text-gray-900 font-medium">₹ {Math.round(Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0))}</span>
+                                        <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : Math.round(Number(bookingDetails?.paymentDetails?.details?.walletAmountUsed || 0))}</span>
                                     </div>
                                 }
 
@@ -2244,32 +2250,32 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {bookingDetails?.paymentDetails?.details?.discountPercentage > 0 && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.status !=='ENDED' && bookingDetails?.status !== 'END_OTP' && (
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                        <span className="text-gray-900 font-medium">{bookingDetails?.paymentDetails?.details?.discountPercentage} %</span>
+                                        <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : bookingDetails?.paymentDetails?.details?.discountPercentage} %</span>
                                 </div>
                                 )}                                                                                                                         
                         </>)}
                         {(bookingDetails?.paymentDetails?.details?.discountPercentage || 0) > 0 && (
                                         <div className="flex flex-col-2 gap-2">
                                             <span className="text-gray-500 font-semibold">Discount Percentage :</span>
-                                            <span className="text-gray-900 font-semibold">{Number(bookingDetails?.paymentDetails?.details?.discountPercentage || 0).toFixed(2)}%</span>
+                                            <span className="text-gray-900 font-semibold">{shouldHideDashFallback ? "-" : Number(bookingDetails?.paymentDetails?.details?.discountPercentage || 0).toFixed(2)}%</span>
                                         </div>
                                     )}
                                             {bookingDetails?.paymentDetails?.details?.discountAmount > 0  && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' &&(
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Total Discount Applied:</span>
-                                        <span className="text-gray-900 font-medium">  ₹ {bookingDetails?.paymentDetails?.details?.discountAmount} </span>
+                                        <span className="text-gray-900 font-medium">  ₹ {shouldHideDashFallback ? "-" : bookingDetails?.paymentDetails?.details?.discountAmount} </span>
                                 </div>
                                 )}
-                         {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' && shouldShowQuotePricing(bookingDetails) &&(
+                         {bookingDetails?.discount?.amount > 0 &&  bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' &&(
                                              <div  className="flex flex-col-2 gap-2">                                                                       
                                             <span className="text-gray-500 font-semibold">Discount Applied:</span>
-                                            <span className="text-gray-900 font-medium">₹ {bookingDetails?.discount?.amount} </span>
+                                            <span className="text-gray-900 font-medium">₹ {shouldHideDashFallback ? "-" : bookingDetails?.discount?.amount} </span>
                                             </div>
                                         )}
-                                        {bookingDetails?.discount?.amount > 0  && bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' &&  bookingDetails?.serviceType !== 'AUTO' && !isHourlyShowingPrice(bookingDetails)&& shouldShowQuotePricing(bookingDetails) && (
+                                        {bookingDetails?.discount?.amount > 0  && bookingDetails?.status !== 'ENDED' && bookingDetails?.status !== 'END_OTP' &&  bookingDetails?.serviceType !== 'AUTO' && !isHourlyShowingPrice(bookingDetails)&& (
                                           <div className="flex flex-col-2 gap-2">  
                                         <span className="text-gray-500 font-semibold">Total estimated Fare:</span>
-                                        <span className="text-gray-900 font-medium">₹ {Number(
+                                        <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : "₹ " + Number(
                                             (bookingDetails?.value?.estimatedPrice || 0) - (bookingDetails?.discount?.amount || 0)
                                         ).toFixed(2)}</span>
                                             </div>
@@ -2287,13 +2293,13 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 {finalPaymentPirces.customerWalledUsed > 0 && (
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Customer Wallet Points Used:</span>
-                                        <span className="text-gray-900 font-medium">{finalPaymentPirces.customerWalledUsed}</span>
+                                        <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : finalPaymentPirces.customerWalledUsed}</span>
                                     </div>
                                 )}
                                 {/* {finalPaymentPirces.driverWalletAdded > 0 && (
                                     <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Driver Wallet Points Added:</span>
-                                        <span className="text-gray-900 font-medium">{finalPaymentPirces.driverWalletAdded}</span>
+                                        <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : finalPaymentPirces.driverWalletAdded}</span>
                                     </div>
                                 )} */}
                                 <div className="flex flex-col-2 gap-2">
@@ -2303,16 +2309,16 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         </>)}
 
                                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
-                                            adminDiscountEffective &&
+                                            visibleAdminDiscountStatus &&
                                             visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex flex-col-2 gap-2">
                                                     <span className="text-gray-500 font-semibold">Admin Discount Applied</span>
                                                     <span className="text-gray-900 font-medium">
-                                                        ({visibleAdminDiscountType === "PERCENTAGE"
-                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                        {shouldHideDashFallback ? "-" : `(${visibleAdminDiscountType === "PERCENTAGE"
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Math.round(Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2))}`
                                                             : `₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
-                                                        })
+                                                        })`}
                                                     </span>
                                                 </div>
                                                 {Number(systemDiscountAmount || 0) > 0 && (
@@ -2320,35 +2326,35 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                         <div className="flex flex-col-2 gap-2">
                                                             <span className="text-gray-500 font-semibold">System Discount Applied:</span>
                                                             <span className="text-gray-900 font-medium">
-                                                                {systemDiscountType === "PERCENTAGE"
+                                                                {shouldHideDashFallback ? "-" : (systemDiscountType === "PERCENTAGE"
                                                                     ? `${systemDiscountValue.toFixed(2)} %`
                                                                     : `₹ ${Math.round(systemDiscountValue)}`
-                                                                }
+                                                                )}
                                                             </span>
                                                         </div>
                                                         <div className="flex flex-col-2 gap-2">
                                                             <span className="text-gray-500 font-semibold">System Discount Amount:</span>
-                                                            <span className="text-gray-900 font-medium">₹ {Number(systemDiscountAmount || 0).toFixed(2)}</span>
+                                                            <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${Number(systemDiscountAmount || 0).toFixed(2)}`}</span>
                                                         </div>
                                                     </>
                                                 )}
                                             </>
                                         )}
-                                        {quoteCancelChargeApplicable && shouldShowQuotePricing(bookingDetails) && (
+                                        {quoteCancelChargeApplicable && (
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">Cancel Charge Added:</span>
                                                 <span className="text-gray-900 font-medium">
-                                                    ₹ {Math.round(Number(quoteCancelChargeAmount || 0))} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
+                                                    ₹ {shouldHideDashFallback ? "-" : Math.round(Number(quoteCancelChargeAmount || 0))} ({quoteCancelChargePaid ? "Paid" : "Unpaid"})
                                                 </span>
                                         </div>
                                     )}
                                     {displayCollectedAmount > 0 && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total Collected Amount {inclTaxLabel}:</span>
-                                    <span className="text-gray-900 font-semibold">₹ {Number(displayCollectedAmount || 0).toFixed(2)}</span>
+                                    <span className="text-gray-900 font-semibold">{shouldHideDashFallback ? "-" : `₹ ${Number(displayCollectedAmount || 0).toFixed(2)}`}</span>
                                 </div>
                                     )}
-                                        {/* {shouldShowQuotePricing(bookingDetails) && (
+                                        {/* {
                                             <div className="flex flex-col-2 gap-2">
                                                 <span className="text-gray-500 font-semibold">{finalTotalLabel}</span>
                                                 <span className="text-gray-900 font-medium">
@@ -2792,7 +2798,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 }
                                 {(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW || quoteCancelChargeApplicable) && (
                                     <>
-                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountValue > 0 && (
+                                        {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && visibleAdminDiscountStatus && visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex justify-between my-1">
                                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Percentage:</Typography>
@@ -2816,7 +2822,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                         </div>
                                                         <div className="flex justify-between my-1">
                                                             <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">System Discount Amount:</Typography>
-                                                            <Typography className="text-sm text-black font-medium">₹ {Number(systemDiscountAmount || 0).toFixed(2)}</Typography>
+                                                            <Typography className="text-sm text-black font-medium">{shouldHideDashFallback ? "-" : `₹ ${Number(systemDiscountAmount || 0).toFixed(2)}`}</Typography>
                                                         </div>
                                                     </>
                                                 )}

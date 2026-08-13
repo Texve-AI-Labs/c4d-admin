@@ -5,6 +5,14 @@ import { UserIcon } from '@heroicons/react/24/solid';
 import moment from "moment";
 import { Typography } from '@material-tailwind/react';
 
+const formatStatusLabel = (value) => {
+  if (!value) return 'N/A';
+  return String(value)
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
   const [text, setText] = useState('');
   const [noteType, setNoteType] = useState('')
@@ -453,19 +461,19 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
                   <>
                     Customer Trip Status changed from{' '}
                     <span className="font-medium text-primary-600">{
-                    log?.old_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.old_status || 'N/A'}</span>{' '}
+                    formatStatusLabel(log?.old_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.old_status)}</span>{' '}
                     to{' '}
-                    <span className="font-medium text-green-600">{log?.new_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.new_status || 'N/A'}</span>
+                    <span className="font-medium text-green-600">{formatStatusLabel(log?.new_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.new_status)}</span>
                         </>
                       ) : (
                         <>
                           Follow-up Status changed from{" "}
                           <span className="font-medium text-primary-600">
-                            {log?.previousStatus === "NONE" ? "QUOTED" : log?.previousStatus || "N/A"}
+                            {formatStatusLabel(log?.previousStatus === "NONE" ? "QUOTED" : log?.previousStatus)}
                           </span>{" "}
                           to{" "}
                           <span className="font-medium text-green-600">
-                            {log?.newStatus === "NONE" ? "QUOTED" : log?.newStatus || "N/A"}
+                            {formatStatusLabel(log?.newStatus === "NONE" ? "QUOTED" : log?.newStatus)}
                           </span>
                   </>
                 )}

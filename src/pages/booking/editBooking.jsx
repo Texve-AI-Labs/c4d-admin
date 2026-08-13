@@ -355,7 +355,7 @@ const EditBooking = (props) => {
             }));
             const response = await ApiRequestUtils.post(API_ROUTES.POST_QUOTATION_LOG, updatedLogs);
             if (response?.success) {
-                console.log('Quotation logs sent successfully:', response);
+                // console.log('Quotation logs sent successfully:', response);
                 setQuotationLogs([]);
             } else {
                 console.error('Failed to send quotation logs:', response?.message);
