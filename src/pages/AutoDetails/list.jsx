@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import moment from "moment";
 import { FaFilter } from "react-icons/fa";
+import { safeText } from "@/utils/text";
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -316,23 +317,23 @@ export function AutoDetailsList({ id = 0 }) {
                     ({ id, driverName, name, vehicleType, carType, type, assigned,firstName,driverAddress,curAddress,Account, autoNumber, Drivers, subscriptionStatus, phoneNumber,status, created_at }) => (                      
                     <tr key={id}>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{Drivers[0]?.firstName || driverName || Account?.name || ''}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Drivers[0]?.firstName || driverName || Account?.name || '')}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold">{name}</Typography>
+                        <Typography className="text-xs font-semibold">{safeText(name)}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{Drivers?.[0]?.phoneNumber?.name || Drivers?.[0]?.phoneNumber || phoneNumber || "-"}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Drivers?.[0]?.phoneNumber?.name || Drivers?.[0]?.phoneNumber || phoneNumber || "-")}</Typography>
                       </td>
                       {/* <td className="py-3 px-5 border-b border-blue-gray-50">
                         <Typography className="text-xs font-semibold text-blue-gray-600">{carType}</Typography>
                       </td> */}
                       <td className="py-3 px-5 border-b border-blue-gray-50">
-                        <Typography className="text-xs font-semibold text-blue-gray-600">{autoNumber}</Typography>
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(autoNumber)}</Typography>
                       </td>
                         <td className="py-3 px-5 border-b border-blue-gray-50">
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {Drivers?.[0]?.curAddress?.name || Drivers?.[0]?.curAddress ||  driverAddress || curAddress || 'N/A'}
+                              {safeText(Drivers?.[0]?.curAddress?.name || Drivers?.[0]?.curAddress ||  driverAddress || curAddress || 'N/A')}
                           </Typography>
                         </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
