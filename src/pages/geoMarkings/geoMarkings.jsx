@@ -99,6 +99,7 @@ const GeoMarkings = () => {
           {...tabProps}
           handleZoneSave={handleZoneSave}
           zones={zones}
+          onSaveSuccess={() => setActiveTab('zones')}
         />
       ),
     },

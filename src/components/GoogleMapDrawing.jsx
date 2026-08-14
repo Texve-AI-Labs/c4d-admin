@@ -49,11 +49,13 @@ const GoogleMapDrawing = ({
   existingPolygonStyles = [],
   focusPolygons = [],
   initialPolygon = [],
+  editablePolygonIndex = null,
   onPolygonComplete,
   onPolygonUpdate,
   onPolygonDelete,
   mapHeight = '500px',
-  showDrawingManager = false
+  showDrawingManager = false,
+  isEditingExistingPolygon = false
 }) => {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_SIT,
@@ -65,6 +67,7 @@ const GoogleMapDrawing = ({
   const polygonRefs = useRef([]);
   const [draftPath, setDraftPath] = useState([]);
   const [completedPath, setCompletedPath] = useState([]);
+  const hasEditablePolygon = isEditingExistingPolygon && Array.isArray(initialPolygon) && initialPolygon.length >= 3;
 
   const onMapLoad = useCallback((map) => {
     setMap(map);
@@ -172,11 +175,11 @@ const GoogleMapDrawing = ({
   }, [showDrawingManager, map]);
 
   useEffect(() => {
-    if (showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length >= 3) {
+    if (showDrawingManager && !hasEditablePolygon && Array.isArray(initialPolygon) && initialPolygon.length >= 3) {
       setDraftPath(initialPolygon);
       setCompletedPath([]);
     }
-  }, [initialPolygon, showDrawingManager]);
+  }, [initialPolygon, showDrawingManager, hasEditablePolygon]);
 
   useEffect(() => {
     return () => {
@@ -185,11 +188,11 @@ const GoogleMapDrawing = ({
   }, []);
 
   const handleMapClick = useCallback((event) => {
-    if (!showDrawingManager || !event?.latLng) return;
+    if (!showDrawingManager || hasEditablePolygon || !event?.latLng) return;
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
     setDraftPath((prev) => [...prev, { lat, lng }]);
-  }, [showDrawingManager]);
+  }, [showDrawingManager, hasEditablePolygon]);
 
   const handleUndoPoint = useCallback(() => {
     setDraftPath((prev) => prev.slice(0, -1));
@@ -237,7 +240,7 @@ const GoogleMapDrawing = ({
 
   return (
     <div className="space-y-2">
-      {showDrawingManager && (
+      {showDrawingManager && !hasEditablePolygon && (
         <div className="bg-blue-gray-50 p-3 rounded-lg text-sm text-blue-gray-700">
           <p className="font-medium">Drawing Instructions:</p>
           <ol className="list-decimal ml-4 mt-1 space-y-1">
@@ -256,7 +259,7 @@ const GoogleMapDrawing = ({
           onLoad={onMapLoad}
           onClick={handleMapClick}
         >
-          {isMapLoaded && showDrawingManager && completedPath.length > 0 && draftPath.length === 0 && (
+          {isMapLoaded && showDrawingManager && !hasEditablePolygon && completedPath.length > 0 && draftPath.length === 0 && (
             <Polygon
               path={completedPath}
               options={{
@@ -267,7 +270,7 @@ const GoogleMapDrawing = ({
             />
           )}
 
-          {isMapLoaded && showDrawingManager && draftPath.length > 0 && (
+          {isMapLoaded && showDrawingManager && !hasEditablePolygon && draftPath.length > 0 && (
             <Polygon
               path={draftPath}
               options={{
@@ -278,13 +281,29 @@ const GoogleMapDrawing = ({
             />
           )}
 
-          {isMapLoaded && !showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length > 0 && (
+          {isMapLoaded && (!showDrawingManager || hasEditablePolygon) && Array.isArray(initialPolygon) && initialPolygon.length > 0 && (
             <Polygon
               path={initialPolygon}
               options={{
                 ...polygonOptions,
-                editable: false,
-                draggable: false,
+                editable: hasEditablePolygon,
+                draggable: hasEditablePolygon,
+                zIndex: hasEditablePolygon ? 3 : 1,
+              }}
+              onLoad={polygon => {
+                if (hasEditablePolygon) {
+                  polygonRefs.current[0] = polygon;
+                }
+              }}
+              onMouseUp={() => {
+                if (hasEditablePolygon && polygonRefs.current[0]) {
+                  handlePolygonPathChange(polygonRefs.current[0], 0);
+                }
+              }}
+              onDragEnd={() => {
+                if (hasEditablePolygon && polygonRefs.current[0]) {
+                  handlePolygonPathChange(polygonRefs.current[0], 0);
+                }
               }}
             />
           )}
@@ -308,38 +327,60 @@ const GoogleMapDrawing = ({
             ) : null
           ))}
 
-          {isMapLoaded && existingPolygons.map((polygonCoords, index) => (
+          {isMapLoaded && existingPolygons.map((polygonCoords, index) => {
+            const isEditablePolygon = editablePolygonIndex === index;
+            if (isEditablePolygon) return null;
+
+            return (
+              <Polygon
+                key={index}
+                path={polygonCoords}
+                options={{
+                  ...polygonOptions,
+                  ...(existingPolygonStyles[index] || {}),
+                  editable: false,
+                  draggable: false,
+                  zIndex: 2,
+                }}
+                onRightClick={() => handlePolygonDelete(index)}
+              />
+            );
+          })}
+
+          {isMapLoaded && editablePolygonIndex !== null && Array.isArray(existingPolygons[editablePolygonIndex]) && existingPolygons[editablePolygonIndex].length > 0 && (
             <Polygon
-              key={index}
-              path={polygonCoords}
+              key={`editable-${editablePolygonIndex}`}
+              path={existingPolygons[editablePolygonIndex]}
               options={{
                 ...polygonOptions,
-                ...(existingPolygonStyles[index] || {}),
-                zIndex: 2,
+                ...(existingPolygonStyles[editablePolygonIndex] || {}),
+                editable: true,
+                draggable: true,
+                zIndex: 3,
               }}
-              onLoad={polygon => {
-                polygonRefs.current[index] = polygon;
+              onLoad={(polygon) => {
+                polygonRefs.current[editablePolygonIndex] = polygon;
               }}
               onMouseUp={() => {
-                if (polygonRefs.current[index]) {
-                  handlePolygonPathChange(polygonRefs.current[index], index);
+                if (polygonRefs.current[editablePolygonIndex]) {
+                  handlePolygonPathChange(polygonRefs.current[editablePolygonIndex], editablePolygonIndex);
                 }
               }}
               onDragEnd={() => {
-                if (polygonRefs.current[index]) {
-                  handlePolygonPathChange(polygonRefs.current[index], index);
+                if (polygonRefs.current[editablePolygonIndex]) {
+                  handlePolygonPathChange(polygonRefs.current[editablePolygonIndex], editablePolygonIndex);
                 }
               }}
               onChange={() => {
-                if (polygonRefs.current[index]) {
-                  handlePolygonPathChange(polygonRefs.current[index], index);
+                if (polygonRefs.current[editablePolygonIndex]) {
+                  handlePolygonPathChange(polygonRefs.current[editablePolygonIndex], editablePolygonIndex);
                 }
               }}
-              onRightClick={() => handlePolygonDelete(index)}
+              onRightClick={() => handlePolygonDelete(editablePolygonIndex)}
             />
-          ))}
+          )}
         </GoogleMap>
-        {showDrawingManager && (
+        {showDrawingManager && !hasEditablePolygon && (
           <div className="absolute right-3 top-3 z-10 flex gap-2 rounded-lg bg-white/95 p-2 shadow-md">
             <button type="button" className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white" onClick={handleFinishDraft}>
               Finish Drawing

@@ -441,7 +441,7 @@ const ServiceAreaForm = ({
 
       await onSave(payload);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to save service area');
     } finally {
       setIsSubmittingFull(false);
     }

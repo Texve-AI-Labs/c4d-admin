@@ -24,6 +24,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
   const [nameError, setNameError] = useState(null);
   const [descriptionError, setDescriptionError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
 
   const handleConfigChange = (field, value) => {
     // Convert to number and validate
@@ -45,6 +46,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     setError(null);
     setNameError(null);
     setDescriptionError(null);
+    setSaveStatus('');
 
     let hasError = false;
 
@@ -93,17 +95,20 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     }
 
     setIsSubmitting(true);
+    setSaveStatus('Saving zone...');
 
     try {
-      onSave({
+      await onSave({
         ...formData,
         coordinates,
         parent_id: serviceAreaId,
         type: 'Zone'
       });
+      setSaveStatus('Zone updated successfully');
     } catch (err) {
       console.log(err);
-      setError(err.message);
+      setError(err?.message || 'Failed to save zone');
+      setSaveStatus('');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,6 +122,11 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
       {error && (
         <Alert color="red" className="mb-4">
           {error}
+        </Alert>
+      )}
+      {saveStatus && !error && (
+        <Alert color="blue" className="mb-4">
+          {saveStatus}
         </Alert>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
