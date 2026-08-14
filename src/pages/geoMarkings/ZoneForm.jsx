@@ -25,6 +25,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
   const [descriptionError, setDescriptionError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const hasValidCoordinates = Array.isArray(coordinates) && coordinates.length >= 3;
 
   const handleConfigChange = (field, value) => {
     // Convert to number and validate
@@ -118,6 +119,9 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     <Card className="p-4 mt-4">
       <Typography variant="h6" color="blue-gray" className="mb-4">
         Zone Details
+      </Typography>
+      <Typography variant="small" color="gray" className="mb-3 block">
+        Draw the polygon on the map, click Finish Drawing, then save this zone.
       </Typography>
       {error && (
         <Alert color="red" className="mb-4">
@@ -293,10 +297,15 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
         <Button 
           type="submit" 
           className="mt-6"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !hasValidCoordinates}
         >
           {isSubmitting ? 'Saving...' : (initialData ? 'Update' : 'Save')} Zone
         </Button>
+        {!hasValidCoordinates && (
+          <Typography variant="small" color="red" className="mt-1">
+            Finish drawing the polygon before saving.
+          </Typography>
+        )}
       </form>
     </Card>
   );

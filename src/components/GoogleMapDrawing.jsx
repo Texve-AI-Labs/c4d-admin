@@ -51,6 +51,7 @@ const GoogleMapDrawing = ({
   initialPolygon = [],
   editablePolygonIndex = null,
   onPolygonComplete,
+  onDraftChange,
   onPolygonUpdate,
   onPolygonDelete,
   mapHeight = '500px',
@@ -68,6 +69,7 @@ const GoogleMapDrawing = ({
   const [draftPath, setDraftPath] = useState([]);
   const [completedPath, setCompletedPath] = useState([]);
   const hasEditablePolygon = isEditingExistingPolygon && Array.isArray(initialPolygon) && initialPolygon.length >= 3;
+  const isCreateMode = showDrawingManager && !hasEditablePolygon;
 
   const onMapLoad = useCallback((map) => {
     setMap(map);
@@ -191,17 +193,32 @@ const GoogleMapDrawing = ({
     if (!showDrawingManager || hasEditablePolygon || !event?.latLng) return;
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
-    setDraftPath((prev) => [...prev, { lat, lng }]);
-  }, [showDrawingManager, hasEditablePolygon]);
+    setDraftPath((prev) => {
+      const next = [...prev, { lat, lng }];
+      if (onDraftChange) {
+        onDraftChange(next);
+      }
+      return next;
+    });
+  }, [showDrawingManager, hasEditablePolygon, onDraftChange]);
 
   const handleUndoPoint = useCallback(() => {
-    setDraftPath((prev) => prev.slice(0, -1));
+    setDraftPath((prev) => {
+      const next = prev.slice(0, -1);
+      if (onDraftChange) {
+        onDraftChange(next);
+      }
+      return next;
+    });
   }, []);
 
   const handleClearDraft = useCallback(() => {
     setDraftPath([]);
     setCompletedPath([]);
-  }, []);
+    if (onDraftChange) {
+      onDraftChange([]);
+    }
+  }, [onDraftChange]);
 
   const handleFinishDraft = useCallback(() => {
     if (draftPath.length < 3) {
@@ -214,6 +231,9 @@ const GoogleMapDrawing = ({
     }
     setCompletedPath(draftPath);
     setDraftPath([]);
+    if (onDraftChange) {
+      onDraftChange(draftPath);
+    }
   }, [draftPath, onPolygonComplete]);
 
   if (loadError) {
@@ -240,7 +260,7 @@ const GoogleMapDrawing = ({
 
   return (
     <div className="space-y-2">
-      {showDrawingManager && !hasEditablePolygon && (
+      {isCreateMode && (
         <div className="bg-blue-gray-50 p-3 rounded-lg text-sm text-blue-gray-700">
           <p className="font-medium">Drawing Instructions:</p>
           <ol className="list-decimal ml-4 mt-1 space-y-1">
@@ -251,6 +271,11 @@ const GoogleMapDrawing = ({
         </div>
       )}
       <div style={{ height: mapHeight }} className="w-full relative">
+        {isCreateMode && (
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-md">
+            Draw Tool Active
+          </div>
+        )}
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
           center={center}
@@ -259,7 +284,7 @@ const GoogleMapDrawing = ({
           onLoad={onMapLoad}
           onClick={handleMapClick}
         >
-          {isMapLoaded && showDrawingManager && !hasEditablePolygon && completedPath.length > 0 && draftPath.length === 0 && (
+          {isMapLoaded && isCreateMode && completedPath.length > 0 && draftPath.length === 0 && (
             <Polygon
               path={completedPath}
               options={{
@@ -270,7 +295,7 @@ const GoogleMapDrawing = ({
             />
           )}
 
-          {isMapLoaded && showDrawingManager && !hasEditablePolygon && draftPath.length > 0 && (
+          {isMapLoaded && isCreateMode && draftPath.length > 0 && (
             <Polygon
               path={draftPath}
               options={{
@@ -338,6 +363,7 @@ const GoogleMapDrawing = ({
                 options={{
                   ...polygonOptions,
                   ...(existingPolygonStyles[index] || {}),
+                  clickable: !isCreateMode,
                   editable: false,
                   draggable: false,
                   zIndex: 2,
@@ -354,6 +380,7 @@ const GoogleMapDrawing = ({
               options={{
                 ...polygonOptions,
                 ...(existingPolygonStyles[editablePolygonIndex] || {}),
+                clickable: false,
                 editable: true,
                 draggable: true,
                 zIndex: 3,
@@ -381,7 +408,11 @@ const GoogleMapDrawing = ({
           )}
         </GoogleMap>
         {showDrawingManager && !hasEditablePolygon && (
-          <div className="absolute right-3 top-3 z-10 flex gap-2 rounded-lg bg-white/95 p-2 shadow-md">
+          <div className="absolute right-3 top-3 z-10 flex flex-col gap-2 rounded-xl bg-white/95 p-3 shadow-md">
+            <div className="text-xs font-medium text-blue-gray-700">
+              Click on the map to add points
+            </div>
+            <div className="flex gap-2">
             <button type="button" className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white" onClick={handleFinishDraft}>
               Finish Drawing
             </button>
@@ -391,6 +422,7 @@ const GoogleMapDrawing = ({
             <button type="button" className="rounded-md bg-red-100 px-3 py-2 text-sm font-medium text-red-700" onClick={handleClearDraft}>
               Clear
             </button>
+            </div>
           </div>
         )}
       </div>

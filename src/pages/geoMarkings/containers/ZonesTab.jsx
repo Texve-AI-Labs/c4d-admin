@@ -22,11 +22,6 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
   const [selectedDescription, setSelectedDescription] = useState('');
-  const selectedZoneRecord = useMemo(() => {
-    const source = selectedItem ? updatedZones : zones;
-    return source.find((zone) => String(zone?.id) === String(selectedItem?.id)) || null;
-  }, [selectedItem, updatedZones, zones]);
-  const activeZoneId = selectedItem?.id ?? selectedZoneRecord?.id ?? null;
   const normalizeZoneType = (value) => String(value || '').trim().toLowerCase();
   const getOverlapType = (value) => {
     const type = normalizeZoneType(value);
@@ -35,6 +30,11 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     if (type === 'zone') return 'zone';
     return '';
   };
+  const selectedZoneRecord = useMemo(() => {
+    return zones.find((zone) => String(zone?.id) === String(selectedItem?.id)) || null;
+  }, [selectedItem, zones]);
+  const activeZoneId = selectedItem?.id ?? selectedZoneRecord?.id ?? null;
+  const activeZoneType = getOverlapType(selectedItem?.description || selectedZoneRecord?.description);
   const findOverlappingZone = (candidateCoordinates, overlapType) => {
     if (!overlapType) return null;
     return zones
@@ -67,8 +67,8 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const focusZonePolygons = zones
     .filter((zone) => !selectedDescription || String(zone?.description || '').trim().toLowerCase() === selectedDescription)
     .map((zone) => zone.coordinates);
-  const isOverlappingAnyOtherZone = (candidateCoordinates) => {
-    return !!findOverlappingZone(candidateCoordinates, getOverlapType(selectedItem?.description));
+  const isOverlappingAnyOtherZone = (candidateCoordinates, overlapType = activeZoneType) => {
+    return !!findOverlappingZone(candidateCoordinates, overlapType);
   };
   const isServiceAreaRecord = (area) => {
     const type = String(area?.type || '').trim().toLowerCase();
@@ -168,6 +168,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setSelectedPolygon(null);
     setSelectedItem(null);
     setCoordinates(null);
+    setError(null);
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -179,27 +180,31 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setSelectedItem(null);
     setCoordinates(null);
     setSelectedDescription('');
+    setError(null);
   };
 
   const handlePolygonUpdate = (newCoordinates, index) => {
-    const overlappingZone = selectedItem && index === 0
-      ? findOverlappingZone(newCoordinates, getOverlapType(selectedItem?.description))
-      : null;
+    const overlappingZone = index === 0 ? findOverlappingZone(newCoordinates, activeZoneType) : null;
     if (overlappingZone) {
       setError(
-        `This zone overlaps an existing zone${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}`,
+        `This ${overlappingZone?.description || activeZoneType || 'zone'} overlaps an existing ${overlappingZone?.description || activeZoneType || 'zone'}${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}`,
       );
-    } else {
-      setError(null);
+      return;
     }
-    setUpdatedZones(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        coordinates: newCoordinates
-      };
-      return updated;
-    });
+    setError(null);
+    if (selectedItem) {
+      setUpdatedZones((prev) => {
+        const updated = [...prev];
+        const selectedIndex = updated.findIndex((zone) => String(zone.id) === String(selectedItem.id));
+        if (selectedIndex !== -1) {
+          updated[selectedIndex] = {
+            ...updated[selectedIndex],
+            coordinates: newCoordinates,
+          };
+        }
+        return updated;
+      });
+    }
     setCoordinates(newCoordinates);
   };
 
@@ -219,11 +224,10 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         selectedServiceArea,
         coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
       });
-      const overlapType = getOverlapType(formData?.description || selectedItem?.description);
-      const selectedIndex = zones.findIndex((zone) => zone.id === selectedItem?.id);
+      const overlapType = getOverlapType(formData?.description || selectedItem?.description || activeZoneType);
+      const selectedIndex = zones.findIndex((zone) => String(zone.id) === String(selectedItem?.id));
       const candidateCoordinates =
         coordinates ||
-        updatedZones[selectedIndex]?.coordinates ||
         selectedZoneRecord?.coordinates ||
         [];
       const {
@@ -268,18 +272,16 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       }
 
       if (selectedItem) {
-        if (selectedIndex !== -1) {
-          console.log('ZonesTab updating zone', selectedItem.id);
-          const response = await ApiRequestUtils.update(`${API_ROUTES.GEO_MARKINGS}/${selectedItem.id}`, {
-            ...selectedItemRest,
-            ...sanitizedZonePayload,
-          });
-          
-          if (!response?.success) {
-            throw new Error(response?.message || 'Failed to update zone');
-          }
-          console.log('ZonesTab update response', response);
+        console.log('ZonesTab updating zone', selectedItem.id);
+        const response = await ApiRequestUtils.update(`${API_ROUTES.GEO_MARKINGS}/${selectedItem.id}`, {
+          ...selectedItemRest,
+          ...sanitizedZonePayload,
+        });
+
+        if (!response?.success) {
+          throw new Error(response?.message || 'Failed to update zone');
         }
+        console.log('ZonesTab update response', response);
       } else {
         console.log('ZonesTab creating zone');
         const response = await ApiRequestUtils.post(API_ROUTES.GEO_MARKINGS, {
@@ -295,6 +297,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       setShowDrawingManager(false);
       setIsCreating(false);
       setCoordinates(null);
+      setSelectedItem(null);
       await fetchZones();
       handleCancel();
       if (typeof onSaveSuccess === 'function') {
@@ -309,7 +312,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     const index = zones.findIndex(z => z.id === zone.id);
     setSelectedItem(zone);
     setShowForm(true);
-    setCoordinates(updatedZones[index]?.coordinates || zone.coordinates || []);
+    setCoordinates(zone.coordinates || []);
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -337,6 +340,14 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     }
     setError(null);
     setCoordinates(nextCoordinates);
+  };
+
+  const handleDraftChange = (coords) => {
+    if (selectedItem) return;
+    const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
+    if (!Array.isArray(nextCoordinates)) return;
+    setCoordinates(nextCoordinates);
+    setError(null);
   };
 
   const handleServiceAreaChange = (value) => {
@@ -410,6 +421,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
           <div className="h-[500px] w-full">
             <GoogleMapDrawing
               onPolygonComplete={handlePolygonComplete}
+              onDraftChange={handleDraftChange}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
               backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
@@ -418,7 +430,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
               existingPolygonStyles={visibleZonePolygonStyles}
               focusPolygons={focusZonePolygons}
               showDrawingManager={showDrawingManager}
-              initialPolygon={selectedItem ? coordinates : coordinates}
+              initialPolygon={coordinates || []}
               editablePolygonIndex={editablePolygonIndex}
               isEditingExistingPolygon={!!selectedItem}
               mapHeight="500px"
