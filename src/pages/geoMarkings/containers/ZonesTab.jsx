@@ -36,6 +36,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   }, [selectedItem, zones]);
   const activeZoneId = selectedItem?.id ?? selectedZoneRecord?.id ?? null;
   const activeZoneType = getOverlapType(selectedItem?.description || selectedZoneRecord?.description);
+  const activeDraftType = getOverlapType(selectedDescription || selectedItem?.description || 'zone');
   const findOverlappingZone = (candidateCoordinates, overlapType) => {
     if (!overlapType) return null;
     return zones
@@ -186,8 +187,8 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setSessionMode('view');
   };
 
-  const handlePolygonUpdate = (newCoordinates, index) => {
-    const overlappingZone = index === 0 ? findOverlappingZone(newCoordinates, activeZoneType) : null;
+  const handlePolygonUpdate = (newCoordinates) => {
+    const overlappingZone = findOverlappingZone(newCoordinates, selectedItem ? activeZoneType : activeDraftType);
     if (overlappingZone) {
       setError(
         `This ${overlappingZone?.description || activeZoneType || 'zone'} overlaps an existing ${overlappingZone?.description || activeZoneType || 'zone'}${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}`,
@@ -337,7 +338,8 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
 
   const handlePolygonComplete = (coords) => {
     const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
-    if (isOverlappingAnyOtherZone(nextCoordinates)) {
+    const overlapType = selectedItem ? activeZoneType : activeDraftType;
+    if (isOverlappingAnyOtherZone(nextCoordinates, overlapType)) {
       setError('This zone overlaps an existing zone');
       setCoordinates(null);
       return;
@@ -350,6 +352,10 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     if (selectedItem) return;
     const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
     if (!Array.isArray(nextCoordinates)) return;
+    if (isOverlappingAnyOtherZone(nextCoordinates, activeDraftType)) {
+      setError('This zone overlaps an existing zone');
+      return;
+    }
     setCoordinates(nextCoordinates);
     setError(null);
   };
@@ -376,8 +382,14 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       setShowForm(true);
       setShowDrawingManager(true);
     }
-    if (tool === 'edit' && !selectedItem && coordinates && coordinates.length >= 3) {
-      setSessionMode('edit');
+    if (tool === 'edit') {
+      setSessionMode(selectedItem ? 'edit' : 'create');
+      if (!showForm) {
+        setShowForm(true);
+      }
+      if (!showDrawingManager) {
+        setShowDrawingManager(true);
+      }
     }
   };
 
