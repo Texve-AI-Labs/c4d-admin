@@ -205,6 +205,8 @@ const ZonesTab = () => {
 
   const selectedServiceAreaName =
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.name || '';
+  const selectedServiceAreaPolygon =
+    serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.coordinates || [];
 
   // Show create/edit form with map
   if (isCreating || selectedItem) {
@@ -231,8 +233,8 @@ const ZonesTab = () => {
               onPolygonComplete={handlePolygonComplete}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
+              backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
               existingPolygons={selectedItem ? updatedZones.map(zone => zone.coordinates) : []}
-              hideExistingPolygons={!selectedItem}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"
@@ -342,7 +344,7 @@ const ZonesTab = () => {
                     variant="text"
                     onClick={() => setDeleteDialog({ open: true, item: zone })}
                   >
-                    <TrashIcon className="h-4 w-4" />
+                    {/* <TrashIcon className="h-4 w-4" /> */}
                   </IconButton>
                 </div>
               </div>

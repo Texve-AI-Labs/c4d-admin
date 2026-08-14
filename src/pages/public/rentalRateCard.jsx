@@ -215,7 +215,7 @@ export function RentalTariffRateCard() {
             <div className="p-6 text-center text-sm text-blue-gray-500">No tariff data available.</div>
           )}
           {!loading && !error && hasData && (
-            <div className="max-h-[70vh] overflow-y-auto">
+            <div className="max-h-[70vh] overflow-y-auto mt-4">
               <table className="w-full min-w-[640px] table-auto border-collapse">
                 <thead class="sticky top-0 z-40">{tableHeadings}</thead>
                 <tbody>

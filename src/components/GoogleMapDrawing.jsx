@@ -43,6 +43,7 @@ const polygonOptions = {
 const GoogleMapDrawing = ({
   center = defaultCenter,
   zoom = 12,
+  backgroundPolygons = [],
   existingPolygons = [],
   initialPolygon = [],
   onPolygonComplete,
@@ -259,11 +260,32 @@ const GoogleMapDrawing = ({
             />
           )}
 
+          {isMapLoaded && Array.isArray(backgroundPolygons) && backgroundPolygons.map((polygonCoords, index) => (
+            Array.isArray(polygonCoords) && polygonCoords.length > 0 ? (
+              <Polygon
+                key={`background-${index}`}
+                path={polygonCoords}
+                options={{
+                  ...polygonOptions,
+                  fillOpacity: 0.18,
+                  strokeWeight: 3,
+                  clickable: false,
+                  editable: false,
+                  draggable: false,
+                  zIndex: 0,
+                }}
+              />
+            ) : null
+          ))}
+
           {isMapLoaded && existingPolygons.map((polygonCoords, index) => (
             <Polygon
               key={index}
               path={polygonCoords}
-              options={{ ...polygonOptions }}
+              options={{
+                ...polygonOptions,
+                zIndex: 2,
+              }}
               onLoad={polygon => {
                 polygonRefs.current[index] = polygon;
               }}
