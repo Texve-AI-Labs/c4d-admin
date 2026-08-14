@@ -24,6 +24,8 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
   const [nameError, setNameError] = useState(null);
   const [descriptionError, setDescriptionError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
+  const hasValidCoordinates = Array.isArray(coordinates) && coordinates.length >= 3;
 
   const handleConfigChange = (field, value) => {
     // Convert to number and validate
@@ -45,6 +47,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     setError(null);
     setNameError(null);
     setDescriptionError(null);
+    setSaveStatus('');
 
     let hasError = false;
 
@@ -93,17 +96,20 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     }
 
     setIsSubmitting(true);
+    setSaveStatus('Saving zone...');
 
     try {
-      onSave({
+      await onSave({
         ...formData,
         coordinates,
         parent_id: serviceAreaId,
         type: 'Zone'
       });
+      setSaveStatus('Zone updated successfully');
     } catch (err) {
       console.log(err);
-      setError(err.message);
+      setError(err?.message || 'Failed to save zone');
+      setSaveStatus('');
     } finally {
       setIsSubmitting(false);
     }
@@ -114,9 +120,17 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
       <Typography variant="h6" color="blue-gray" className="mb-4">
         Zone Details
       </Typography>
+      <Typography variant="small" color="gray" className="mb-3 block">
+        Draw the polygon on the map, click Finish Drawing, then save this zone.
+      </Typography>
       {error && (
         <Alert color="red" className="mb-4">
           {error}
+        </Alert>
+      )}
+      {saveStatus && !error && (
+        <Alert color="blue" className="mb-4">
+          {saveStatus}
         </Alert>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -283,10 +297,15 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
         <Button 
           type="submit" 
           className="mt-6"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !hasValidCoordinates}
         >
           {isSubmitting ? 'Saving...' : (initialData ? 'Update' : 'Save')} Zone
         </Button>
+        {!hasValidCoordinates && (
+          <Typography variant="small" color="red" className="mt-1">
+            Finish drawing the polygon before saving.
+          </Typography>
+        )}
       </form>
     </Card>
   );

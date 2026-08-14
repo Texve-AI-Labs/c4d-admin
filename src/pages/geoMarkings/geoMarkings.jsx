@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, Tab, TabsHeader, TabsBody, TabPanel, Typography } from '@material-tailwind/react';
 import ServiceAreasTab from './containers/ServiceAreasTab';
 import ZonesTab from './containers/ZonesTab';
+import { ApiRequestUtils } from '@/utils/apiRequestUtils';
+import { API_ROUTES } from '@/utils/constants';
 
 const GeoMarkings = () => {
   const [activeTab, setActiveTab] = useState('serviceAreas');
@@ -12,8 +14,26 @@ const GeoMarkings = () => {
   const [selectedPolygon, setSelectedPolygon] = useState(null);
 
   useEffect(() => {
-    // TODO: Fetch existing service areas and zones from API
-    // This is where you'll make API calls to get the data
+    const fetchGeoMarkings = async () => {
+      try {
+        const [serviceAreasResponse, zonesResponse] = await Promise.all([
+          ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: 'Service Area' }),
+          ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: 'Zone' }),
+        ]);
+
+        if (serviceAreasResponse?.success) {
+          setServiceAreas(Array.isArray(serviceAreasResponse.data) ? serviceAreasResponse.data : []);
+        }
+
+        if (zonesResponse?.success) {
+          setZones(Array.isArray(zonesResponse.data) ? zonesResponse.data : []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch geo markings:', error);
+      }
+    };
+
+    fetchGeoMarkings();
   }, []);
 
   const handlePolygonComplete = (coordinates) => {
@@ -79,6 +99,7 @@ const GeoMarkings = () => {
           {...tabProps}
           handleZoneSave={handleZoneSave}
           zones={zones}
+          onSaveSuccess={() => setActiveTab('zones')}
         />
       ),
     },

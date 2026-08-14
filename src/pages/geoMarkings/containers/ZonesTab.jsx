@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Button, IconButton, Dialog, DialogBody, DialogFooter, DialogHeader, Select, Option } from '@material-tailwind/react';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ZoneForm from '../ZoneForm';
 import GoogleMapDrawing from '../../../components/GoogleMapDrawing';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
+import { polygonsOverlap } from '../utils/geoPolygonUtils';
 
-const ZonesTab = () => {
+const ZonesTab = ({ onSaveSuccess } = {}) => {
   const [showForm, setShowForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [showDrawingManager, setShowDrawingManager] = useState(false);
@@ -21,6 +22,56 @@ const ZonesTab = () => {
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
   const [selectedDescription, setSelectedDescription] = useState('');
+  const [sessionMode, setSessionMode] = useState('view');
+  const normalizeZoneType = (value) => String(value || '').trim().toLowerCase();
+  const getOverlapType = (value) => {
+    const type = normalizeZoneType(value);
+    if (type === 'city') return 'city';
+    if (type === 'prime') return 'prime';
+    if (type === 'zone') return 'zone';
+    return '';
+  };
+  const selectedZoneRecord = useMemo(() => {
+    return zones.find((zone) => String(zone?.id) === String(selectedItem?.id)) || null;
+  }, [selectedItem, zones]);
+  const activeZoneId = selectedItem?.id ?? selectedZoneRecord?.id ?? null;
+  const activeZoneType = getOverlapType(selectedItem?.description || selectedZoneRecord?.description);
+  const activeDraftType = getOverlapType(selectedDescription || selectedItem?.description || 'zone');
+  const findOverlappingZone = (candidateCoordinates, overlapType) => {
+    if (!overlapType) return null;
+    return zones
+      .filter((zone) => String(zone.id) !== String(activeZoneId))
+      .filter((zone) => getOverlapType(zone.description) === overlapType)
+      .find((zone) => {
+        const polygon = zone.coordinates;
+        return Array.isArray(polygon) && polygon.length >= 3 && polygonsOverlap(candidateCoordinates, polygon);
+      }) || null;
+  };
+  const visibleZonePolygons = zones.map((zone) => zone.coordinates);
+  const editablePolygonIndex = selectedItem
+    ? zones.findIndex((zone) => String(zone.id) === String(activeZoneId))
+    : null;
+  const visibleZonePolygonStyles = zones.map((zone, index) => {
+    const description = String(zone?.description || '').trim().toLowerCase();
+    const isSelected = !selectedDescription || selectedDescription === description;
+    const isActive = index === editablePolygonIndex;
+    if (description === 'city') {
+      return { fillColor: '#16a34a', strokeColor: '#166534', fillOpacity: isActive ? 0.55 : isSelected ? 0.42 : 0.18 };
+    }
+    if (description === 'prime') {
+      return { fillColor: '#dc2626', strokeColor: '#991b1b', fillOpacity: isActive ? 0.55 : isSelected ? 0.42 : 0.18 };
+    }
+    if (description === 'zone' || description === 'all') {
+      return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: isActive ? 0.52 : isSelected ? 0.4 : 0.16 };
+    }
+    return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: isActive ? 0.5 : 0.16 };
+  });
+  const focusZonePolygons = zones
+    .filter((zone) => !selectedDescription || String(zone?.description || '').trim().toLowerCase() === selectedDescription)
+    .map((zone) => zone.coordinates);
+  const isOverlappingAnyOtherZone = (candidateCoordinates, overlapType = activeZoneType) => {
+    return !!findOverlappingZone(candidateCoordinates, overlapType);
+  };
   const isServiceAreaRecord = (area) => {
     const type = String(area?.type || '').trim().toLowerCase();
     const description = String(area?.description || '').trim().toLowerCase();
@@ -64,6 +115,13 @@ const ZonesTab = () => {
       fetchZones();
     } else {
       setZones([]);
+      setUpdatedZones([]);
+      setSelectedItem(null);
+      setShowForm(false);
+      setIsCreating(false);
+      setShowDrawingManager(false);
+      setCoordinates(null);
+      setSelectedDescription('');
     }
   }, [selectedServiceArea]);
 
@@ -108,10 +166,12 @@ const ZonesTab = () => {
       return;
     }
     setIsCreating(true);
+    setSessionMode('create');
     setShowForm(true);
     setSelectedPolygon(null);
     setSelectedItem(null);
     setCoordinates(null);
+    setError(null);
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -123,17 +183,33 @@ const ZonesTab = () => {
     setSelectedItem(null);
     setCoordinates(null);
     setSelectedDescription('');
+    setError(null);
+    setSessionMode('view');
   };
 
-  const handlePolygonUpdate = (newCoordinates, index) => {
-    setUpdatedZones(prev => {
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        coordinates: newCoordinates
-      };
-      return updated;
-    });
+  const handlePolygonUpdate = (newCoordinates) => {
+    const overlappingZone = findOverlappingZone(newCoordinates, selectedItem ? activeZoneType : activeDraftType);
+    if (overlappingZone) {
+      setError(
+        `This ${overlappingZone?.description || activeZoneType || 'zone'} overlaps an existing ${overlappingZone?.description || activeZoneType || 'zone'}${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}`,
+      );
+      return;
+    }
+    setError(null);
+    if (selectedItem) {
+      setUpdatedZones((prev) => {
+        const updated = [...prev];
+        const selectedIndex = updated.findIndex((zone) => String(zone.id) === String(selectedItem.id));
+        if (selectedIndex !== -1) {
+          updated[selectedIndex] = {
+            ...updated[selectedIndex],
+            coordinates: newCoordinates,
+          };
+        }
+        return updated;
+      });
+    }
+    setCoordinates(newCoordinates);
   };
 
   const handlePolygonDelete = async (index) => {
@@ -147,39 +223,90 @@ const ZonesTab = () => {
 
   const handleSave = async (formData) => {
     try {
+      // console.log('ZonesTab handleSave called', {
+      //   selectedItemId: selectedItem?.id,
+      //   selectedServiceArea,
+      //   coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
+      // });
+      const overlapType = getOverlapType(formData?.description || selectedItem?.description || activeZoneType);
+      const selectedIndex = zones.findIndex((zone) => String(zone.id) === String(selectedItem?.id));
+      const candidateCoordinates =
+        coordinates ||
+        selectedZoneRecord?.coordinates ||
+        [];
+      const {
+        services,
+        quickServices,
+        parcelSubServices,
+        highlightedService,
+        driverServices,
+        newServices,
+        config_data,
+        created_at,
+        updated_at,
+        ...selectedItemRest
+      } = selectedItem || {};
+      const sanitizedZonePayload = {
+        name: formData?.name?.trim?.() || formData?.name || '',
+        description: formData?.description || selectedItem?.description || 'Zone',
+        coordinates: candidateCoordinates,
+        type: 'Zone',
+        parent_id: selectedServiceArea,
+        config_data: formData?.config_data || selectedItem?.config_data || null,
+        services: [],
+        highlightedService: [],
+        quickServices: [],
+        parcelSubServices: [],
+        driverServices: [],
+        newServices: null,
+      };
+      const overlappingZone = findOverlappingZone(candidateCoordinates, overlapType);
+      if (overlappingZone) {
+        // console.warn('ZonesTab save blocked by overlap', {
+        //   selectedItemId: selectedItem?.id,
+        //   overlappingZoneId: overlappingZone.id,
+        //   overlappingZoneName: overlappingZone.name,
+        //   overlappingZoneType: overlappingZone.type,
+        //   overlappingZoneDescription: overlappingZone.description,
+        // });
+        setError(
+          `This zone overlaps an existing zone${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}${overlappingZone?.type ? ` [${overlappingZone.type}]` : ''}`,
+        );
+        return;
+      }
+
       if (selectedItem) {
-        const index = zones.findIndex(zone => zone.id === selectedItem.id);
-        if (index !== -1) {
-          const response = await ApiRequestUtils.update(`${API_ROUTES.GEO_MARKINGS}/${selectedItem.id}`, {
-            ...selectedItem,
-            ...formData,
-            coordinates: updatedZones[index].coordinates,
-            type: 'Zone',
-            parent_id: selectedServiceArea
-          });
-          
-          if (!response?.success) {
-            throw new Error(response?.message || 'Failed to update zone');
-          }
+        // console.log('ZonesTab updating zone', selectedItem.id);
+        const response = await ApiRequestUtils.update(`${API_ROUTES.GEO_MARKINGS}/${selectedItem.id}`, {
+          ...selectedItemRest,
+          ...sanitizedZonePayload,
+        });
+
+        if (!response?.success) {
+          throw new Error(response?.message || 'Failed to update zone');
         }
+        // console.log('ZonesTab update response', response);
       } else {
+        // console.log('ZonesTab creating zone');
         const response = await ApiRequestUtils.post(API_ROUTES.GEO_MARKINGS, {
-          ...formData,
-          coordinates: coordinates,
-          type: 'Zone',
-          parent_id: selectedServiceArea
+          ...sanitizedZonePayload,
         });
         
         if (!response?.success) {
           throw new Error(response?.message || 'Failed to create zone');
         }
+        // console.log('ZonesTab create response', response);
       }
       
       setShowDrawingManager(false);
       setIsCreating(false);
       setCoordinates(null);
+      setSelectedItem(null);
       await fetchZones();
       handleCancel();
+      if (typeof onSaveSuccess === 'function') {
+        onSaveSuccess();
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -188,8 +315,9 @@ const ZonesTab = () => {
   const handleEdit = (zone) => {
     const index = zones.findIndex(z => z.id === zone.id);
     setSelectedItem(zone);
+    setSessionMode('edit');
     setShowForm(true);
-    setCoordinates(updatedZones[index].coordinates);
+    setCoordinates(zone.coordinates || []);
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -209,46 +337,73 @@ const ZonesTab = () => {
   };
 
   const handlePolygonComplete = (coords) => {
-    setCoordinates(Array.isArray(coords) ? [...coords] : coords);
+    const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
+    const overlapType = selectedItem ? activeZoneType : activeDraftType;
+    if (isOverlappingAnyOtherZone(nextCoordinates, overlapType)) {
+      setError('This zone overlaps an existing zone');
+      setCoordinates(null);
+      return;
+    }
+    setError(null);
+    setCoordinates(nextCoordinates);
+  };
+
+  const handleDraftChange = (coords) => {
+    if (selectedItem) return;
+    const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
+    if (!Array.isArray(nextCoordinates)) return;
+    if (isOverlappingAnyOtherZone(nextCoordinates, activeDraftType)) {
+      setError('This zone overlaps an existing zone');
+      return;
+    }
+    setCoordinates(nextCoordinates);
+    setError(null);
   };
 
   const handleServiceAreaChange = (value) => {
     setSelectedServiceArea(value);
     setError(null);
+    setSelectedItem(null);
+    setShowForm(false);
+    setIsCreating(false);
+    setShowDrawingManager(false);
+    setCoordinates(null);
+    setSelectedDescription('');
+    setSessionMode('view');
+  };
+
+  const handleToolChange = (tool) => {
+    if (tool === 'draw' && selectedItem) {
+      setSelectedItem(null);
+      setCoordinates(null);
+      setError(null);
+      setSessionMode('create');
+      setIsCreating(true);
+      setShowForm(true);
+      setShowDrawingManager(true);
+    }
+    if (tool === 'edit') {
+      setSessionMode(selectedItem ? 'edit' : 'create');
+      if (!showForm) {
+        setShowForm(true);
+      }
+      if (!showDrawingManager) {
+        setShowDrawingManager(true);
+      }
+    }
   };
 
   const selectedServiceAreaName =
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.name || '';
   const selectedServiceAreaPolygon =
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.coordinates || [];
-  const visibleZonePolygons = selectedItem
-    ? updatedZones.map((zone) => zone.coordinates)
-    : zones.map((zone) => zone.coordinates);
-  const visibleZonePolygonStyles = (selectedItem ? updatedZones : zones).map((zone) => {
-    const description = String(zone?.description || '').trim().toLowerCase();
-    const isSelected = !selectedDescription || selectedDescription === description;
-    if (description === 'city') {
-      return { fillColor: '#16a34a', strokeColor: '#166534', fillOpacity: isSelected ? 0.42 : 0.18 };
-    }
-    if (description === 'prime') {
-      return { fillColor: '#dc2626', strokeColor: '#991b1b', fillOpacity: isSelected ? 0.42 : 0.18 };
-    }
-    if (description === 'zone' || description === 'all') {
-      return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: isSelected ? 0.4 : 0.16 };
-    }
-    return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: 0.16 };
-  });
-  const focusZonePolygons = (selectedItem ? updatedZones : zones)
-    .filter((zone) => !selectedDescription || String(zone?.description || '').trim().toLowerCase() === selectedDescription)
-    .map((zone) => zone.coordinates);
-
   // Show create/edit form with map
   if (isCreating || selectedItem) {
     return (
       <div className="mt-4">
         <div className="flex justify-between items-center mb-4">
           <Typography variant="h5">
-            {selectedItem ? 'Edit Zone' : 'Create New Zone'}
+            {selectedItem ? 'Edit Existing Zone' : 'Create Zone'}
           </Typography>
           <Button
             color="red"
@@ -298,15 +453,20 @@ const ZonesTab = () => {
           <div className="h-[500px] w-full">
             <GoogleMapDrawing
               onPolygonComplete={handlePolygonComplete}
+              onDraftChange={handleDraftChange}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
+              onToolChange={handleToolChange}
+              initialTool={sessionMode === 'edit' ? 'edit' : 'draw'}
               backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
               backgroundPolygonStyle={{ fillColor: '#60a5fa', strokeColor: '#2563eb', fillOpacity: 0.1 }}
               existingPolygons={visibleZonePolygons}
               existingPolygonStyles={visibleZonePolygonStyles}
               focusPolygons={focusZonePolygons}
               showDrawingManager={showDrawingManager}
-              initialPolygon={selectedItem?.coordinates}
+              initialPolygon={coordinates || []}
+              editablePolygonIndex={editablePolygonIndex}
+              isEditingExistingPolygon={sessionMode === 'edit' && !!selectedItem}
               mapHeight="500px"
             />
           </div>
@@ -315,9 +475,7 @@ const ZonesTab = () => {
           <ZoneForm
             onSave={handleSave}
             initialData={selectedItem}
-            coordinates={selectedItem ? 
-              updatedZones[zones.findIndex(z => z.id === selectedItem.id)]?.coordinates 
-              : coordinates}
+            coordinates={coordinates}
             serviceAreaId={selectedServiceArea}
             serviceAreaName={selectedServiceAreaName}
           />
@@ -331,13 +489,13 @@ const ZonesTab = () => {
     <div className="mt-4">
       <div className="flex justify-between items-center mb-6">
         <Typography variant="h5">Zones</Typography>
-        <Button
-          color="blue"
-          onClick={handleCreateNew}
-          disabled={!selectedServiceArea}
-        >
-          Create New Zone
-        </Button>
+          <Button
+            color="blue"
+            onClick={handleCreateNew}
+            disabled={!selectedServiceArea}
+          >
+          Create Zone
+          </Button>
       </div>
 
       {/* Service Area Selection */}
@@ -425,7 +583,7 @@ const ZonesTab = () => {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
+      {/* <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
         <DialogHeader>Confirm Deletion</DialogHeader>
         <DialogBody>
           Are you sure you want to delete the zone "{deleteDialog.item?.name}"? This action cannot be undone.
@@ -443,7 +601,7 @@ const ZonesTab = () => {
             Delete
           </Button>
         </DialogFooter>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };
