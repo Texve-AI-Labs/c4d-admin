@@ -115,7 +115,7 @@ const ServiceAreasTab = () => {
     const index = serviceAreas.findIndex(a => a.id === area.id);
     setSelectedItem(area);
     setShowForm(true);
-    setCoordinates(updatedServiceAreas[index].coordinates); // Use updatedServiceAreas
+    setCoordinates(updatedServiceAreas[index]?.coordinates || area.coordinates || []); // Use updatedServiceAreas
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 

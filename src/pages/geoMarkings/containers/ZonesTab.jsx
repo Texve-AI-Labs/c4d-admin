@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Typography, Button, IconButton, Dialog, DialogBody, DialogFooter, DialogHeader, Select, Option } from '@material-tailwind/react';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ZoneForm from '../ZoneForm';
@@ -21,6 +21,10 @@ const ZonesTab = () => {
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
   const [selectedDescription, setSelectedDescription] = useState('');
+  const selectedZoneRecord = useMemo(() => {
+    const source = selectedItem ? updatedZones : zones;
+    return source.find((zone) => String(zone?.id) === String(selectedItem?.id)) || null;
+  }, [selectedItem, updatedZones, zones]);
   const isServiceAreaRecord = (area) => {
     const type = String(area?.type || '').trim().toLowerCase();
     const description = String(area?.description || '').trim().toLowerCase();
@@ -64,6 +68,13 @@ const ZonesTab = () => {
       fetchZones();
     } else {
       setZones([]);
+      setUpdatedZones([]);
+      setSelectedItem(null);
+      setShowForm(false);
+      setIsCreating(false);
+      setShowDrawingManager(false);
+      setCoordinates(null);
+      setSelectedDescription('');
     }
   }, [selectedServiceArea]);
 
@@ -189,7 +200,7 @@ const ZonesTab = () => {
     const index = zones.findIndex(z => z.id === zone.id);
     setSelectedItem(zone);
     setShowForm(true);
-    setCoordinates(updatedZones[index].coordinates);
+    setCoordinates(updatedZones[index]?.coordinates || zone.coordinates || []);
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -215,16 +226,21 @@ const ZonesTab = () => {
   const handleServiceAreaChange = (value) => {
     setSelectedServiceArea(value);
     setError(null);
+    setSelectedItem(null);
+    setShowForm(false);
+    setIsCreating(false);
+    setShowDrawingManager(false);
+    setCoordinates(null);
+    setSelectedDescription('');
   };
 
   const selectedServiceAreaName =
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.name || '';
   const selectedServiceAreaPolygon =
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.coordinates || [];
-  const visibleZonePolygons = selectedItem
-    ? updatedZones.map((zone) => zone.coordinates)
-    : zones.map((zone) => zone.coordinates);
-  const visibleZonePolygonStyles = (selectedItem ? updatedZones : zones).map((zone) => {
+  const visibleZoneRecords = selectedItem ? [selectedZoneRecord].filter(Boolean) : zones;
+  const visibleZonePolygons = visibleZoneRecords.map((zone) => zone.coordinates);
+  const visibleZonePolygonStyles = visibleZoneRecords.map((zone) => {
     const description = String(zone?.description || '').trim().toLowerCase();
     const isSelected = !selectedDescription || selectedDescription === description;
     if (description === 'city') {
@@ -238,7 +254,7 @@ const ZonesTab = () => {
     }
     return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: 0.16 };
   });
-  const focusZonePolygons = (selectedItem ? updatedZones : zones)
+  const focusZonePolygons = visibleZoneRecords
     .filter((zone) => !selectedDescription || String(zone?.description || '').trim().toLowerCase() === selectedDescription)
     .map((zone) => zone.coordinates);
 
@@ -315,9 +331,7 @@ const ZonesTab = () => {
           <ZoneForm
             onSave={handleSave}
             initialData={selectedItem}
-            coordinates={selectedItem ? 
-              updatedZones[zones.findIndex(z => z.id === selectedItem.id)]?.coordinates 
-              : coordinates}
+            coordinates={selectedItem ? selectedZoneRecord?.coordinates : coordinates}
             serviceAreaId={selectedServiceArea}
             serviceAreaName={selectedServiceAreaName}
           />
