@@ -223,11 +223,11 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
 
   const handleSave = async (formData) => {
     try {
-      console.log('ZonesTab handleSave called', {
-        selectedItemId: selectedItem?.id,
-        selectedServiceArea,
-        coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
-      });
+      // console.log('ZonesTab handleSave called', {
+      //   selectedItemId: selectedItem?.id,
+      //   selectedServiceArea,
+      //   coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
+      // });
       const overlapType = getOverlapType(formData?.description || selectedItem?.description || activeZoneType);
       const selectedIndex = zones.findIndex((zone) => String(zone.id) === String(selectedItem?.id));
       const candidateCoordinates =
@@ -262,13 +262,13 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       };
       const overlappingZone = findOverlappingZone(candidateCoordinates, overlapType);
       if (overlappingZone) {
-        console.warn('ZonesTab save blocked by overlap', {
-          selectedItemId: selectedItem?.id,
-          overlappingZoneId: overlappingZone.id,
-          overlappingZoneName: overlappingZone.name,
-          overlappingZoneType: overlappingZone.type,
-          overlappingZoneDescription: overlappingZone.description,
-        });
+        // console.warn('ZonesTab save blocked by overlap', {
+        //   selectedItemId: selectedItem?.id,
+        //   overlappingZoneId: overlappingZone.id,
+        //   overlappingZoneName: overlappingZone.name,
+        //   overlappingZoneType: overlappingZone.type,
+        //   overlappingZoneDescription: overlappingZone.description,
+        // });
         setError(
           `This zone overlaps an existing zone${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}${overlappingZone?.type ? ` [${overlappingZone.type}]` : ''}`,
         );
@@ -276,7 +276,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       }
 
       if (selectedItem) {
-        console.log('ZonesTab updating zone', selectedItem.id);
+        // console.log('ZonesTab updating zone', selectedItem.id);
         const response = await ApiRequestUtils.update(`${API_ROUTES.GEO_MARKINGS}/${selectedItem.id}`, {
           ...selectedItemRest,
           ...sanitizedZonePayload,
@@ -285,9 +285,9 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         if (!response?.success) {
           throw new Error(response?.message || 'Failed to update zone');
         }
-        console.log('ZonesTab update response', response);
+        // console.log('ZonesTab update response', response);
       } else {
-        console.log('ZonesTab creating zone');
+        // console.log('ZonesTab creating zone');
         const response = await ApiRequestUtils.post(API_ROUTES.GEO_MARKINGS, {
           ...sanitizedZonePayload,
         });
@@ -295,7 +295,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         if (!response?.success) {
           throw new Error(response?.message || 'Failed to create zone');
         }
-        console.log('ZonesTab create response', response);
+        // console.log('ZonesTab create response', response);
       }
       
       setShowDrawingManager(false);

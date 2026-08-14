@@ -169,7 +169,7 @@ const ServiceAreasTab = () => {
         ...updated[index],
         coordinates: newCoordinates
       };
-      console.log("updated on tab", updated);
+      // console.log("updated on tab", updated);
       return updated;
     });
     setCoordinates(newCoordinates);
