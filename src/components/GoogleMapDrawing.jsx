@@ -75,6 +75,34 @@ const GoogleMapDrawing = ({
     }
   }, [map]);
 
+  useEffect(() => {
+    if (!map || !window.google) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    const polygonsToFit = [];
+
+    if (Array.isArray(backgroundPolygons)) {
+      polygonsToFit.push(...backgroundPolygons);
+    }
+
+    if (!showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length > 0) {
+      polygonsToFit.push(initialPolygon);
+    }
+
+    polygonsToFit.forEach((polygon) => {
+      if (!Array.isArray(polygon)) return;
+      polygon.forEach((point) => {
+        if (point && typeof point.lat === 'number' && typeof point.lng === 'number') {
+          bounds.extend(point);
+        }
+      });
+    });
+
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds);
+    }
+  }, [map, backgroundPolygons, initialPolygon, showDrawingManager]);
+
   const handlePolygonComplete = useCallback((polygon) => {
     console.log('Polygon completed');
     

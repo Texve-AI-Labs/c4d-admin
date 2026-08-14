@@ -20,6 +20,15 @@ const ZonesTab = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
+  const isServiceAreaRecord = (area) => {
+    const type = String(area?.type || '').trim().toLowerCase();
+    const description = String(area?.description || '').trim().toLowerCase();
+    return type === 'service area' || description === 'service area';
+  };
+  const isZoneRecord = (zone) => {
+    const type = String(zone?.type || '').trim().toLowerCase();
+    return type === 'zone';
+  };
 
   // Fetch service areas on component mount and when tab gains focus
   useEffect(() => {
@@ -61,7 +70,8 @@ const ZonesTab = () => {
     try {
       const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {type: 'Service Area'});
       if (response?.success) {
-        setServiceAreas(response.data || []);
+        const areas = Array.isArray(response.data) ? response.data : [];
+        setServiceAreas(areas.filter(isServiceAreaRecord));
       } else {
         throw new Error(response?.message || 'Failed to fetch service areas');
       }
@@ -77,8 +87,10 @@ const ZonesTab = () => {
       setIsLoading(true);
       const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {type: 'Zone',parent_id: selectedServiceArea});
       if (response?.success) {
-        setZones(response.data || []);
-        setUpdatedZones(response.data || []);
+        const records = Array.isArray(response.data) ? response.data : [];
+        const filteredZones = records.filter(isZoneRecord);
+        setZones(filteredZones);
+        setUpdatedZones(filteredZones);
       } else {
         throw new Error(response?.message || 'Failed to fetch zones');
       }
