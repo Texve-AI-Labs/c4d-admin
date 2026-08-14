@@ -343,13 +343,13 @@ const ZonesTab = () => {
                   >
                     <PencilIcon className="h-4 w-4" />
                   </IconButton>
-                  <IconButton
+                  {/* <IconButton
                     color="red"
                     variant="text"
                     onClick={() => setDeleteDialog({ open: true, item: zone })}
                   >
-                    {/* <TrashIcon className="h-4 w-4" /> */}
-                  </IconButton>
+                    <TrashIcon className="h-4 w-4" />
+                  </IconButton> */}
                 </div>
               </div>
             </div>
