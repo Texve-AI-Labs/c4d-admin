@@ -207,6 +207,9 @@ const ZonesTab = () => {
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.name || '';
   const selectedServiceAreaPolygon =
     serviceAreas.find((area) => String(area.id) === String(selectedServiceArea))?.coordinates || [];
+  const visibleZonePolygons = selectedItem
+    ? updatedZones.map((zone) => zone.coordinates)
+    : zones.map((zone) => zone.coordinates);
 
   // Show create/edit form with map
   if (isCreating || selectedItem) {
@@ -234,7 +237,7 @@ const ZonesTab = () => {
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
               backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
-              existingPolygons={selectedItem ? updatedZones.map(zone => zone.coordinates) : []}
+              existingPolygons={visibleZonePolygons}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"
@@ -249,6 +252,7 @@ const ZonesTab = () => {
               updatedZones[zones.findIndex(z => z.id === selectedItem.id)]?.coordinates 
               : coordinates}
             serviceAreaId={selectedServiceArea}
+            serviceAreaName={selectedServiceAreaName}
           />
         )}
       </div>
