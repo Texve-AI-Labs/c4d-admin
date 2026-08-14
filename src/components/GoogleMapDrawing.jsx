@@ -44,7 +44,10 @@ const GoogleMapDrawing = ({
   center = defaultCenter,
   zoom = 12,
   backgroundPolygons = [],
+  backgroundPolygonStyle = {},
   existingPolygons = [],
+  existingPolygonStyles = [],
+  focusPolygons = [],
   initialPolygon = [],
   onPolygonComplete,
   onPolygonUpdate,
@@ -74,6 +77,39 @@ const GoogleMapDrawing = ({
       setIsMapLoaded(true);
     }
   }, [map]);
+
+  useEffect(() => {
+    if (!map || !window.google) return;
+
+    const bounds = new window.google.maps.LatLngBounds();
+    const polygonsToFit = [];
+
+    const focusSource =
+      Array.isArray(focusPolygons) && focusPolygons.length > 0
+        ? focusPolygons
+        : backgroundPolygons;
+
+    if (Array.isArray(focusSource)) {
+      polygonsToFit.push(...focusSource);
+    }
+
+    if (!showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length > 0) {
+      polygonsToFit.push(initialPolygon);
+    }
+
+    polygonsToFit.forEach((polygon) => {
+      if (!Array.isArray(polygon)) return;
+      polygon.forEach((point) => {
+        if (point && typeof point.lat === 'number' && typeof point.lng === 'number') {
+          bounds.extend(point);
+        }
+      });
+    });
+
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds);
+    }
+  }, [map, backgroundPolygons, focusPolygons, initialPolygon, showDrawingManager]);
 
   const handlePolygonComplete = useCallback((polygon) => {
     console.log('Polygon completed');
@@ -242,13 +278,6 @@ const GoogleMapDrawing = ({
             />
           )}
 
-          {isMapLoaded && showDrawingManager && draftPath.map((point, index) => (
-            <Marker
-              key={`${point.lat}-${point.lng}-${index}`}
-              position={point}
-              label={`${index + 1}`}
-            />
-          ))}
           {isMapLoaded && !showDrawingManager && Array.isArray(initialPolygon) && initialPolygon.length > 0 && (
             <Polygon
               path={initialPolygon}
@@ -267,6 +296,7 @@ const GoogleMapDrawing = ({
                 path={polygonCoords}
                 options={{
                   ...polygonOptions,
+                  ...backgroundPolygonStyle,
                   fillOpacity: 0.18,
                   strokeWeight: 3,
                   clickable: false,
@@ -284,6 +314,7 @@ const GoogleMapDrawing = ({
               path={polygonCoords}
               options={{
                 ...polygonOptions,
+                ...(existingPolygonStyles[index] || {}),
                 zIndex: 2,
               }}
               onLoad={polygon => {

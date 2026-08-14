@@ -119,6 +119,10 @@ const ServiceAreasTab = () => {
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
+  const selectedServiceAreaPolygon = selectedItem
+    ? updatedServiceAreas[serviceAreas.findIndex((area) => area.id === selectedItem.id)]?.coordinates || selectedItem.coordinates || []
+    : [];
+
 
   const handlePolygonComplete = (coords) => {
     setCoordinates(Array.isArray(coords) ? [...coords] : coords);
@@ -170,8 +174,8 @@ const ServiceAreasTab = () => {
               onPolygonComplete={handlePolygonComplete}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
-              existingPolygons={selectedItem ? updatedServiceAreas.map(area => area.coordinates) : []}
-              hideExistingPolygons={!selectedItem}
+              existingPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
+              backgroundPolygonStyle={{ fillColor: '#94a3b8', strokeColor: '#475569', fillOpacity: 0.12 }}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"
