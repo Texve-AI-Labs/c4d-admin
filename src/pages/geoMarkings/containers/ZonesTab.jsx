@@ -22,6 +22,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
   const [selectedDescription, setSelectedDescription] = useState('');
+  const [sessionMode, setSessionMode] = useState('view');
   const normalizeZoneType = (value) => String(value || '').trim().toLowerCase();
   const getOverlapType = (value) => {
     const type = normalizeZoneType(value);
@@ -164,6 +165,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       return;
     }
     setIsCreating(true);
+    setSessionMode('create');
     setShowForm(true);
     setSelectedPolygon(null);
     setSelectedItem(null);
@@ -181,6 +183,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setCoordinates(null);
     setSelectedDescription('');
     setError(null);
+    setSessionMode('view');
   };
 
   const handlePolygonUpdate = (newCoordinates, index) => {
@@ -311,6 +314,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const handleEdit = (zone) => {
     const index = zones.findIndex(z => z.id === zone.id);
     setSelectedItem(zone);
+    setSessionMode('edit');
     setShowForm(true);
     setCoordinates(zone.coordinates || []);
     setTimeout(() => setShowDrawingManager(true), 500);
@@ -359,6 +363,22 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setShowDrawingManager(false);
     setCoordinates(null);
     setSelectedDescription('');
+    setSessionMode('view');
+  };
+
+  const handleToolChange = (tool) => {
+    if (tool === 'draw' && selectedItem) {
+      setSelectedItem(null);
+      setCoordinates(null);
+      setError(null);
+      setSessionMode('create');
+      setIsCreating(true);
+      setShowForm(true);
+      setShowDrawingManager(true);
+    }
+    if (tool === 'edit' && !selectedItem && coordinates && coordinates.length >= 3) {
+      setSessionMode('edit');
+    }
   };
 
   const selectedServiceAreaName =
@@ -371,7 +391,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       <div className="mt-4">
         <div className="flex justify-between items-center mb-4">
           <Typography variant="h5">
-            {selectedItem ? 'Edit Zone' : 'Create New Zone'}
+            {selectedItem ? 'Edit Existing Zone' : 'Create Zone'}
           </Typography>
           <Button
             color="red"
@@ -424,6 +444,8 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
               onDraftChange={handleDraftChange}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
+              onToolChange={handleToolChange}
+              initialTool={sessionMode === 'edit' ? 'edit' : 'draw'}
               backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
               backgroundPolygonStyle={{ fillColor: '#60a5fa', strokeColor: '#2563eb', fillOpacity: 0.1 }}
               existingPolygons={visibleZonePolygons}
@@ -432,7 +454,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
               showDrawingManager={showDrawingManager}
               initialPolygon={coordinates || []}
               editablePolygonIndex={editablePolygonIndex}
-              isEditingExistingPolygon={!!selectedItem}
+              isEditingExistingPolygon={sessionMode === 'edit' && !!selectedItem}
               mapHeight="500px"
             />
           </div>
@@ -455,13 +477,13 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     <div className="mt-4">
       <div className="flex justify-between items-center mb-6">
         <Typography variant="h5">Zones</Typography>
-        <Button
-          color="blue"
-          onClick={handleCreateNew}
-          disabled={!selectedServiceArea}
-        >
-          Create New Zone
-        </Button>
+          <Button
+            color="blue"
+            onClick={handleCreateNew}
+            disabled={!selectedServiceArea}
+          >
+          Create Zone
+          </Button>
       </div>
 
       {/* Service Area Selection */}
