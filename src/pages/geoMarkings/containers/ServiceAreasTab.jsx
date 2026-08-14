@@ -175,6 +175,7 @@ const ServiceAreasTab = () => {
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
               existingPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
+              backgroundPolygonStyle={{ fillColor: '#94a3b8', strokeColor: '#475569', fillOpacity: 0.12 }}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"

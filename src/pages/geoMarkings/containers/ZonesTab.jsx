@@ -20,6 +20,7 @@ const ZonesTab = () => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
+  const [selectedDescription, setSelectedDescription] = useState('');
   const isServiceAreaRecord = (area) => {
     const type = String(area?.type || '').trim().toLowerCase();
     const description = String(area?.description || '').trim().toLowerCase();
@@ -121,6 +122,7 @@ const ZonesTab = () => {
     setSelectedPolygon(null);
     setSelectedItem(null);
     setCoordinates(null);
+    setSelectedDescription('');
   };
 
   const handlePolygonUpdate = (newCoordinates, index) => {
@@ -222,6 +224,23 @@ const ZonesTab = () => {
   const visibleZonePolygons = selectedItem
     ? updatedZones.map((zone) => zone.coordinates)
     : zones.map((zone) => zone.coordinates);
+  const visibleZonePolygonStyles = (selectedItem ? updatedZones : zones).map((zone) => {
+    const description = String(zone?.description || '').trim().toLowerCase();
+    const isSelected = !selectedDescription || selectedDescription === description;
+    if (description === 'city') {
+      return { fillColor: '#16a34a', strokeColor: '#166534', fillOpacity: isSelected ? 0.42 : 0.18 };
+    }
+    if (description === 'prime') {
+      return { fillColor: '#dc2626', strokeColor: '#991b1b', fillOpacity: isSelected ? 0.42 : 0.18 };
+    }
+    if (description === 'zone' || description === 'all') {
+      return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: isSelected ? 0.4 : 0.16 };
+    }
+    return { fillColor: '#eab308', strokeColor: '#a16207', fillOpacity: 0.16 };
+  });
+  const focusZonePolygons = (selectedItem ? updatedZones : zones)
+    .filter((zone) => !selectedDescription || String(zone?.description || '').trim().toLowerCase() === selectedDescription)
+    .map((zone) => zone.coordinates);
 
   // Show create/edit form with map
   if (isCreating || selectedItem) {
@@ -243,13 +262,49 @@ const ZonesTab = () => {
           <Typography variant="small" color="gray" className="mb-2">
             Draw a polygon on the map to define your zone boundaries
           </Typography>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {[
+              { key: '', label: 'All' },
+              { key: 'city', label: 'City', color: 'green' },
+              { key: 'prime', label: 'Prime', color: 'red' },
+              { key: 'zone', label: 'Zone', color: 'yellow' },
+            ].map((item) => (
+              <button
+                key={item.key || 'all'}
+                type="button"
+                onClick={() => setSelectedDescription(item.key)}
+                className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+                  selectedDescription === item.key
+                    ? item.color === 'green'
+                      ? 'border-green-600 bg-green-600 text-white'
+                      : item.color === 'red'
+                        ? 'border-red-600 bg-red-600 text-white'
+                        : item.color === 'yellow'
+                          ? 'border-yellow-500 bg-yellow-500 text-white'
+                          : 'border-blue-600 bg-blue-600 text-white'
+                    : item.color === 'green'
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : item.color === 'red'
+                        ? 'border-red-200 bg-red-50 text-red-700'
+                        : item.color === 'yellow'
+                          ? 'border-yellow-200 bg-yellow-50 text-yellow-800'
+                          : 'border-blue-gray-200 bg-white text-blue-gray-700'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
           <div className="h-[500px] w-full">
             <GoogleMapDrawing
               onPolygonComplete={handlePolygonComplete}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
               backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
+              backgroundPolygonStyle={{ fillColor: '#60a5fa', strokeColor: '#2563eb', fillOpacity: 0.1 }}
               existingPolygons={visibleZonePolygons}
+              existingPolygonStyles={visibleZonePolygonStyles}
+              focusPolygons={focusZonePolygons}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
               mapHeight="500px"
