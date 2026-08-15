@@ -159,7 +159,7 @@ function TierDetailsAdd() {
           Add Tier
         </Typography>
         <Link to="/dashboard/driverengagement">
-          <Button variant="outlined" color="blue">
+          <Button className="bg-primary text-white hover:bg-primary/90">
             Back
           </Button>
         </Link>

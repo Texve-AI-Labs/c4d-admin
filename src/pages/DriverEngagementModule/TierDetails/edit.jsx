@@ -256,7 +256,7 @@ function TierDetailsEdit() {
             Edit Tier
           </Typography>
           <Link to="/dashboard/driverengagement">
-            <Button variant="outlined" color="blue-gray">
+            <Button className="bg-primary text-white hover:bg-primary/90">
               Back
             </Button>
           </Link>
@@ -280,7 +280,7 @@ function TierDetailsEdit() {
           Edit Tier
         </Typography>
         <Link to="/dashboard/driverengagement">
-          <Button variant="outlined" color="blue-gray">
+          <Button className="bg-primary text-white hover:bg-primary/90">
             Back
           </Button>
         </Link>
@@ -300,6 +300,10 @@ function TierDetailsEdit() {
               }}
               serviceAreas={serviceAreas}
               showParcelVehicleType
+              disableType
+              disablePartnerType
+              disableZone
+              disableParcelVehicleType
             />
 
             <div className="flex items-center">
@@ -323,6 +327,7 @@ function TierDetailsEdit() {
               partnerType={form.partnerType}
               parcelVehicleType={form.parcelVehicleType}
               initialConfig={rowData?.config || {}}
+              disablePayoutFrequency
             />
 
             <div>
