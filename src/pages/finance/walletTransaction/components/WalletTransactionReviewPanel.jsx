@@ -9,6 +9,8 @@ const WalletTransactionReviewPanel = ({
   onStatusChange,
   paymentTransactionId,
   onPaymentTransactionIdChange,
+  transactionDate,
+  onTransactionDateChange,
   adminReason,
   onAdminReasonChange,
   onUpdateStatus,
@@ -54,8 +56,12 @@ const WalletTransactionReviewPanel = ({
                 <div className="mt-1 text-sm font-semibold text-slate-900">{selectedRow?.entityType || "-"}</div>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Entity Name</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">{selectedRow?.entityName || "-"}</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Driver Name</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">{selectedRow?.driverName || "-"}</div>
+              </div>
+               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone Number</div>
+                <div className="mt-1 text-sm font-semibold text-slate-900">{selectedRow?.driverContact || "-"}</div>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requested Amount</div>
@@ -98,6 +104,20 @@ const WalletTransactionReviewPanel = ({
                     type="text"
                     value={paymentTransactionId}
                     onChange={(e) => onPaymentTransactionIdChange(e.target.value)}
+                    disabled={isTerminalStatus}
+                    className="!border-slate-300 !text-black placeholder:!text-black/40"
+                  />
+                </div>
+              ) : null}
+              {selectedStatus === "PAID" && !isNotEligible ? (
+                <div className="space-y-2">
+                  <Typography className="text-sm font-semibold text-slate-700">
+                    Transaction Date <span className="text-red-500">*</span>
+                  </Typography>
+                  <Input
+                    type="datetime-local"
+                    value={transactionDate}
+                    onChange={(e) => onTransactionDateChange(e.target.value)}
                     disabled={isTerminalStatus}
                     className="!border-slate-300 !text-black placeholder:!text-black/40"
                   />

@@ -9,7 +9,7 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
         <thead className="bg-primary text-white">
           <tr className="border-b border-slate-200 bg-slate-900 text-left">
             <th className="p-2 text-sm font-semibold text-black-100 whitespace-nowrap">Entity Type</th>
-            <th className="p-2 text-sm font-semibold text-black-100">Entity Name</th>
+            <th className="p-2 text-sm font-semibold text-black-100">Driver Name</th>
             <th className="p-2 text-sm font-semibold text-black-100">Tier</th>
             <th className="p-2 text-sm font-semibold text-black-100">Amount</th>
             <th className="p-2 text-sm font-semibold text-black-100">Status</th>
@@ -21,6 +21,7 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
             <th className="p-2 text-sm font-semibold text-black-100">Raised At</th>      
             <th className="p-2 text-sm font-semibold text-black-100">Processed By</th>
             <th className="p-2 text-sm font-semibold text-black-100">Processed At</th>
+            <th className="p-2 text-sm font-semibold text-black-100">Transaction Date</th>
             <th className="p-2 text-sm font-semibold text-black-100">Action</th>            
             {/* <th className="p-2 text-sm font-semibold text-black-100">Payment Txn</th> */}
             {/* <th className="p-2 text-sm font-semibold text-black-100">Admin Reason</th> */}
@@ -39,7 +40,7 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
             return (
               <tr key={`${id || "row"}-${index}`} className={`border-b border-slate-100 align-top transition ${isSelected ? "bg-sky-50" : "hover:bg-slate-50"}`}>
                 <td className="p-3 text-sm whitespace-nowrap">{formatDisplayLabel(item?.entityType)}</td>
-                <td className="p-3 text-sm whitespace-nowrap">{item?.entityName || "-"}</td>
+                <td className="p-3 text-sm whitespace-nowrap">{item?.driverName || "-"}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
                   <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${badgeClassByValue(item?.tier)}`}>{formatDisplayLabel(item?.tier)}</span>
                 </td>
@@ -67,6 +68,7 @@ const WalletTransactionTable = ({ items, selectedId, onSelectRow, allUsers }) =>
                   <span className='inline-flex rounded-full border px-2.5 py-1 bg-blue-600 text-white text-xs font-semibold'>{processedByLabel}</span>
                 </td>
                 <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.processedAt)}</td>
+                <td className="p-3 text-sm whitespace-nowrap">{formatDateTime(item?.transactionDate)}</td>
                 <td className="p-3 text-sm whitespace-nowrap">
                   <Button size="sm" onClick={() => onSelectRow(item)} className="rounded-full bg-gradient-to-r from-sky-600 to-cyan-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:shadow-md">
                     Review
