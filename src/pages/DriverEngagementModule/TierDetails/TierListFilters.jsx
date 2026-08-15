@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography } from "@material-tailwind/react";
+import { Spinner, Typography } from "@material-tailwind/react";
 import { PARTNER_TYPE_OPTIONS, PARCEL_VEHICLE_TYPE_OPTIONS } from "./shared/typeConstants";
 
 function TierListFilters({
@@ -11,9 +11,12 @@ function TierListFilters({
   onStatusFilterChange,
   onPartnerTypeFilterChange,
   onParcelVehicleTypeFilterChange,
+  isRefreshing = false,
+  hasActiveFilters = false,
+  onRefresh,
 }) {
   return (
-    <div className="mb-4 grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-4">
+    <div className="mb-4 grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-5">
       <div>
         <Typography variant="small" color="blue-gray" className="mb-2 font-semibold">
           Type Filter
@@ -83,6 +86,18 @@ function TierListFilters({
             </option>
           ))}
         </select>
+      </div>
+      <div className="flex item-end justify-end mt-7">
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={!hasActiveFilters || isRefreshing}
+          className="flex h-10 min-w-24 items-center justify-center rounded-md bg-red-600 px-4 text-white hover:bg-red/90 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={isRefreshing ? "Refreshing filters" : "Refresh filters"}
+          title={isRefreshing ? "Refreshing filters" : "Refresh filters"}
+        >
+          {isRefreshing ? <Spinner className="h-5 w-5" /> : "Refresh"}
+        </button>
       </div>
     </div>
   );

@@ -250,13 +250,13 @@ function TierDetailsEdit() {
 
   if (!rowData) {
     return (
-      <div className="mt-5 mb-10 px-4">
+      <div className="mt-5 mb-10 px-4 bg-white rounded-md shadow-md">
         <div className="mb-5 flex items-center justify-between">
           <Typography variant="h4" color="blue-gray">
             Edit Tier
           </Typography>
           <Link to="/dashboard/driverengagement">
-            <Button className="bg-primary text-white hover:bg-primary/90">
+            <Button className="bg-white text-black border">
               Back
             </Button>
           </Link>
@@ -274,16 +274,11 @@ function TierDetailsEdit() {
   }
 
   return (
-    <div className="mt-5 mb-10 px-4">
+    <div className="mt-5 mb-10 px-4 bg-white rounded-sm shadow-md py-2">
       <div className="mb-5 flex items-center justify-between">
         <Typography variant="h4" color="blue-gray">
           Edit Tier
         </Typography>
-        <Link to="/dashboard/driverengagement">
-          <Button className="bg-primary text-white hover:bg-primary/90">
-            Back
-          </Button>
-        </Link>
       </div>
 
       <Card>
@@ -330,10 +325,15 @@ function TierDetailsEdit() {
               disablePayoutFrequency
             />
 
-            <div>
+            <div className="flex justify-center gap-2">
               <Button type="submit" color="blue" disabled={isSaving}>
                 {isSaving ? "Saving..." : "Update"}
               </Button>
+              <Link to="/dashboard/driverengagement">
+                <Button className="bg-white text-black">
+                  Back
+                </Button>
+              </Link>
             </div>
           </form>
         </CardBody>
