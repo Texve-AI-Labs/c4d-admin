@@ -74,11 +74,11 @@ const WithdrawalRulesList = () => {
               className="rounded-md border border-gray-300 px-3 py-2"
             >
               <option value="">All</option>
-              <option value="RIDES_RENTAL_CABS">RIDES_RENTAL_CABS</option>
-              <option value="ACTING_DRIVER">ACTING_DRIVER</option>
-              <option value="AUTO">AUTO</option>
-              <option value="BIKE">BIKE</option>
-              <option value="PARCEL">PARCEL</option>
+              <option value="CAB">Rides Rental Cabs</option>
+              <option value="DRIVER">Driver</option>
+              <option value="AUTO">Auto</option>
+              <option value="BIKE">Bike</option>
+              <option value="PARCEL">Parcel</option>
             </select>
           </div>
           <div>
