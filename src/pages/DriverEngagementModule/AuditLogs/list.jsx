@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Typography } from "@material-tailwind/react";
 import AuditSummaryCards from "./AuditSummaryCards";
 import AuditLogsTable from "./AuditLogsTable";
@@ -8,7 +8,6 @@ import {
   fetchDriverEngagementAuditSummary,
 } from "./auditLogApi";
 import { buildAuditSummary, mapAuditRows } from "./auditLogMapper";
-import ActionViewModal from "../common/ActionViewModal";
 
 const resolvePartnerId = (source = {}, partnerType = "CAB") => {
   const normalizedType = String(partnerType || "").toUpperCase();
@@ -21,6 +20,15 @@ const resolvePartnerId = (source = {}, partnerType = "CAB") => {
   return source.cabId || source.cabPartnerId || source.partnerId || source.partner?.id || source.partner?._id;
 };
 
+const extractAuditRows = (response) => {
+  if (Array.isArray(response?.rows)) return response.rows;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.rows)) return response.data.rows;
+  if (Array.isArray(response?.data?.data?.rows)) return response.data.data.rows;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
+
 function DriverEngagementAuditLogs() {
   const [rows, setRows] = useState([]);
   const [summaryPayload, setSummaryPayload] = useState(null);
@@ -31,10 +39,11 @@ function DriverEngagementAuditLogs() {
     itemsPerPage: null,
   });
   const [loading, setLoading] = useState(true);
-  const [isViewOpen, setIsViewOpen] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
   const [viewError, setViewError] = useState("");
   const [viewPayload, setViewPayload] = useState(null);
+  const [expandedRowId, setExpandedRowId] = useState(null);
+  const viewRequestSeq = useRef(0);
 
   useEffect(() => {
     const loadAuditLogs = async () => {
@@ -49,10 +58,10 @@ function DriverEngagementAuditLogs() {
           fetchDriverEngagementAuditSummary({ partnerType: "CAB" }),
         ]);
 
-        const auditRows = Array.isArray(response?.rows) ? response.rows : response?.data || [];
+        const auditRows = extractAuditRows(response);
         const mappedRows = mapAuditRows(auditRows);
         const nextPagination = response?.pagination || {};
-        const summaryData = summaryResponse?.data || summaryResponse?.summary || null;
+        const summaryData = summaryResponse?.data || summaryResponse?.summary || summaryResponse?.data?.summary || null;
 
         setRows(mappedRows);
         setSummaryPayload(summaryData);
@@ -85,10 +94,17 @@ function DriverEngagementAuditLogs() {
   };
 
   const onView = async (row) => {
-    setIsViewOpen(true);
-    setViewLoading(true);
+    const nextExpandedRowId = expandedRowId === row.id ? null : row.id;
+    const requestSeq = ++viewRequestSeq.current;
+    setExpandedRowId(nextExpandedRowId);
+    setViewLoading(Boolean(nextExpandedRowId));
     setViewError("");
     setViewPayload(row?.raw || null);
+
+    if (nextExpandedRowId === null) {
+      setViewLoading(false);
+      return;
+    }
 
     try {
       const source = row?.raw || {};
@@ -107,14 +123,17 @@ function DriverEngagementAuditLogs() {
           ? response.data
           : [];
 
+      if (requestSeq !== viewRequestSeq.current) return;
 
       setViewPayload({
         selectedRow: source,
         relatedHistory: records,
       });
     } catch (error) {
+      if (requestSeq !== viewRequestSeq.current) return;
       setViewError(error?.message || "Failed to load audit details");
     } finally {
+      if (requestSeq !== viewRequestSeq.current) return;
       setViewLoading(false);
     }
   };
@@ -134,15 +153,10 @@ function DriverEngagementAuditLogs() {
         pagination={pagination}
         onPageChange={onPageChange}
         onView={onView}
-      />
-
-      <ActionViewModal
-        open={isViewOpen}
-        onClose={() => setIsViewOpen(false)}
-        title="Audit Details"
-        loading={viewLoading}
-        error={viewError}
-        payload={viewPayload}
+        expandedRowId={expandedRowId}
+        expandedRowPayload={viewPayload}
+        expandedRowLoading={viewLoading}
+        expandedRowError={viewError}
       />
     </div>
   );

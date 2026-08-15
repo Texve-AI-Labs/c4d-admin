@@ -28,6 +28,29 @@ const safeText = (value, fallback = "-") => {
   return fallback;
 };
 
+const getBadgeClasses = (value, kind) => {
+  const normalized = safeText(value).toUpperCase();
+  const base =
+    "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide shadow-sm whitespace-nowrap";
+
+  if (kind === "tier") {
+    if (normalized === "SILVER") return `${base} bg-slate-700 text-slate-50`;
+    if (normalized === "GOLD") return `${base} bg-amber-700 text-amber-50`;
+    if (normalized === "ELITE") return `${base} bg-emerald-800 text-emerald-50`;
+    return `${base} bg-blue-gray-700 text-blue-gray-50`;
+  }
+
+  if (kind === "vehicle") {
+    if (normalized.includes("BIKE")) return `${base} bg-indigo-700 text-indigo-50`;
+    if (normalized.includes("AUTO")) return `${base} bg-orange-800 text-orange-50`;
+    if (normalized.includes("PARCEL")) return `${base} bg-teal-800 text-teal-50`;
+    if (normalized.includes("DRIVER")) return `${base} bg-cyan-800 text-cyan-50`;
+    return `${base} bg-blue-gray-700 text-blue-gray-50`;
+  }
+
+  return `${base} bg-blue-gray-700 text-blue-gray-50`;
+};
+
 function MonitoringTable({ rows, loading, pagination, onPageChange, onView }) {
   const {
     currentPage = 1,
@@ -46,7 +69,7 @@ function MonitoringTable({ rows, loading, pagination, onPageChange, onView }) {
           <thead>
             <tr>
               {TABLE_HEAD.map((head) => (
-                <th key={head} className="border-b border-blue-gray-50 py-3 px-5 text-left bg-primary">
+                <th key={head} className="border-b border-blue-gray-50 py-3 px-5 text-left bg-primary whitespace-nowrap">
                   <Typography variant="small" className="font-semibold text-white">
                     {head}
                   </Typography>
@@ -76,13 +99,17 @@ function MonitoringTable({ rows, loading, pagination, onPageChange, onView }) {
                 const cellClass =
                   index === rows.length - 1
                     ? "px-4 py-3"
-                    : "border-b border-blue-gray-50 px-4 py-3";
+                    : "border-b border-blue-gray-50 px-4 py-3 whitespace-nowrap";
 
                 return (
                   <tr key={row.id}>
-                    <td className={cellClass}><Typography variant="small" className="font-semibold text-blue-gray-700">{safeText(row.driver)}</Typography></td>
-                    <td className={cellClass}><Typography variant="small" className="font-medium text-blue-gray-700">{safeText(row.tier)}</Typography></td>
-                    <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.vehicle)}</Typography></td>
+                    <td className={cellClass}><Typography variant="small" className="font-semibold text-blue-gray-700">{safeText(row.driver) || (row.partnerName)}</Typography></td>
+                    <td className={cellClass}>
+                      <span className={getBadgeClasses(row.tier, "tier")}>{safeText(row.tier)}</span>
+                    </td>
+                    <td className={cellClass}>
+                      <span className={getBadgeClasses(row.vehicle, "vehicle")}>{safeText(row.vehicle)}</span>
+                    </td>
                     <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.zone)}</Typography></td>
                     <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.dailyHoursDisplay)}</Typography></td>
                     <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.weeklyARDisplay)}</Typography></td>
@@ -105,32 +132,35 @@ function MonitoringTable({ rows, loading, pagination, onPageChange, onView }) {
           </tbody>
         </table>
 
-        <div className="flex flex-col items-start justify-between gap-3 border-t border-blue-gray-100 px-4 py-3 sm:flex-row sm:items-center">
-          <Typography variant="small" color="gray">
+        <div className="flex flex-col items-center justify-center gap-3 border-t px-4 py-4 text-center">
+          {/* <Typography variant="small" color="gray" className="text-blue-gray-600">
             {`Showing ${startIndex}-${endIndex} of ${totalItems}`}
-          </Typography>
+          </Typography> */}
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
             <Button
               size="sm"
-              variant="outlined"
-              color="blue-gray"
+              variant="filled"
+              color="blue"
               disabled={currentPage <= 1 || loading}
               onClick={() => onPageChange(currentPage - 1)}
-              className="normal-case"
+              className="normal-case shadow-none"
             >
               Previous
             </Button>
-            <Typography variant="small" className="font-semibold text-blue-gray-700">
+            <Typography
+              variant="small"
+              className="min-w-[96px] rounded-full bg-blue-gray-100 px-3 py-2 text-center font-semibold text-blue-gray-700"
+            >
               {`Page ${currentPage} / ${totalPages}`}
             </Typography>
             <Button
               size="sm"
-              variant="outlined"
-              color="blue-gray"
+              variant="filled"
+              color="blue"
               disabled={currentPage >= totalPages || loading}
               onClick={() => onPageChange(currentPage + 1)}
-              className="normal-case"
+              className="normal-case shadow-none"
             >
               Next
             </Button>

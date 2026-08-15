@@ -58,10 +58,22 @@ export const normalizeMonitoringRows = (rows = []) => {
     const firstName = String(row?.firstName || "").trim();
     const lastName = String(row?.lastName || "").trim();
     const nameFromParts = `${firstName} ${lastName}`.trim();
+    const partnerDriver = row?.partnerRelation?.drivers?.[0] || {};
 
-    const driverName = pickDisplay(row?.partnerRelation?.drivers[0]?.firstName);
+    const driverName = pickDisplay(
+      nameFromParts,
+      row?.partnerName,
+      row?.partnerRelation?.partner?.name,
+      partnerDriver?.firstName,
+      partnerDriver?.lastName
+    );
 
-    const vehicle = pickDisplay(row?.partnerRelation?.partner?.name);
+    const vehicle = pickDisplay(
+      row?.vehicle,
+      row?.partnerRelation?.partner?.driverType,
+      row?.partnerRelation?.partner?.vehicleType,
+      row?.partnerRelation?.partner?.name
+    );
 
     const zone = pickDisplay(row?.zone, row?.serviceArea, row?.locationZone);
 
@@ -75,6 +87,7 @@ export const normalizeMonitoringRows = (rows = []) => {
 
     return {
       id: String(id),
+      partnerType: toUpperString(row?.partnerType || row?.partner_type || row?.partnerRelation?.partner?.type || ""),
       driver: driverName,
       tier: normalizeTier(row),
       vehicle,
