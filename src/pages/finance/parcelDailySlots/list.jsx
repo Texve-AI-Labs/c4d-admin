@@ -220,7 +220,7 @@ const ParcelDailySlotsList = () => {
                     <th className="px-5 py-3 text-left whitespace-nowrap">Max Bookings</th>
                     <th className="px-5 py-3 text-left whitespace-nowrap">Booked Count</th>
                     <th className="px-5 py-3 text-left whitespace-nowrap">State</th>
-                    <th className="px-5 py-3 text-left whitespace-nowrap">Source Rule</th>
+                    {/* <th className="px-5 py-3 text-left whitespace-nowrap">Source Rule</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -260,9 +260,9 @@ const ParcelDailySlotsList = () => {
                           <td className="px-5 py-3 whitespace-nowrap">
                             <Chip value={stateChip.label} className={stateChip.className} />
                           </td>
-                          <td className="px-5 py-3 whitespace-nowrap">
+                          {/* <td className="px-5 py-3 whitespace-nowrap">
                             {row.sourceRuleType || "-"}{row.sourceRuleId ? ` #${row.sourceRuleId}` : ""}
-                          </td>
+                          </td> */}
                         </tr>
                       );
                     })
