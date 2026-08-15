@@ -31,7 +31,7 @@ function MonitoringFilters({
   onVehicleChange,
   zoneOptions,
 }) {
-  const partnerTypeOptions = ["CAB", "AUTO"];
+  const partnerTypeOptions = ["CAB", "AUTO","PARCEL","BIKE","DRIVER"];
   const tierOptions = ["ALL", "SILVER", "GOLD", "ELITE"];
   const vehicleOptions = ["ALL"];
 

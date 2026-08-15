@@ -74,6 +74,7 @@ function TierComponentRulesSection({
   allowMetricChange = false,
   allowPeriodChange = false,
   disableServiceType = false,
+  disablePayoutFrequency = false,
   hideMandatory = false,
   syncPeriodWithPayoutFrequency = false,
   serviceOptions = COMPONENT_RULE_SERVICE_OPTIONS,
@@ -442,7 +443,8 @@ function TierComponentRulesSection({
             <select
               value={componentState.payoutFrequency}
               onChange={(event) => onComponentChange("payoutFrequency", event.target.value)}
-              className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700"
+              disabled={disablePayoutFrequency}
+              className="w-full rounded-md border border-blue-gray-200 bg-white px-3 py-2 text-sm text-blue-gray-700 disabled:bg-blue-gray-50"
             >
               {payoutFrequencyOptions.map((option) => (
                 <option key={getOptionValue(option)} value={getOptionValue(option)}>

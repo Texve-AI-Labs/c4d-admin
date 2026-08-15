@@ -9,6 +9,13 @@ import WalletTransactionTable from "./components/WalletTransactionTable";
 import WalletTransactionReviewPanel from "./components/WalletTransactionReviewPanel";
 import { normalizeRows } from "./utils";
 
+const toDateTimeLocalValue = (dateStr) => {
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 const validationSchema = Yup.object().shape({
   status: Yup.string()
     .oneOf(["PAID", "REJECTED"], "Status must be PAID or REJECTED.")
@@ -16,6 +23,11 @@ const validationSchema = Yup.object().shape({
   paymentTransactionId: Yup.string().when("status", {
     is: "PAID",
     then: (schema) => schema.trim().required("Payment Transaction ID is required when marking as PAID."),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  transactionDate: Yup.string().when("status", {
+    is: "PAID",
+    then: (schema) => schema.trim().required("Transaction Date is required when marking as PAID."),
     otherwise: (schema) => schema.notRequired(),
   }),
   adminReason: Yup.string().when("status", {
@@ -41,6 +53,7 @@ const WalletTransactionList = () => {
   });
   const [status, setStatus] = useState("IN_PROGRESS");
   const [paymentTransactionId, setPaymentTransactionId] = useState("");
+  const [transactionDate, setTransactionDate] = useState("");
   const [adminReason, setAdminReason] = useState("");
   const [formError, setFormError] = useState("");
   const selectedRow = useMemo(() => items.find((item) => String(item?.id) === String(selectedId)) || null, [items, selectedId]);
@@ -96,6 +109,7 @@ const WalletTransactionList = () => {
     const rowStatus = String(selectedRow?.status || "IN_PROGRESS").toUpperCase();
     setStatus(rowStatus === "IN_PROGRESS" && selectedRow?.isStillEligibleForPayment === false ? "REJECTED" : rowStatus);
     setPaymentTransactionId(selectedRow?.paymentTransactionId || "");
+    setTransactionDate(toDateTimeLocalValue(selectedRow?.transactionDate));
     setAdminReason(selectedRow?.adminReason || "");
     setFormError("");
   }, [selectedRow]);
@@ -154,6 +168,7 @@ const WalletTransactionList = () => {
     const payload = {
       status: String(status).toUpperCase(),
       paymentTransactionId: paymentTransactionId || "",
+      transactionDate: transactionDate ? new Date(transactionDate).toISOString() : "",
       adminReason: adminReason || "",
     };
     try {
@@ -161,6 +176,7 @@ const WalletTransactionList = () => {
       setError("");
       setFormError("");
       await validationSchema.validate(payload, { abortEarly: false });
+      // console.log('payload:- ',payload)
       const response = await ApiRequestUtils.update(`${API_ROUTES.ADMIN_WITHDRAWALS_UPDATE}/${id}`, payload);
       if (response?.success) {
         await fetchWalletTransactions(pagination.currentPage);
@@ -248,6 +264,8 @@ const WalletTransactionList = () => {
                 onStatusChange={setStatus}
                 paymentTransactionId={paymentTransactionId}
                 onPaymentTransactionIdChange={setPaymentTransactionId}
+                transactionDate={transactionDate}
+                onTransactionDateChange={setTransactionDate}
                 adminReason={adminReason}
                 onAdminReasonChange={setAdminReason}
                 onUpdateStatus={handleUpdateStatus}

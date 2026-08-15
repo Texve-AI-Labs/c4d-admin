@@ -153,16 +153,11 @@ function TierDetailsAdd() {
   };
 
   return (
-    <div className="mt-5 mb-10 px-4">
+    <div className="mt-5 mb-10 px-4 bg-white py-2 rounded-md shadow-md">
       <div className="mb-5 flex items-center justify-between">
         <Typography variant="h4" color="blue-gray">
           Add Tier
         </Typography>
-        <Link to="/dashboard/driverengagement">
-          <Button variant="outlined" color="blue">
-            Back
-          </Button>
-        </Link>
       </div>
 
       <Card>
@@ -200,10 +195,15 @@ function TierDetailsAdd() {
               </div>
             </div>
 
-            <div>
+            <div className="flex gap-2 justify-center">
               <Button type="submit" color="blue" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Save"}
               </Button>
+              <Link to="/dashboard/driverengagement">
+                <Button className="bg-white text-black border">
+                  Back
+                </Button>
+              </Link>
             </div>
           </form>
         </CardBody>

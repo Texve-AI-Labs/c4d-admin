@@ -42,6 +42,7 @@ function ServiceTripRulesSection(props) {
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
       syncPeriodWithPayoutFrequency
       serviceOptions={serviceOptions}
+      disablePayoutFrequency={props.disablePayoutFrequency}
       disableServiceType={normalizedPartnerType === "PARCEL"}
       hideMandatory
     />
