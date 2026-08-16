@@ -18,6 +18,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const [updatedZones, setUpdatedZones] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errorDialog, setErrorDialog] = useState({ open: false, message: '' });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
@@ -52,19 +53,19 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     return `This ${candidateLabel} overlaps an existing ${existingLabel}${existingName}`;
   };
   const logOverlapDebug = (context, candidateType, candidateCoordinates, overlappingZone) => {
-    console.log('[GeoMarkings overlap debug]', {
-      context,
-      candidateType,
-      candidateLabel: getOverlapLabel(candidateType),
-      selectedItemId: selectedItem?.id || null,
-      selectedItemDescription: selectedItem?.description || null,
-      selectedDescription,
-      coordinateCount: Array.isArray(candidateCoordinates) ? candidateCoordinates.length : 0,
-      overlappingZoneId: overlappingZone?.id || null,
-      overlappingZoneName: overlappingZone?.name || null,
-      overlappingZoneDescription: overlappingZone?.description || null,
-      overlappingZoneType: overlappingZone?.type || null,
-    });
+    // console.log('[GeoMarkings overlap debug]', {
+    //   context,
+    //   candidateType,
+    //   candidateLabel: getOverlapLabel(candidateType),
+    //   selectedItemId: selectedItem?.id || null,
+    //   selectedItemDescription: selectedItem?.description || null,
+    //   selectedDescription,
+    //   coordinateCount: Array.isArray(candidateCoordinates) ? candidateCoordinates.length : 0,
+    //   overlappingZoneId: overlappingZone?.id || null,
+    //   overlappingZoneName: overlappingZone?.name || null,
+    //   overlappingZoneDescription: overlappingZone?.description || null,
+    //   overlappingZoneType: overlappingZone?.type || null,
+    // });
   };
   const findOverlappingZone = (candidateCoordinates, overlapType) => {
     if (!overlapType) return null;
@@ -77,6 +78,12 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       }) || null;
   };
   const visibleZonePolygons = zones.map((zone) => zone.coordinates);
+  const filteredZones = useMemo(() => {
+    if (!selectedDescription) return zones;
+    return zones.filter(
+      (zone) => String(zone?.description || '').trim().toLowerCase() === selectedDescription,
+    );
+  }, [zones, selectedDescription]);
   const editablePolygonIndex = selectedItem
     ? zones.findIndex((zone) => String(zone.id) === String(activeZoneId))
     : null;
@@ -109,6 +116,22 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const isZoneRecord = (zone) => {
     const type = String(zone?.type || '').trim().toLowerCase();
     return type === 'zone';
+  };
+  const handleError = (err) => {
+    const message = String(err?.message || err || '');
+    const responseData = err?.response?.data;
+    const topMessage = responseData?.message ? String(responseData.message) : '';
+    const backendError = responseData?.error ? String(responseData.error) : '';
+    const dialogMessage = [topMessage || message, backendError].filter(Boolean).join('\n');
+    setError(topMessage || message);
+    if (
+      /status code 500/i.test(message) ||
+      Boolean(responseData?.error) ||
+      /foreign key constraint/i.test(message) ||
+      /error deleting geo marking/i.test(message)
+    ) {
+      setErrorDialog({ open: true, message: dialogMessage || message });
+    }
   };
 
   // Fetch service areas on component mount and when tab gains focus
@@ -164,7 +187,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         throw new Error(response?.message || 'Failed to fetch service areas');
       }
     } catch (err) {
-      setError(err.message);
+      handleError(err);
     }
   };
 
@@ -183,7 +206,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         throw new Error(response?.message || 'Failed to fetch zones');
       }
     } catch (err) {
-      setError(err.message);
+      handleError(err);
     } finally {
       setIsLoading(false);
     }
@@ -224,14 +247,22 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     const candidateType = selectedItem ? activeZoneType : activeDraftType;
     const overlappingZone = findOverlappingZone(newCoordinates, candidateType);
     logOverlapDebug('polygon_update', candidateType, newCoordinates, overlappingZone);
+    // console.log('[ZonesTab] polygon update', {
+    //   mode: selectedItem ? 'edit' : 'create',
+    //   candidateType,
+    //   coordinatesLength: Array.isArray(newCoordinates) ? newCoordinates.length : 0,
+    //   overlappingZoneId: overlappingZone?.id || null,
+    //   overlappingZoneName: overlappingZone?.name || null,
+    // });
     if (overlappingZone) {
       const message = buildOverlapMessage(candidateType, overlappingZone);
       setOverlapWarning(message);
       setError(message);
-      return;
     }
+    else {
     setError(null);
     setOverlapWarning('');
+    }
     if (selectedItem) {
       setUpdatedZones((prev) => {
         const updated = [...prev];
@@ -253,12 +284,20 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       const zoneToDelete = zones[index];
       setDeleteDialog({ open: true, item: zoneToDelete });
     } catch (err) {
-      setError(err.message);
+      handleError(err);
     }
   };
 
   const handleSave = async (formData) => {
     try {
+      // console.log('[ZonesTab] handleSave called', {
+      //   mode: selectedItem ? 'edit' : 'create',
+      //   selectedItemId: selectedItem?.id || null,
+      //   selectedServiceArea,
+      //   formDescription: formData?.description || null,
+      //   coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
+      //   coordinates,
+      // });
       // console.log('ZonesTab handleSave called', {
       //   selectedItemId: selectedItem?.id,
       //   selectedServiceArea,
@@ -267,7 +306,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       const overlapType = getOverlapType(formData?.description || selectedItem?.description || activeZoneType);
       const selectedIndex = zones.findIndex((zone) => String(zone.id) === String(selectedItem?.id));
       const candidateCoordinates =
-        coordinates ||
+        (Array.isArray(coordinates) && coordinates.length > 0 ? coordinates : null) ||
         selectedZoneRecord?.coordinates ||
         [];
       const {
@@ -298,6 +337,13 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       };
       const overlappingZone = findOverlappingZone(candidateCoordinates, overlapType);
       logOverlapDebug('save', overlapType, candidateCoordinates, overlappingZone);
+      // console.log('[ZonesTab] save payload', {
+      //   overlapType,
+      //   candidateCoordinatesLength: Array.isArray(candidateCoordinates) ? candidateCoordinates.length : 0,
+      //   candidateCoordinates,
+      //   overlappingZoneId: overlappingZone?.id || null,
+      //   overlappingZoneName: overlappingZone?.name || null,
+      // });
       if (overlappingZone) {
         const message = buildOverlapMessage(overlapType, overlappingZone);
         setError(message);
@@ -339,7 +385,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         onSaveSuccess();
       }
     } catch (err) {
-      setError(err.message);
+      handleError(err);
     }
   };
 
@@ -362,7 +408,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         throw new Error(response?.message || 'Failed to delete zone');
       }
     } catch (err) {
-      setError(err.message);
+      handleError(err);
     } finally {
       setDeleteDialog({ open: false, item: null });
     }
@@ -371,6 +417,12 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const handlePolygonComplete = (coords) => {
     const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
     const overlapType = selectedItem ? activeZoneType : activeDraftType;
+    // console.log('[ZonesTab] polygon complete', {
+    //   mode: selectedItem ? 'edit' : 'create',
+    //   overlapType,
+    //   coordinatesLength: Array.isArray(nextCoordinates) ? nextCoordinates.length : 0,
+    //   coordinates: nextCoordinates,
+    // });
     if (isOverlappingAnyOtherZone(nextCoordinates, overlapType)) {
       const overlappingZone = findOverlappingZone(nextCoordinates, overlapType);
       logOverlapDebug('polygon_complete', overlapType, nextCoordinates, overlappingZone);
@@ -389,6 +441,12 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     if (selectedItem) return;
     const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
     if (!Array.isArray(nextCoordinates)) return;
+    // console.log('[ZonesTab] draft change', {
+    //   coordinatesLength: nextCoordinates.length,
+    //   coordinates: nextCoordinates,
+    //   selectedDescription,
+    //   draftDescription,
+    // });
     if (isOverlappingAnyOtherZone(nextCoordinates, activeDraftType)) {
       const overlappingZone = findOverlappingZone(nextCoordinates, activeDraftType);
       logOverlapDebug('draft_change', activeDraftType, nextCoordinates, overlappingZone);
@@ -423,9 +481,6 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       }
       if (!showDrawingManager) {
         setShowDrawingManager(true);
-      }
-      if (!selectedItem) {
-        setCoordinates(null);
       }
       setIsCreating(true);
       return;
@@ -549,6 +604,28 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
           </Button>
       </div>
 
+      <div className="mb-4 flex flex-wrap gap-2">
+        {[
+          { key: '', label: 'All' },
+          { key: 'city', label: 'City' },
+          { key: 'prime', label: 'Prime' },
+          { key: 'zone', label: 'Zone' },
+        ].map((item) => (
+          <button
+            key={item.key || 'all'}
+            type="button"
+            onClick={() => setSelectedDescription(item.key)}
+            className={`rounded-full border px-3 py-1 text-sm font-medium transition-colors ${
+              selectedDescription === item.key
+                ? 'border-blue-600 bg-blue-600 text-white'
+                : 'border-blue-gray-200 bg-white text-blue-gray-700 hover:bg-blue-gray-50'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       {/* Service Area Selection */}
       <div className="mb-6">
         <Select
@@ -557,7 +634,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
           onChange={handleServiceAreaChange}
           selected={() => selectedServiceAreaName || ''}
           menuProps={{
-            className: 'max-h-20 overflow-y-scroll',
+            className: 'max-h-60 overflow-y-auto',
           }}
         >
           {serviceAreas.map((area) => (
@@ -584,10 +661,10 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         <div className="text-center py-8">
           <Typography color="gray">Loading zones...</Typography>
         </div>
-      ) : zones.length === 0 ? (
+      ) : filteredZones.length === 0 ? (
         <div className="text-center py-8 bg-blue-gray-50/30 rounded-lg">
           <Typography color="gray" className="font-medium">
-            No zones defined for this service area
+            No zones match the selected filter
           </Typography>
           <Typography color="gray" variant="small" className="mt-1">
             Click 'Create New Zone' to get started
@@ -595,7 +672,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         </div>
       ) : (
         <div className="grid gap-4">
-          {zones.map((zone) => (
+          {filteredZones.map((zone) => (
             <div 
               key={zone.id} 
               className="p-4 border border-blue-gray-100 rounded-lg hover:border-blue-gray-200 transition-colors"
@@ -634,7 +711,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       )}
 
       {/* Delete Confirmation Dialog */}
-      {/* <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
+      <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
         <DialogHeader>Confirm Deletion</DialogHeader>
         <DialogBody>
           Are you sure you want to delete the zone "{deleteDialog.item?.name}"? This action cannot be undone.
@@ -649,10 +726,21 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
             Cancel
           </Button>
           <Button color="red" onClick={handleDelete}>
-            Delete
+          Delete
           </Button>
         </DialogFooter>
-      </Dialog> */}
+      </Dialog>
+      <Dialog open={errorDialog.open} handler={() => setErrorDialog({ open: false, message: '' })} size="xs">
+        <DialogHeader className="text-red-700">Error</DialogHeader>
+        <DialogBody className="bg-red-50 text-red-700 whitespace-pre-line">
+          {errorDialog.message}
+        </DialogBody>
+        <DialogFooter className="bg-red-50">
+          <Button color="red" onClick={() => setErrorDialog({ open: false, message: '' })}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 };

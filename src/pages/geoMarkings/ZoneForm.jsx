@@ -30,7 +30,6 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     : Array.isArray(initialData?.coordinates) && initialData.coordinates.length >= 3
       ? initialData.coordinates
       : coordinates;
-  const hasValidCoordinates = Array.isArray(effectiveCoordinates) && effectiveCoordinates.length >= 3;
 
   useEffect(() => {
     if (typeof onDescriptionChange === 'function') {
@@ -59,6 +58,15 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     setNameError(null);
     setDescriptionError(null);
     setSaveStatus('');
+    // console.log('[ZoneForm] submit', {
+    //   isEditing,
+    //   serviceAreaId,
+    //   coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
+    //   effectiveCoordinatesLength: Array.isArray(effectiveCoordinates) ? effectiveCoordinates.length : 0,
+    //   coordinates,
+    //   effectiveCoordinates,
+    //   formData,
+    // });
 
     let hasError = false;
 
@@ -71,14 +79,6 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
       setDescriptionError('Description is required');
       hasError = true;
     }
-
-      if (!hasValidCoordinates) {
-      const msg = isEditing
-        ? 'Please keep a valid polygon with at least 3 points'
-        : 'Please draw a valid polygon with at least 3 points';
-      setError(msg);
-      hasError = true;
-      }
 
       // Validate percentage fields are between 0 and 100
       const percentageFields = [
@@ -112,6 +112,12 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     setSaveStatus('Saving zone...');
 
     try {
+      // console.log('[ZoneForm] sending save payload', {
+      //   name: formData.name,
+      //   description: formData.description,
+      //   coordinatesLength: Array.isArray(effectiveCoordinates) ? effectiveCoordinates.length : 0,
+      //   coordinates: effectiveCoordinates,
+      // });
       await onSave({
         ...formData,
         coordinates: effectiveCoordinates,
@@ -316,15 +322,10 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
         <Button 
           type="submit" 
           className="mt-6"
-          disabled={isSubmitting || !hasValidCoordinates}
+          disabled={isSubmitting}
         >
           {isSubmitting ? 'Saving...' : (initialData ? 'Update' : 'Save')} Zone
         </Button>
-        {!hasValidCoordinates && (
-          <Typography variant="small" color="red" className="mt-1">
-            Finish drawing the polygon before saving.
-          </Typography>
-        )}
       </form>
     </Card>
   );
