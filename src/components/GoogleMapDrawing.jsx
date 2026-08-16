@@ -73,11 +73,14 @@ const GoogleMapDrawing = ({
   const [draftPath, setDraftPath] = useState([]);
   const [completedPath, setCompletedPath] = useState([]);
   const [activeTool, setActiveTool] = useState(initialTool);
+  const [drawShape, setDrawShape] = useState('polygon');
+  const [shapeSize, setShapeSize] = useState('medium');
   const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const mapWrapperRef = useRef(null);
   const hasEditablePolygon = isEditingExistingPolygon && Array.isArray(initialPolygon) && initialPolygon.length >= 3;
   const isEditMode = showDrawingManager && hasEditablePolygon && activeTool === 'edit';
   const isCreateMode = showDrawingManager && activeTool === 'draw';
+  const isPresetShape = activeTool === 'draw' && drawShape !== 'polygon';
 
   const onMapLoad = useCallback((map) => {
     setMap(map);
@@ -170,12 +173,47 @@ const GoogleMapDrawing = ({
     }
   }, [onPolygonUpdate]);
 
+  const getPolygonCoordinates = useCallback((polygon) => {
+    if (!polygon?.getPath) return [];
+    return polygon.getPath().getArray().map((coord) => ({
+      lat: coord.lat(),
+      lng: coord.lng(),
+    }));
+  }, []);
+
   // Add handlers for polygon deletion
   const handlePolygonDelete = useCallback((index) => {
     if (onPolygonDelete) {
       onPolygonDelete(index);
     }
   }, [onPolygonDelete]);
+
+  const buildPresetPolygon = useCallback((centerPoint, shape) => {
+    const lat = centerPoint?.lat;
+    const lng = centerPoint?.lng;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return [];
+
+    const sizeMultiplier = shapeSize === 'small' ? 0.85 : shapeSize === 'large' ? 2.0 : 1.35;
+    const offset = 0.015 * sizeMultiplier;
+    if (shape === 'rectangle') {
+      return [
+        { lat: lat + offset, lng: lng - offset },
+        { lat: lat + offset, lng: lng + offset },
+        { lat: lat - offset, lng: lng + offset },
+        { lat: lat - offset, lng: lng - offset },
+      ];
+    }
+
+    if (shape === 'triangle') {
+      return [
+        { lat: lat + offset, lng: lng },
+        { lat: lat - offset, lng: lng + offset },
+        { lat: lat - offset, lng: lng - offset },
+      ];
+    }
+
+    return [];
+  }, [shapeSize]);
 
   useEffect(() => {
     if (!showDrawingManager) {
@@ -235,6 +273,16 @@ const GoogleMapDrawing = ({
     if (!showDrawingManager || hasEditablePolygon || activeTool !== 'draw' || !event?.latLng) return;
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
+    if (drawShape === 'rectangle' || drawShape === 'triangle') {
+      const presetPath = buildPresetPolygon({ lat, lng }, drawShape);
+      if (!presetPath.length) return;
+      setDraftPath(presetPath);
+      setCompletedPath([]);
+      if (onDraftChange) {
+        onDraftChange(presetPath);
+      }
+      return;
+    }
     setDraftPath((prev) => {
       const next = [...prev, { lat, lng }];
       if (onDraftChange) {
@@ -242,7 +290,7 @@ const GoogleMapDrawing = ({
       }
       return next;
     });
-  }, [activeTool, showDrawingManager, hasEditablePolygon, onDraftChange]);
+  }, [activeTool, showDrawingManager, hasEditablePolygon, onDraftChange, drawShape, buildPresetPolygon, onPolygonComplete]);
 
   const handleUndoPoint = useCallback(() => {
     setDraftPath((prev) => {
@@ -258,6 +306,8 @@ const GoogleMapDrawing = ({
     setDraftPath([]);
     setCompletedPath([]);
     setActiveTool('draw');
+    setDrawShape('polygon');
+    setShapeSize('medium');
     if (onDraftChange) {
       onDraftChange([]);
     }
@@ -269,16 +319,16 @@ const GoogleMapDrawing = ({
       return;
     }
 
-    if (onPolygonComplete) {
-      onPolygonComplete(draftPath);
-    }
     setCompletedPath(draftPath);
     setDraftPath([]);
     setActiveTool('draw');
     if (onDraftChange) {
       onDraftChange(draftPath);
     }
-  }, [draftPath, onPolygonComplete]);
+    if (onPolygonComplete) {
+      onPolygonComplete(draftPath);
+    }
+  }, [draftPath, onPolygonComplete, onDraftChange]);
 
   const handleToggleFullscreen = useCallback(async () => {
     const element = mapWrapperRef.current;
@@ -395,6 +445,56 @@ const GoogleMapDrawing = ({
                 Select Draw New to create a zone. Select Edit Existing to reshape the current zone.
               </div>
             )}
+            {activeTool === 'draw' && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[
+                  { key: 'polygon', label: 'Polygon' },
+                  { key: 'rectangle', label: 'Rectangle' },
+                  { key: 'triangle', label: 'Triangle' },
+                ].map((shape) => (
+                  <button
+                    key={shape.key}
+                    type="button"
+                    onClick={() => setDrawShape(shape.key)}
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition ${
+                      drawShape === shape.key
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    }`}
+                  >
+                    {shape.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {activeTool === 'draw' && drawShape !== 'polygon' && (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-gray-500">
+                  Size
+                </span>
+                {[
+                  { key: 'small', label: 'Small' },
+                  { key: 'medium', label: 'Medium' },
+                  { key: 'large', label: 'Large' },
+                ].map((size) => (
+                  <button
+                    key={size.key}
+                    type="button"
+                    onClick={() => setShapeSize(size.key)}
+                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide transition ${
+                      shapeSize === size.key
+                        ? 'bg-red-600 text-white'
+                        : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                    }`}
+                  >
+                    {size.label}
+                  </button>
+                ))}
+                <span className="w-full text-[10px] text-blue-gray-500">
+                  Tip: size affects the next rectangle or triangle you place.
+                </span>
+              </div>
+            )}
             {isEditMode && (
               <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-2 text-[11px] text-blue-gray-700">
                 Edit Existing mode: drag the visible corner handles to reshape the polygon.
@@ -430,7 +530,7 @@ const GoogleMapDrawing = ({
         )}
         {isCreateMode && (
           <div className="absolute left-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-md">
-            Draw Tool Active
+            {drawShape === 'polygon' ? 'Draw Tool Active' : `Shape: ${drawShape}`}
           </div>
         )}
         {isEditMode && (
@@ -454,6 +554,14 @@ const GoogleMapDrawing = ({
                 editable: false,
                 draggable: false,
               }}
+              onLoad={(polygon) => {
+                if (polygon) {
+                  polygonRefs.current[0] = polygon;
+                }
+              }}
+              onDragEnd={() => {
+                return;
+              }}
             />
           )}
 
@@ -462,8 +570,25 @@ const GoogleMapDrawing = ({
               path={draftPath}
               options={{
                 ...polygonOptions,
-                editable: false,
-                draggable: false,
+                editable: isPresetShape,
+                draggable: isPresetShape,
+              }}
+              onLoad={(polygon) => {
+                if (isPresetShape) {
+                  polygonRefs.current[1] = polygon;
+                }
+              }}
+              onDragEnd={() => {
+                if (isPresetShape && polygonRefs.current[1]) {
+                  const next = getPolygonCoordinates(polygonRefs.current[1]);
+                  setDraftPath(next);
+                  if (onDraftChange) {
+                    onDraftChange(next);
+                  }
+                  if (onPolygonComplete) {
+                    onPolygonComplete(next);
+                  }
+                }
               }}
             />
           )}
