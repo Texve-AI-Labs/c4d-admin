@@ -106,7 +106,7 @@ const GeoMarkings = () => {
   ];
 
   return (
-    <div className="p-4">
+    <div className="p-4 bg-white rounded shadow">
       <Typography variant="h4" className="mb-6">GeoMarkings</Typography>
       <Tabs value={activeTab} className="overflow-visible">
         <TabsHeader 

@@ -78,7 +78,7 @@ const ServiceAreasTab = () => {
     try {
       const selectedIndex = serviceAreas.findIndex((area) => area.id === selectedItem?.id);
       const candidateCoordinates =
-        coordinates ||
+        (Array.isArray(coordinates) && coordinates.length > 0 ? coordinates : null) ||
         updatedServiceAreas[selectedIndex]?.coordinates ||
         selectedItem?.coordinates ||
         [];
@@ -184,6 +184,24 @@ const ServiceAreasTab = () => {
     }
   };
 
+  // const handleDelete = async () => {
+  //   try {
+  //     if (!deleteDialog.item?.id) return;
+  //     const response = await ApiRequestUtils.delete(`${API_ROUTES.GEO_MARKINGS_DELETE}/${deleteDialog.item.id}`);
+  //     if (response?.success) {
+  //       await fetchServiceAreas();
+  //     } else if (/associated zone/i.test(response?.message || '')) {
+  //       setZoneAlertOpen(true);
+  //     } else {
+  //       throw new Error(response?.message || 'Failed to delete service area');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //   } finally {
+  //     setDeleteDialog({ open: false, item: null });
+  //   }
+  // };
+
   // Show create/edit form with map
   if (isCreating || selectedItem) {
     return (
@@ -285,6 +303,13 @@ const ServiceAreasTab = () => {
                   >
                     <PencilIcon className="h-4 w-4" />
                   </IconButton>                
+                  {/* <IconButton
+                    color="red"
+                    variant="text"
+                    onClick={() => handlePolygonDelete(serviceAreas.findIndex((item) => item.id === area.id))}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </IconButton> */}
                 </div>
               </div>
             </div>

@@ -57,6 +57,7 @@ const GoogleMapDrawing = ({
   onPolygonDelete,
   onToolChange,
   initialTool = 'draw',
+  overlapWarning = '',
   mapHeight = '500px',
   showDrawingManager = false,
   isEditingExistingPolygon = false
@@ -72,11 +73,15 @@ const GoogleMapDrawing = ({
   const [draftPath, setDraftPath] = useState([]);
   const [completedPath, setCompletedPath] = useState([]);
   const [activeTool, setActiveTool] = useState(initialTool);
+  const [drawShape, setDrawShape] = useState('polygon');
+  const [shapeSize, setShapeSize] = useState('medium');
+  const [showMoreTools, setShowMoreTools] = useState(false);
   const [toolbarExpanded, setToolbarExpanded] = useState(false);
   const mapWrapperRef = useRef(null);
   const hasEditablePolygon = isEditingExistingPolygon && Array.isArray(initialPolygon) && initialPolygon.length >= 3;
   const isEditMode = showDrawingManager && hasEditablePolygon && activeTool === 'edit';
   const isCreateMode = showDrawingManager && activeTool === 'draw';
+  const isPresetShape = activeTool === 'draw' && drawShape !== 'polygon';
 
   const onMapLoad = useCallback((map) => {
     setMap(map);
@@ -124,7 +129,7 @@ const GoogleMapDrawing = ({
   }, [map, backgroundPolygons, focusPolygons, initialPolygon, showDrawingManager]);
 
   const handlePolygonComplete = useCallback((polygon) => {
-    console.log('Polygon completed');
+    // console.log('Polygon completed');
     
     // Get the underlying Google Maps polygon instance
     const nativePolygon = polygon;
@@ -148,7 +153,7 @@ const GoogleMapDrawing = ({
 
   // Add handlers for polygon path updates
   const handlePolygonPathChange = useCallback((polygon, index) => {
-    console.log('Polygon path changed');
+    // console.log('Polygon path changed');
     
     // Get the underlying Google Maps polygon instance
     const nativePolygon = polygon;
@@ -163,11 +168,19 @@ const GoogleMapDrawing = ({
       lng: coord.lng()
     }));
     
-    console.log('Updated coordinates:', coordinates);
+    // console.log('Updated coordinates:', coordinates);
     if (onPolygonUpdate) {
       onPolygonUpdate(coordinates, index);
     }
   }, [onPolygonUpdate]);
+
+  const getPolygonCoordinates = useCallback((polygon) => {
+    if (!polygon?.getPath) return [];
+    return polygon.getPath().getArray().map((coord) => ({
+      lat: coord.lat(),
+      lng: coord.lng(),
+    }));
+  }, []);
 
   // Add handlers for polygon deletion
   const handlePolygonDelete = useCallback((index) => {
@@ -176,29 +189,56 @@ const GoogleMapDrawing = ({
     }
   }, [onPolygonDelete]);
 
+  const buildPresetPolygon = useCallback((centerPoint, shape) => {
+    const lat = centerPoint?.lat;
+    const lng = centerPoint?.lng;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return [];
+
+    const sizeMultiplier = shapeSize === 'small' ? 0.85 : shapeSize === 'large' ? 2.0 : 1.35;
+    const offset = 0.015 * sizeMultiplier;
+    if (shape === 'rectangle') {
+      return [
+        { lat: lat + offset, lng: lng - offset },
+        { lat: lat + offset, lng: lng + offset },
+        { lat: lat - offset, lng: lng + offset },
+        { lat: lat - offset, lng: lng - offset },
+      ];
+    }
+
+    if (shape === 'triangle') {
+      return [
+        { lat: lat + offset, lng: lng },
+        { lat: lat - offset, lng: lng + offset },
+        { lat: lat - offset, lng: lng - offset },
+      ];
+    }
+
+    return [];
+  }, [shapeSize]);
+
   useEffect(() => {
     if (!showDrawingManager) {
       setDraftPath([]);
       setCompletedPath([]);
-      setActiveTool(initialTool);
+      setToolbarExpanded(false);
     }
-  }, [showDrawingManager, map, initialTool]);
+  }, [showDrawingManager]);
 
   useEffect(() => {
-    if (showDrawingManager) {
-      setActiveTool(initialTool);
+    setActiveTool(initialTool);
+  }, [initialTool]);
+
+  useEffect(() => {
+    if (overlapWarning && showDrawingManager) {
+      setToolbarExpanded(true);
     }
-  }, [initialTool, showDrawingManager]);
+  }, [overlapWarning, showDrawingManager]);
 
   useEffect(() => {
     if (!showDrawingManager) {
       setToolbarExpanded(false);
-      return;
     }
-    if (activeTool === 'draw' || activeTool === 'edit') {
-      setToolbarExpanded(true);
-    }
-  }, [activeTool, showDrawingManager]);
+  }, [showDrawingManager]);
 
   useEffect(() => {
     if (showDrawingManager && !hasEditablePolygon && Array.isArray(initialPolygon) && initialPolygon.length >= 3) {
@@ -216,7 +256,11 @@ const GoogleMapDrawing = ({
 
   useEffect(() => {
     if (typeof onToolChange === 'function') {
-      onToolChange(activeTool);
+      const tool = activeTool;
+      const id = window.setTimeout(() => {
+        onToolChange(tool);
+      }, 0);
+      return () => window.clearTimeout(id);
     }
   }, [activeTool, onToolChange]);
 
@@ -230,6 +274,32 @@ const GoogleMapDrawing = ({
     if (!showDrawingManager || hasEditablePolygon || activeTool !== 'draw' || !event?.latLng) return;
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
+    // console.log('[GoogleMapDrawing] map click', {
+    //   activeTool,
+    //   drawShape,
+    //   isPresetShape,
+    //   lat,
+    //   lng,
+    // });
+    if (drawShape === 'rectangle' || drawShape === 'triangle') {
+      const presetPath = buildPresetPolygon({ lat, lng }, drawShape);
+      if (!presetPath.length) return;
+      // console.log('[GoogleMapDrawing] preset polygon created', {
+      //   shape: drawShape,
+      //   size: shapeSize,
+      //   points: presetPath.length,
+      //   presetPath,
+      // });
+      setDraftPath(presetPath);
+      setCompletedPath([]);
+      if (onDraftChange) {
+        onDraftChange(presetPath);
+      }
+      if (onPolygonComplete) {
+        onPolygonComplete(presetPath);
+      }
+      return;
+    }
     setDraftPath((prev) => {
       const next = [...prev, { lat, lng }];
       if (onDraftChange) {
@@ -237,7 +307,7 @@ const GoogleMapDrawing = ({
       }
       return next;
     });
-  }, [activeTool, showDrawingManager, hasEditablePolygon, onDraftChange]);
+  }, [activeTool, showDrawingManager, hasEditablePolygon, onDraftChange, drawShape, buildPresetPolygon, onPolygonComplete]);
 
   const handleUndoPoint = useCallback(() => {
     setDraftPath((prev) => {
@@ -253,27 +323,36 @@ const GoogleMapDrawing = ({
     setDraftPath([]);
     setCompletedPath([]);
     setActiveTool('draw');
+    setDrawShape('polygon');
+    setShapeSize('medium');
+    setShowMoreTools(false);
     if (onDraftChange) {
       onDraftChange([]);
     }
   }, [onDraftChange]);
 
   const handleFinishDraft = useCallback(() => {
+    // console.log('[GoogleMapDrawing] finish draft clicked', {
+    //   draftPoints: draftPath.length,
+    //   draftPath,
+    //   activeTool,
+    //   drawShape,
+    // });
     if (draftPath.length < 3) {
       window.alert('Please add at least 3 points before finishing the polygon.');
       return;
     }
 
-    if (onPolygonComplete) {
-      onPolygonComplete(draftPath);
-    }
     setCompletedPath(draftPath);
     setDraftPath([]);
     setActiveTool('draw');
     if (onDraftChange) {
       onDraftChange(draftPath);
     }
-  }, [draftPath, onPolygonComplete]);
+    if (onPolygonComplete) {
+      onPolygonComplete(draftPath);
+    }
+  }, [draftPath, onPolygonComplete, onDraftChange]);
 
   const handleToggleFullscreen = useCallback(async () => {
     const element = mapWrapperRef.current;
@@ -314,31 +393,30 @@ const GoogleMapDrawing = ({
   return (
     <div className="space-y-2">
       {isCreateMode && (
-        <div className="bg-blue-gray-50 p-3 rounded-lg text-sm text-blue-gray-700">
-          <div className="flex items-center gap-2 font-medium">
-            <PencilSquareIcon className="h-5 w-5 text-blue-600" />
+        <div className="rounded-lg border border-blue-100 bg-blue-50/80 px-3 py-2 text-xs text-blue-gray-700">
+          <div className="flex items-center gap-2 font-medium text-blue-gray-800">
+            <PencilSquareIcon className="h-4 w-4 text-blue-600" />
             <span>Drawing mode active</span>
           </div>
-          <div className="mt-2 flex items-start gap-2 rounded-md bg-white px-3 py-2 text-xs text-blue-gray-700">
-            <CursorArrowRaysIcon className="mt-0.5 h-4 w-4 text-blue-500" />
-            <span>Click points on the map to draw the polygon. Dragging is not used here.</span>
+          <div className="mt-1 text-[11px] text-blue-gray-600">
+            Click points on the map to draw. Use the toolbar for shape presets and save actions.
           </div>
-          <ol className="list-decimal ml-4 mt-2 space-y-1">
-            <li>Click on the map to add points for the polygon</li>
-            <li>Use Undo or Clear if you need to adjust the draft</li>
-            <li>Click Finish Drawing once you have at least 3 points</li>
-          </ol>
         </div>
       )}
       {isEditMode && (
-        <div className="bg-blue-gray-50 p-3 rounded-lg text-sm text-blue-gray-700">
-          <div className="flex items-center gap-2 font-medium">
-            <ArrowsPointingOutIcon className="h-5 w-5 text-emerald-700" />
+        <div className="rounded-lg border border-emerald-100 bg-emerald-50/80 px-3 py-2 text-xs text-blue-gray-700">
+          <div className="flex items-center gap-2 font-medium text-blue-gray-800">
+            <ArrowsPointingOutIcon className="h-4 w-4 text-emerald-700" />
             <span>Drag vertices to edit</span>
           </div>
-          <div className="mt-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-xs text-blue-gray-700">
-            Corner handles are visible on the selected polygon. Drag any handle to reshape the zone, then save when finished.
+          <div className="mt-1 text-[11px] text-blue-gray-600">
+            Move the visible corner handles, then save when finished.
           </div>
+        </div>
+      )}
+      {overlapWarning && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
+          {overlapWarning}
         </div>
       )}
       <div ref={mapWrapperRef} style={{ height: mapHeight }} className="w-full relative">
@@ -346,85 +424,142 @@ const GoogleMapDrawing = ({
           <button
             type="button"
             onClick={handleToggleToolbar}
-            className="absolute right-3 top-20 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-blue-gray-700 shadow-md ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
+            className="absolute left-1/2 top-2 z-10 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-blue-gray-700 shadow-md ring-1 ring-black/5 backdrop-blur transition hover:bg-white"
           >
             <RectangleGroupIcon className="h-4 w-4" />
             Tools
           </button>
         )}
         {showDrawingManager && toolbarExpanded && (
-          <div className="absolute right-3 top-20 z-10 w-[290px] rounded-xl bg-white/95 p-2.5 shadow-md ring-1 ring-black/5 backdrop-blur">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-blue-gray-500">
+          <div className="absolute left-1/2 top-2 z-10 w-[min(92vw,460px)] -translate-x-1/2 rounded-xl bg-white/95 p-2 shadow-md ring-1 ring-black/5 backdrop-blur">
+            <div className="flex flex-wrap items-center justify-between gap-1">
+              <div className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-blue-gray-500">
                 <RectangleGroupIcon className="h-4 w-4" />
-                <span>Create / Edit Tools</span>
+                <span>Tools</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-1">
                 <button
                   type="button"
                   onClick={handleToggleToolbar}
-                  className="inline-flex items-center gap-1 rounded-full bg-blue-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-gray-700 transition hover:bg-blue-gray-200"
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-gray-100 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-blue-gray-700 transition hover:bg-blue-gray-200"
                 >
                   Collapse
                 </button>
                 <button
                   type="button"
                   onClick={handleToggleFullscreen}
-                  className="inline-flex items-center gap-1 rounded-full bg-blue-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-gray-700 transition hover:bg-blue-gray-200"
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-gray-100 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-blue-gray-700 transition hover:bg-blue-gray-200"
                 >
                   <ArrowsPointingOutIcon className="h-3.5 w-3.5" />
                   Full Screen
                 </button>
-                <div className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isEditMode ? 'bg-emerald-100 text-emerald-800' : activeTool === 'draw' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                <button
+                  type="button"
+                  onClick={() => setShowMoreTools((prev) => !prev)}
+                  className="inline-flex items-center gap-1 rounded-full bg-blue-gray-100 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-blue-gray-700 transition hover:bg-blue-gray-200"
+                >
+                  More
+                </button>
+                <div className={`rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${isEditMode ? 'bg-emerald-100 text-emerald-800' : activeTool === 'draw' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
                   {isEditMode ? 'Edit Existing' : activeTool === 'draw' ? 'Draw New' : 'Idle'}
                 </div>
               </div>
             </div>
-            {activeTool === 'draw' && (
-              <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-2 text-[11px] text-blue-gray-700">
-                Select Draw New to create a zone. Select Edit Existing to reshape the current zone.
+            {showMoreTools && (
+              <div className="mt-1.5 rounded-lg border border-blue-100 bg-blue-50 px-2 py-1.5">
+                {activeTool === 'draw' && (
+                  <>
+                    <div className="flex flex-wrap gap-1">
+                {[
+                  { key: 'polygon', label: 'Polygon' },
+                  { key: 'rectangle', label: 'Rectangle' },
+                  { key: 'triangle', label: 'Triangle' },
+                ].map((shape) => (
+                  <button
+                    key={shape.key}
+                    type="button"
+                    onClick={() => setDrawShape(shape.key)}
+                    className={`rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wide transition ${
+                      drawShape === shape.key
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100'
+                    }`}
+                  >
+                    {shape.label}
+                  </button>
+                ))}
+              </div>
+                    {drawShape !== 'polygon' && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-blue-gray-500">
+                  Size
+                </span>
+                {[
+                  { key: 'small', label: 'Small' },
+                  { key: 'medium', label: 'Medium' },
+                  { key: 'large', label: 'Large' },
+                ].map((size) => (
+                  <button
+                    key={size.key}
+                    type="button"
+                    onClick={() => setShapeSize(size.key)}
+                    className={`rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-wide transition ${
+                      shapeSize === size.key
+                        ? 'bg-red-600 text-white'
+                        : 'bg-white text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100'
+                    }`}
+                  >
+                    {size.label}
+                  </button>
+                ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
             {isEditMode && (
-              <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-2 text-[11px] text-blue-gray-700">
+              <div className="mt-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2 py-1.5 text-[10px] text-blue-gray-700">
                 Edit Existing mode: drag the visible corner handles to reshape the polygon.
               </div>
             )}
-            <div className={`mt-2.5 gap-2 ${isEditMode ? 'grid grid-cols-2' : 'grid grid-cols-3'}`}>
-              <button type="button" className={`inline-flex items-center justify-center gap-1 rounded-md px-2.5 py-2 text-xs font-medium transition ${activeTool === 'draw' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`} onClick={() => setActiveTool('draw')}>
+            <div className="mt-2 flex flex-wrap gap-1">
+              <button type="button" className={`inline-flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[10px] font-medium transition ${activeTool === 'draw' ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`} onClick={() => setActiveTool('draw')}>
                 <PencilSquareIcon className="h-4 w-4" />
                 Draw New
               </button>
-              <button type="button" className={`inline-flex items-center justify-center gap-1 rounded-md px-2.5 py-2 text-xs font-medium transition ${activeTool === 'edit' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}`} onClick={() => setActiveTool('edit')}>
+              <button type="button" className={`inline-flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[10px] font-medium transition ${activeTool === 'edit' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}`} onClick={() => setActiveTool('edit')}>
                 <ArrowsPointingOutIcon className="h-4 w-4" />
                 Edit Existing
               </button>
               {activeTool === 'draw' && (
-                <>
-                  <button type="button" className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-2.5 py-2 text-xs font-medium text-white transition hover:bg-blue-700" onClick={handleFinishDraft}>
+                  <button type="button" className="inline-flex items-center justify-center gap-1 rounded-md bg-blue-600 px-2 py-1.5 text-[10px] font-medium text-white transition hover:bg-blue-700" onClick={handleFinishDraft}>
                     <CheckIcon className="h-4 w-4" />
                     Save Draft
                   </button>
-                  <button type="button" className="inline-flex items-center justify-center gap-1 rounded-md bg-gray-200 px-2.5 py-2 text-xs font-medium text-gray-800 transition hover:bg-gray-300" onClick={handleUndoPoint}>
+              )}
+            </div>
+            {showMoreTools && activeTool === 'draw' && (
+              <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                  <button type="button" className="inline-flex items-center justify-center gap-1 rounded-md bg-gray-200 px-2 py-1.5 text-[11px] font-medium text-gray-800 transition hover:bg-gray-300" onClick={handleUndoPoint}>
                     <ArrowUturnLeftIcon className="h-4 w-4" />
                     Undo
                   </button>
-                  <button type="button" className="inline-flex items-center justify-center gap-1 rounded-md bg-red-100 px-2.5 py-2 text-xs font-medium text-red-700 transition hover:bg-red-200" onClick={handleClearDraft}>
+                  <button type="button" className="inline-flex items-center justify-center gap-1 rounded-md bg-red-100 px-2 py-1.5 text-[11px] font-medium text-red-700 transition hover:bg-red-200" onClick={handleClearDraft}>
                     <TrashIcon className="h-4 w-4" />
                     Clear
                   </button>
-                </>
-              )}
-            </div>
+                </div>
+            )}
           </div>
         )}
         {isCreateMode && (
           <div className="absolute left-3 top-3 z-10 rounded-full bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-md">
-            Draw Tool Active
+            {drawShape === 'polygon' ? 'Draw Tool Active' : `Shape: ${drawShape}`}
           </div>
         )}
         {isEditMode && (
-          <div className="absolute left-3 top-3 z-10 rounded-full bg-emerald-700 px-3 py-2 text-xs font-semibold text-white shadow-lg ring-2 ring-emerald-200">
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-emerald-700 px-3 py-2 text-xs font-semibold bg-primary text-white shadow-lg ring-2 ring-emerald-200">
             Edit Mode: Drag Vertices
           </div>
         )}
@@ -444,6 +579,14 @@ const GoogleMapDrawing = ({
                 editable: false,
                 draggable: false,
               }}
+              onLoad={(polygon) => {
+                if (polygon) {
+                  polygonRefs.current[0] = polygon;
+                }
+              }}
+              onDragEnd={() => {
+                return;
+              }}
             />
           )}
 
@@ -452,8 +595,25 @@ const GoogleMapDrawing = ({
               path={draftPath}
               options={{
                 ...polygonOptions,
-                editable: false,
-                draggable: false,
+                editable: isPresetShape,
+                draggable: isPresetShape,
+              }}
+              onLoad={(polygon) => {
+                if (isPresetShape) {
+                  polygonRefs.current[1] = polygon;
+                }
+              }}
+              onDragEnd={() => {
+                if (isPresetShape && polygonRefs.current[1]) {
+                  const next = getPolygonCoordinates(polygonRefs.current[1]);
+                  setDraftPath(next);
+                  if (onDraftChange) {
+                    onDraftChange(next);
+                  }
+                  if (onPolygonComplete) {
+                    onPolygonComplete(next);
+                  }
+                }
               }}
             />
           )}
