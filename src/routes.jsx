@@ -90,6 +90,9 @@ import DynamicTextList from "./pages/marketing/dynamicText/listDynamicText";
 import DynamicTextAdd from "./pages/marketing/dynamicText/addDynamicText";
 import DynamicTextEdit from "./pages/marketing/dynamicText/editDynamicText";
 import SkipLogs from "./pages/marketing/skipLogs";
+import ExternalPromotionsList from "./pages/marketing/externalPromotions/list";
+import ExternalPromotionsAdd from "./pages/marketing/externalPromotions/add";
+import ExternalPromotionsEdit from "./pages/marketing/externalPromotions/edit";
 import InstantReward from "./pages/vendor/instantReward";
 import ReferralRuleList from "./pages/finance/referralRules/list";
 import ReferralRuleAdd from "./pages/finance/referralRules/add";
@@ -417,6 +420,30 @@ export const routes = [
         path: "/vendors/skip-logs",
         element: <SkipLogs />,
         display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "external promotions",
+        path: "/vendors/external-promotions",
+        element: <ExternalPromotionsList />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "external promotions add",
+        path: "/vendors/external-promotions/add",
+        element: <ExternalPromotionsAdd />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "external promotions edit",
+        path: "/vendors/external-promotions/edit/:id",
+        element: <ExternalPromotionsEdit />,
+        display: false,
         permission: "Marketing",
       },
       {

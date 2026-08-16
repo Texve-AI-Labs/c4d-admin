@@ -1075,7 +1075,11 @@ export const API_ROUTES = {
     'POST_REFERRAL_RULE': '/referral-rules',
     'UPDATE_REFERRAL_RULE': '/referral-rules/:settingId',
     'GET_REFERRAL_CREDIT_LOGS': '/getReferralCreditLogs',
-    'GET_ROOTCABS_WEBSITE_REGISTRATIONS': '/admin/rootcabs-website/registrations'
+    'GET_ROOTCABS_WEBSITE_REGISTRATIONS': '/admin/rootcabs-website/registrations',
+    'GET_EXTERNAL_PROMOTIONS':'/external-promotions',
+    'ADD_EXTERNAL_PROMOTIONS':'/external-promotions/add',
+    'UPDATE_EXTERNAL_PROMOTIONS':'/external-promotions/update',
+    'DELETE_EXTERNAL_PROMOTIONS':'/external-promotions/:id'
 
 };
 
