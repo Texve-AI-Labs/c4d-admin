@@ -22,7 +22,9 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   const [serviceAreas, setServiceAreas] = useState([]);
   const [selectedServiceArea, setSelectedServiceArea] = useState(null);
   const [selectedDescription, setSelectedDescription] = useState('');
+  const [draftDescription, setDraftDescription] = useState('Zone');
   const [sessionMode, setSessionMode] = useState('view');
+  const [overlapWarning, setOverlapWarning] = useState('');
   const normalizeZoneType = (value) => String(value || '').trim().toLowerCase();
   const getOverlapType = (value) => {
     const type = normalizeZoneType(value);
@@ -36,7 +38,34 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
   }, [selectedItem, zones]);
   const activeZoneId = selectedItem?.id ?? selectedZoneRecord?.id ?? null;
   const activeZoneType = getOverlapType(selectedItem?.description || selectedZoneRecord?.description);
-  const activeDraftType = getOverlapType(selectedDescription || selectedItem?.description || 'zone');
+  const activeDraftType = getOverlapType(draftDescription || selectedItem?.description || 'zone');
+  const getOverlapLabel = (value) => {
+    const type = getOverlapType(value);
+    if (type === 'city') return 'City';
+    if (type === 'prime') return 'Prime';
+    return 'Zone';
+  };
+  const buildOverlapMessage = (candidateType, overlappingZone) => {
+    const candidateLabel = getOverlapLabel(candidateType);
+    const existingLabel = getOverlapLabel(overlappingZone?.description || overlappingZone?.type || candidateType);
+    const existingName = overlappingZone?.name ? `: ${overlappingZone.name}` : '';
+    return `This ${candidateLabel} overlaps an existing ${existingLabel}${existingName}`;
+  };
+  const logOverlapDebug = (context, candidateType, candidateCoordinates, overlappingZone) => {
+    console.log('[GeoMarkings overlap debug]', {
+      context,
+      candidateType,
+      candidateLabel: getOverlapLabel(candidateType),
+      selectedItemId: selectedItem?.id || null,
+      selectedItemDescription: selectedItem?.description || null,
+      selectedDescription,
+      coordinateCount: Array.isArray(candidateCoordinates) ? candidateCoordinates.length : 0,
+      overlappingZoneId: overlappingZone?.id || null,
+      overlappingZoneName: overlappingZone?.name || null,
+      overlappingZoneDescription: overlappingZone?.description || null,
+      overlappingZoneType: overlappingZone?.type || null,
+    });
+  };
   const findOverlappingZone = (candidateCoordinates, overlapType) => {
     if (!overlapType) return null;
     return zones
@@ -172,6 +201,8 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setSelectedItem(null);
     setCoordinates(null);
     setError(null);
+    setOverlapWarning('');
+    setDraftDescription('Zone');
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -184,18 +215,23 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setCoordinates(null);
     setSelectedDescription('');
     setError(null);
+    setOverlapWarning('');
+    setDraftDescription('Zone');
     setSessionMode('view');
   };
 
   const handlePolygonUpdate = (newCoordinates) => {
-    const overlappingZone = findOverlappingZone(newCoordinates, selectedItem ? activeZoneType : activeDraftType);
+    const candidateType = selectedItem ? activeZoneType : activeDraftType;
+    const overlappingZone = findOverlappingZone(newCoordinates, candidateType);
+    logOverlapDebug('polygon_update', candidateType, newCoordinates, overlappingZone);
     if (overlappingZone) {
-      setError(
-        `This ${overlappingZone?.description || activeZoneType || 'zone'} overlaps an existing ${overlappingZone?.description || activeZoneType || 'zone'}${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}`,
-      );
+      const message = buildOverlapMessage(candidateType, overlappingZone);
+      setOverlapWarning(message);
+      setError(message);
       return;
     }
     setError(null);
+    setOverlapWarning('');
     if (selectedItem) {
       setUpdatedZones((prev) => {
         const updated = [...prev];
@@ -261,17 +297,11 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
         newServices: null,
       };
       const overlappingZone = findOverlappingZone(candidateCoordinates, overlapType);
+      logOverlapDebug('save', overlapType, candidateCoordinates, overlappingZone);
       if (overlappingZone) {
-        // console.warn('ZonesTab save blocked by overlap', {
-        //   selectedItemId: selectedItem?.id,
-        //   overlappingZoneId: overlappingZone.id,
-        //   overlappingZoneName: overlappingZone.name,
-        //   overlappingZoneType: overlappingZone.type,
-        //   overlappingZoneDescription: overlappingZone.description,
-        // });
-        setError(
-          `This zone overlaps an existing zone${overlappingZone?.name ? `: ${overlappingZone.name}` : ''}${overlappingZone?.description ? ` (${overlappingZone.description})` : ''}${overlappingZone?.type ? ` [${overlappingZone.type}]` : ''}`,
-        );
+        const message = buildOverlapMessage(overlapType, overlappingZone);
+        setError(message);
+        setOverlapWarning(message);
         return;
       }
 
@@ -302,6 +332,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
       setIsCreating(false);
       setCoordinates(null);
       setSelectedItem(null);
+      setDraftDescription(formData?.description || 'Zone');
       await fetchZones();
       handleCancel();
       if (typeof onSaveSuccess === 'function') {
@@ -318,6 +349,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setSessionMode('edit');
     setShowForm(true);
     setCoordinates(zone.coordinates || []);
+    setDraftDescription(zone.description || 'Zone');
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
@@ -340,11 +372,16 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
     const overlapType = selectedItem ? activeZoneType : activeDraftType;
     if (isOverlappingAnyOtherZone(nextCoordinates, overlapType)) {
-      setError('This zone overlaps an existing zone');
+      const overlappingZone = findOverlappingZone(nextCoordinates, overlapType);
+      logOverlapDebug('polygon_complete', overlapType, nextCoordinates, overlappingZone);
+      const message = buildOverlapMessage(overlapType, overlappingZone);
+      setError(message);
+      setOverlapWarning(message);
       setCoordinates(null);
       return;
     }
     setError(null);
+    setOverlapWarning('');
     setCoordinates(nextCoordinates);
   };
 
@@ -353,11 +390,16 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     const nextCoordinates = Array.isArray(coords) ? [...coords] : coords;
     if (!Array.isArray(nextCoordinates)) return;
     if (isOverlappingAnyOtherZone(nextCoordinates, activeDraftType)) {
-      setError('This zone overlaps an existing zone');
+      const overlappingZone = findOverlappingZone(nextCoordinates, activeDraftType);
+      logOverlapDebug('draft_change', activeDraftType, nextCoordinates, overlappingZone);
+      const message = buildOverlapMessage(activeDraftType, overlappingZone);
+      setError(message);
+      setOverlapWarning(message);
       return;
     }
     setCoordinates(nextCoordinates);
     setError(null);
+    setOverlapWarning('');
   };
 
   const handleServiceAreaChange = (value) => {
@@ -370,20 +412,26 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
     setCoordinates(null);
     setSelectedDescription('');
     setSessionMode('view');
+    setOverlapWarning('');
   };
 
   const handleToolChange = (tool) => {
-    if (tool === 'draw' && selectedItem) {
-      setSelectedItem(null);
-      setCoordinates(null);
-      setError(null);
+    if (tool === 'draw') {
       setSessionMode('create');
+      if (!showForm) {
+        setShowForm(true);
+      }
+      if (!showDrawingManager) {
+        setShowDrawingManager(true);
+      }
+      if (!selectedItem) {
+        setCoordinates(null);
+      }
       setIsCreating(true);
-      setShowForm(true);
-      setShowDrawingManager(true);
+      return;
     }
     if (tool === 'edit') {
-      setSessionMode(selectedItem ? 'edit' : 'create');
+      setSessionMode('edit');
       if (!showForm) {
         setShowForm(true);
       }
@@ -458,6 +506,7 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
               onPolygonDelete={handlePolygonDelete}
               onToolChange={handleToolChange}
               initialTool={sessionMode === 'edit' ? 'edit' : 'draw'}
+              overlapWarning={overlapWarning}
               backgroundPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
               backgroundPolygonStyle={{ fillColor: '#60a5fa', strokeColor: '#2563eb', fillOpacity: 0.1 }}
               existingPolygons={visibleZonePolygons}
@@ -478,6 +527,8 @@ const ZonesTab = ({ onSaveSuccess } = {}) => {
             coordinates={coordinates}
             serviceAreaId={selectedServiceArea}
             serviceAreaName={selectedServiceAreaName}
+            isEditing={sessionMode === 'edit'}
+            onDescriptionChange={setDraftDescription}
           />
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   Input,
@@ -8,7 +8,7 @@ import {
 } from '@material-tailwind/react';
 import Select from 'react-select';
 
-const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaId }) => {
+const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaId, isEditing = false, onDescriptionChange }) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -25,7 +25,18 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
   const [descriptionError, setDescriptionError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
-  const hasValidCoordinates = Array.isArray(coordinates) && coordinates.length >= 3;
+  const effectiveCoordinates = Array.isArray(coordinates) && coordinates.length >= 3
+    ? coordinates
+    : Array.isArray(initialData?.coordinates) && initialData.coordinates.length >= 3
+      ? initialData.coordinates
+      : coordinates;
+  const hasValidCoordinates = Array.isArray(effectiveCoordinates) && effectiveCoordinates.length >= 3;
+
+  useEffect(() => {
+    if (typeof onDescriptionChange === 'function') {
+      onDescriptionChange(formData.description || 'Zone');
+    }
+  }, [formData.description, onDescriptionChange]);
 
   const handleConfigChange = (field, value) => {
     // Convert to number and validate
@@ -61,8 +72,10 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
       hasError = true;
     }
 
-      if (!coordinates || coordinates.length < 3) {
-      const msg = 'Please draw a valid polygon with at least 3 points';
+      if (!hasValidCoordinates) {
+      const msg = isEditing
+        ? 'Please keep a valid polygon with at least 3 points'
+        : 'Please draw a valid polygon with at least 3 points';
       setError(msg);
       hasError = true;
       }
@@ -101,7 +114,7 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     try {
       await onSave({
         ...formData,
-        coordinates,
+        coordinates: effectiveCoordinates,
         parent_id: serviceAreaId,
         type: 'Zone'
       });
@@ -121,7 +134,9 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
         Zone Details
       </Typography>
       <Typography variant="small" color="gray" className="mb-3 block">
-        Draw the polygon on the map, click Finish Drawing, then save this zone.
+        {isEditing
+          ? 'Edit the polygon on the map, then save this zone.'
+          : 'Draw the polygon on the map, click Finish Drawing, then save this zone.'}
       </Typography>
       {error && (
         <Alert color="red" className="mb-4">
@@ -173,10 +188,14 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
                 : null
             }
             onChange={(selected) => {
+              const nextDescription = selected ? selected.value : '';
               setFormData({
                 ...formData,
-                description: selected ? selected.value : '',
+                description: nextDescription,
               });
+              if (typeof onDescriptionChange === 'function') {
+                onDescriptionChange(nextDescription || 'Zone');
+              }
               if (selected && descriptionError) {
                 setDescriptionError(null);
               }

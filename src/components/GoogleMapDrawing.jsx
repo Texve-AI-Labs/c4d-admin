@@ -57,6 +57,7 @@ const GoogleMapDrawing = ({
   onPolygonDelete,
   onToolChange,
   initialTool = 'draw',
+  overlapWarning = '',
   mapHeight = '500px',
   showDrawingManager = false,
   isEditingExistingPolygon = false
@@ -180,15 +181,19 @@ const GoogleMapDrawing = ({
     if (!showDrawingManager) {
       setDraftPath([]);
       setCompletedPath([]);
-      setActiveTool(initialTool);
+      setToolbarExpanded(false);
     }
-  }, [showDrawingManager, map, initialTool]);
+  }, [showDrawingManager]);
 
   useEffect(() => {
-    if (showDrawingManager) {
-      setActiveTool(initialTool);
+    setActiveTool(initialTool);
+  }, [initialTool]);
+
+  useEffect(() => {
+    if (overlapWarning && showDrawingManager) {
+      setToolbarExpanded(true);
     }
-  }, [initialTool, showDrawingManager]);
+  }, [overlapWarning, showDrawingManager]);
 
   useEffect(() => {
     if (!showDrawingManager) {
@@ -341,6 +346,11 @@ const GoogleMapDrawing = ({
           </div>
         </div>
       )}
+      {overlapWarning && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700">
+          {overlapWarning}
+        </div>
+      )}
       <div ref={mapWrapperRef} style={{ height: mapHeight }} className="w-full relative">
         {showDrawingManager && !toolbarExpanded && (
           <button
@@ -353,11 +363,11 @@ const GoogleMapDrawing = ({
           </button>
         )}
         {showDrawingManager && toolbarExpanded && (
-          <div className="absolute right-3 top-20 z-10 w-[290px] rounded-xl bg-white/95 p-2.5 shadow-md ring-1 ring-black/5 backdrop-blur">
+          <div className="absolute right-3 z-10  rounded-xl bg-white/95 p-2.5 shadow-md ring-1 ring-black/5 backdrop-blur">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-blue-gray-500">
                 <RectangleGroupIcon className="h-4 w-4" />
-                <span>Create / Edit Tools</span>
+                <span>Tools</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -424,7 +434,7 @@ const GoogleMapDrawing = ({
           </div>
         )}
         {isEditMode && (
-          <div className="absolute left-3 top-3 z-10 rounded-full bg-emerald-700 px-3 py-2 text-xs font-semibold text-white shadow-lg ring-2 ring-emerald-200">
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-emerald-700 px-3 py-2 text-xs font-semibold bg-primary text-white shadow-lg ring-2 ring-emerald-200">
             Edit Mode: Drag Vertices
           </div>
         )}
