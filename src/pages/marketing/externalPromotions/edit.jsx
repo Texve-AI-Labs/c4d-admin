@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { Button, Card, CardBody, CardHeader, Dialog, DialogBody, DialogFooter, DialogHeader, Typography } from "@material-tailwind/react";
+import Select from "react-select";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -9,6 +10,7 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 const validationSchema = Yup.object().shape({
   title: Yup.string().trim().required("Title is required"),
   redirectUrl: Yup.string().trim().required("Redirect URL is required"),
+  zone: Yup.string().trim().required("Zone is required"),
   position: Yup.number().typeError("Position must be a number").required("Position is required"),
   status: Yup.boolean().required("Status is required"),
 });
@@ -17,6 +19,7 @@ const buildInitialValues = (row = {}) => ({
   type: row?.type || 'VENDOR_LIST',
   title: row?.title || row?.name || "",
   redirectUrl: row?.redirectUrl || "",
+  zone: row?.zone || "",
   position: row?.position ?? "",
   status: typeof row?.status === "boolean" ? row.status : Boolean(row?.isActive),
   image: null,
@@ -32,8 +35,23 @@ function ExternalPromotionsEdit() {
   const [modalMessage, setModalMessage] = useState("");
   const [imagePreview, setImagePreview] = useState(row?.imageUrl || null);
   const [image2Preview, setImage2Preview] = useState(row?.secondaryImageUrl || null);
+  const [zones, setZones] = useState([]);
 
   useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {
+          type: "Service Area",
+        });
+        setZones(Array.isArray(response?.data) ? response.data : []);
+      } catch (error) {
+        console.error("Failed to fetch zones:", error);
+        setZones([]);
+      }
+    };
+
+    fetchZones();
+
     return () => {
       if (imagePreview?.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
       if (image2Preview?.startsWith("blob:")) URL.revokeObjectURL(image2Preview);
@@ -47,6 +65,7 @@ function ExternalPromotionsEdit() {
       formData.append("type",values.type)
       formData.append("title", values.title.trim());
       formData.append("redirectUrl", values.redirectUrl.trim());
+      formData.append("zone", values.zone);
       formData.append("position", String(values.position));
       formData.append("status", String(Boolean(values.status)));
 
@@ -109,33 +128,44 @@ function ExternalPromotionsEdit() {
               <Form className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Title</label>
+                    <label className="text-sm font-medium text-gray-700">Title <span className="text-red-500">*</span></label>
                     <Field name="title" type="text" className="w-full rounded-md border border-gray-300 p-2 shadow-sm" />
                     <ErrorMessage name="title" component="div" className="text-sm text-red-500" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Redirect URL</label>
+                    <label className="text-sm font-medium text-gray-700">Redirect URL <span className="text-red-500">*</span></label>
                     <Field name="redirectUrl" type="text" className="w-full rounded-md border border-gray-300 p-2 shadow-sm" />
                     <ErrorMessage name="redirectUrl" component="div" className="text-sm text-red-500" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Position</label>
+                    <label className="text-sm font-medium text-gray-700">Zone <span className="text-red-500">*</span></label>
+                    <Select
+                      options={[
+                        { value: "All", label: "All" },
+                        ...zones.map((zone) => ({
+                        value: zone?.name,
+                        label: zone?.name,
+                      }))
+                      ]}
+                      value={[
+                        { value: "All", label: "All" },
+                        ...zones.map((zone) => ({ value: zone?.name, label: zone?.name }))
+                      ].find((opt) => opt.value === values.zone) || null}
+                      onChange={(opt) => setFieldValue("zone", opt?.value || "")}
+                      placeholder="Select Zone"
+                      className="mt-1"
+                      classNamePrefix="react-select"
+                    >
+                    </Select>
+                    <ErrorMessage name="zone" component="div" className="text-sm text-red-500" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Position <span className="text-red-500">*</span></label>
                     <Field name="position" type="number" className="w-full rounded-md border border-gray-300 p-2 shadow-sm" />
                     <ErrorMessage name="position" component="div" className="text-sm text-red-500" />
                   </div>
-                  <div className="flex items-center gap-3 pt-6">
-                    <span className="text-sm font-medium text-gray-700">Status</span>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(values.status)}
-                      onChange={(e) => setFieldValue("status", e.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm text-gray-700">{values.status ? "Active" : "Inactive"}</span>
-                    <ErrorMessage name="status" component="div" className="text-sm text-red-500" />
-                  </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Image</label>
+                    <label className="text-sm font-medium text-gray-700">Image (Upload Square Image) <span className="text-red-500">*</span></label>
                     <input
                       type="file"
                       accept="image/*"
@@ -153,7 +183,7 @@ function ExternalPromotionsEdit() {
                     ) : null}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Image 2</label>
+                    <label className="text-sm font-medium text-gray-700">Image  (Upload landscap Image) <span className="text-red-500">*</span></label>
                     <input
                       type="file"
                       accept="image/*"
@@ -168,6 +198,17 @@ function ExternalPromotionsEdit() {
                     {image2Preview ? (
                       <img src={image2Preview} alt="Image 2 preview" className="mt-3 h-32 w-full rounded-lg border border-gray-200 object-cover" />
                     ) : null}
+                  </div>
+                  <div className="flex items-center gap-3 pt-6">
+                    <span className="text-sm font-medium text-gray-700">Status <span className="text-red-500">*</span></span>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(values.status)}
+                      onChange={(e) => setFieldValue("status", e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm text-gray-700">{values.status ? "Active" : "Inactive"}</span>
+                    <ErrorMessage name="status" component="div" className="text-sm text-red-500" />
                   </div>
                 </div>
 

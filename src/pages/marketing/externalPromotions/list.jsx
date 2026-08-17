@@ -238,8 +238,8 @@ function ExternalPromotionsList() {
                 <thead>
                   <tr>
                     <th className="border-b py-3 px-5 text-left">ID</th>
-                    <th className="border-b py-3 px-5 text-left">Type</th>
                     <th className="border-b py-3 px-5 text-left">Title</th>
+                    <th className="border-b py-3 px-5 text-left">Zone</th>
                     <th className="border-b py-3 px-5 text-left">Image</th>
                     <th className="border-b py-3 px-5 text-left">Secondary Image</th>
                     <th className="border-b py-3 px-5 text-left">Redirect URL</th>
@@ -253,7 +253,7 @@ function ExternalPromotionsList() {
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-2 px-2 text-center text-gray-600">
+                      <td colSpan={11} className="py-2 px-2 text-center text-gray-600">
                         No external promotions found.
                       </td>
                     </tr>
@@ -261,8 +261,8 @@ function ExternalPromotionsList() {
                     rows.map((item, index) => (
                       <tr key={item?.id || item?._id || `external-promotion-${index}`} className="border-b">
                         <td className="py-3 px-5">{item?.id || item?._id || "-"}</td>
-                        <td className="py-3 px-5">{item?.type || "-"}</td>
                         <td className="py-3 px-5">{item?.title || item?.name || "-"}</td>
+                        <td className="py-3 px-5">{item?.zone || "-"}</td>
                         <td className="py-3 px-5">
                           {item?.imageUrl ? (
                             <a href={item.imageUrl} target="_blank" rel="noreferrer" className="inline-block">
