@@ -211,6 +211,10 @@ function DriverAdsEdit() {
                               <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">From <span className="text-red-500">*</span></Typography>
                               <Input type="time" value={slot.from} onChange={(e) => setFieldValue(`placements[${index}].from`, e.target.value)} className="w-full" />
                             </div>
+                            <div className="flex-1">
+                              <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">To <span className="text-red-500">*</span></Typography>
+                              <Input type="time" value={slot.to} onChange={(e) => setFieldValue(`placements[${index}].to`, e.target.value)} className="w-full" />
+                            </div>
                             <div className="flex items-end">
                               <IconButton variant="text" color="red" onClick={() => remove(index)} disabled={values.placements.length === 0}>
                                 <TrashIcon className="h-5 w-5" />
