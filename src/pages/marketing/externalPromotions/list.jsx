@@ -238,6 +238,7 @@ function ExternalPromotionsList() {
                 <thead>
                   <tr>
                     <th className="border-b py-3 px-5 text-left">ID</th>
+                    <th className="border-b py-3 px-5 text-left">Type</th>
                     <th className="border-b py-3 px-5 text-left">Title</th>
                     <th className="border-b py-3 px-5 text-left">Image</th>
                     <th className="border-b py-3 px-5 text-left">Secondary Image</th>
@@ -260,6 +261,7 @@ function ExternalPromotionsList() {
                     rows.map((item, index) => (
                       <tr key={item?.id || item?._id || `external-promotion-${index}`} className="border-b">
                         <td className="py-3 px-5">{item?.id || item?._id || "-"}</td>
+                        <td className="py-3 px-5">{item?.type || "-"}</td>
                         <td className="py-3 px-5">{item?.title || item?.name || "-"}</td>
                         <td className="py-3 px-5">
                           {item?.imageUrl ? (

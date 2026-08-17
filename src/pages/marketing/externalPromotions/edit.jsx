@@ -14,6 +14,7 @@ const validationSchema = Yup.object().shape({
 });
 
 const buildInitialValues = (row = {}) => ({
+  type: row?.type || 'VENDOR_LIST',
   title: row?.title || row?.name || "",
   redirectUrl: row?.redirectUrl || "",
   position: row?.position ?? "",
@@ -43,6 +44,7 @@ function ExternalPromotionsEdit() {
     try {
       const formData = new FormData();
       formData.append("externalPromotionId", String(id || ""));
+      formData.append("type",values.type)
       formData.append("title", values.title.trim());
       formData.append("redirectUrl", values.redirectUrl.trim());
       formData.append("position", String(values.position));
