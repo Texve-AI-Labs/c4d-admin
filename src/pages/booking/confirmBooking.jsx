@@ -1788,7 +1788,8 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Weight:</span>
                                     <span className="text-gray-900 font-medium">
-                                        {bookingDetails?.weight ? `${bookingDetails?.weight} Kg` : 'N/A'}
+                                        {/* {bookingDetails?.weight ? `${bookingDetails?.weight} Kg` : 'N/A'} */}
+                                        {bookingDetails?.Package?.parcelPricing[0]?.weightSurcharge?.[0]?.label}
                                     </span>
                                 </div>  
                             }
