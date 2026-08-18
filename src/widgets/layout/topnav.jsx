@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import CustomersSubmenu from "./CustomersSubmenu";
 import VendorsSubmenu from "./VendorsSubmenu";
+import VendorManagementSubmenu from "./VendorManagementSubmenu";
 import MarketingSubmenu from "./MarketingSubmenu";
 import AdminSubmenu from "./AdminSubmenu";
 import AllRecordsSubmenu from "./AllRecordsSubmenu";
@@ -50,7 +51,8 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/vendors/root-web-reg") ||
     path.startsWith("/dashboard/doc-verification") ||
     path.startsWith("/dashboard/doc-verification/pending");
-  
+
+  const isVendorManagementSection = path.startsWith("/dashboard/vendor-management");
   const isMarketingSection = 
     path.startsWith("/dashboard/vendors/driver-incentive") ||
     path.startsWith("/dashboard/vendors/notificationlist") ||
@@ -102,6 +104,7 @@ export function Topnav({ permissions = [] }) {
     !isSupportSection &&
     !isCustomersSection &&
     !isVendorsSection &&
+    !isVendorManagementSection &&
     // !isDocVerifiction &&
     !isMarketingSection &&
     !isFinanceSection &&
@@ -129,6 +132,7 @@ return (
       {isAllRecordsSection && <AllRecordsSubmenu />}
       {isCustomersSection && <CustomersSubmenu />}
       {isVendorsSection && <VendorsSubmenu />}
+      {isVendorManagementSection && <VendorManagementSubmenu />}
       {isMarketingSection && <MarketingSubmenu />}
       {isFinanceSection && <FinanceSubmenu permissions={permissions} />}
       {isDriverEngagementSection && <DriverEngagementSubmenu permissions={permissions} />}
