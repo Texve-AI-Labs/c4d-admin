@@ -7,7 +7,7 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/solid";
  
-const GEO_INTELLIGENCE_URL = "https://geointelligence-cd5f6.web.app";
+const GEO_INTELLIGENCE_URL = import.meta.env.VITE_GEO_INTELLIGENCE_UAT;
 const OPERATIONAL_URL = "https://operational-dashboard-96d1b.web.app";
  
  
