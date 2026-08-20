@@ -14,7 +14,7 @@ const initialValues = {
   overrideName: "",
   image: null,
   isVisible: true,
-  sortOrder: "",
+  sortOrder: 0,
 };
 
 const schema = Yup.object({
@@ -22,9 +22,9 @@ const schema = Yup.object({
   categoryId: Yup.string().required("Category is required"),
   productId: Yup.string().required("Product is required"),
   vendorSku: Yup.string().trim().required("Vendor SKU is required"),
-  overrideName: Yup.string().trim(),
-  image: Yup.mixed().required("Image is required"),
-  sortOrder: Yup.number().typeError("Sort order must be a number").nullable(),
+  // overrideName: Yup.string().trim(),
+  // image: Yup.mixed().required("Image is required"),
+  // sortOrder: Yup.number().typeError("Sort order must be a number").nullable(),
 });
 
 export const VendorManagementCatalogMappingAdd = () => {
@@ -75,7 +75,7 @@ export const VendorManagementCatalogMappingAdd = () => {
       formData.append("overrideName", values.overrideName);
       formData.append("image", values.image || "");
       formData.append("isVisible", Boolean(values.isVisible));
-      formData.append("sortOrder", values.sortOrder === "" ? "" : Number(values.sortOrder));
+      formData.append("sortOrder", values.sortOrder || 0);
       if (values.image?.name) {
         formData.append("fileTypeImage", values.image.type || "");
         formData.append("extImage", values.image.name.split(".").pop()?.toLowerCase() || "");

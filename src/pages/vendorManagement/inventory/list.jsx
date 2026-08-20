@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button, Card, CardBody, CardHeader, Spinner, Typography } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -8,25 +8,65 @@ export const VendorManagementInventory = () => {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [vendors, setVendors] = useState([]);
+  const [vendorId, setVendorId] = useState("");
+
+  const vendorOptions = useMemo(
+    () =>
+      vendors.map((item) => ({
+        value: item.vendorId ?? item.id,
+        label: item.name || item.title || `Vendor ${item.vendorId ?? item.id}`,
+      })),
+    [vendors]
+  );
 
   useEffect(() => {
+    ApiRequestUtils.get(API_ROUTES.GET_VENDORS)
+      .then((r) => {
+        const list = Array.isArray(r?.data) ? r.data : r?.data?.rows || [];
+        setVendors(list);
+        const firstVendorId = list?.[0]?.vendorId ?? list?.[0]?.id ?? "";
+        if (firstVendorId) setVendorId(String(firstVendorId));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!vendorId) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
-    ApiRequestUtils.get(API_ROUTES.GET_VENDOR_INVENTORY.replace(":vendorId", ""))
+    ApiRequestUtils.get(API_ROUTES.GET_VENDOR_INVENTORY.replace(":vendorId", vendorId))
       .then((r) => setRows(Array.isArray(r?.data) ? r.data : r?.data?.rows || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [vendorId]);
 
   return (
     <Card className="mx-auto mt-8 w-full">
       <CardHeader variant="gradient" className={`mb-4 rounded-xl p-6 ${ColorStyles.bgColor}`}>
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <Typography variant="h6" color="white">
             Inventory
           </Typography>
-          <Button className="bg-white text-black font-bold hover:bg-gray-100" onClick={() => navigate("/dashboard/vendor-management/inventory/add")}>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <select
+              value={vendorId}
+              onChange={(e) => setVendorId(e.target.value)}
+              className="min-w-[220px] rounded-md border border-white/30 bg-white px-3 py-2 text-sm font-semibold text-gray-900"
+            >
+              <option value="">Select Vendor</option>
+              {vendorOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <Button className="bg-white text-black font-bold hover:bg-gray-100" onClick={() => navigate("/dashboard/vendor-management/inventory/add")}>
             Add New
-          </Button>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardBody className="pt-0 px-0 pb-2">

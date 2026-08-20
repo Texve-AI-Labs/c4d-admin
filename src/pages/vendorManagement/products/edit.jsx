@@ -43,8 +43,8 @@ export const VendorManagementProductsEdit = () => {
       formData.append("description", values.description);
       formData.append("brand", values.brand);
       formData.append("status", Boolean(values.status));
-      formData.append("image", values.image || "");
-      if (values.image?.name) {
+      if (values.image && values.image.name) {
+        formData.append("image", values.image || "");
         formData.append("fileTypeImage", values.image.type || "");
         formData.append("extImage", values.image.name.split(".").pop()?.toLowerCase() || "");
       }

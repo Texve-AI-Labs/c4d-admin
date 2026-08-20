@@ -11,9 +11,9 @@ const schema = Yup.object({
   categoryId: Yup.string().required("Category is required"),
   productId: Yup.string().required("Product is required"),
   vendorSku: Yup.string().trim().required("Vendor SKU is required"),
-  overrideName: Yup.string().trim(),
-  image: Yup.mixed().required("Image is required"),
-  sortOrder: Yup.number().typeError("Sort order must be a number").nullable(),
+  // overrideName: Yup.string().trim(),
+  // image: Yup.mixed().required("Image is required"),
+  // sortOrder: Yup.number().typeError("Sort order must be a number").nullable(),
 });
 
 export const VendorManagementCatalogMappingEdit = () => {
@@ -31,7 +31,7 @@ export const VendorManagementCatalogMappingEdit = () => {
           ApiRequestUtils.get(API_ROUTES.GET_VENDORS),
           ApiRequestUtils.get(API_ROUTES.GET_CATEGORIES),
           ApiRequestUtils.get(API_ROUTES.GET_PRODUCTS),
-          ApiRequestUtils.get(API_ROUTES.GET_CATALOG_MAPPING_BY_ID.replace(":id", id)),
+          ApiRequestUtils.get(API_ROUTES.GET_CATALOG_MAPPING_BY_ID, { catalogMappingId: Number(id) }),
         ]);
         setVendors(Array.isArray(vendorRes?.data) ? vendorRes.data : vendorRes?.data?.rows || []);
         setCategories(Array.isArray(categoryRes?.data) ? categoryRes.data : categoryRes?.data?.rows || []);
@@ -53,7 +53,7 @@ export const VendorManagementCatalogMappingEdit = () => {
       overrideName: record?.overrideName ?? "",
       image: record?.overrideImageUrl ?? null,
       isVisible: Boolean(record?.isVisible ?? true),
-      sortOrder: record?.sortOrder ?? "",
+      sortOrder: record?.sortOrder ?? 0,
     }),
     [record]
   );
@@ -71,10 +71,10 @@ export const VendorManagementCatalogMappingEdit = () => {
       formData.append("productId", Number(values.productId));
       formData.append("vendorSku", values.vendorSku);
       formData.append("overrideName", values.overrideName);
-      formData.append("image", values.image || "");
       formData.append("isVisible", Boolean(values.isVisible));
-      formData.append("sortOrder", values.sortOrder === "" ? "" : Number(values.sortOrder));
-      if (values.image?.name) {
+      formData.append("sortOrder", values.sortOrder || 0);
+      if (values.image && values.image.name) {
+        formData.append("image", values.image);
         formData.append("fileTypeImage", values.image.type || "");
         formData.append("extImage", values.image.name.split(".").pop()?.toLowerCase() || "");
       }

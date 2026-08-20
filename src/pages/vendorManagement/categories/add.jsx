@@ -6,13 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 
-const initialValues = { vendorId: "", name: "", slug: "", image: null, sortOrder: "", status: true };
+const initialValues = { vendorId: "", name: "", slug: "",  sortOrder: "", status: true }; //image: null
 const schema = Yup.object({
   vendorId: Yup.string().required("Vendor is required"),
   name: Yup.string().trim().required("Name is required"),
   slug: Yup.string().trim().required("Slug is required"),
-  image: Yup.mixed().required("Image is required"),
-  sortOrder: Yup.number().typeError("Sort order must be a number").nullable(),
+  // image: Yup.mixed().required("Image is required"),
+  // sortOrder: Yup.number().typeError("Sort order must be a number").nullable(),
 });
 
 export const VendorManagementCategoriesAdd = () => {
@@ -39,13 +39,13 @@ export const VendorManagementCategoriesAdd = () => {
       formData.append("vendorId", Number(values.vendorId));
       formData.append("name", values.name);
       formData.append("slug", values.slug);
-      formData.append("sortOrder", values.sortOrder === "" ? "" : Number(values.sortOrder));
+      formData.append("sortOrder", values.sortOrder || 0);
       formData.append("status", Boolean(values.status));
-      formData.append("image", values.image || "");
-      if (values.image?.name) {
-        formData.append("fileTypeImage", values.image.type || "");
-        formData.append("extImage", values.image.name.split(".").pop()?.toLowerCase() || "");
-      }
+      // formData.append("image", values.image || "");
+      // if (values.image?.name) {
+      //   formData.append("fileTypeImage", values.image.type || "");
+      //   formData.append("extImage", values.image.name.split(".").pop()?.toLowerCase() || "");
+      // }
       await ApiRequestUtils.postDocs(API_ROUTES.ADD_CATEGORY, formData);
       navigate("/dashboard/vendor-management/categories");
     } finally {
@@ -83,11 +83,11 @@ export const VendorManagementCategoriesAdd = () => {
                   <Field name="slug" className="w-full rounded-md border-2 border-gray-300 p-2" />
                   <ErrorMessage name="slug" component="div" className="text-sm text-red-500" />
                 </div>
-                <div>
+                {/* <div>
                   <label className="mb-1 block text-sm font-bold">Image <span className="text-red-600">*</span></label>
                   <input type="file" accept="image/*" className="w-full rounded-md border-2 border-gray-300 p-2" onChange={(e) => setFieldValue("image", e.target.files?.[0] || null)} />
                   <ErrorMessage name="image" component="div" className="text-sm text-red-500" />
-                </div>
+                </div> */}
                 <div>
                   <label className="mb-1 block text-sm font-bold">Sort Order <span className="text-red-600">*</span></label>
                   <Field name="sortOrder" type="number" className="w-full rounded-md border-2 border-gray-300 p-2" />

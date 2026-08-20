@@ -19,7 +19,7 @@ export const VendorManagementCatalogMappingDetails = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await ApiRequestUtils.get(API_ROUTES.GET_CATALOG_MAPPING_BY_ID.replace(":id", id));
+        const response = await ApiRequestUtils.get(API_ROUTES.GET_CATALOG_MAPPING_BY_ID, { catalogMappingId: Number(id) });
         setRecord(response?.data || null);
       } catch (error) {
         console.error("Failed to load catalog mapping details:", error);

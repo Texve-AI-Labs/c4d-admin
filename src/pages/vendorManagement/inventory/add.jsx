@@ -1,109 +1,21 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { Button, Card, CardBody, Input, List, ListItem, Switch, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, Switch } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
-
-const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
-  const [isFocused, setIsFocused] = useState(false);
-
-  const getPrimaryLabel = (suggestion) => {
-    if (typeof suggestion === "string") return suggestion;
-    if (suggestion && typeof suggestion === "object") {
-      return suggestion.title || suggestion.name || suggestion.label || "";
-    }
-    return "";
-  };
-
-  const getSuggestionLabel = (suggestion) => {
-    if (typeof suggestion === "string") return suggestion;
-    if (suggestion && typeof suggestion === "object") {
-      return (
-        suggestion.fullText ||
-        suggestion.name ||
-        suggestion.address ||
-        suggestion.label ||
-        suggestion.title ||
-        suggestion.subtitle ||
-        suggestion.formatted_address ||
-        suggestion.description ||
-        suggestion.display_name ||
-        ""
-      );
-    }
-    return "";
-  };
-
-  useEffect(() => {
-    form.validateField(field.name);
-  }, []);
-
-  return (
-    <div className="relative">
-      <Input
-        type="text"
-        placeholder="Enter warehouse location"
-        {...field}
-        onChange={(e) => {
-          form.setFieldValue(field.name, e.target.value);
-          form.setFieldValue("warehouseAddress.placeId", "");
-          onSearch(e.target.value);
-          form.setFieldTouched(field.name, true, false);
-        }}
-        onFocus={() => setIsFocused(true)}
-        onBlur={(e) => {
-          field.onBlur(e);
-          setTimeout(() => setIsFocused(false), 200);
-          form.validateField(field.name);
-        }}
-        className="pr-10"
-      />
-      {suggestions.length > 0 && isFocused && (
-        <List className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-gray-300 bg-white shadow-xl">
-          {suggestions.map((suggestion, index) => (
-            <ListItem
-              key={index}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const selectedValue = getSuggestionLabel(suggestion);
-                form.setFieldValue(field.name, selectedValue);
-                form.setFieldValue("warehouseAddress.placeId", suggestion?.placeId || suggestion?.place_id || suggestion?.placeID || suggestion?.id || "");
-                form.setFieldTouched(field.name, true, false);
-                if (typeof onSelect === "function") onSelect(suggestion);
-                setIsFocused(false);
-                form.validateField(field.name);
-              }}
-              className="cursor-pointer px-4 py-2 text-gray-900 hover:bg-gray-100"
-            >
-              <div className="flex flex-col">
-                <Typography variant="small" className="text-gray-900">
-                  {getPrimaryLabel(suggestion) || getSuggestionLabel(suggestion)}
-                </Typography>
-                {typeof suggestion === "object" && suggestion?.fullText ? (
-                  <Typography variant="small" className="text-xs text-gray-600">
-                    {suggestion.fullText}
-                  </Typography>
-                ) : null}
-              </div>
-            </ListItem>
-          ))}
-        </List>
-      )}
-    </div>
-  );
-};
 
 const initialValues = {
   vendorId: "",
   productId: "",
   availableQty: "",
   reservedQty: "",
-  warehouseAddress: {
-    name: "",
-    placeId: "",
-  },
+  // warehouseAddress: {
+  //   name: "",
+  //   placeId: "",
+  // },
+  warehouseAddress:'',
   status: true,
 };
 
@@ -112,17 +24,16 @@ const schema = Yup.object({
   productId: Yup.string().required("Product is required"),
   availableQty: Yup.number().typeError("Must be a number"),
   reservedQty: Yup.number().typeError("Must be a number"),
-  warehouseAddress: Yup.object().shape({
-    name: Yup.string().required("Warehouse location is required"),
-    placeId: Yup.string().required(),
-  }),
+  // warehouseAddress: Yup.object().shape({
+  //   name: Yup.string().required("Warehouse location is required"),
+  //   placeId: Yup.string().required(),
+  // }),
 });
 
 export const VendorManagementInventoryAdd = () => {
   const navigate = useNavigate();
-  const [vendors, setVendors] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [warehouseSuggestions, setWarehouseSuggestions] = useState([]);
+  const [vendors, setVendors] = React.useState([]);
+  const [products, setProducts] = React.useState([]);
 
   const vendorOptions = useMemo(
     () =>
@@ -166,19 +77,6 @@ export const VendorManagementInventoryAdd = () => {
       console.error("Failed to add inventory:", error);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleWarehouseSearch = async (query) => {
-    if (!query?.trim()) {
-      setWarehouseSuggestions([]);
-      return;
-    }
-    try {
-      const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, { address: query });
-      setWarehouseSuggestions(data?.success && Array.isArray(data?.data) ? data.data : []);
-    } catch (error) {
-      setWarehouseSuggestions([]);
     }
   };
 
@@ -226,26 +124,9 @@ export const VendorManagementInventoryAdd = () => {
                 </div>
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-sm font-bold">Warehouse Location <span className="text-red-600">*</span></label>
-                  <Field
-                    name="warehouseAddress.name"
-                    component={LocationInput}
-                    suggestions={warehouseSuggestions}
-                    onSearch={handleWarehouseSearch}
-                    onSelect={(suggestion) =>
-                      setFieldValue("warehouseAddress", {
-                        name:
-                          suggestion?.fullText ||
-                          suggestion?.name ||
-                          suggestion?.address ||
-                          suggestion?.label ||
-                          suggestion?.title ||
-                          "",
-                        placeId: suggestion?.placeId || suggestion?.place_id || suggestion?.placeID || suggestion?.id || "",
-                      })
-                    }
-                  />
+                  <Field name="warehouseAddress.name" className="w-full rounded-md border-2 border-gray-300 p-2" placeholder="Enter warehouse location" />
                   <ErrorMessage
-                    name="warehouseAddress.name"
+                    name="warehouseAddress"
                     component="div"
                     className="text-sm text-red-500"
                   />
