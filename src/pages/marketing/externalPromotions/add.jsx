@@ -8,6 +8,7 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 
 const validationSchema = Yup.object().shape({
+  type: Yup.string().oneOf(["OWN_PRODUCT", "THIRD_PARTY"], "Type is required").required("Type is required"),
   title: Yup.string().trim().required("Title is required"),
   redirectUrl: Yup.string().trim().required("Redirect URL is required"),
   zone: Yup.string().trim().required("Zone is required"),
@@ -18,7 +19,7 @@ const validationSchema = Yup.object().shape({
 });
 
 const initialValues = {
-  type:'VENDOR_LIST',
+  type: "",
   title: "",
   redirectUrl: "",
   zone: "",
@@ -123,6 +124,15 @@ function ExternalPromotionsAdd() {
             {({ isSubmitting, values, setFieldValue }) => (
               <Form className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Type <span className="text-red-500">*</span></label>
+                    <Field as="select" name="type" className="w-full rounded-md border border-gray-300 p-2 shadow-sm">
+                      <option value="">Select Type</option>
+                      <option value="OWN_PRODUCT">Own Product</option>
+                      <option value="THIRD_PARTY">Third Party</option>
+                    </Field>
+                    <ErrorMessage name="type" component="div" className="text-sm text-red-500" />
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Title <span className="text-red-500">*</span></label>
                     <Field name="title" type="text" className="w-full rounded-md border border-gray-300 p-2 shadow-sm" />
