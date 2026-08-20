@@ -51,7 +51,10 @@ function DriverAdsZone({
         parent_id: parentId,
       });
       if (response?.success) {
-        setZones(response.data || []);
+        const filteredZones = (response.data || []).filter(
+          (item) => item?.type === "Zone" && item?.description === "Zone"
+        );
+        setZones(filteredZones);
       } else {
         throw new Error(response?.message || "Failed to fetch zones");
       }
