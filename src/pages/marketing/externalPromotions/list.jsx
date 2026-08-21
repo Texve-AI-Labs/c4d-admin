@@ -21,6 +21,18 @@ const normalizeBoolean = (value) => {
   return null;
 };
 
+const formatLabelCase = (value) => {
+  if (value == null || value === "") return "-";
+
+  const text = String(value).trim();
+  if (text === "-") return "-";
+
+  return text
+    .replace(/[_-]+/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const formatDate = (value) => {
   if (!value) return "-";
   const parsed = moment(value);
@@ -237,7 +249,7 @@ function ExternalPromotionsList() {
               <table className="w-full min-w-[1200px] table-auto whitespace-nowrap">
                 <thead>
                   <tr>
-                    <th className="border-b py-3 px-5 text-left">ID</th>
+                    <th className="border-b py-3 px-5 text-left">Type</th>
                     <th className="border-b py-3 px-5 text-left">Title</th>
                     <th className="border-b py-3 px-5 text-left">Zone</th>
                     <th className="border-b py-3 px-5 text-left">Image</th>
@@ -260,7 +272,7 @@ function ExternalPromotionsList() {
                   ) : (
                     rows.map((item, index) => (
                       <tr key={item?.id || item?._id || `external-promotion-${index}`} className="border-b">
-                        <td className="py-3 px-5">{item?.id || item?._id || "-"}</td>
+                        <td className="py-3 px-5">{formatLabelCase (item?.type)}</td>
                         <td className="py-3 px-5">{item?.title || item?.name || "-"}</td>
                         <td className="py-3 px-5">{item?.zone || "-"}</td>
                         <td className="py-3 px-5">

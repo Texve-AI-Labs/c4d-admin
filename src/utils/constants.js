@@ -1078,7 +1078,43 @@ export const API_ROUTES = {
     'GET_EXTERNAL_PROMOTIONS':'/external-promotions',
     'ADD_EXTERNAL_PROMOTIONS':'/external-promotions/add',
     'UPDATE_EXTERNAL_PROMOTIONS':'/external-promotions/update',
-    'DELETE_EXTERNAL_PROMOTIONS':'/external-promotions/:id'
+    'DELETE_EXTERNAL_PROMOTIONS':'/external-promotions/:id',
+
+    // Vendor Management
+    'GET_VENDORS': '/vendors',
+    'ADD_VENDOR': '/vendors/add',
+    'UPDATE_VENDOR': '/vendors/update',
+    'GET_VENDOR_BY_ID': '/vendors/:id',
+
+    'GET_CATEGORIES': '/categories',
+    'ADD_CATEGORY': '/categories/add',
+    'UPDATE_CATEGORY': '/categories/update',
+    'GET_CATEGORY_BY_ID': '/categories/:id',
+    
+    'GET_PRODUCTS': '/products',
+    'ADD_PRODUCT': '/products/add',
+    'UPDATE_PRODUCT': '/products/update',
+    'GET_PRODUCT_BY_ID': '/products/:id',
+    
+    'GET_VENDOR_CATALOG': '/vendors/:vendorId/catalog',
+    'ADD_CATALOG_MAPPING': '/catalog-mappings/add',
+    'UPDATE_CATALOG_MAPPING': '/catalog-mappings/update',
+    'GET_CATALOG_MAPPING_BY_ID': '/catalog-mappings/:id',
+    
+    'GET_VENDOR_INVENTORY': '/vendors/:vendorId/inventory',
+    'ADD_INVENTORY': '/inventory/add',
+    'UPDATE_INVENTORY': '/inventory/update',
+    'GET_INVENTORY_BY_ID': '/inventory/:id',
+    
+    'GET_VENDOR_PRICING': '/vendors/:vendorId/pricing',
+    'ADD_PRICING': '/pricing/add',
+    'UPDATE_PRICING': '/pricing/update',
+    'GET_PRICING_BY_ID': '/pricing/:id',
+    
+    'GET_VENDOR_ORDERS': '/orders',
+    // 'ADD_ORDER': '/orders/add',
+    // 'UPDATE_ORDER': '/orders/update',
+    'GET_ORDER_BY_ID': '/orders/:id'
 
 };
 
@@ -1190,7 +1226,7 @@ export const USER_ROLE = [
 
 // Role-based permissions for main modules (side/top nav)
 export const ROLE_PERMISSIONS = {
-    'SUPER_USER': ['Home','Support','Driver Ops',"Calls", 'All bookings', 'Customers', 'Vendors', 'Trip Master','Finance', 'Document verification','Marketing', 'Users','Driver Engagement','Autos'],
+    'SUPER_USER': ['Home','Support','Driver Ops',"Calls", 'All bookings', 'Customers', 'Vendors', 'Trip Master','Finance', 'Document verification','Marketing','Vendor Management', 'Users','Driver Engagement','Autos'],
     'SALES': ['Home','Support','Driver Ops','All bookings', 'Customers', 'Vendors', 'Document verification','Autos'],
     'SUPPORT': ['Home','Support','Calls','All bookings', 'Customers', 'Vendors','Autos'],
     'FINANCE': ['Home','Support','Driver Ops','All bookings', 'Customers', 'Vendors', 'Finance','Document verification','Autos'],
@@ -1256,6 +1292,7 @@ export const PERMISSION_OPTIONS = [
     { name: 'Finance', id: 'Finance' },
     { name: 'Document verification', id: 'Document verification' },
     { name: 'Marketing', id: 'Marketing' },
+    { name: 'Vendor Management', id: 'Vendor Management'},
     { name: 'Users', id: 'Users' },
 ];
 
