@@ -104,6 +104,32 @@ import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
 import DriverNotificationListEdit from "./pages/vendor/driverNotificationEdit";
 import DriverReturnTripsList from "./pages/vendor/driverReturnTripsList";
 import RootWebRegistrationList from "./pages/vendor/rootWebRegistrationList";
+import { VendorManagementVendors } from "./pages/vendorManagement/vendors/list";
+import { VendorManagementVendorsAdd } from "./pages/vendorManagement/vendors/add";
+import { VendorManagementVendorsEdit } from "./pages/vendorManagement/vendors/edit";
+import { VendorManagementVendorsDetails } from "./pages/vendorManagement/vendors/details";
+import { VendorManagementCategories } from "./pages/vendorManagement/categories/list";
+import { VendorManagementCategoriesAdd } from "./pages/vendorManagement/categories/add";
+import { VendorManagementCategoriesEdit } from "./pages/vendorManagement/categories/edit";
+import { VendorManagementCategoriesDetails } from "./pages/vendorManagement/categories/details";
+import { VendorManagementProducts } from "./pages/vendorManagement/products/list";
+import { VendorManagementProductsAdd } from "./pages/vendorManagement/products/add";
+import { VendorManagementProductsEdit } from "./pages/vendorManagement/products/edit";
+import { VendorManagementProductsDetails } from "./pages/vendorManagement/products/details";
+import { VendorManagementOrders } from "./pages/vendorManagement/orders/list";
+import { VendorManagementOrdersDetails } from "./pages/vendorManagement/orders/details";
+import { VendorManagementCatalogMapping } from "./pages/vendorManagement/catalogMapping/list";
+import { VendorManagementCatalogMappingAdd } from "./pages/vendorManagement/catalogMapping/add";
+import { VendorManagementCatalogMappingEdit } from "./pages/vendorManagement/catalogMapping/edit";
+import { VendorManagementCatalogMappingDetails } from "./pages/vendorManagement/catalogMapping/details";
+import { VendorManagementInventory } from "./pages/vendorManagement/inventory/list";
+import { VendorManagementInventoryAdd } from "./pages/vendorManagement/inventory/add";
+import { VendorManagementInventoryEdit } from "./pages/vendorManagement/inventory/edit";
+import { VendorManagementInventoryDetails } from "./pages/vendorManagement/inventory/details";
+import { VendorManagementPricing } from "./pages/vendorManagement/pricing/list";
+import { VendorManagementPricingAdd } from "./pages/vendorManagement/pricing/add";
+import { VendorManagementPricingEdit } from "./pages/vendorManagement/pricing/edit";
+import { VendorManagementPricingDetails } from "./pages/vendorManagement/pricing/details";
 import VersionControlList from "./pages/versionControl/VersionControlList";
 import VersionControlEdit from "./pages/versionControl/VersionControlEdit";
 import DiscountView from "./pages/discountModule/view";
@@ -829,6 +855,214 @@ export const routes = [
         element: <RootWebRegistrationList />,
         display: true,
         permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors",
+        path: "/vendor-management/vendors",
+        element: <VendorManagementVendors />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors Add",
+        path: "/vendor-management/vendors/add",
+        element: <VendorManagementVendorsAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors Edit",
+        path: "/vendor-management/vendors/edit/:id",
+        element: <VendorManagementVendorsEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors Details",
+        path: "/vendor-management/vendors/details/:id",
+        element: <VendorManagementVendorsDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories",
+        path: "/vendor-management/categories",
+        element: <VendorManagementCategories />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories Add",
+        path: "/vendor-management/categories/add",
+        element: <VendorManagementCategoriesAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories Edit",
+        path: "/vendor-management/categories/edit/:id",
+        element: <VendorManagementCategoriesEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories Details",
+        path: "/vendor-management/categories/details/:id",
+        element: <VendorManagementCategoriesDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products",
+        path: "/vendor-management/products",
+        element: <VendorManagementProducts />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products Add",
+        path: "/vendor-management/products/add",
+        element: <VendorManagementProductsAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products Edit",
+        path: "/vendor-management/products/edit/:id",
+        element: <VendorManagementProductsEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products Details",
+        path: "/vendor-management/products/details/:id",
+        element: <VendorManagementProductsDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Orders",
+        path: "/vendor-management/orders",
+        element: <VendorManagementOrders />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Orders Details",
+        path: "/vendor-management/orders/details/:id",
+        element: <VendorManagementOrdersDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping",
+        path: "/vendor-management/catalog-mapping",
+        element: <VendorManagementCatalogMapping />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping Add",
+        path: "/vendor-management/catalog-mapping/add",
+        element: <VendorManagementCatalogMappingAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping Edit",
+        path: "/vendor-management/catalog-mapping/edit/:id",
+        element: <VendorManagementCatalogMappingEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping Details",
+        path: "/vendor-management/catalog-mapping/details/:id",
+        element: <VendorManagementCatalogMappingDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory",
+        path: "/vendor-management/inventory",
+        element: <VendorManagementInventory />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory Add",
+        path: "/vendor-management/inventory/add",
+        element: <VendorManagementInventoryAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory Edit",
+        path: "/vendor-management/inventory/edit/:id",
+        element: <VendorManagementInventoryEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory Details",
+        path: "/vendor-management/inventory/details/:id",
+        element: <VendorManagementInventoryDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing",
+        path: "/vendor-management/pricing",
+        element: <VendorManagementPricing />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing Add",
+        path: "/vendor-management/pricing/add",
+        element: <VendorManagementPricingAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing Edit",
+        path: "/vendor-management/pricing/edit/:id",
+        element: <VendorManagementPricingEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing Details",
+        path: "/vendor-management/pricing/details/:id",
+        element: <VendorManagementPricingDetails />,
+        display: false,
+        permission: "Vendor Management",
       },
       {
         icon: <UserIcon {...icon} />,

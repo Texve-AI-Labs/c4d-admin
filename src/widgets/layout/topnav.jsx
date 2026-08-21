@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import CustomersSubmenu from "./CustomersSubmenu";
 import VendorsSubmenu from "./VendorsSubmenu";
+import VendorManagementSubmenu from "./VendorManagementSubmenu";
 import MarketingSubmenu from "./MarketingSubmenu";
 import AdminSubmenu from "./AdminSubmenu";
 import AllRecordsSubmenu from "./AllRecordsSubmenu";
@@ -69,6 +70,7 @@ export function Topnav({ permissions = [] }) {
     // path.startsWith("/dashboard/user/testimonialview") ||
     // path.startsWith("/dashboard/user/testimonial/add");
 
+      const isShoppVendorSubmenu = path.startsWith("/dashboard/vendor-management")                                         
   const isFinanceSection =
     path.startsWith("/dashboard/finance") ||
     path.startsWith("/finance") ||
@@ -102,6 +104,7 @@ export function Topnav({ permissions = [] }) {
     !isSupportSection &&
     !isCustomersSection &&
     !isVendorsSection &&
+    !isShoppVendorSubmenu &&
     // !isDocVerifiction &&
     !isMarketingSection &&
     !isFinanceSection &&
@@ -129,6 +132,7 @@ return (
       {isAllRecordsSection && <AllRecordsSubmenu />}
       {isCustomersSection && <CustomersSubmenu />}
       {isVendorsSection && <VendorsSubmenu />}
+      {isShoppVendorSubmenu && <VendorManagementSubmenu />}
       {isMarketingSection && <MarketingSubmenu />}
       {isFinanceSection && <FinanceSubmenu permissions={permissions} />}
       {isDriverEngagementSection && <DriverEngagementSubmenu permissions={permissions} />}

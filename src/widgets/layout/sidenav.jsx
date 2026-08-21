@@ -47,6 +47,7 @@ const menuItems = [
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
   { type: "item", name: "Marketing", path: "/dashboard/vendors/notificationList", permission: "Marketing" },
+  { type: "item", name: "Vendor Management", path: "/dashboard/vendor-management/vendors", permission: "Vendor Management" },
   { type: "item", name: "Reports", path: "/dashboard/driver-ops", permission: "Driver Ops" },
   { type: "item", name: "Geo Int & Ops", path: "/dashboard/geo-intelligence", permission: "Users" },
   {
@@ -253,6 +254,8 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
           currentPath.startsWith("/dashboard/user/bannerimg")
           // currentPath.startsWith("/dashboard/user/testimonial")
         );
+      case "Vendor Management":
+        return currentPath.startsWith("/dashboard/vendor-management");
       case "Reports":
         return currentPath.startsWith("/dashboard/driver-ops");
       case "Geo Int & Ops":
@@ -425,6 +428,11 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                         ) : null}
                         {name === "Marketing" ? (
                           <MegaphoneIcon
+                            className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
+                          />
+                        ) : null}
+                        {name === "Vendor Management" ? (
+                          <BuildingStorefrontIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
