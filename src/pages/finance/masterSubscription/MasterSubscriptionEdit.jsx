@@ -285,11 +285,13 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     <option value="CREDIT">Credit</option>
                     <option value="UNLIMITED">Unlimited</option>
                   </Field>
+                  <ErrorMessage name="earningStrategy" component="div" className="text-red-500 text-sm my-1" />
                 </div>
            
                 <div>
                   <label className="text-sm font-medium text-gray-700">Earning Window Days</label>
                   <Field type="number" name="earningWindowDays" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"  placeholder="Enter days" />
+                  <ErrorMessage name="earningWindowDays" component="div" className="text-red-500 text-sm my-1" />
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
                   <div>

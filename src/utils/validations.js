@@ -752,6 +752,17 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
     totalPrice: Yup.number()
         .typeError("Total Price must be a number")
         .notRequired("Total Price is not required"),
+    earningStrategy: Yup.string().oneOf(["UNLIMITED", "CREDIT"]).required("Earning Strategy is required"),
+    earningWindowDays: Yup.number()
+        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .when("earningStrategy", {
+      is: "UNLIMITED",
+      then: (schema) => schema.required("Earning Window Days is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+        
+    zone: Yup.string().required("zone is required"),
+    // status: Yup.string().required("Status is required"),
 
     // validityDays: Yup.number()
     //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
@@ -803,6 +814,15 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
     totalPrice: Yup.number()
         .typeError("Total Price must be a number")
         .notRequired("Total Price is not required"),
+    earningStrategy: Yup.string().oneOf(["UNLIMITED", "CREDIT"]).required("Earning Strategy is required"),
+    earningWindowDays: Yup.number()
+        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .when("earningStrategy", {
+      is: "UNLIMITED",
+      then: (schema) => schema.required("Earning Window Days is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),        
+    zone: Yup.string().required("zone is required"),
 
     // validityDays: Yup.number()
     //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))

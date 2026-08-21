@@ -54,7 +54,13 @@ const ROUTE_MATCHERS = {
   "Subscription Invoice": ["/finance/invoice"],
   "Booking Receipt": ["/finance/receipt"],
   "Booking Invoice": ["/finance/bookinginvoicelist", "/finance/bookinginvoice/details"],
-  "Master Subscription Table": ["/finance/master-subscription"],
+  "Master Subscription Table": [
+    "/finance/master-subscription",
+    "/finance/master-subscription/add",
+    "/finance/master-subscription/edit",
+    "/finance/master-subscription/details",
+    "/finance/master-subscription/log",
+  ],
   "Joining Bonus": ["/dashboard/finance/joining-bonus"],
   "Master Price Table": ["/finance/master-price"],
   "Instant Reward": ["/finance/instant-reward"],
@@ -130,7 +136,7 @@ function FinanceSubmenu({ permissions = [] }) {
   const renderItems = (menuItems) =>
     menuItems.map(({ label, path }) => (
         <li key={label}>
-          <NavLink to={path} end={label === "Master Subscription Table"}>
+          <NavLink to={path} end={false}>
             {({ isActive }) => (
               <Button
                 variant="text"

@@ -170,6 +170,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                 <option value="INACTIVE">In Active</option>
                 {/* <option value="SCHEDULED">Scheduled</option> */}
               </Field>
+              <ErrorMessage name="status" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div>
               <label htmlFor="effectiveFrom" className="text-sm font-medium text-gray-700">Effective From</label>
@@ -276,6 +277,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                     <option value="CREDIT">Credit</option>
                     <option value="UNLIMITED">Unlimited</option>
                   </Field>
+                  <ErrorMessage name="earningStrategy" component="div" className="text-red-500 text-sm my-1" />
                 </div>
            
                 <div>
@@ -286,6 +288,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                     className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                     placeholder="Enter days"
                     />
+                    <ErrorMessage name="earningWindowDays" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
               <div>
