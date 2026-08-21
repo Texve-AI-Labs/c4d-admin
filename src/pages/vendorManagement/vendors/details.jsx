@@ -42,7 +42,7 @@ export const VendorManagementVendorsDetails = () => {
     { label: "Vendor", path: "/dashboard/vendor-management/vendors" },
     { label: "Categories", path: "/dashboard/vendor-management/categories" },
     // { label: "Products", path: "/dashboard/vendor-management/products" },
-    { label: "Products Mapping", path: "/dashboard/vendor-management/catalog-mapping" },
+    { label: "Catalog Mapping", path: "/dashboard/vendor-management/catalog-mapping" },
     { label: "Inventory", path: "/dashboard/vendor-management/inventory" },
     { label: "Pricing", path: "/dashboard/vendor-management/pricing" },
   ]), []);
@@ -121,7 +121,7 @@ export const VendorManagementVendorsDetails = () => {
           <VendorManagementCategories embeddedVendorId={id} />
         // ) : activeTab === "Products" ? (
         //   <VendorManagementProducts embeddedVendorId={id} />
-        ) : activeTab === "Products Mapping" ? (
+        ) : activeTab === "Catalog Mapping" ? (
           <VendorManagementCatalogMapping embeddedVendorId={id} />
         ) : activeTab === "Inventory" ? (
           <VendorManagementInventory embeddedVendorId={id} />
