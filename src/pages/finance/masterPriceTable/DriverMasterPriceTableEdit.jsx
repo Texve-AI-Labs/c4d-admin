@@ -168,7 +168,7 @@ const DriverMasterPriceTableEdit = () => {
                 <Formik
                     initialValues={initialValues}
                     onSubmit={onSubmit}
-                    validationSchema={DRIVER_SCHEMA}
+                    // validationSchema={DRIVER_SCHEMA}
                     enableReinitialize >
                     {({ handleSubmit, isValid, dirty, errors, setFieldValue, values }) => (
                         <Form className="space-y-4">
