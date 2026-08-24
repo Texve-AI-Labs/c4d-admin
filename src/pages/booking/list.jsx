@@ -1389,6 +1389,7 @@ if (!statusFilter.includes('All')) {
                                                             options={[
                                                                 { value: 'All', label: 'All' },
                                                                 { value: 'QUOTED', label: 'Quoted' },
+                                                                { value: 'QUOTE_EXPIRED', label: 'Quote Expired'},
                                                                 { value: 'BOOKING_ACCEPTED', label: 'Driver Accepted' },
                                                                 { value: 'CONFIRMED', label: 'Booking Confirmed' },
                                                                 { value: 'REQUEST_DRIVER', label: 'Request Driver' },
