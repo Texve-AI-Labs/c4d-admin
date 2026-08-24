@@ -7,7 +7,7 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import FinanceSubscriptionTabs from "@/pages/finance/components/FinanceSubscriptionTabs";
 
 const SERVICE_TYPE_LABELS = {
-  ACTING_DRIVER: "Driver",
+  DRIVER: "Driver",
   RIDES_RENTAL_CABS: "Rides/Rental Cabs",
   AUTO: "Auto",
   BIKE: "Bike",
@@ -94,7 +94,7 @@ export default function JoiningBonusView() {
                 className="px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Service Types</option>
-                <option value="ACTING_DRIVER">Driver</option>
+                <option value="DRIVER">Driver</option>
                 <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
                 <option value="AUTO">Autos</option>
                 <option value="BIKE">Bikes</option>
