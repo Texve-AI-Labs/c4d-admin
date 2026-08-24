@@ -19,6 +19,7 @@ import UserAdd from "./pages/users/add";
 import CustomerAdd from "./pages/customer/add";
 
 import { HomeModernIcon } from "@heroicons/react/24/outline";
+import EditBanner from "./pages/bannerImage/edit";
 import Booking from "./pages/booking/booking";
 import ConfirmBooking from "./pages/booking/confirmBooking";
 import SelectLocation from "./pages/booking/selectLocation";
@@ -705,6 +706,14 @@ export const routes = [
         path: "/user/bannerimg/add",
         element: <AddBanner />,
         display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Banner image edit",
+        path: "/user/bannerimg/edit/:id",
+        element: <EditBanner />,
+        display: false,
         permission: "Marketing",
       },
       {

@@ -19,7 +19,6 @@ const debounce = (func, delay) => {
 const AddBanner = () => {
   const navigate = useNavigate();
   const [imagePreview, setImagePreview] = useState(null);
-  const [image2Preview, setImage2Preview] = useState(null);
   const [error, setError] = useState(null);
   const [serviceAreas, setServiceAreas] = useState([]);
   const [dropSuggestions, setDropSuggestions] = useState([]);
@@ -196,17 +195,6 @@ const AddBanner = () => {
 
     setFieldValue('image', file);
     setImagePreview(URL.createObjectURL(file));
-  };
-
-  const handleImage2Upload = (file, setFieldValue) => {
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/avif', 'image/webp'];
-    if (!file || !validTypes.includes(file.type)) {
-      alert('Only JPEG, PNG, GIF, and AVIF, WEBP images are allowed.');
-      return;
-    }
-
-    setFieldValue('image2', file);
-    setImage2Preview(URL.createObjectURL(file));
   };
 
   // Search Locations (same as Booking page)
@@ -398,9 +386,9 @@ const AddBanner = () => {
                 >
                   <option value="">select the Type</option>
                   <option value="BANNER">Customer Banner First App</option>
-                  <option value="BANNER_DRIVER">Banner Driver</option>
-                  <option value="ONTRIP_BANNER">On Trip Banner</option>
-                  <option value="TOP_NEW">Top New</option>
+                  <option value="BANNER_DRIVER">One Time Driver Banner</option>
+                  <option value="ONTRIP_BANNER">Trip Screen Banner</option>
+                  <option value="TOP_NEW">Dashboard Banner Image</option>
                   <option value="SERVICE_INTRO_IMAGE">Service Intro Image (customer)</option>                  
                   <option value="NEW_CUSTOMER">New Customer</option>
                   <option value="INTRO_SLIDES">Intro Slides (customer)</option>         
