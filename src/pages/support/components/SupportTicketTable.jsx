@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Typography } from "@material-tailwind/react";
 
-function SupportTicketTable({ rows, selectedId, onSelectTicket, onOpenBooking, formatBadgeText, getStatusTone, formatCurrency, formatDateTime }) {
+function SupportTicketTable({ rows, selectedId, onSelectTicket, onOpenBooking, onOpenHistory, canOpenHistory, formatBadgeText, getStatusTone, formatCurrency, formatDateTime }) {
   return (
     <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -60,6 +60,16 @@ function SupportTicketTable({ rows, selectedId, onSelectTicket, onOpenBooking, f
                     <Button size="sm" onClick={() => onSelectTicket(item)} className="rounded-full bg-gradient-to-r from-sky-600 to-cyan-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:shadow-md">
                       Review
                     </Button>
+                  {canOpenHistory ? (
+                    <Button
+                      size="sm"
+                      variant="outlined"
+                      onClick={() => onOpenHistory?.(item)}
+                      className="ml-2 rounded-full border-black bg-pink-400 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800"
+                    >
+                      History
+                    </Button>
+                  ) : null}
                   </td>
                 </tr>
               );
