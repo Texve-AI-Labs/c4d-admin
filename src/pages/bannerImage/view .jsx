@@ -8,16 +8,11 @@ import {
   Spinner,
   Switch,
   Input,
-  Popover,
-  PopoverHandler,
-  PopoverContent,
-  Checkbox,
 } from '@material-tailwind/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
-import { FaFilter } from 'react-icons/fa';
 import { fetchZoneOptions } from '@/pages/marketing/DriverIncentive/zoneOptions';
 
 const BannerView = () => {
@@ -99,14 +94,23 @@ const BannerView = () => {
     return moment(timeValue, ['HH:mm:ss', 'HH:mm']).format('hh:mm A');
   };
 
-  const getPrimaryBannerImage = (item) => {
-    if (!item) return '';
-    return item.imageUrl || item.secondaryImageUrl || '';
+  const normalizeStatus = (status) => {
+    if (status === true || status === false) return status;
+    if (typeof status === 'string') {
+      return status.toLowerCase() === 'true';
+    }
+    return Boolean(status);
   };
 
-  const getSecondaryBannerImage = (item) => {
+  const getPrimaryBannerImage = (item) => {
     if (!item) return '';
-    return item.secondaryImageUrl || '';
+    return item.imageUrl || '';
+  };
+
+  const handleEditBanner = (item) => {
+    navigate(`/dashboard/user/bannerimg/edit/${item.id}`, {
+      state: { banner: item },
+    });
   };
 
   useEffect(() => {
@@ -146,7 +150,7 @@ const BannerView = () => {
       
       const updated = location.state?.updatedBanner;
       if (updated) {
-        list = list.map((item) => item.id === updated.id ? updated : item);
+        list = list.map((item) => item.id === updated.id ? { ...item, ...updated, status: normalizeStatus(updated.status) } : item);
       }
 
       setBannerList(list);
@@ -175,7 +179,7 @@ const BannerView = () => {
 
       setBannerList((prevList) =>
         prevList.map((item) =>
-          item.id === bannerId ? { ...item, status: newStatus } : item
+          item.id === bannerId ? { ...item, status: normalizeStatus(newStatus) } : item
         )
       );
     } catch (err) {
@@ -218,52 +222,12 @@ const BannerView = () => {
     }
   };
 
-  const handleFilterChange = (filterType, value) => {
-    const setter = filterType === 'type' ? setTypeFilter : setZoneFilter;
-    setter(prev => {
-      if (value === 'All') {
-        return ['All'];
-      } else {
-        const newFilter = prev.includes(value)
-          ? prev.filter(item => item !== value)
-          : [...prev.filter(item => item !== 'All'), value];
-        return newFilter.length === 0 ? ['All'] : newFilter;
-      }
-    });
-  };
-
-  const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
-    <Popover placement="bottom-start">
-      <PopoverHandler>
-        <div className="flex items-center cursor-pointer">
-         {title}
-         <FaFilter className="text-gray-700
-           text-xs" />
-        </div>
-      </PopoverHandler>
-      <PopoverContent className="p-2 z-10">
-        {options.map((option) => (
-          <div key={option.value} className="flex items-center mb-2">
-            <Checkbox
-              color="blue"
-              checked={selectedFilters.includes(option.value)}
-              onChange={() => onFilterChange(option.value)}
-            />
-            <Typography color="blue-gray" className="font-medium ml-2">
-              {option.label}
-            </Typography>
-          </div>
-        ))}
-      </PopoverContent>
-    </Popover>
-  );
-
   const typeOptions = [
   { value: 'All', label: 'All' },
-  {value:'BANNER', label:'Customer Banner' },
-  {value:'BANNER_DRIVER', label:'Banner Driver' },
-  {value:'ONTRIP_BANNER', label:'On Trip Banner' },
-  {value: 'TOP_NEW', label: 'Top New'},
+  {value:'BANNER', label:'Customer Banner First App' },
+  {value:'BANNER_DRIVER', label:'One Time Driver Banner' },
+  {value:'ONTRIP_BANNER', label:'Trip Screen Banner' },
+  {value: 'TOP_NEW', label: 'Dashboard Banner Image'},
   {value: 'SERVICE_INTRO_IMAGE', label:'Service Intro Image (customer)'},
   { value: 'NEW_CUSTOMER', label: 'New Customer' },
   { value: 'INTRO_SLIDES', label: 'Intro Slides (customer)'},
@@ -275,6 +239,18 @@ const BannerView = () => {
   // { value: 'QR_DRIVER_TO_CUSTOMER', label: 'QR Driver To Customer' },
   // { value: 'QR_CUSTOMER_TO_CUSTOMER', label: 'QR Customer To Customer' }
 ] ;
+  const getTypeLabel = (type) => {
+    const matched = typeOptions.find((option) => option.value === type);
+    return matched?.label || formatTypeText(type);
+  };
+
+  const handleTypeFilterChange = (value) => {
+    setTypeFilter(value === 'All' ? ['All'] : [value]);
+  };
+
+  const handleZoneFilterChange = (value) => {
+    setZoneFilter(value === 'All' ? ['All'] : [value]);
+  };
 
   // Client-side filtering remains as a fallback
   const filteredBannerList = bannerList.filter(item =>
@@ -284,23 +260,32 @@ const BannerView = () => {
 
   return (
     <div className="mb-8 flex flex-col gap-12">
-      <div className="flex items-center justify-end">
-        <button
-          onClick={() => navigate('/dashboard/user/bannerimg/add')}
-          className="ml-4 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-700"
-        >
-          Add New
-        </button>
-      </div>
-
-      <Card className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-        <CardHeader className="mb-8 p-6 flex justify-between items-center bg-primary">
-          <Typography variant="h6" color="white">Banner List</Typography>
-        </CardHeader>
-
-        <CardBody className="overflow-x-auto px-0 pt-0 pb-4">
-          <div className="px-6 pb-4 flex items-center justify-between">
-            <div className="inline-flex rounded-full bg-gray-100 p-1">
+       <div className="p-4 flex  flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex gap-4">
+              <select
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm"
+                value={typeFilter[0] || 'All'}
+                onChange={(e) => handleTypeFilterChange(e.target.value)}
+              >
+                {typeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm"
+                value={zoneFilter[0] || 'All'}
+                onChange={(e) => handleZoneFilterChange(e.target.value)}
+              >
+                {zoneOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            
+            
               <button
                 type="button"
                 onClick={() => setStatusTab('active')}
@@ -315,14 +300,25 @@ const BannerView = () => {
                 type="button"
                 onClick={() => setStatusTab('inactive')}
                 className={`px-4 py-1 text-sm font-medium rounded-full transition-colors ${
-                  statusTab === 'inactive' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'
+                  statusTab === 'inactive' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                Inactive 
+                Inactive
                 {/* ({inactiveCount}) */}
               </button>
             </div>
+             <button
+          onClick={() => navigate('/dashboard/user/bannerimg/add')}
+          className="ml-4 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-700"
+        >
+          Add New
+        </button>
           </div>
+      <Card className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+        <CardHeader className="mb-4 p-6 bg-primary">
+          <Typography variant="h6" color="white">Banner List</Typography>
+        </CardHeader>
+        <CardBody className="overflow-x-auto px-0 pt-0 pb-4">
 
           {loading ? (
             <div className="flex justify-center items-center py-10">
@@ -331,41 +327,26 @@ const BannerView = () => {
           ) : (
             <table className="min-w-full w-max table-auto">
               <thead>
-                <tr className=" text-black">
+                <tr className="text-black">
                   <th className="py-3 px-5 text-left text-gray-700">Image</th>
-                  <th className="py-3 px-5 text-left text-gray-700">Image 2</th>
-                 <th className="py-3 px-5 text-left">
-                    <FilterPopover
-                      title={<span className="text-base font-semibold text-gray-700 mr-1">Type</span>}
-                      options={typeOptions}
-                      selectedFilters={typeFilter}
-                      onFilterChange={(value) => handleFilterChange('type', value)}
-                    />
-                  </th>
-                  <th className="py-3 px-5 text-left  text-gray-700">Redirect URL</th>
+                  <th className="py-3 px-5 text-left text-gray-700">Type</th>
+                  <th className="py-3 px-5 text-left text-gray-700">Status</th>
                   <th className="py-3 px-5 text-left  text-gray-700">From Date</th>
                   <th className="py-3 px-5 text-left  text-gray-700">To Date</th>
-                  <th className="py-3 px-5 text-left  text-gray-700">Schedule Start Time</th>
-                  <th className="py-3 px-5 text-left  text-gray-700">Schedule End Time</th>
+                  <th className="py-3 px-5 text-left  text-gray-700">Start Time</th>
+                  <th className="py-3 px-5 text-left  text-gray-700">End Time</th>
+                  <th className="py-3 px-5 text-left  text-gray-700">Zone</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Driver Type</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Service Type</th>  
-                  <th className="py-3 px-5 text-left  text-gray-700">Status</th>
                   <th className="py-3 px-5 text-left  text-gray-700">Position</th>
-                  <th className="py-3 px-5 text-left  text-gray-700">
-                  <FilterPopover
-                      title={<span className="text-base font-semibold text-gray-700">Zone</span>}
-                      options={zoneOptions}
-                      selectedFilters={zoneFilter}
-                      onFilterChange={(value) => handleFilterChange('zone', value)}
-                    />
-                  </th>
-                  <th className="py-3 px-5 text-left"></th>
+                  <th className="py-3 px-5 text-left  text-gray-700">Redirect URL</th>
+                  <th className="py-3 px-5 text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredBannerList.length === 0 ? (
                   <tr>
-                  <td colSpan="13" className="text-center py-4">
+                  <td colSpan="12" className="text-center py-4">
                       No Banner Records Found
                     </td>
                   </tr>
@@ -383,19 +364,16 @@ const BannerView = () => {
                           <span className="text-xs text-gray-500">No image</span>
                         )}
                       </td>
+                      <td className="py-3 px-5">{getTypeLabel(item.type)}</td>
                       <td className="py-3 px-5">
-                        {getSecondaryBannerImage(item) ? (
-                          <img
-                            src={getSecondaryBannerImage(item)}
-                            alt="banner 2"
-                            className="w-8 h-auto rounded-xl"
-                          />
-                        ) : (
-                          <span className="text-xs text-gray-500">-</span>
-                        )}
+                        <Switch
+                          color="blue"
+                          checked={normalizeStatus(item.status)}
+                          onChange={() => handleStatusToggle(item.id, !normalizeStatus(item.status))}
+                          disabled={updatingBannerId === item.id}
+                          label={normalizeStatus(item.status) ? 'Active' : 'Inactive'}
+                        />
                       </td>
-                      <td className="py-3 px-5">{formatTypeText(item.type)}</td>
-                      <td className="py-3 px-5 break-words max-w-xs">{item.redirectUrl || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         {formatDate(item.fromDate)}
                       </td>
@@ -409,19 +387,13 @@ const BannerView = () => {
                         {formatTime(item.endTime)}
                       </td>
                       <td className="py-3 px-5">
+                        {item.zone}
+                      </td>
+                      <td className="py-3 px-5">
                         {formatTypeText(item.driverType)}
                       </td>
                       <td className="py-3 px-5">
                         {getServiceTypeLabel(item)}
-                      </td>
-                      <td className="py-3 px-5">
-                        <Switch
-                          color="blue"
-                          checked={item.status}
-                          onChange={() => handleStatusToggle(item.id, !item.status)}
-                          disabled={updatingBannerId === item.id}
-                          label={item.status ? 'Active' : 'Inactive'}
-                        />
                       </td>
                       <td className="py-3 px-5">
                         <div className="flex items-center">
@@ -500,10 +472,17 @@ const BannerView = () => {
                           </p>
                         )}
                       </td>
-                       <td className="py-3 px-5">
-                        {item.zone}
+                      <td className="py-3 px-5 break-words max-w-xs">{item.redirectUrl || '-'}</td>
+                      <td className="py-3 px-5">
+                        <Button
+                          size="sm"
+                          color="blue"
+                          variant="gradient"
+                          onClick={() => handleEditBanner(item)}
+                        >
+                          Edit
+                        </Button>
                       </td>
-                     
                     </tr>
                   ))
                 )}

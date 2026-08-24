@@ -1032,7 +1032,7 @@ export const API_ROUTES = {
     'ADD_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
     'UPDATE_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
     'SUPPORT_TICKETS': '/admin/support-tickets',
-    'SUPPORT_TICKET_BY_ID': '/admin/support-tickets/:id',
+    'SUPPORT_TICKET_BY_ID': '/support-tickets/:ticketId',
     'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status',
     'CUSTOMER_CANCELLATION_CHARGE_LOGS': '/admin/customer-cancellation-charge-logs',
     'ADD_NEW_BIKE_TAXI':'/register/admin/bike',
@@ -1168,6 +1168,7 @@ export const BOOKING_STATUS = {
     PAYMENT_REQUESTED:'PAYMENT_REQUESTED',
     ENDED: 'ENDED',
     TRIP_ENDED: 'TRIP_ENDED',
+    QUOTE_EXPIRED:'QUOTE_EXPIRED',
 };
 
 export const BOOKING_SERVICE_TYPE = {
