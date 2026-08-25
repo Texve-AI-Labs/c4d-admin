@@ -1115,7 +1115,8 @@ export const API_ROUTES = {
     'GET_VENDOR_ORDERS': '/orders',
     // 'ADD_ORDER': '/orders/add',
     // 'UPDATE_ORDER': '/orders/update',
-    'GET_ORDER_BY_ID': '/orders/:id'
+    'GET_ORDER_BY_ID': '/orders/:id',
+    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote'
 
 };
 

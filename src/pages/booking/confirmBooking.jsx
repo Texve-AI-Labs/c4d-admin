@@ -3465,7 +3465,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                 </Card>  
             }*/}
             <>
-                {showDetails && <TextBoxWithList addNotes={addNotes} notesData={bookingDetails?.notesData} bookingId={bookingDetails?.id} />}
+                {showDetails && <TextBoxWithList addNotes={addNotes} notesData={bookingDetails?.notesData} bookingId={bookingDetails?.id} bookingDetails={bookingDetails} />}
             </>
             
         </div>
