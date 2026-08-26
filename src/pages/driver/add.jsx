@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, THALUK_LIST, STATE_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, THALUK_LIST, STATE_LIST, DISTRICT_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
 import { Alert, Button, Card, CardBody, Typography, Input, List, ListItem, Dialog, DialogHeader, DialogBody,Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
@@ -11,6 +11,7 @@ import Select from 'react-select'
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const searchTimerRef = useRef(null);
 
     const getSuggestionText = (suggestion) => {
         if (typeof suggestion === 'string') return suggestion;
@@ -31,6 +32,12 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
         form.validateField(field.name);
     }, []);
 
+    useEffect(() => () => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+    }, []);
+
     return (
         <div className="relative">
             <Input
@@ -38,8 +45,12 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                 placeholder="Enter address"
                 {...field}
                 onChange={(e) => {
-                    form.setFieldValue(field.name, e.target.value);
-                    onSearch(e.target.value);
+                    const value = e.target.value;
+                    form.setFieldValue(field.name, value);
+                    if (searchTimerRef.current) {
+                        clearTimeout(searchTimerRef.current);
+                    }
+                    searchTimerRef.current = setTimeout(() => onSearch(value), 250);
                     form.setFieldTouched(field.name, true, false);
                 }}
                 onFocus={() => setIsFocused(true)}
@@ -56,9 +67,11 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                     {suggestions.map((suggestion, index) => (
                         <ListItem
                             key={index}
-                            onClick={() => {
+                            onMouseDown={(e) => {
+                                e.preventDefault();
                                 const selectedText = getSuggestionText(suggestion);
                                 form.setFieldValue(field.name, selectedText);
+                                form.setFieldTouched(field.name, true, false);
                                 if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
@@ -190,8 +203,9 @@ const DriverAdd = () => {
         streetName: driverVal?.street || "",
         thaluk: driverVal?.thaluk || "",
         district: driverVal?.district || "",
+        accountDistrict: driverVal?.accountDistrict || "",
         state: driverVal?.state || "",
-        pinCode: driverVal?.pincode || "",
+        pincode: driverVal?.pincode || "",
         source: driverVal?.source || "",
         reference1: driverVal?.reference1 || "",
         phoneNumber1: driverVal?.reference1_phone ? driverVal?.reference1_phone.replace(/^(\+91)/, '') : "",
@@ -312,9 +326,10 @@ const DriverAdd = () => {
                 street: values.streetName || "",
                 thaluk: values.thaluk,
                 district: values.district,
+                accountDistrict: values.accountDistrict,
                 state: values.state,
                 country: "India",
-                pincode: values.pinCode || "",
+                pincode: values.pincode || "",
                 reference1: values.reference1 || "",
                 reference1_phone: values.phoneNumber1 || "",
                 reference2: values.reference2 || "",
@@ -382,6 +397,10 @@ const DriverAdd = () => {
     const stateOptions = STATE_LIST.map(state => ({
         id: state.value,
         name: state.label
+    }));
+    const accountDistrictOptions = DISTRICT_LIST.map((district) => ({
+        id: district.value,
+        name: district.label
     }));
 
     const filteredState = stateOptions.filter(state =>
@@ -622,7 +641,7 @@ const DriverAdd = () => {
         return pincodeObj ? pincodeObj.long_name : "";
     };
 
-    const handleGoogleAddressSelect = (addressText, place) => {
+    const handleGoogleAddressSelect = (addressText, place, form) => {
         const resolvedAddress =
             addressText ||
             place?.formatted_address ||
@@ -637,14 +656,14 @@ const DriverAdd = () => {
 
         const parsedAddress = parseAddress(resolvedAddress, place?.address_components);
 
-        setFieldValue("address", resolvedAddress);
+        form?.setFieldValue?.("address", resolvedAddress);
 
         if (isSameAddress) {
-            setFieldValue("streetName", parsedAddress.street);
-            setFieldValue("thaluk", parsedAddress.taluk);
-            setFieldValue("district", parsedAddress.district);
-            setFieldValue("state", parsedAddress.state);
-            setFieldValue("pinCode", parsedAddress.pincode);
+            form?.setFieldValue?.("streetName", parsedAddress.street);
+            form?.setFieldValue?.("thaluk", parsedAddress.taluk);
+            form?.setFieldValue?.("district", parsedAddress.district);
+            form?.setFieldValue?.("state", parsedAddress.state);
+            form?.setFieldValue?.("pincode", parsedAddress.pincode);
         }
     };
 
@@ -830,7 +849,7 @@ const DriverAdd = () => {
                                                     suggestions={addressSuggestions}
                                                     onSearch={searchLocations}
                                                     disabled={!isEditable}
-                                                    onSelect={handleGoogleAddressSelect}
+                                                    onSelect={(selectedText, suggestion) => handleGoogleAddressSelect(selectedText, suggestion, form)}
                                                 />
                                             )}
                                         </Field>
@@ -852,13 +871,13 @@ const DriverAdd = () => {
                                                 setFieldValue("thaluk", currentAddress.taluk);
                                                 setFieldValue("district", currentAddress.district);
                                                 setFieldValue("state", currentAddress.state);
-                                                setFieldValue("pinCode", currentAddress.pincode);
+                                                setFieldValue("pincode", currentAddress.pincode);
                                             } else {
                                                 setFieldValue("streetName", "");
                                                 setFieldValue("thaluk", "");
                                                 setFieldValue("district", "");
                                                 setFieldValue("state", "");
-                                                setFieldValue("pinCode", "");
+                                                setFieldValue("pincode", "");
                                             }
                                         }}
                                         className="mr-2"
@@ -906,7 +925,7 @@ const DriverAdd = () => {
                                         </div>
                                         <div>
                                             <label htmlFor="district" className="text-sm font-medium text-gray-700">
-                                                District
+                                                Zone
                                             </label>
                                             <select
                                                 id="district"
@@ -916,7 +935,7 @@ const DriverAdd = () => {
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
-                                                <option value="" disabled>Select District</option>
+                                                <option value="" disabled>Select Zone</option>
                                                 {filteredDistricts.map((district) => (
                                                     <option key={district.id} value={district.id}>
                                                         {district.name}
@@ -925,6 +944,31 @@ const DriverAdd = () => {
                                             </select>
                                             <ErrorMessage
                                                 name="district"
+                                                component="div"
+                                                className="text-red-500 text-sm mt-1"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">
+                                                Account District
+                                            </label>
+                                            <select
+                                                id="accountDistrict"
+                                                name="accountDistrict"
+                                                value={values.accountDistrict}
+                                                onChange={(e) => setFieldValue("accountDistrict", e.target.value)}
+                                                className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                                disabled={!isEditable}
+                                            >
+                                                <option value="" disabled>Select District</option>
+                                                {accountDistrictOptions.map((district) => (
+                                                    <option key={district.id} value={district.id}>
+                                                        {district.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ErrorMessage
+                                                name="accountDistrict"
                                                 component="div"
                                                 className="text-red-500 text-sm mt-1"
                                             />
@@ -955,9 +999,9 @@ const DriverAdd = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label htmlFor="pinCode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                            <Field type="text" name="pinCode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                            <ErrorMessage name="pinCode" component="div" className="text-red-500 text-sm my-1" />
+                                            <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
+                                            <Field type="text" name="pincode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
                                             <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>

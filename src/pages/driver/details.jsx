@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles, KYC_PROCESS } from '@/utils/constants';
+import { API_ROUTES, ColorStyles, KYC_PROCESS, DISTRICT_LIST } from '@/utils/constants';
 import { useParams, useNavigate } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import PriceTable from '@/components/PriceTable';
@@ -73,8 +73,9 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
         streetName: driver?.result?.street || "",
         thaluk: driver?.result?.thaluk || "",
         district: driver?.result?.district || "",
+        accountDistrict: driver?.result?.accountDistrict || "",
         state: driver?.result?.state || "",
-        pinCode: driver?.result?.pincode || "",
+        pincode: driver?.result?.pincode || "",
         source: driver?.result?.source || "",
         serviceType: driver?.result?.serviceType || "",
         reference1: driver?.result?.reference1 || "",
@@ -286,9 +287,21 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                             <ErrorMessage name="thaluk" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="district" className="text-sm font-medium text-gray-700">District</label>
+                                            <label htmlFor="district" className="text-sm font-medium text-gray-700">Zone</label>
                                             <Field type="text" name="district" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200" />
                                             <ErrorMessage name="district" component="div" className="text-red-500 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">Account District</label>
+                                            <Field as="select" name="accountDistrict" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200">
+                                                <option value="">Select District</option>
+                                                {DISTRICT_LIST.map((district) => (
+                                                    <option key={district.value} value={district.value}>
+                                                        {district.label}
+                                                    </option>
+                                                ))}
+                                            </Field>
+                                            <ErrorMessage name="accountDistrict" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
                                             <label htmlFor="state" className="text-sm font-medium text-gray-700">State</label>
@@ -296,9 +309,9 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                             <ErrorMessage name="state" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="pinCode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                            <Field type="text" name="pinCode" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200" />
-                                            <ErrorMessage name="pinCode" component="div" className="text-red-500 text-sm my-1" />
+                                            <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
+                                            <Field type="text" name="pincode" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200" />
+                                            <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
                                             <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>

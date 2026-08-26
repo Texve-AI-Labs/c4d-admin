@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, THALUK_LIST, STATE_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, THALUK_LIST, STATE_LIST, DISTRICT_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
 import { Alert, Button, Card, CardBody, Typography, Input, List, ListItem, Dialog, DialogHeader, DialogBody,Spinner , DialogFooter,} from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
@@ -13,6 +13,7 @@ import moment from "moment";
 
 const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const searchTimerRef = useRef(null);
 
     const getSuggestionText = (suggestion) => {
         if (typeof suggestion === 'string') return suggestion;
@@ -29,6 +30,12 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
         return suggestion.title || suggestion.fullText || '';
     };
 
+    useEffect(() => () => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+    }, []);
+
     return (
         <div className="relative">
             <Input
@@ -36,8 +43,12 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
                 placeholder="Enter address"
                 {...field}
                 onChange={(e) => {
-                    form.setFieldValue(field.name, e.target.value);
-                    onSearch(e.target.value);
+                    const value = e.target.value;
+                    form.setFieldValue(field.name, value);
+                    if (searchTimerRef.current) {
+                        clearTimeout(searchTimerRef.current);
+                    }
+                    searchTimerRef.current = setTimeout(() => onSearch(value), 250);
                 }}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 200)}
@@ -48,7 +59,8 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
                     {suggestions.map((suggestion, index) => (
                         <ListItem
                             key={index}
-                            onClick={() => {
+                            onMouseDown={(e) => {
+                                e.preventDefault();
                                 const selectedText = getSuggestionText(suggestion);
                                 form.setFieldValue(field.name, selectedText);
                                 if (onSelect) onSelect(selectedText, suggestion);
@@ -204,8 +216,9 @@ const DriverEdit = () => {
         streetName: driverVal?.result?.street || "",
         thaluk: driverVal?.result?.thaluk || "",
         district: driverVal?.result?.district || "",
+        accountDistrict: driverVal?.result?.accountDistrict || "",
         state: driverVal?.result?.state || "",
-        pinCode: driverVal?.result?.pincode || "",
+        pincode: driverVal?.result?.pincode || "",
         reference1: driverVal?.result?.reference1 || "",
         phoneNumber1: driverVal?.result?.reference1_phone ? driverVal?.result?.reference1_phone.replace(/^(\+91)/, '') : "",
         reference2: driverVal?.result?.reference2 || "",
@@ -330,9 +343,10 @@ const [blockedReason, setBlockedReason] = useState('');
                 street: values.streetName || "",
                 thaluk: values.thaluk,
                 district: values.district,
+                accountDistrict: values.accountDistrict,
                 state: values.state,
                 country: "India",
-                pincode: values.pinCode || "",
+                pincode: values.pincode || "",
                 reference1: values.reference1 || "",
                 reference1_phone: values.phoneNumber1 || "",
                 reference2: values.reference2 || "",
@@ -386,6 +400,10 @@ const [blockedReason, setBlockedReason] = useState('');
     const stateOptions = STATE_LIST.map(state => ({
         id: state.value,
         name: state.label
+    }));
+    const accountDistrictOptions = DISTRICT_LIST.map((district) => ({
+        id: district.value,
+        name: district.label
     }));
 
     const getDocumentByType = (value, type) => {
@@ -706,7 +724,7 @@ const [blockedReason, setBlockedReason] = useState('');
             setFieldValue("thaluk", parsedAddress.taluk);
             setFieldValue("district", parsedAddress.district);
             setFieldValue("state", parsedAddress.state);
-            setFieldValue("pinCode", parsedAddress.pincode);
+            setFieldValue("pincode", parsedAddress.pincode);
         }
     };
 
@@ -965,14 +983,16 @@ const [blockedReason, setBlockedReason] = useState('');
                                         setFieldValue("streetName", currentAddress.street);
                                         setFieldValue("thaluk", currentAddress.taluk);
                                         setFieldValue("district", currentAddress.district);
+                                        setFieldValue("accountDistrict", currentAddress.accountDistrict || "");
                                         setFieldValue("state", currentAddress.state);
-                                        setFieldValue("pinCode", currentAddress.pincode);
+                                        setFieldValue("pincode", currentAddress.pincode);
                                     } else {
                                         setFieldValue("streetName", "");
                                         setFieldValue("thaluk", "");
                                         setFieldValue("district", "");
+                                        setFieldValue("accountDistrict", "");
                                         setFieldValue("state", "");
-                                        setFieldValue("pinCode", "");
+                                        setFieldValue("pincode", "");
                                     }
                                 }}
                                 className="mr-2"
@@ -1014,7 +1034,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                 </div>
                                 <div>
                                     <label htmlFor="district" className="text-sm font-medium text-gray-700">
-                                        District
+                                        Zone
                                     </label>
                                     <select
                                         id="district"
@@ -1023,7 +1043,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                         onChange={(e) => setFieldValue('district', e.target.value)}
                                         className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
-                                        <option value="" disabled>Select District</option>
+                                        <option value="" disabled>Select Zone</option>
                                         {districtOptions.map((district) => (
                                             <option key={district.id} value={district.id}>
                                                 {district.name}
@@ -1031,6 +1051,26 @@ const [blockedReason, setBlockedReason] = useState('');
                                         ))}
                                     </select>
                                     <ErrorMessage name="district" component="div" className="text-red-500 text-sm mt-1" />
+                                </div>
+                                <div>
+                                    <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">
+                                        Account District
+                                    </label>
+                                    <select
+                                        id="accountDistrict"
+                                        name="accountDistrict"
+                                        value={values.accountDistrict}
+                                        onChange={(e) => setFieldValue("accountDistrict", e.target.value)}
+                                        className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                    >
+                                        <option value="" disabled>Select District</option>
+                                        {accountDistrictOptions.map((district) => (
+                                            <option key={district.id} value={district.id}>
+                                                {district.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ErrorMessage name="accountDistrict" component="div" className="text-red-500 text-sm mt-1" />
                                 </div>
 
                                 <div>
@@ -1054,9 +1094,9 @@ const [blockedReason, setBlockedReason] = useState('');
                                     <ErrorMessage name="state" component="div" className="text-red-500 text-sm mt-1" />
                                 </div>
                                 <div>
-                                    <label htmlFor="pinCode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                    <Field type="text" name="pinCode" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                    <ErrorMessage name="pinCode" component="div" className="text-red-500 text-sm my-1" />
+                                    <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
+                                    <Field type="text" name="pincode" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                    <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
                                 <div>
                                     <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>

@@ -225,10 +225,14 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
     streetName: Yup.string().required('Street is required').min(3, 'Street name must be atleast 3 characters'),
     thaluk: Yup.string().required('Thaluk is required'),
     district: Yup.string().required('District is required'),
+    accountDistrict: Yup.string().required('Account District is required'),
     state: Yup.string().required('State is required'),
-    pinCode: Yup.string()
-        .required('Pincode is required')
-        .matches(/^[1-9][0-9]{5}$/, 'Must be a valid 6-digit pincode'),
+        pincode: Yup.string()
+        .nullable()
+        .test('pincode-format', 'Pincode must be exactly 6 digits', (value) => {
+            if (!value) return true;
+            return /^\d{6}$/.test(value);
+        }),
     reference1: Yup.string()
         .required('Reference 1 is required')
         .min(2, 'Reference name must be at least 2 characters')
@@ -324,10 +328,14 @@ export const DRIVER_SCHEMA = Yup.object({
     streetName: Yup.string().required('Street is required').min(3, 'Street name must be atleast 3 characters'),
     thaluk: Yup.string().required('Thaluk is required'),
     district: Yup.string().required('District is required'),
+    accountDistrict: Yup.string().required('Account District is required'),
     state: Yup.string().required('State is required'),
-    pinCode: Yup.string()
-        .required('Pincode is required')
-        .matches(/^[1-9][0-9]{5}$/, 'Must be a valid 6-digit pincode'),
+    pincode: Yup.string()
+        .nullable()
+        .test('pincode-format', 'Pincode must be exactly 6 digits', (value) => {
+            if (!value) return true;
+            return /^\d{6}$/.test(value);
+        }),
     reference1: Yup.string()
         .min(2, 'Reference name must be at least 2 characters')
         .matches(/^[a-zA-Z\s]*$/, 'Reference name can only contain letters'),
