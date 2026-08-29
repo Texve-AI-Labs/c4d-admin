@@ -2392,6 +2392,22 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     {bookingDetails?.dropAddress?.name || bookingDetails?.endAddress?.name || "Not Added"}
                                 </span>
                             </div>
+                            <div className="flex flex-col-2 gap-2">
+                                <span className="text-gray-500 font-semibold">Trip Start:</span>
+                                <span className="text-gray-900 font-medium">
+                                    {bookingDetails?.tripStartAddress?.name?.trim()
+                                        || bookingDetails?.tripStartFormatAddress?.name?.trim()
+                                        || "Not Available"}
+                                </span>
+                            </div>
+                            <div className="flex flex-col-2 gap-2">
+                                <span className="text-gray-500 font-semibold">End Address:</span>
+                                <span className="text-gray-900 font-medium">
+                                    {bookingDetails?.endAddress?.name?.trim() 
+                                    || bookingDetails?.endFormatAddress?.name?.trim() 
+                                    || "Not Available"}
+                                </span>
+                            </div>                            
                             {bookingDetails?.packageType !== 'Local' && bookingDetails?.serviceType !== 'DRIVER' && (bookingDetails?.driverStartAddress?.name?.trim() || Number(bookingDetails?.value?.driverWithin) > 0) && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">{bookingDetails?.serviceType === 'AUTO' ? 'Auto' : bookingDetails?.serviceType === 'BIKE' ? 'Bike' : 'Cab'} Starting Points:</span>
@@ -3465,7 +3481,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                 </Card>  
             }*/}
             <>
-                {showDetails && <TextBoxWithList addNotes={addNotes} notesData={bookingDetails?.notesData} bookingId={bookingDetails?.id} />}
+                {showDetails && <TextBoxWithList addNotes={addNotes} notesData={bookingDetails?.notesData} bookingId={bookingDetails?.id} bookingDetails={bookingDetails} />}
             </>
             
         </div>

@@ -12,7 +12,7 @@ import {
     IconButton,
     Spinner,
 } from "@material-tailwind/react";
-import { FaArrowRight, FaArrowUp, FaArrowDown, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser } from 'react-icons/fa';
+import { FaArrowRight, FaArrowUp, FaArrowDown, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser, FaEdit } from 'react-icons/fa';
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, BOOKING_STATUS, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -171,6 +171,9 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [selectedBookingForSupportApproval, setSelectedBookingForSupportApproval] = useState(null);
     const [supportApprovalDecision, setSupportApprovalDecision] = useState('END_TRIP');
     const [supportApprovalReasonDetails, setSupportApprovalReasonDetails] = useState('');
+    const [showQuoteExpireModal, setShowQuoteExpireModal] = useState(false);
+    const [selectedBookingForQuoteExpire, setSelectedBookingForQuoteExpire] = useState(null);
+    const [quoteExpireReason, setQuoteExpireReason] = useState('');
     const [counts, setCounts] = useState({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0"});
     const [dateFilter, setDateFilter] = useState('All');
     const [customDateFrom, setCustomDateFrom] = useState('');
@@ -792,6 +795,12 @@ if (!statusFilter.includes('All')) {
         setShowSupportApprovalModal(true);
     };
 
+    const onQuoteExpireEditHandler = (data) => {
+        setSelectedBookingForQuoteExpire(data);
+        setQuoteExpireReason('');
+        setShowQuoteExpireModal(true);
+    };
+
     const submitSupportApproval = async () => {
         if (!selectedBookingForSupportApproval?.id) return;
 
@@ -816,6 +825,32 @@ if (!statusFilter.includes('All')) {
             }
         } catch (error) {
             console.error('Error submitting support approval:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const submitQuoteExpireUpdate = async () => {
+        if (!selectedBookingForQuoteExpire?.id) return;
+
+        const payload = {
+            bookingId: selectedBookingForQuoteExpire.id,
+            expiryReason: quoteExpireReason?.trim() || '',
+        };
+        // console.log("payload:- ",payload)
+        try {
+            setLoading(true);
+            const response = await ApiRequestUtils.update(API_ROUTES.BOOKING_QUOTE_EXPIRE, payload);
+            if (response?.success) {
+                setShowQuoteExpireModal(false);
+                setSelectedBookingForQuoteExpire(null);
+                setQuoteExpireReason('');
+                await getBookingsList(pagination.currentPage);
+            } else {
+                console.error('Quote expire update failed:', response?.message);
+            }
+        } catch (error) {
+            console.error('Error submitting quote expire update:', error);
         } finally {
             setLoading(false);
         }
@@ -1584,6 +1619,48 @@ if (!statusFilter.includes('All')) {
                                                 </div>
                                             </div>
                                         )}
+                                        {showQuoteExpireModal && (
+                                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                                <div className="bg-white/95 p-6 rounded-lg max-w-lg w-full">
+                                                    <Typography className="text-2xl font-extrabold text-center mb-4">
+                                                        Update Quote Status
+                                                    </Typography>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <Typography className="text-sm font-semibold mb-2">
+                                                                Expiry Reason
+                                                            </Typography>
+                                                            <textarea
+                                                                value={quoteExpireReason}
+                                                                onChange={(e) => setQuoteExpireReason(e.target.value)}
+                                                                placeholder="Enter expiry reason"
+                                                                className="border border-gray-300 px-4 py-2 rounded-md w-full min-h-[110px]"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-center gap-3 mt-6">
+                                                        <Button
+                                                            className="bg-orange-600 text-white w-32"
+                                                            onClick={submitQuoteExpireUpdate}
+                                                            disabled={!quoteExpireReason?.trim()}
+                                                        >
+                                                            Update Status
+                                                        </Button>
+                                                        <Button
+                                                            variant="outlined"
+                                                            className="bg-red-600 text-white w-32"
+                                                            onClick={() => {
+                                                                setShowQuoteExpireModal(false);
+                                                                setSelectedBookingForQuoteExpire(null);
+                                                                setQuoteExpireReason('');
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         {bookingsList
                                             .filter(booking =>
                                                 (statusFilter.includes('All') ||
@@ -1762,6 +1839,7 @@ if (!statusFilter.includes('All')) {
                                                             }
                                                         </td> */}
                                                         <td>
+                                                            <div className="flex items-center gap-2">                                                         
                                                             <Chip
                                                                 variant="ghost"
                                                                 // color={"blue"}
@@ -1784,6 +1862,18 @@ if (!statusFilter.includes('All')) {
                                                                     
                                                                 }`}
                                                             />
+                                                            {data?.status === 'QUOTED' ? (
+                                                            <FaEdit
+                                                                className="text-red-700 text-sm cursor-pointer"
+                                                                title="Edit quote status"
+                                                                onClick={(event) => {
+                                                                    event.preventDefault();
+                                                                    event.stopPropagation();
+                                                                    onQuoteExpireEditHandler(data);
+                                                                }}
+                                                            />
+                                                                ) : ""}
+                                                            </div>
                                                         </td>
                                                        {!isCompactFeatureList && (
                                                     <td className={className}>

@@ -13,7 +13,7 @@ const formatStatusLabel = (value) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
+const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
   const [text, setText] = useState('');
   const [noteType, setNoteType] = useState('')
   const [items, setItems] = useState([]);
@@ -23,6 +23,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
   const [bookingExtraCharges, setBookingExtraCharges] = useState([]); 
   const [errorMessage, setErrorMessage] = useState('');
   const [tripDetailsLogs, setTripDetailsLogs] = useState([]);
+  const [quoteExpiryLogs, setQuoteExpiryLogs] = useState([]);
   const [tripFare, setTripFare] = useState(0);
   const [fuelCost, setFuelCost] = useState(0);
   const [tollCost, setTollCost] = useState(0);
@@ -39,6 +40,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
         setBookingLogs([]);
         setQuotationLogs([]);
         setBookingFollowupLogs([]);
+        setQuoteExpiryLogs([]);
         return;
       }
 
@@ -75,6 +77,8 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
           } else {
             setTripDetailsLogs([]);
           }
+          const quoteExpiryReason = data?.data?.quoteExpiryReason || bookingDetails?.quoteExpiryReason;
+          setQuoteExpiryLogs(quoteExpiryReason ? [quoteExpiryReason] : []);
         } else {
           console.warn('API call failed, falling back to notesData:', data?.message);
           setItems(fallbackNotes);
@@ -83,6 +87,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
           setTripDetailsLogs([]);
           setBookingFollowupLogs([]);
           setBookingExtraCharges([]);
+          setQuoteExpiryLogs(bookingDetails?.quoteExpiryReason ? [bookingDetails.quoteExpiryReason] : []);
         }
       } catch (error) {
         console.error('Error fetching notes:', error);
@@ -92,11 +97,12 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
         setTripDetailsLogs([]);
         setBookingFollowupLogs([]);
         setBookingExtraCharges([]);
+        setQuoteExpiryLogs(bookingDetails?.quoteExpiryReason ? [bookingDetails.quoteExpiryReason] : []);
       }
     };
 
     fetchNotes();
-  }, [bookingId, notesData]);
+  }, [bookingId, notesData, bookingDetails]);
 
   const handleAddItem = async () => {
     setErrorMessage(''); 
@@ -140,6 +146,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
     { id: 'extra', label: 'Extra Booking Charges Log' },
     { id: 'estimates', label: 'Check Estimate Price Log' },
     { id: 'status', label: 'Booking Status Log' },
+    { id: 'quoteExpiry', label: 'Quote Expiry Log' },
   ];
 
   return (
@@ -477,6 +484,48 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
                           </span>
                   </>
                 )}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+  </>
+)}
+{activeTab === 'quoteExpiry' && (
+  <>
+    <div className="flex-1">
+      {quoteExpiryLogs.length === 0 ? (
+        <p className="text-center text-gray-500 text-base mt-5">No quote expiry logs yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {quoteExpiryLogs.map((log, index) => (
+            <li
+              key={log?.id || `${log?.quoteExpiredAt || 'quote-expiry'}-${index}`}
+              className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <UserIcon className="h-5 w-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-800">
+                  {log?.quoteExpiredBy?.name || 'System'}
+                </span>
+                <span className="text-sm text-gray-500 ml-auto">
+                  {log?.quoteExpiredAt ? moment(log.quoteExpiredAt).format('DD-MM-YYYY / hh:mm A') : 'N/A'}
+                </span>
+              </div>
+              <div className="text-base text-gray-700 flex items-center gap-2">
+                <span>
+                  Quote Expiry changed from{' '}
+                  <span className="font-medium text-primary-600">
+                    {formatStatusLabel(log?.oldStatus || 'QUOTED')}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-medium text-green-600">
+                    {formatStatusLabel(log?.newStatus || 'QUOTE_EXPIRED')}
+                  </span>
+                  {' '}because{' '}
+                  <span className="font-medium">{log?.reason || 'N/A'}</span>
                   </span>
                 </div>
               </li>

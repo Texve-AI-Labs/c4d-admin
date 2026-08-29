@@ -250,7 +250,6 @@ const VehicleInfoSection = ({
                           row.label === "Vehicle Type" ? (
                             <select
                               value={normalizeVehicleTypeInput(draftValues[row.label])}
-                              disabled
                               onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >

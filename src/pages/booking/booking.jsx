@@ -1348,7 +1348,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             // fromDate: values.fromDate,
             customerId: values.customerId?.id,
             adminBooking: true,
-            serviceType: values.serviceType || "AUTO",
+            serviceType: values.serviceType || mappedServiceType,
             cabType: values.cabType,
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
             ...(!shouldOmitDriverPackage && {
@@ -1383,7 +1383,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             seaterCapacity:values.seaterCapacity,
             landmark: values.landmark || '',
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
-            serviceType: values.serviceType || mappedServiceType,
             zone: actualZone,
             isPremiumService : values?.isPremiumService ? true : false
         };

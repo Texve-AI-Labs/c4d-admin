@@ -42,7 +42,7 @@ const initialValuesTemplate = {
   priority: "",
   totalPrice: 0,
   type: "",
-  status: "ACTIVE",
+  // status: "ACTIVE",
   // validityDays: 0,
   earningStrategy: "",
   earningWindowDays: "",

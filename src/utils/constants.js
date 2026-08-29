@@ -53,12 +53,12 @@ export const DISTRICT_LIST = [
     { label: 'Erode', value: 'Erode' },
     { label: 'Kallakurichi', value: 'Kallakurichi' },
     { label: 'Kancheepuram', value: 'Kancheepuram' },
+    { label: 'Kanniyakumari', value: 'Kanniyakumari' },
     { label: 'Karur', value: 'Karur' },
     { label: 'Krishnagiri', value: 'Krishnagiri' },
     { label: 'Madurai', value: 'Madurai' },
     { label: 'Mayiladuthurai', value: 'Mayiladuthurai' },
     { label: 'Nagapattinam', value: 'Nagapattinam' },
-    { label: 'Kanniyakumari', value: 'Kanniyakumari' },
     { label: 'Namakkal', value: 'Namakkal' },
     { label: 'Perambalur', value: 'Perambalur' },
     { label: 'Pudukottai', value: 'Pudukottai' },
@@ -67,17 +67,19 @@ export const DISTRICT_LIST = [
     { label: 'Salem', value: 'Salem' },
     { label: 'Sivagangai', value: 'Sivagangai' },
     { label: 'Tenkasi', value: 'Tenkasi' },
+    { label: 'Thanjavur', value: 'Thanjavur' },
+    { label: 'Theni', value: 'Theni' },
     { label: 'Thiruvallur', value: 'Thiruvallur' },
     { label: 'Thiruvarur', value: 'Thiruvarur' },
     { label: 'Thoothukudi', value: 'Thoothukudi' },
-    { label: 'Trichirappalli', value: 'Trichirapalli' },
-    { label: 'Thirunelveli', value: 'Thirunelveli' },
+    { label: 'Tiruchirappalli', value: 'Tiruchirappalli' },
+    { label: 'Tirunelveli', value: 'Tirunelveli' },
     { label: 'Tirupathur', value: 'Tirupathur' },
     { label: 'Tiruppur', value: 'Tiruppur' },
     { label: 'Tiruvannamalai', value: 'Tiruvannamalai' },
     { label: 'The Nilgiris', value: 'The Nilgiris' },
     { label: 'Vellore', value: 'Vellore' },
-    { label: 'Villupuram', value: 'Villupuram' },
+    { label: 'Viluppuram', value: 'Viluppuram' },
     { label: 'Virudhunagar', value: 'Virudhunagar' }
 ]
 
@@ -1114,7 +1116,8 @@ export const API_ROUTES = {
     'GET_VENDOR_ORDERS': '/orders',
     // 'ADD_ORDER': '/orders/add',
     // 'UPDATE_ORDER': '/orders/update',
-    'GET_ORDER_BY_ID': '/orders/:id'
+    'GET_ORDER_BY_ID': '/orders/:id',
+    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote'
 
 };
 
