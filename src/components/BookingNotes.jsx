@@ -522,9 +522,9 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
                   </span>{' '}
                   to{' '}
                   <span className="font-medium text-green-600">
-                    {formatStatusLabel(log?.newStatus || 'QUOTE_EXPIRED')}
+                    {formatStatusLabel(log?.newStatus || 'QUOTE_EXPIRED')}.
                   </span>
-                  {' '}because{' '}
+                  {' '}because Reason:{' '}
                   <span className="font-medium">{log?.reason || 'N/A'}</span>
                   </span>
                 </div>
