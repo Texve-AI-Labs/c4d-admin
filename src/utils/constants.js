@@ -1118,7 +1118,14 @@ export const API_ROUTES = {
     // 'ADD_ORDER': '/orders/add',
     // 'UPDATE_ORDER': '/orders/update',
     'GET_ORDER_BY_ID': '/orders/:id',
-    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote'
+    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote',
+
+    //service-contents
+    'GET_SERVICE_CONTENTS': '/admin/service-contents',
+    'GET_SERVICE_CONTENT_BY_ID': '/admin/service-contents',
+    'POST_SERVICE_CONTENT': '/admin/service-contents',
+    'PUT_SERVICE_CONTENT': '/admin/service-contents',
+    'DELETE_SERVICE_CONTENT': '/admin/service-contents',
 
 };
 

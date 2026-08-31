@@ -32,6 +32,7 @@ function AdminSubmenu({ permissions = [] }) {
   const primaryItems = [
     { label: "Users", path: "/dashboard/users", requiredPermission: "Users" },
     { label: "GeoMarkings", path: "/dashboard/admin/geo-markings", requiredPermission: "Users" },
+    { label: "Service Contents", path: "/dashboard/admin/service-contents", requiredPermission: "Users" },
     { label: "Version Control", path: "/dashboard/user/versionControlList", requiredPermission: "Users" },
   ];
 
@@ -53,8 +54,8 @@ function AdminSubmenu({ permissions = [] }) {
     return null;
   }
 
-  const firstRowItems = allAdminItems.slice(0, 7);
-  const secondRowItems = allAdminItems.slice(7);
+  const firstRowItems = allAdminItems.slice(0, 4);
+  const secondRowItems = allAdminItems.slice(4);
 
   const renderItems = (items) =>
     items.map(({ label, path }) => (

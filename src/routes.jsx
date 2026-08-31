@@ -99,6 +99,9 @@ import ReferralRuleList from "./pages/finance/referralRules/list";
 import ReferralRuleAdd from "./pages/finance/referralRules/add";
 import ReferralRuleEdit from "./pages/finance/referralRules/edit";
 import ReferralCreditLogsList from "./pages/finance/referralRules/logs";
+import ServiceContentList from "./pages/admin/serviceContents/list";
+import ServiceContentAdd from "./pages/admin/serviceContents/add";
+import ServiceContentEdit from "./pages/admin/serviceContents/edit";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
@@ -1920,6 +1923,30 @@ export const routes = [
         path: "/admin/geo-markings",
         element: <GeoMarkings />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents",
+        path: "/admin/service-contents",
+        element: <ServiceContentList />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents add",
+        path: "/admin/service-contents/add",
+        element: <ServiceContentAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents edit",
+        path: "/admin/service-contents/edit/:id",
+        element: <ServiceContentEdit />,
+        display: false,
         permission: "Users",
       },
       {
