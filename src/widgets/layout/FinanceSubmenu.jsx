@@ -17,6 +17,7 @@ const FINANCE_GROUPS = [
     items: [
       { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
       { label: "Joining Bonus", path: "/dashboard/finance/joining-bonus" },
+      { label: "Driver Radius & Bonus Configuration", path: "/dashboard/finance/driver-radius-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     ],
@@ -62,6 +63,12 @@ const ROUTE_MATCHERS = {
     "/finance/master-subscription/log",
   ],
   "Joining Bonus": ["/dashboard/finance/joining-bonus"],
+  "Driver Radius & Bonus Configuration": [
+    "/dashboard/finance/driver-radius-bonus",
+    "/dashboard/finance/driver-radius-bonus/add",
+    "/dashboard/finance/driver-radius-bonus/edit",
+    "/dashboard/finance/driver-radius-bonus/details",
+  ],
   "Master Price Table": ["/finance/master-price"],
   "Instant Reward": ["/finance/instant-reward"],
   "Referral Rules": ["/finance/referral-rules"],
@@ -86,8 +93,17 @@ const matchesRouteFamily = (pathname, label, path) => {
   return families.some((familyPath) => pathname.startsWith(normalizePath(familyPath)));
 };
 
+const matchesFinanceGroup = (pathname, group) =>
+  group.items.some(({ label, path }) => {
+    const normalizedItemPath = normalizePath(path);
+    return (
+      pathname.startsWith(normalizedItemPath) ||
+      matchesRouteFamily(pathname, label, path)
+    );
+  });
+
 const getFinanceGroupForPath = (groups, pathname) =>
-  groups.find((group) => group.items.some(({ label, path }) => matchesRouteFamily(pathname, label, path)));
+  groups.find((group) => matchesFinanceGroup(pathname, group));
 
 function FinanceSubmenu({ permissions = [] }) {
   const location = useLocation();

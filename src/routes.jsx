@@ -191,6 +191,10 @@ import DriverBonusList from "./pages/finance/driverBonus/list";
 import DriverBonusAdd from "./pages/finance/driverBonus/add";
 import DriverBonusEdit from "./pages/finance/driverBonus/edit";
 import DriverBonusDetails from "./pages/finance/driverBonus/details";
+import DriverRadiusBonusList from "./pages/finance/driverRadiusBonus/list";
+import DriverRadiusBonusAdd from "./pages/finance/driverRadiusBonus/add";
+import DriverRadiusBonusEdit from "./pages/finance/driverRadiusBonus/edit";
+import DriverRadiusBonusDetails from "./pages/finance/driverRadiusBonus/details";
 import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
@@ -1674,6 +1678,38 @@ export const routes = [
         name: "Driver Bonus Details",
         path: "/finance/driver-bonus/details/:id",
         element: <DriverBonusDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus List",
+        path: "/finance/driver-radius-bonus",
+        element: <DriverRadiusBonusList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Add",
+        path: "/finance/driver-radius-bonus/add",
+        element: <DriverRadiusBonusAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Edit",
+        path: "/finance/driver-radius-bonus/edit/:id",
+        element: <DriverRadiusBonusEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Details",
+        path: "/finance/driver-radius-bonus/details/:id",
+        element: <DriverRadiusBonusDetails />,
         display: false,
         permission: "Users",
       },
