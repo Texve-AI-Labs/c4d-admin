@@ -211,15 +211,35 @@ const DriverMasterPriceTableEdit = () => {
                                     <Field type="time" name="nightHoursTo" className="p-2 rounded border" />
                                 </div>
                             </div>
-                            {values?.serviceType === "DRIVER" && values?.type === "Outstation" && 
+                            {/* {values?.serviceType === "DRIVER" && values?.type === "Outstation" &&  */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                     <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md border-2" />
                                 </div>
-                                }
+                                {/* } */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                     <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Waiting (mins)</label>
+                                    <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2" />
+                                </div>
+                                 <div>
+                                    <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
+                                    <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-2" />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Cancel Mins</label>
+                                    <Field type="number" name="cancelMins" className="p-2 w-full rounded-md border-2" />
+                                </div>
+                                 <div>
+                                    <label className="text-sm font-medium text-gray-700">Cancel Charge</label>
+                                    <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-2" />
+                                </div>
+                                 <div>
+                                    <label className="text-sm font-medium text-gray-700">Night Charge</label>
+                                    <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2" />
                                 </div>
                              {/* Outstation Base Fare */}
                        
@@ -242,17 +262,12 @@ const DriverMasterPriceTableEdit = () => {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
                                     <tr className="bg-blue-600 text-white">
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Package </th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Base Hours</th>
                                         <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th> */}
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting (mins)</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting Charges Apply After</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Night Charge</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Mins</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Charge</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -263,11 +278,6 @@ const DriverMasterPriceTableEdit = () => {
                                         <td className="px-2 py-3 border"><Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-1" /></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td>
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
-                                        <td className="px-2 py-3 border"><Field type="number" name="waitingMins" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="waitingCharge" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="nightCharge" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="cancelMins" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="cancelCharge" className="w-full text-center border rounded p-1" /></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -281,16 +291,11 @@ const DriverMasterPriceTableEdit = () => {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
-                                    <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
+                                    <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins</th>
+                                    <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins Price</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting (mins)</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Mins</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Charge</th>
                                    
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Night Charges</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th>
                                    
                                 </tr>
@@ -305,12 +310,7 @@ const DriverMasterPriceTableEdit = () => {
                                         <td className="px-2 py-3 border"><Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-1" /></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td>
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
-                                        <td className="px-2 py-3 border"><Field type="number" name="waitingMins" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="waitingCharge" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="cancelMins" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="cancelCharge" className="w-full text-center border rounded p-1" /></td>
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-1" /></td> */}
-                                        <td className="px-2 py-3 border"><Field type="number" name="nightCharge" className="w-full text-center border rounded p-1" /></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="dropPrice" className="w-full text-center border rounded p-1" /></td>
                                    
                                 </tr>

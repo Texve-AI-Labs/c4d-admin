@@ -168,18 +168,37 @@ export function MasterPriceDetailsAndEdit() {
                                     />
                                 </div>
                             </div>
-                             {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' &&
+                             {/* {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' && */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <Field type="number" name="dropPriceAbove" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                             </div>
-                            }
+                            {/* } */}
                             
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <Field type="number" name="freeExtraMinutes" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                             </div>
-                            
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Time</label>
+                                <Field type="number" name="waitingMins" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
+                                <Field type="number" name="waitingCharge" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
+                                <Field type="number" name="cancelMins" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
+                                <Field type="number" name="cancelCharge" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Night Charge</label>
+                                <Field type="number" name="nightCharge" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
                                 {/* <Select
@@ -200,7 +219,7 @@ export function MasterPriceDetailsAndEdit() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                             <thead className="text-center whitespace-nowrap">
                                 <tr className="bg-blue-600">
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Package</th>
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Kilometer</th> */}
                                      
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
@@ -209,12 +228,6 @@ export function MasterPriceDetailsAndEdit() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Kilometer Price</th> */}
-                                   
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Time</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Night Charge</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Cancellation Mins</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Cancellation Charge</th>
                                 </tr>
                             </thead>
 
@@ -227,11 +240,6 @@ export function MasterPriceDetailsAndEdit() {
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td>
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || "-"}</td> */}
-                                    <td className="px-4 py-4 border border-gray-300">{values.waitingMins || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.waitingCharge || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.nightCharge || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.cancelMins || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.cancelCharge || "-"}</td>
                                 </tr>
                             </tbody>
                             </table>
@@ -250,13 +258,8 @@ export function MasterPriceDetailsAndEdit() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Time</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Cancellation Mins</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Cancellation Charge</th>
                                    
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Night Charges</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th>
                                    
                                 </tr>
@@ -270,12 +273,7 @@ export function MasterPriceDetailsAndEdit() {
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td>
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || '-'}</td> */}
-                                    <td className="px-4 py-4 border border-gray-300">{values.waitingMins || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.waitingCharge || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.cancelMins || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.cancelCharge || "-"}</td>
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.dropPriceAbove || "-"}</td> */}
-                                    <td className="px-4 py-4 border border-gray-300">{values. nightCharge || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.dropPrice || "-"}</td>
                                    
                                 </tr>
