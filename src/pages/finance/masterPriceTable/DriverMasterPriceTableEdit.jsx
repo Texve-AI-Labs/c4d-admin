@@ -265,7 +265,7 @@ const DriverMasterPriceTableEdit = () => {
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Base Hours</th>
                                         <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th> */}
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
+                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th> */}
                                     </tr>
@@ -276,7 +276,7 @@ const DriverMasterPriceTableEdit = () => {
                                         <td className="px-2 py-3 border"><Field type="number" name="price" className="w-full text-center border rounded p-1" /></td>
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="kilometer" className="w-full text-center border rounded p-1" /></td> */}
                                         <td className="px-2 py-3 border"><Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td>
+                                        {/* <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td> */}
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
                                     </tr>
                                 </tbody>
@@ -291,7 +291,7 @@ const DriverMasterPriceTableEdit = () => {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins</th>
+                                    {/* <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins</th> */}
                                     <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins Price</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
                                    
@@ -308,7 +308,7 @@ const DriverMasterPriceTableEdit = () => {
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="kilometer" className="w-full text-center border rounded p-1" /></td> */}
                                         <td className="px-2 py-3 border"><Field type="number" name="price" className="w-full text-center border rounded p-1" /></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-1" /></td>
-                                        <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td>
+                                        {/* <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td> */}
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-1" /></td> */}
                                         <td className="px-2 py-3 border"><Field type="number" name="dropPrice" className="w-full text-center border rounded p-1" /></td>
