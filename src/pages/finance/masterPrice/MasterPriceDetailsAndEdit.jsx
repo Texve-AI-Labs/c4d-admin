@@ -21,10 +21,6 @@ export function MasterPriceDetailsAndEdit() {
             fetchItem(id);
         }
     }, [id]);
-    // const STATUS_OPTIONS = [
-    //     { value: 'ACTIVE', label: 'Active' },
-    //     { value: 'INACTIVE', label: 'Inactive' },
-    // ];
     const fetchItem = async (itemId) => {
         const data = await ApiRequestUtils.get(API_ROUTES.GET_PACKAGE_DETAIL + `${itemId}`);
         if (data?.success) {
@@ -33,13 +29,17 @@ export function MasterPriceDetailsAndEdit() {
                 zone: data?.data?.zone || '',
                 type: data?.data?.type || '',
                 period: data?.data?.period || '',
-                priceMVP: data.data.priceMVP || '',
                 price: data.data.price,
+                priceMVP: data.data.priceMVP || '',
+                priceSuv: data.data.priceSuv || '',
+                priceSedan: data.data.priceSedan || '',
                 waitingMins: Utils.convertTimeFormatToMinutes(data?.data?.waitingMins) || '',
                 waitingCharge: data?.data?.waitingCharge || '',
                 dropPrice: data?.data?.dropPrice || '',
                 additionalMinCharge: data?.data?.additionalMinCharge || '',
-                extraPrice: data?.data?.extraPrice || '',
+                additionalMinChargeMVP: data?.data?.additionalMinChargeMVP || '',
+                additionalMinChargeSuv: data?.data?.additionalMinChargeSuv || '',
+                additionalMinChargeSedan: data?.data?.additionalMinChargeSedan || '',
                 nightHoursFrom: data?.data?.nightHoursFrom || '00:00',
                 nightHoursTo: data?.data?.nightHoursTo || '00:00',
                 nightCharge: data?.data?.nightCharge || '',
@@ -48,8 +48,6 @@ export function MasterPriceDetailsAndEdit() {
                 freeExtraMinutes:data?.data?.freeExtraMinutes || 0,
 
                 baseFare:data?.data?.baseFare || '',
-                // kilometer:data?.data?.kilometer || '',
-                // extraKmPrice:data?.data?.extraKmPrice || '',
                 dropPriceAbove:data?.data?.dropPriceAbove || 0,
                 bookingType: data?.data?.bookingType || 'DROP ONLY',
 
@@ -68,6 +66,8 @@ export function MasterPriceDetailsAndEdit() {
                 period: values.period,
                 price: values.price,
                 priceMVP: values.priceMVP,
+                priceSuv: values.priceSuv,
+                priceSedan: values.priceSedan,
                 dropPrice: values.dropPrice,
                 nightCharge: values.nightCharge,
                 cancelCharge: Number(values.cancelCharge || 0),
@@ -76,20 +76,18 @@ export function MasterPriceDetailsAndEdit() {
                 waitingCharge: values.waitingCharge,
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
-                extraPrice: values.extraPrice,
-                // extraKmPrice:values.extraKmPrice,
                 additionalMinCharge: values.additionalMinCharge,
+                additionalMinChargeMVP: values.additionalMinChargeMVP,
+                additionalMinChargeSuv: values.additionalMinChargeSuv,
+                additionalMinChargeSedan: values.additionalMinChargeSedan,
                 status: values.status === 'Active' ? 1 : 0,
                 dropPriceAbove:values.dropPriceAbove,
-                // kilometer:values.kilometer || '',
                 zone: values.zone,
                 freeExtraMinutes:values.freeExtraMinutes || 0,
                 bookingType: values.bookingType || 'DROP ONLY',
             };
             if (values.type === 'Outstation') {
                 masterpriceList['baseFare'] = values.baseFare;
-                // masterpriceList['kilometer'] = values.kilometer;
-                // masterpriceList['extraKmPrice'] = values.extraKmPrice;
             }
             console.log('masterpriceList -> ', masterpriceList);
             let data;
@@ -112,7 +110,6 @@ export function MasterPriceDetailsAndEdit() {
             <h2 className="text-2xl font-bold mb-4">Master Price Details</h2>
             <Formik
                 initialValues={initialValues}
-                // validationSchema={MASTERPRICE_ADD_SCHEME}
                 onSubmit={handleSubmit}
                 enableReinitialize
             >
@@ -171,12 +168,10 @@ export function MasterPriceDetailsAndEdit() {
                                     />
                                 </div>
                             </div>
-                             {/* {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' && */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <Field type="number" name="dropPriceAbove" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                             </div>
-                            {/* } */}
                             
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
@@ -210,14 +205,6 @@ export function MasterPriceDetailsAndEdit() {
                             </>)}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
-                                {/* <Select
-                                    options={STATUS_OPTIONS}
-                                    onChange={(selectedOption) => setFieldValue('status', selectedOption.value)}
-                                    value={STATUS_OPTIONS.find(option => option.value === values?.status)}
-                                    placeholder="Select Status"
-                                    className="w-full"
-                                    
-                                /> */}
                                 <Field type="string" name="status" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
@@ -228,27 +215,36 @@ export function MasterPriceDetailsAndEdit() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                             <thead className="text-center whitespace-nowrap">
                                 <tr className="bg-blue-600">
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th> */}
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Kilometer</th> */}
-                                     
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price(MUV)</th> */}
-                                    
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th> */}
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Kilometer Price</th> */}
                                 </tr>
                             </thead>
 
                             <tbody className=" whitespace-nowrap">
+                                {/* Mini */}
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td> */}
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td> */}
+                                    <td className="px-4 py-4 border border-gray-300">Mini</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td> */}
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || "-"}</td> */}
+                                </tr>
+                                {/* Sedan */}
+                                <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
+                                    <td className="px-4 py-4 border border-gray-300">Sedan</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.priceSedan || "-"}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSedan || '-'}</td>
+                                </tr>
+                                {/* Suv */}
+                                <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
+                                    <td className="px-4 py-4 border border-gray-300">Suv</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.priceSuv || "-"}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSuv || '-'}</td>
+                                </tr>
+                                {/* MVP */}
+                                  <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
+                                    <td className="px-4 py-4 border border-gray-300">Muv</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeMVP || '-'}</td>
                                 </tr>
                             </tbody>
                             </table>
@@ -261,30 +257,36 @@ export function MasterPriceDetailsAndEdit() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                             <thead className="text-center  whitespace-nowrap">
                                 <tr className="bg-blue-600">
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th> */}
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
-                                   
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th> */}
                                    
                                 </tr>
                             </thead>
 
                             <tbody className=" whitespace-nowrap">
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td> */}
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td> */}
+                                    <td className="px-4 py-4 border border-gray-300">Mini</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td> */}
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || '-'}</td> */}
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.dropPriceAbove || "-"}</td> */}
-                                    {/* <td className="px-4 py-4 border border-gray-300">{values.dropPrice || "-"}</td> */}
                                    
+                                </tr>
+                                    <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
+                                    <td className="px-4 py-4 border border-gray-300">Sedan</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.priceSedan || "-"}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSedan || '-'}</td>
+                                </tr>
+                                {/* Suv */}
+                                <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
+                                    <td className="px-4 py-4 border border-gray-300">Suv</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.priceSuv || "-"}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSuv || '-'}</td>
+                                </tr>
+                                {/* MVP */}
+                                  <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
+                                    <td className="px-4 py-4 border border-gray-300">Muv</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeMVP || '-'}</td>
                                 </tr>
                             </tbody>
                             </table>

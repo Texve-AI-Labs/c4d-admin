@@ -19,12 +19,8 @@ const DRIVER_SCHEMA = Yup.object().shape({
     serviceType: Yup.string().required('Service Type is required'),
     type: Yup.string().required('Type is required'),
     period: Yup.number().required('Period is required'),
-    price: Yup.number().required('Price is required'),
-    priceMVP: Yup.number().required('Price MUV is required'),
-    // dropPrice: Yup.number().required('Drop Price is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
     cancelCharge: Yup.number().required('Cancel Charge is required'),
-    // extraPrice: Yup.number().required('Extra Price is required'),
     status: Yup.string().required('Status is required'),
     bookingType: Yup.string().required('Booking Type is required'),
 
@@ -57,14 +53,16 @@ const DriverMasterPriceTableEdit = () => {
                     period: data.data.period,
                     price: data.data.price,
                     priceMVP: data.data.priceMVP,
-
+                    priceSedan: data.data.priceSedan,
+                    priceSuv: data.data.priceSuv,
                     waitingMins: Utils.convertTimeFormatToMinutes(data.data.waitingMins),
                     waitingCharge: data.data.waitingCharge,
                     dropPrice: data.data.dropPrice,
                     additionalMinCharge: data.data.additionalMinCharge,
+                    additionalMinChargeSedan: data.data.additionalMinChargeSedan,
+                    additionalMinChargeSuv: data.data.additionalMinChargeSuv,
+                    additionalMinChargeMVP: data.data.additionalMinChargeMVP,
                     freeExtraMinutes: data.data.freeExtraMinutes,
-
-                    extraPrice: data.data.extraPrice,
                     nightHoursFrom: convertToTimeFormat(data.data.nightHoursFrom) || '00:00',
                     nightHoursTo: convertToTimeFormat(data.data.nightHoursTo) || '00:00',
                     nightCharge: data.data.nightCharge,
@@ -73,8 +71,6 @@ const DriverMasterPriceTableEdit = () => {
                     cancelCharge: data.data.cancelCharge ?? 0,
 
                     baseFare:data.data.baseFare,
-                    // kilometer:data.data.kilometer,
-                    // extraKmPrice:data.data.extraKmPrice,
                     dropPriceAbove:data.data.dropPriceAbove,
                     bookingType:data.data.bookingType,
 
@@ -109,24 +105,22 @@ const DriverMasterPriceTableEdit = () => {
                 period: Number(values.period),
                 priceMVP: Number(values.priceMVP),
                 price: Number(values.price),
-
+                priceSedan: Number(values.priceSedan),
+                priceSuv: Number(values.priceSuv),
                 waitingMins: Utils.convertMinutesToTimeFormat(values.waitingMins),
                 waitingCharge: Number(values.waitingCharge),
                 additionalMinCharge: Number(values.additionalMinCharge),
+                additionalMinChargeSedan: Number(values.additionalMinChargeSedan),
+                additionalMinChargeSuv: Number(values.additionalMinChargeSuv),
+                additionalMinChargeMVP: Number(values.additionalMinChargeMVP),
                 freeExtraMinutes: Number(values.freeExtraMinutes),
-                extraPrice: Number(values.extraPrice),
-                // extraKmPrice:Number(values.extraKmPrice),
                 dropPrice: Number(values.dropPrice),
-
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
                 nightCharge: Number(values.nightCharge),
-
                 cancelMins: Utils.convertMinutesToTimeFormat(values.cancelMins),
                 cancelCharge: Number(values.cancelCharge || 0),
                 dropPriceAbove:Number(values.dropPriceAbove),
-                // kilometer : Number(values.kilometer),
-
                 status: values.status === 'ACTIVE' ? 1 : 0,
                 demandRules: demandRules,
                 bookingType:values.bookingType,
@@ -135,8 +129,6 @@ const DriverMasterPriceTableEdit = () => {
             // Include Outstation-specific fields
             if (values.type === 'Outstation') {
                 reqdata.baseFare = Number(values.baseFare);
-                // reqdata.kilometer = Number(values.kilometer);
-                // reqdata.extraKmPrice = Number(values.extraKmPrice);
             }
 
             let response;
@@ -214,12 +206,10 @@ const DriverMasterPriceTableEdit = () => {
                                     <Field type="time" name="nightHoursTo" className="p-2 rounded border" />
                                 </div>
                             </div>
-                            {/* {values?.serviceType === "DRIVER" && values?.type === "Outstation" &&  */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                     <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
-                                {/* } */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                     <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2 border-gray-300" />
@@ -250,7 +240,6 @@ const DriverMasterPriceTableEdit = () => {
                                     <Field type="number" name="dropPrice" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                 </>)}
-                             {/* Outstation Base Fare */}
                        
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -265,28 +254,40 @@ const DriverMasterPriceTableEdit = () => {
                             </div>
                         </div>
 
-                        {/* Editable Table */}
                          {values?.type === 'Local' && (
                         <div className="overflow-x-auto rounded-lg border border-gray-300 shadow-md">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
                                     <tr className="bg-blue-600 text-white">
-                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Base Hours</th> */}
+                                        <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                         <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
-                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th> */}
-                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
-                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th> */}
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {/* Mini */}
                                     <tr className="hover:bg-gray-50">
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="period" className="w-full text-center border rounded p-1" /></td> */}
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Mini</label></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="price" className="w-full text-center border rounded p-1" /></td>
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="kilometer" className="w-full text-center border rounded p-1" /></td> */}
                                         <td className="px-2 py-3 border"><Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-1" /></td>
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td> */}
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
+                                    </tr>
+                                    {/* Sedan */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Sedan</label></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="priceSedan" className="w-full text-center border rounded p-1" /></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="additionalMinChargeSedan" className="w-full text-center border rounded p-1" /></td>
+                                    </tr>
+                                    {/* Suv */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Suv</label></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="priceSuv" className="w-full text-center border rounded p-1" /></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="additionalMinChargeSuv" className="w-full text-center border rounded p-1" /></td>
+                                    </tr>
+                                    {/* MVP */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Muv</label></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="priceMVP" className="w-full text-center border rounded p-1" /></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="additionalMinChargeMVP" className="w-full text-center border rounded p-1" /></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -297,32 +298,37 @@ const DriverMasterPriceTableEdit = () => {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                             <thead className="text-center">
                                 <tr className="bg-blue-600">
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th> */}
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    {/* <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins</th> */}
                                     <th className="px-4 py-3 text-xs font-bold uppercase border text-white border-gray-300">Additional Mins Price</th>
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
-                                   
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th> */}
-                                   
                                 </tr>
                             </thead>
 
                             <tbody>
-                                <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
-                                    
-                                    {/* <td className="px-2 py-3 border"><Field type="number" name="period" className="w-full text-center border rounded p-1" /></td> */}
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="kilometer" className="w-full text-center border rounded p-1" /></td> */}
+                                {/* Mini */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Mini</label></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="price" className="w-full text-center border rounded p-1" /></td>
                                         <td className="px-2 py-3 border"><Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-1" /></td>
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td> */}
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-1" /></td> */}
-                                        {/* <td className="px-2 py-3 border"><Field type="number" name="dropPrice" className="w-full text-center border rounded p-1" /></td> */}
-                                   
-                                </tr>
+                                    </tr>
+                                    {/* Sedan */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Sedan</label></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="priceSedan" className="w-full text-center border rounded p-1" /></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="additionalMinChargeSedan" className="w-full text-center border rounded p-1" /></td>
+                                    </tr>
+                                    {/* Suv */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Suv</label></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="priceSuv" className="w-full text-center border rounded p-1" /></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="additionalMinChargeSuv" className="w-full text-center border rounded p-1" /></td>
+                                    </tr>
+                                    {/* MVP */}
+                                    <tr className="hover:bg-gray-50">
+                                        <td className="px-2 py-3 border"><label className="font-bold text-gray-700">Muv</label></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="priceMVP" className="w-full text-center border rounded p-1" /></td>
+                                        <td className="px-2 py-3 border"><Field type="number" name="additionalMinChargeMVP" className="w-full text-center border rounded p-1" /></td>
+                                    </tr>
                             </tbody>
                             </table>
 
