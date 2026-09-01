@@ -141,7 +141,10 @@ export function MasterPriceDetailsAndEdit() {
                                 <label className="text-sm font-medium text-gray-700">Booking Type</label>
                                 <Field type="string" name="bookingType" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                             </div>
-                            
+                             <div>
+                                <label className="text-sm font-medium text-gray-700">Base Hours</label>
+                                <Field type="number" name="period" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
                           
                            
                             <div>
@@ -225,7 +228,7 @@ export function MasterPriceDetailsAndEdit() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                             <thead className="text-center whitespace-nowrap">
                                 <tr className="bg-blue-600">
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th> */}
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Kilometer</th> */}
                                      
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
@@ -239,7 +242,7 @@ export function MasterPriceDetailsAndEdit() {
 
                             <tbody className=" whitespace-nowrap">
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
-                                    <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td> */}
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td> */}
@@ -258,7 +261,7 @@ export function MasterPriceDetailsAndEdit() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                             <thead className="text-center  whitespace-nowrap">
                                 <tr className="bg-blue-600">
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th> */}
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th> */}
@@ -273,7 +276,7 @@ export function MasterPriceDetailsAndEdit() {
 
                             <tbody className=" whitespace-nowrap">
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
-                                    <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td> */}
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>

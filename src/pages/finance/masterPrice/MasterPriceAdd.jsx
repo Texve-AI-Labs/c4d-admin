@@ -156,7 +156,13 @@ export function MasterPriceAdd() {
                                 </Field>
                                 <ErrorMessage name="bookingType" component="div" className="text-red-500 text-sm" />
                             </div>
-
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Base Hours</label>
+                                <div className="flex items-center gap-2">
+                                     <Field type="number" name="period" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                                <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
+                            </div>
                            
 
                             <div>
@@ -238,7 +244,7 @@ export function MasterPriceAdd() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
                                     <tr className="bg-blue-600 text-white whitespace-nowrap">
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Base Hours</th>
+                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Base Hours</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price (MUV)</th> */}
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th> */}
@@ -249,10 +255,10 @@ export function MasterPriceAdd() {
                                 </thead>
                                 <tbody className="bg-gray-100">
                                     <tr className=" whitespace-nowrap">
-                                        <td className="px-2 py-3 border">
+                                        {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
-                                        </td>
+                                        </td> */}
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="price" className="w-full text-center border rounded p-2" />
                                             <ErrorMessage name="price" component="div" className="text-red-500 text-xs" />
@@ -283,7 +289,7 @@ export function MasterPriceAdd() {
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
                                     <tr className="bg-blue-600 text-white whitespace-nowrap">
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th> */}
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th> */}
@@ -296,10 +302,10 @@ export function MasterPriceAdd() {
                                 </thead>
                                 <tbody className="bg-gray-100">
                                     <tr className=" whitespace-nowrap">
-                                        <td className="px-2 py-3 border">
+                                        {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
-                                        </td>
+                                        </td> */}
                                          {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="kilometer" className="w-full text-center border rounded p-2" />
                                         </td> */}
