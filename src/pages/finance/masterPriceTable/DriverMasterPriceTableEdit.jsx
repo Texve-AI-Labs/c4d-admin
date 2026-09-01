@@ -165,7 +165,7 @@ const DriverMasterPriceTableEdit = () => {
 
     return (
         <>
-            <div className="p-4 mx-auto">
+            <div className="p-4 mx-auto bg-white">
                 <h2 className="text-2xl font-bold mb-4">Edit Driver Details</h2>
 
                 <Formik
@@ -214,12 +214,12 @@ const DriverMasterPriceTableEdit = () => {
                             {values?.serviceType === "DRIVER" && values?.type === "Outstation" && 
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Food Charges</label>
-                                    <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md" />
+                                    <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md border-2" />
                                 </div>
                                 }
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
-                                    <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md" />
+                                    <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2" />
                                 </div>
                              {/* Outstation Base Fare */}
                        

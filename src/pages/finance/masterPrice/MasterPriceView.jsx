@@ -7,7 +7,22 @@ import { Utils } from '@/utils/utils';
 import Select from 'react-select';
 import { ParcelExpandableRow } from "./ParcelExpandableRow";
 
+const MASTER_PRICE_FILTER_STORAGE_KEY = "masterPriceViewFilters";
+
+const getStoredMasterPriceFilters = () => {
+    if (typeof window === "undefined") return {};
+
+    try {
+        const storedFilters = window.sessionStorage.getItem(MASTER_PRICE_FILTER_STORAGE_KEY);
+        return storedFilters ? JSON.parse(storedFilters) : {};
+    } catch (error) {
+        console.error("Error reading master price filters:", error);
+        return {};
+    }
+};
+
 export function MasterPriceView() {
+    const [initialFilters] = useState(getStoredMasterPriceFilters);
     const normalizeText = (value) => String(value || "").trim().toLowerCase();
     const normalizeVehicleType = (value) => {
         const normalized = String(value || "").trim().toUpperCase();
@@ -24,13 +39,13 @@ export function MasterPriceView() {
     const [bikeLocalPackageList, setBikeLocalPackageList] = useState([]);
     const [parcelLocalPackageList, setParcelLocalPackageList] = useState([]);
     const navigate = useNavigate();
-    const [serviceType, setServiceType] = useState("");
-    const [bookingType, setBookingType] = useState("");
+    const [serviceType, setServiceType] = useState(initialFilters.serviceType || "");
+    const [bookingType, setBookingType] = useState(initialFilters.bookingType || "");
     const [driverPackageList, setDriverPackageList] = useState([]);
     const [ridesData, setRidesData] = useState([]);
     // const [rentalsData, setRentalsData] = useState([]);
-    const [zone, setZone] = useState("");
-    const [parcelSubService, setParcelSubService] = useState("BIKE");
+    const [zone, setZone] = useState(initialFilters.zone || "");
+    const [parcelSubService, setParcelSubService] = useState(normalizeVehicleType(initialFilters.parcelSubService));
     const [showParcelGeoError, setShowParcelGeoError] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
     const [subZones, setSubZones] = useState([]);
@@ -86,10 +101,6 @@ export function MasterPriceView() {
         } 
     };
 
-    useEffect(() => {
-        fetchGeoData();
-    }, []);
-
     const ZONE_OPTIONS = serviceAreas.map((area) => ({
         value: area.name, 
         label: area.name, 
@@ -107,6 +118,73 @@ export function MasterPriceView() {
             setParcelLocalPackageList(filteredData.filter((item) => item.type === "Parcel" && item.serviceType === "PARCEL"));
         }
     };
+
+    useEffect(() => {
+        window.sessionStorage.setItem(MASTER_PRICE_FILTER_STORAGE_KEY, JSON.stringify({
+            serviceType,
+            zone,
+            bookingType: serviceType === "DRIVER" ? bookingType : "",
+            parcelSubService,
+        }));
+    }, [serviceType, zone, bookingType, parcelSubService]);
+
+    useEffect(() => {
+        const loadStoredFilters = async () => {
+            await fetchGeoData(serviceType, parcelSubService, zone);
+            if (!serviceType) return;
+
+            try {
+                if (serviceType === 'DRIVER') {
+                    await fetchDriverPackageList(zone, bookingType);
+                } else if (serviceType === 'RIDES') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setRidesData(filteredData || []);
+                    } else {
+                        setRidesData([]);
+                    }
+                } else if (serviceType === 'AUTO') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.AUTO_PACKAGE_LIST, {
+                        type: "Service area",
+                    });
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setAutoLocalPackageList(filteredData.filter(item => item.type === "Auto" && item.serviceType === "AUTO"));
+                    }
+                } else if (serviceType === 'BIKE') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.BIKE_PACKAGE_LIST, {
+                        type: "Service area",
+                    });
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setBikeLocalPackageList(filteredData.filter(item => item.type === "Bike" && item.serviceType === "BIKE"));
+                    }
+                } else if (serviceType === 'PARCEL') {
+                    await fetchParcelPackageList(zone, parcelSubService);
+                } else if (serviceType === 'RENTAL') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.RENTALS_PRICE_DETAILS);
+                    if(data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "RENTAL"));
+                        setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "RENTAL"));
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading stored master price filters:", err);
+            }
+        };
+
+        loadStoredFilters();
+    }, []);
 
     const handleChange = async (selectedOption, field) => {
         if (field === 'serviceType') {

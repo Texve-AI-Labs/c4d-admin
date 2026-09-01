@@ -103,7 +103,7 @@ export function MasterPriceAdd() {
     return (
         <div className="p-4 bg-white rounded-xl">
 
-            <h2 className="text-2xl font-bold mb-4">Add Master Price List</h2>
+            <h2 className="text-2xl font-bold mb-4">Add Master Price</h2>
             <Formik
                 initialValues={initialValues}
                 validationSchema={MASTERPRICE_ADD_SCHEME}
@@ -214,8 +214,8 @@ export function MasterPriceAdd() {
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Charge</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr className="hover:bg-gray-50 whitespace-nowrap">
+                                <tbody className="bg-gray-100">
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
@@ -281,8 +281,8 @@ export function MasterPriceAdd() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr className="hover:bg-gray-50 whitespace-nowrap">
+                                <tbody className="bg-gray-100">
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />

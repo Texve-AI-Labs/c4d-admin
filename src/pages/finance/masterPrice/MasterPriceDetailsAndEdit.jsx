@@ -107,7 +107,7 @@ export function MasterPriceDetailsAndEdit() {
         }
     };
     return (
-        <div className="p-4">
+        <div className="p-4 bg-white">
 
             <h2 className="text-2xl font-bold mb-4">Master Price Details</h2>
             <Formik
