@@ -27,7 +27,8 @@ export function MasterPriceAdd() {
         cancelCharge: '',
         active: "",
         extraPrice:'',
-        kilometer:'',
+        // kilometer:'',
+        // extraKmPrice:'',
         dropPriceAbove:'',
         freeExtraMinutes:'',
         bookingType:'',
@@ -64,19 +65,19 @@ export function MasterPriceAdd() {
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom || '00:00:00') ,
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo || '00:00:00') ,
                 extraPrice: values.extraPrice || 0,
-                kilometer: values.kilometer,
+                // kilometer: values.kilometer,
                 dropPriceAbove: values.dropPriceAbove,
                 additionalMinCharge: values.additionalMinCharge || 0,
                 freeExtraMinutes: values.freeExtraMinutes || 0,
                 status: 1,
-                extraKmPrice:values.extraKmPrice,
+                // extraKmPrice:values.extraKmPrice,
                 zone: values.zone,
                 bookingType:values.bookingType,
             };
             if (values.type === 'Outstation') {
                 masterpriceList['baseFare'] = values.baseFare || 0;
-                masterpriceList['kilometer'] = values.kilometer;
-                masterpriceList['extraKmPrice'] = values.extraKmPrice;
+                // masterpriceList['kilometer'] = values.kilometer;
+                // masterpriceList['extraKmPrice'] = values.extraKmPrice;
             }
             console.log('masterpriceList -> ', masterpriceList);
             let data;
@@ -203,10 +204,10 @@ export function MasterPriceAdd() {
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Package (Hrs/Kms)</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price (MUV)</th> */}
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th>
+                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th>
+                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th> */}
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting (mins)</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting Charges Apply After</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Night Charge</th>
@@ -228,18 +229,18 @@ export function MasterPriceAdd() {
                                             <Field type="number" name="priceMVP" className="w-full text-center border rounded p-2" />
                                             <ErrorMessage name="priceMVP" component="div" className="text-red-500 text-xs" />
                                         </td> */}
-                                        <td className="px-2 py-3 border">
+                                        {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="kilometer" className="w-full text-center border rounded p-2" />
-                                        </td>
+                                        </td> */}
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-2" />
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="extraPrice" className="w-full text-center border rounded p-2" />
                                         </td>
-                                        <td className="px-2 py-3 border">
+                                        {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-2" />
-                                        </td>
+                                        </td> */}
 
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="waitingMins" className="w-full text-center border rounded p-2" />
@@ -267,10 +268,11 @@ export function MasterPriceAdd() {
                                 <thead>
                                     <tr className="bg-blue-600 text-white whitespace-nowrap">
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Minute Charge</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
                                     <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting (mins)</th>
                                     <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
                                     <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Mins</th>
@@ -287,9 +289,9 @@ export function MasterPriceAdd() {
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
                                         </td>
-                                         <td className="px-2 py-3 border">
+                                         {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="kilometer" className="w-full text-center border rounded p-2" />
-                                        </td>
+                                        </td> */}
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="price" className="w-full text-center border rounded p-2" />
                                             <ErrorMessage name="price" component="div" className="text-red-500 text-xs" />
@@ -299,7 +301,7 @@ export function MasterPriceAdd() {
                                         </td>
                                         
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="extraPrice" className="w-full text-center border rounded p-2" />
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="waitingMins" className="w-full text-center border rounded p-2" />

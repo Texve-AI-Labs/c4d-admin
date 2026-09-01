@@ -48,8 +48,8 @@ export function MasterPriceDetailsAndEdit() {
                 freeExtraMinutes:data?.data?.freeExtraMinutes || 0,
 
                 baseFare:data?.data?.baseFare || '',
-                kilometer:data?.data?.kilometer || '',
-                extraKmPrice:data?.data?.extraKmPrice || '',
+                // kilometer:data?.data?.kilometer || '',
+                // extraKmPrice:data?.data?.extraKmPrice || '',
                 dropPriceAbove:data?.data?.dropPriceAbove || 0,
                 bookingType: data?.data?.bookingType || 'DROP ONLY',
 
@@ -77,19 +77,19 @@ export function MasterPriceDetailsAndEdit() {
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
                 extraPrice: values.extraPrice,
-                extraKmPrice:values.extraKmPrice,
+                // extraKmPrice:values.extraKmPrice,
                 additionalMinCharge: values.additionalMinCharge,
                 status: values.status === 'Active' ? 1 : 0,
                 dropPriceAbove:values.dropPriceAbove,
-                kilometer:values.kilometer || '',
+                // kilometer:values.kilometer || '',
                 zone: values.zone,
                 freeExtraMinutes:values.freeExtraMinutes || 0,
                 bookingType: values.bookingType || 'DROP ONLY',
             };
             if (values.type === 'Outstation') {
                 masterpriceList['baseFare'] = values.baseFare;
-                masterpriceList['kilometer'] = values.kilometer;
-                masterpriceList['extraKmPrice'] = values.extraKmPrice;
+                // masterpriceList['kilometer'] = values.kilometer;
+                // masterpriceList['extraKmPrice'] = values.extraKmPrice;
             }
             console.log('masterpriceList -> ', masterpriceList);
             let data;
@@ -198,17 +198,17 @@ export function MasterPriceDetailsAndEdit() {
                         {values?.type === 'Local' && (
                         <div className="mt-8 overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
-                            <thead className="text-center">
+                            <thead className="text-center whitespace-nowrap">
                                 <tr className="bg-blue-600">
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Package</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Kilometer</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Kilometer</th> */}
                                      
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price</th>
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Price(MUV)</th> */}
                                     
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Kilometer Price</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Kilometer Price</th> */}
                                    
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Time</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
@@ -218,15 +218,15 @@ export function MasterPriceDetailsAndEdit() {
                                 </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody className=" whitespace-nowrap">
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
                                     {/* <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.waitingMins || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.waitingCharge || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.nightCharge || "-"}</td>
@@ -242,13 +242,14 @@ export function MasterPriceDetailsAndEdit() {
                         {values?.type === 'Outstation' && (
                             <div className="mt-8 overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
-                            <thead className="text-center">
+                            <thead className="text-center  whitespace-nowrap">
                                 <tr className="bg-blue-600">
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Minute Charge</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th>
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Time</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Cancellation Mins</th>
@@ -261,13 +262,14 @@ export function MasterPriceDetailsAndEdit() {
                                 </tr>
                             </thead>
 
-                            <tbody>
+                            <tbody className=" whitespace-nowrap">
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">{values.period || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.kilometer || "-"}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || "-"}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || '-'}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
+                                    <td className="px-4 py-4 border border-gray-300">{values.extraPrice || "-"}</td>
+                                    {/* <td className="px-4 py-4 border border-gray-300">{values.extraKmPrice || '-'}</td> */}
                                     <td className="px-4 py-4 border border-gray-300">{values.waitingMins || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.waitingCharge || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.cancelMins || "-"}</td>
