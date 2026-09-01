@@ -361,12 +361,15 @@ export function MasterPriceView() {
                                         "Service Type",
                                         "Trip Type",
                                         "Booking Type",
-                                        "Package (Hrs)",
-                                        "Price",
+                                        "Base Hours",
+                                        "Price (Mini)",
+                                        "Price (Sedan)",
+                                        "Price (Muv)",
+                                        "Price (Suv)",
                                         // "Price (MUV)",
                                         // "Package KM",
-                                        "Additional Mins Price",
-                                        "Additional Mins Charge",
+                                        // "Additional Mins Price",
+                                        // "Additional Mins Charge",
                                         // "Extra KM Price",
                                         "Free Extra (mins)",
                                         "Waiting Charges Apply After",
@@ -389,7 +392,7 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP,bookingType, additionalMinCharge, extraKmPrice, extraPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
+                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP,priceSuv,priceSedan,bookingType, additionalMinCharge, extraKmPrice, extraPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
                                     const className = `py-3 px-5 ${key === localPackageList.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                                     return (
                                         <tr key={id}  className="whitespace-nowrap">
@@ -431,6 +434,21 @@ export function MasterPriceView() {
                                                     {price}
                                                 </Typography>
                                             </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceSedan}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceMVP}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceSuv}
+                                                </Typography>
+                                            </td>
                                             {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {priceMVP}
@@ -441,16 +459,16 @@ export function MasterPriceView() {
                                                     {kilometer || "-"}
                                                 </Typography>
                                             </td> */}
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {additionalMinCharge || "-"}
                                                 </Typography>
-                                            </td>
-                                             <td className={className}>
+                                            </td> */}
+                                             {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {extraPrice || "-"}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {extraKmPrice || "-"}
@@ -522,9 +540,12 @@ export function MasterPriceView() {
                                     "Booking Type",
                                     "Base Hours",
                                     // "Base KM",
-                                    "Base Fare",
-                                    "Additional Mins Price",
-                                    "Additional Mins Charge",
+                                    "Price (Mini)",
+                                    "Price (Sedan)",
+                                    "Price (Muv)",
+                                    "Price (Suv)",
+                                    // "Additional Mins Price",
+                                    // "Additional Mins Charge",
                                     // "Extra KM rate",
                                     "Food Charges",
                                     "Night Charges",
@@ -546,7 +567,7 @@ export function MasterPriceView() {
                                 const { 
                                     id, zone, serviceType, type, period, extraCabType ,kilometer,  
                                     dropPrice, price, additionalMinCharge, dropPriceAbove, bookingType,
-                                    nightCharge, extraKmPrice, extraPrice 
+                                    nightCharge, extraKmPrice, extraPrice,priceMVP, priceSuv, priceSedan 
                                 } = item;
 
                                 const isLast = index === filteredOutstationList.length - 1;
@@ -599,6 +620,21 @@ export function MasterPriceView() {
                                         </td>
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {priceSedan || '0'}
+                                            </Typography>
+                                        </td>
+                                        <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {priceMVP || '0'}
+                                            </Typography>
+                                        </td>
+                                        <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {priceSuv || '0'}
+                                            </Typography>
+                                        </td>
+                                        {/* <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {additionalMinCharge || '-'}
                                             </Typography>
                                         </td>
@@ -606,7 +642,7 @@ export function MasterPriceView() {
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {extraPrice || '-'}
                                             </Typography>
-                                        </td>
+                                        </td> */}
                                         {/* <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {extraKmPrice || '-'}
