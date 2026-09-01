@@ -854,6 +854,7 @@ export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
     // extraPrice: Yup.number().required('Extra Price is required'),
     // nightHoursFrom:Yup.time().required('Night Hours From Start 22:00 PM.'),
     // nightHoursFrom:Yup.time().required('Night Hours To End 06:00 AM.')
+    bookingType:Yup.string().required('Booking Type is required')
 });
 
 export const VERSION_CONTROL_EDIT=Yup.object({

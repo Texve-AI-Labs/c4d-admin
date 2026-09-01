@@ -82,7 +82,7 @@ const PriceDetails = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white">
             <h2 className="text-2xl font-bold mb-4">Rides Pricing Details</h2>
             <Formik initialValues={initialValues} enableReinitialize>
                 {() => (

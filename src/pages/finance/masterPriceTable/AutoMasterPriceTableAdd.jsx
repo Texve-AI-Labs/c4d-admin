@@ -146,7 +146,7 @@ const AutoMasterPriceTableAdd = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white">
             <h2 className="text-2xl font-bold mb-4">Add Auto Package Pricing</h2>
 
             <Formik
@@ -224,7 +224,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="surchargePercentage"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="surchargePercentage"
@@ -239,7 +239,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="baseKm"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="baseKm"
@@ -254,7 +254,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="freeExtraMinutes"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="freeExtraMinutes"
@@ -272,7 +272,7 @@ const AutoMasterPriceTableAdd = () => {
                                     <Field
                                         type="time"
                                         name="nightHoursFrom"
-                                        className="p-2 w-full rounded-l-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-l-md border-2 border-gray-300 shadow-sm"
                                     />
                                     <span className="px-3 py-2 bg-gray-100 border-t border-b border-gray-300">
                                         to
@@ -280,7 +280,7 @@ const AutoMasterPriceTableAdd = () => {
                                     <Field
                                         type="time"
                                         name="nightHoursTo"
-                                        className="p-2 w-full rounded-r-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-r-md border-2 border-gray-300 shadow-sm"
                                     />
                                 </div>
                                 <ErrorMessage
@@ -303,7 +303,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="nightCharge"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="nightCharge"
@@ -320,7 +320,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="waitingMins"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="waitingMins"
@@ -337,7 +337,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="waitingCharge"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="waitingCharge"
@@ -354,7 +354,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="cancellationMins"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="cancellationMins"
@@ -371,7 +371,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="cancellationCharge"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 <ErrorMessage
                                     name="cancellationCharge"
@@ -386,7 +386,7 @@ const AutoMasterPriceTableAdd = () => {
                                 <Field
                                     type="number"
                                     name="extraKmPrice"
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm"
+                                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                                 />
                                 {/* <ErrorMessage
                                     name="extraKmPrice"
@@ -417,7 +417,7 @@ const AutoMasterPriceTableAdd = () => {
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white">
+                                    <tbody className="bg-gray-100">
                                         <tr>
                                           
                                             <td className="px-6 py-3">
@@ -484,7 +484,7 @@ const AutoMasterPriceTableAdd = () => {
                                         <th>Driver Cancellation Charge</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className='bg-gray-100'>
                                     <tr>
                                         <td className="border p-2">
                                             <Field

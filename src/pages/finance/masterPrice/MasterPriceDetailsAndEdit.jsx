@@ -51,6 +51,7 @@ export function MasterPriceDetailsAndEdit() {
                 kilometer:data?.data?.kilometer || '',
                 extraKmPrice:data?.data?.extraKmPrice || '',
                 dropPriceAbove:data?.data?.dropPriceAbove || 0,
+                bookingType: data?.data?.bookingType || 'DROP ONLY',
 
                 status: Number(data.data.status) === 1 ? "ACTIVE" : "INACTIVE",
             })
@@ -83,6 +84,7 @@ export function MasterPriceDetailsAndEdit() {
                 kilometer:values.kilometer || '',
                 zone: values.zone,
                 freeExtraMinutes:values.freeExtraMinutes || 0,
+                bookingType: values.bookingType || 'DROP ONLY',
             };
             if (values.type === 'Outstation') {
                 masterpriceList['baseFare'] = values.baseFare;
@@ -134,6 +136,10 @@ export function MasterPriceDetailsAndEdit() {
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Trip Type</label>
                                 <Field type="string" name="type" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
+                            </div>
+                             <div>
+                                <label className="text-sm font-medium text-gray-700">Booking Type</label>
+                                <Field type="string" name="bookingType" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                             </div>
                             
                           

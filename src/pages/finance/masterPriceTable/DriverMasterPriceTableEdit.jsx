@@ -26,6 +26,7 @@ const DRIVER_SCHEMA = Yup.object().shape({
     cancelCharge: Yup.number().required('Cancel Charge is required'),
     extraPrice: Yup.number().required('Extra Price is required'),
     status: Yup.string().required('Status is required'),
+    bookingType: Yup.string().required('Booking Type is required'),
 
 });
 
@@ -75,6 +76,7 @@ const DriverMasterPriceTableEdit = () => {
                     kilometer:data.data.kilometer,
                     extraKmPrice:data.data.extraKmPrice,
                     dropPriceAbove:data.data.dropPriceAbove,
+                    bookingType:data.data.bookingType,
 
                     zone : data.data.zone,
 
@@ -127,6 +129,7 @@ const DriverMasterPriceTableEdit = () => {
 
                 status: values.status === 'ACTIVE' ? 1 : 0,
                 demandRules: demandRules,
+                bookingType:values.bookingType,
             };
 
             // Include Outstation-specific fields
@@ -193,6 +196,10 @@ const DriverMasterPriceTableEdit = () => {
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Trip Type</label>
                                     <Field type="text" name="type" disabled className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-200" />
+                            </div>
+                              <div>
+                                    <label className="text-sm font-medium text-gray-700">Booking Type</label>
+                                    <Field type="text" name="bookingType" disabled className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-200" />
                             </div>
  
 

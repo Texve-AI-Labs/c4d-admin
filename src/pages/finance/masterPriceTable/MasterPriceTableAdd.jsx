@@ -141,7 +141,7 @@ const PriceAdd = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white">
             {/* {alert && (
                 <div className='mb-2'>
                     <Alert color={alert.color} className='py-3 px-6 rounded-xl'>
@@ -188,12 +188,12 @@ const PriceAdd = () => {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
-                                <Field type="number" name="surchargePercentage" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="surchargePercentage" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="surchargePercentage" component="div" className="text-red-500 text-sm" />
                             </div>
                               <div>
                                 <label className="text-sm font-medium text-gray-700">Base Km</label>
-                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md  border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="baseKm" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
@@ -204,7 +204,7 @@ const PriceAdd = () => {
                                         name="nightHoursFrom"
                                         min="22:00"
                                         max="23:59"
-                                        className="p-2 w-full rounded-l-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-l-md  border-2 border-gray-300 shadow-sm"
                                     />
                                     <span className="px-3 py-2 bg-gray-100 border-t border-b border-gray-300">to</span>
                                     <Field
@@ -212,7 +212,7 @@ const PriceAdd = () => {
                                         name="nightHoursTo"
                                         min="05:00"
                                         max="08:00"
-                                        className="p-2 w-full rounded-r-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-r-md  border-2 border-gray-300 shadow-sm"
                                     />
                                 </div>
                                 <ErrorMessage name="nightHoursFrom" component="div" className="text-red-500 text-sm" />
@@ -220,32 +220,32 @@ const PriceAdd = () => {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
-                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="freeExtraMinutes" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
-                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
-                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
-                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="nightCharge" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
-                                <Field type="number" name="cancellationMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="cancellationMins" className="p-2 w-full rounded-md border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancellationMins" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
-                                <Field type="number" name="cancellationCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="cancellationCharge" className="p-2 w-full rounded-md border-2  border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancellationCharge" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                         </div>
@@ -342,7 +342,7 @@ const PriceAdd = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
+                                    <tr className='bg-gray-100'>
                                         <td className="border p-2">
                                             <Field
                                                 type="number"

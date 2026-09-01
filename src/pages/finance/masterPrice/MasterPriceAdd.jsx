@@ -30,6 +30,7 @@ export function MasterPriceAdd() {
         kilometer:'',
         dropPriceAbove:'',
         freeExtraMinutes:'',
+        bookingType:'',
     };
 
     const fetchGeoData = async () => {
@@ -70,6 +71,7 @@ export function MasterPriceAdd() {
                 status: 1,
                 extraKmPrice:values.extraKmPrice,
                 zone: values.zone,
+                bookingType:values.bookingType,
             };
             if (values.type === 'Outstation') {
                 masterpriceList['baseFare'] = values.baseFare || 0;
@@ -99,7 +101,7 @@ export function MasterPriceAdd() {
     }));
 
     return (
-        <div className="p-4">
+        <div className="p-4 bg-white rounded-xl">
 
             <h2 className="text-2xl font-bold mb-4">Add Master Price List</h2>
             <Formik
@@ -114,7 +116,7 @@ export function MasterPriceAdd() {
                         <pre>{JSON.stringify(errors, null, 2)}</pre>
                         <p>Package Debug: {JSON.stringify(values.package, null, 2)}</p> */}
 
-                        <div className="p-4 bg-blue-gray-100 grid grid-cols-2 gap-4">
+                        <div className="p-4  grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Zone</label>
                               <Select
@@ -144,22 +146,31 @@ export function MasterPriceAdd() {
                                 </Field>
                                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                             </div>
+                               <div>
+                                <label className="text-sm font-medium text-gray-700">Booking Type</label>
+                                <Field as="select" name="bookingType" className="p-2 w-full rounded-md border-2 border-gray-300">
+                                    <option value="">Select Booking Type</option>
+                                    <option value="DROP ONLY">Drop Only</option>
+                                    <option value="ROUND TRIP">Round Trip</option>
+                                </Field>
+                                <ErrorMessage name="bookingType" component="div" className="text-red-500 text-sm" />
+                            </div>
 
                            
 
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Hours</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="time" name="nightHoursFrom" className="p-2 rounded border-gray-300" />
+                                    <Field type="time" name="nightHoursFrom" className="p-2 rounded border-2 border-gray-300" />
                                     <span className="px-3">to</span>
-                                    <Field type="time" name="nightHoursTo" className="p-2 rounded border-gray-300" />
+                                    <Field type="time" name="nightHoursTo" className="p-2 rounded border-2 border-gray-300" />
                                 </div>
                             </div>
                             {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' &&
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <div className="flex items-center gap-2">
-                                     <Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-2" />
+                                     <Field type="number" name="dropPriceAbove" className="w-full text-center border-2 rounded p-2" />
                                 </div>
                             </div>
                             }
@@ -167,7 +178,7 @@ export function MasterPriceAdd() {
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <div className="flex items-center gap-2">
-                                     <Field type="number" name="freeExtraMinutes" className="w-full text-center border rounded p-2" />
+                                     <Field type="number" name="freeExtraMinutes" className="w-full text-center border-2 rounded p-2" />
                                 </div>
                             </div>
                             
@@ -188,7 +199,7 @@ export function MasterPriceAdd() {
                         <div className="overflow-x-auto rounded-lg border border-gray-300 shadow-md mt-8">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
-                                    <tr className="bg-blue-600 text-white">
+                                    <tr className="bg-blue-600 text-white whitespace-nowrap">
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Package (Hrs/Kms)</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price</th>
                                         {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price (MUV)</th> */}
@@ -204,7 +215,7 @@ export function MasterPriceAdd() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr className="hover:bg-gray-50">
+                                    <tr className="hover:bg-gray-50 whitespace-nowrap">
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
@@ -254,7 +265,7 @@ export function MasterPriceAdd() {
                         <div className="overflow-x-auto rounded-lg border border-gray-300 shadow-md mt-8">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
-                                    <tr className="bg-blue-600 text-white">
+                                    <tr className="bg-blue-600 text-white whitespace-nowrap">
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
@@ -271,7 +282,7 @@ export function MasterPriceAdd() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr className="hover:bg-gray-50">
+                                    <tr className="hover:bg-gray-50 whitespace-nowrap">
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
                                             <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
