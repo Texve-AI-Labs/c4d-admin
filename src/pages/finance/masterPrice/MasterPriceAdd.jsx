@@ -171,7 +171,7 @@ export function MasterPriceAdd() {
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <div className="flex items-center gap-2">
-                                     <Field type="number" name="dropPriceAbove" className="w-full text-center border-2 rounded p-2" />
+                                     <Field type="number" name="dropPriceAbove" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
                             {/* } */}
@@ -179,39 +179,47 @@ export function MasterPriceAdd() {
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <div className="flex items-center gap-2">
-                                     <Field type="number" name="freeExtraMinutes" className="w-full text-center border-2 rounded p-2" />
+                                     <Field type="number" name="freeExtraMinutes" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting (mins)</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="number" name="waitingMins" className="w-full text-center border-2 rounded p-2" />
+                                    <Field type="number" name="waitingMins" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="number" name="waitingCharge" className="w-full text-center border-2 rounded p-2" />
+                                    <Field type="number" name="waitingCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancel Mins</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="number" name="cancelMins" className="w-full text-center border-2 rounded p-2" />
+                                    <Field type="number" name="cancelMins" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancel Charge</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="number" name="cancelCharge" className="w-full text-center border-2 rounded p-2" />
+                                    <Field type="number" name="cancelCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="number" name="nightCharge" className="w-full text-center border-2 rounded p-2" />
+                                    <Field type="number" name="nightCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
-                            </div>                                                                        
+                            </div>
+                            {values?.type === 'Outstation' && ( <>
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Drop-only charge</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="dropPrice" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            </>)}                                                                         
 
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -283,7 +291,7 @@ export function MasterPriceAdd() {
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
                                    
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th> */}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-gray-100">
@@ -312,9 +320,9 @@ export function MasterPriceAdd() {
                                         </td> */}
                                        
 
-                                        <td className="px-2 py-3 border">
+                                        {/* <td className="px-2 py-3 border">
                                             <Field type="number" name="dropPrice" className="w-full text-center border rounded p-2" />
-                                        </td>
+                                        </td> */}
                                       
                                     </tr>
                                 </tbody>

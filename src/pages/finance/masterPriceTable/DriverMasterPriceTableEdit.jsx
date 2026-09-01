@@ -214,33 +214,39 @@ const DriverMasterPriceTableEdit = () => {
                             {/* {values?.serviceType === "DRIVER" && values?.type === "Outstation" &&  */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Food Charges</label>
-                                    <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="dropPriceAbove" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                 {/* } */}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
-                                    <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Waiting (mins)</label>
-                                    <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                  <div>
                                     <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
-                                    <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Cancel Mins</label>
-                                    <Field type="number" name="cancelMins" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="cancelMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                  <div>
                                     <label className="text-sm font-medium text-gray-700">Cancel Charge</label>
-                                    <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
                                  <div>
                                     <label className="text-sm font-medium text-gray-700">Night Charge</label>
-                                    <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2" />
+                                    <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 </div>
+                                {values?.type === 'Outstation' && ( <>
+                                 <div>
+                                    <label className="text-sm font-medium text-gray-700">Drop-only charge</label>
+                                    <Field type="number" name="dropPrice" className="p-2 w-full rounded-md border-2 border-gray-300" />
+                                </div>
+                                </>)}
                              {/* Outstation Base Fare */}
                        
                             <div>
@@ -296,7 +302,7 @@ const DriverMasterPriceTableEdit = () => {
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th> */}
                                    
                                     {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th>
+                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th> */}
                                    
                                 </tr>
                             </thead>
@@ -311,7 +317,7 @@ const DriverMasterPriceTableEdit = () => {
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="extraPrice" className="w-full text-center border rounded p-1" /></td> */}
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-1" /></td> */}
                                         {/* <td className="px-2 py-3 border"><Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-1" /></td> */}
-                                        <td className="px-2 py-3 border"><Field type="number" name="dropPrice" className="w-full text-center border rounded p-1" /></td>
+                                        {/* <td className="px-2 py-3 border"><Field type="number" name="dropPrice" className="w-full text-center border rounded p-1" /></td> */}
                                    
                                 </tr>
                             </tbody>
