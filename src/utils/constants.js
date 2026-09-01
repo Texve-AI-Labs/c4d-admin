@@ -877,6 +877,7 @@ export const API_ROUTES = {
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
     'ACTING_DRIVER_EDIT_OUTSTATION_PACKAGE': '/update-outstation-package',
+    'POST_ACTING_DRIVER_ZONE_PACKAGES': '/acting-driver/zone-packages',
     'GET_PACKAGE_DETAIL': '/package-list/',
     'GET_RECEIPT_LIST': '/admin/receipt',
     'GET_INVOICE_LIST': '/admin/list-invoices',
