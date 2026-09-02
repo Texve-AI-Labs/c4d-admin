@@ -706,7 +706,7 @@ const [blockedReason, setBlockedReason] = useState('');
         return pincodeObj ? pincodeObj.long_name : "";
     };
 
-    const handleGoogleAddressSelect = (addressText, place) => {
+    const handleGoogleAddressSelect = (setFieldValue, addressText, place) => {
         const resolvedAddress =
             addressText ||
             place?.formatted_address ||
@@ -940,7 +940,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                             form={form}
                                             suggestions={addressSuggestions}
                                             onSearch={searchLocations}
-                                            onSelect={handleGoogleAddressSelect}
+                                            onSelect={(addressText, place) => handleGoogleAddressSelect(setFieldValue, addressText, place)}
                                         />
                                     )}
                                 </Field>
