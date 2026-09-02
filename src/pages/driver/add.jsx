@@ -145,30 +145,12 @@ const DriverAdd = () => {
         });
     };
 
-    // const getPackageListDetails = async () => {
-    //     const data = await ApiRequestUtils.get(API_ROUTES.PACKAGES_LIST);
-    //     if (data?.success) {
-    //         const packageData = data?.data.map(option => {
-    //             const suffix = option.type === 'Local' ? 'hr' : option.type === 'Outstation' ? 'd' : '';
-    //             return {
-    //                 ...option,
-    //                 period: `${option.period} ${suffix}`, // Append 'hr' or 'd'
-    //             };
-    //         });
-    //         const intercityPackage = orderPackages(packageData.filter(val => val.type === 'Local'), 'Local');
-    //         const outstationPackage = packageData.filter(val => { return val.type === 'Outstation' && val.period === '1 d' });
-    //         const carWashPackage = orderPackages(packageData.filter(val => val.type === 'CarWash'), 'CarWash');
-    //         setPackageDetails([...intercityPackage, ...outstationPackage, ...carWashPackage]);
-    //     }
-    // };
-
     const getOwnersList = async () => {
         const data = await ApiRequestUtils.get(API_ROUTES.GET_ACCOUNTS);
         setOwners(data?.data);
     }
 
     useEffect(() => {
-        // getPackageListDetails();
         getOwnersList();
     }, []);
 
@@ -193,7 +175,6 @@ const DriverAdd = () => {
         fatherName: driverVal?.fatherName || "",
         dateOfBirth: driverVal?.dob || "",
         age: driverVal?.age || "",
-        // driverExperience: driverVal?.driverExperience || "",
         phoneNumber: driverVal?.phoneNumber ? driverVal?.phoneNumber.replace(/^(\+91)/, '') : "",
         license: driverVal?.license || "",
         licenseType: driverVal?.licenseType || "",
@@ -213,8 +194,6 @@ const DriverAdd = () => {
         phoneNumber2: driverVal?.reference2_phone ? driverVal?.reference2_phone.replace(/^(\+91)/, '') : "",
         carType: driverVal?.carType || "",
         packages: driverVal?.packages || [],
-        //wallet: driverVal?.wallet || "",
-        // prices: [],
         aadhaarImage: '',
         panImage: '',
         policeClearance: '',
@@ -223,6 +202,8 @@ const DriverAdd = () => {
         consentForm: '',
         jobType: "",
         accountId: null,
+        maritalStatus:'',
+        alternateNumber:'',
     };
 
     const searchLocations = async (query) => {
@@ -239,75 +220,6 @@ const DriverAdd = () => {
         }
     };
 
-    // const renderPriceTable = (title, prices, values) => {
-    //     if (prices.length === 0) return null;
-
-    //     const sortedPrices = [...prices].sort((a, b) => {
-    //         const packageA = packageDetails.find(p => p.id === a.packageId);
-    //         const packageB = packageDetails.find(p => p.id === b.packageId);
-
-    //         if (title === "LOCAL") {
-    //             const hoursA = parseInt(packageA.period);
-    //             const hoursB = parseInt(packageB.period);
-    //             return hoursA - hoursB;
-    //         } else if (title === "CAR WASH") {
-    //             const numberA = parseInt(packageA.period.match(/\d+/)[0]);
-    //             const numberB = parseInt(packageB.period.match(/\d+/)[0]);
-    //             return numberA - numberB;
-    //         }
-    //         return 0;
-    //     });
-
-    //     return (
-    //         <div className="mb-8">
-    //             <h3 className="text-xl font-bold mb-4">{title}</h3>
-    //             <Card>
-    //                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-    //                     <table className="w-full min-w-[640px] table-auto">
-    //                         <thead>
-    //                             <tr>
-    //                                 {["Package", "Price", "Extra Price", "Extra KM Price", "Night Charge", "Cancel Charge", "Cab Type"].map((el) => (
-    //                                     <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-    //                                         <Typography variant="h6" className="text-[12px] font-bold uppercase text-black">
-    //                                             {el}
-    //                                         </Typography>
-    //                                     </th>
-    //                                 ))}
-    //                             </tr>
-    //                         </thead>
-    //                         <tbody>
-    //                             {sortedPrices.map((priceItem) => (
-    //                                 <tr key={priceItem.packageId}>
-    //                                     <td className="py-3 px-5 border-b border-blue-gray-50">
-    //                                         <Typography variant="small" color="blue-gray" className="font-semibold">
-    //                                             {priceItem.period}
-    //                                         </Typography>
-    //                                     </td>
-    //                                     {['price', 'extraPrice', 'extraKmPrice', 'nightCharge', 'cancelCharge', 'extraCabType'].map((field) => (
-    //                                         <td key={field} className="py-3 px-5 border-b border-blue-gray-50">
-    //                                             <Field
-    //                                                 name={`prices[${values.prices.indexOf(priceItem)}].${field}`}
-    //                                                 type="number"
-    //                                                 className="w-full p-1 text-xs border rounded"
-    //                                                 disabled={!isEditable} 
-    //                                             />
-    //                                             <ErrorMessage 
-    //                                                 name={`prices[${values.prices.indexOf(priceItem)}].${field}`} 
-    //                                                 component="div" 
-    //                                                 className="text-red-500 text-xs" 
-    //                                             />
-    //                                         </td>
-    //                                     ))}
-    //                                 </tr>
-    //                             ))}
-    //                         </tbody>
-    //                     </table>
-    //                 </CardBody>
-    //             </Card>
-    //         </div>
-    //     );
-    // }; 
-
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
             const driverDetails = {
@@ -316,7 +228,6 @@ const DriverAdd = () => {
                 fatherName: values.fatherName || "",
                 dob: values.dateOfBirth || "",
                 age: values.age || "",
-                // driverExperience: values.driverExperience || "",
                 phoneNumber: "+91" + values.phoneNumber,
                 license: values.license,
                 licenseType: values.licenseType || "",
@@ -339,9 +250,10 @@ const DriverAdd = () => {
                 carType: values.carType,
                 serviceType: values.serviceType,
                 source: values.source,
+                maritalStatus:values.maritalStatus || "",
+                alternateNumber:values.alternateNumber || "",
             };
             let driverData = { driverDetails };
-            //return;
             const data = await ApiRequestUtils.post(API_ROUTES.REGISTER_DRIVER, driverData);
             //console.log('Driver operation:', data.data);
             if (!data?.success && data?.code === 203) {
@@ -354,12 +266,6 @@ const DriverAdd = () => {
                 resetForm();
             } else {
                 console.log('ELSE IN SUBMIT :');
-                // navigate('/dashboard/drivers', {
-                //     state: {
-                //         driverAdded: true,
-                //         driverName: data?.data?.firstName
-                //     }
-                // });
                 setDriverAdded({
                     driverId: data?.data?.id,
                     value: true
@@ -738,13 +644,6 @@ const DriverAdd = () => {
                                         <Field type="text" name="age" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled />
                                         <ErrorMessage name="age" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
-
-                                     {/* <div>
-                                        <label htmlFor="driverExperience" className="text-sm font-medium text-gray-700">Driver Experience</label>
-                                        <Field type="text" name="driverExperience" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                        <ErrorMessage name="driverExperience" component="div" className="text-red-500 text-sm my-1" />
-                                    </div> */}
-
                                     <div>
                                         <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
                                         <Field type="tel" name="phoneNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
@@ -812,26 +711,6 @@ const DriverAdd = () => {
                                                 />
                                                 <span className="ml-2">Acting Driver</span>
                                             </label>
-                                            {/* <label className="inline-flex items-center">
-                                                <Field
-                                                    type="radio"
-                                                    name="serviceType"
-                                                    value="DRIVER_WITH_CAB"
-                                                    className="form-radio"
-                                                    disabled={!isEditable}
-                                                />
-                                                <span className="ml-2">Driver With Vehicle</span>
-                                            </label>
-                                            <label className="inline-flex items-center">
-                                                <Field
-                                                    type="radio"
-                                                    name="serviceType"
-                                                    value="OWNER"
-                                                    className="form-radio"
-                                                    disabled={!isEditable}
-                                                />
-                                                <span className="ml-2">OWNER</span>
-                                            </label> */}
                                         </div>
                                         <ErrorMessage
                                             name="serviceType"
@@ -1003,6 +882,20 @@ const DriverAdd = () => {
                                             <Field type="text" name="pincode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
+                                    <div>
+                                        <label htmlFor="maritalStatus" className="text-sm font-medium text-gray-700">Marital Status</label>
+                                        <Field as="select" name="maritalStatus" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
+                                            <option value="">Select Marital Status</option>
+                                            <option value="SINGLE">Single</option>
+                                            <option value="MARRIED">Married</option>
+                                        </Field>
+                                        <ErrorMessage name="maritalStatus" component="div" className="text-red-500 text-sm" />
+                                    </div>
+									<div>
+                                        <label htmlFor="alternateNumber" className="text-sm font-medium text-gray-700">Alternate Number</label>
+                                        <Field type="text" name="alternateNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 border-2" />
+                                        <ErrorMessage name="alternateNumber" component="div" className="text-red-500 text-sm my-1" />
+                                        </div>
                                         <div>
                                             <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>
                                             <Field type="text" name="reference1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
@@ -1023,102 +916,10 @@ const DriverAdd = () => {
                                             <Field type="tel" name="phoneNumber2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber2" component="div" className="text-red-500 text-sm" />
                                         </div>
-                                        {/* <div>
-                                            <p className="text-sm font-medium text-gray-700 mb-2">Car Type</p>
-                                            <div className="space-x-4">
-                                                <label className="inline-flex items-center">
-                                                    <Field type="radio" name="carType" disabled={!isEditable}  value="Sedan" className="form-radio" />
-                                                    <span className="ml-2">Sedan</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <Field type="radio" name="carType" disabled={!isEditable}  value="SUV" className="form-radio" />
-                                                    <span className="ml-2">SUV</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <Field type="radio" name="carType" disabled={!isEditable}  value="Hatchback" className="form-radio" />
-                                                    <span className="ml-2">Hatchback</span>
-                                                </label>
                                             </div>
-                                            <ErrorMessage name="carType" component="div" className="text-red-500 text-sm" />
-                                        </div> */}
-                                        {/* <div>
-                                            <label htmlFor="wallet" className="text-sm font-medium text-gray-700">Wallet</label>
-                                            <Field type="number" name="wallet" className="p-2 w-full rounded-md border-gray-300" />
-                                            <ErrorMessage name="wallet" component="div" className="text-red-500 text-sm" />
-                                        </div> */}
-                                        {/* {values.jobType !== "CAB" &&  */}
-                                        {/* <div>
-                                            <label htmlFor="packages" className="text-sm font-medium text-gray-700">Package</label>
-                                            <Multiselect
-                                                options={packageDetails}
-                                                displayValue="period"
-                                                selectedValues={packageDetails.filter(option => values.packages.includes(option.id))}
-                                                onSelect={(selectedList) => {
-                                                    setFieldValue("packages", selectedList.map(item => item.id));
-                                                    const newPrices = selectedList.map(item => ({
-                                                        packageId: item.id,
-                                                        period: item.period,
-                                                        price: item.price,
-                                                        extraPrice: item.extra_price,
-                                                        extraKmPrice: item.extraKmPrice,
-                                                        nightCharge: item.nightCharge,
-                                                        cancelCharge: item.cancelCharge,
-                                                        extraCabType: item.extraCabType
-                                                    }));
-                                                    setFieldValue("prices", newPrices);
-                                                }}
-                                                onRemove={(selectedList, removedItem) => {
-                                                    setFieldValue("packages", selectedList.map(item => item.id));
-                                                    setFieldValue("prices", values.prices.filter(price => price.packageId !== removedItem.id));
-                                                }}
-                                                placeholder="Select options"
-                                                className="w-full rounded-md border-gray-300"
-                                                showCheckbox={true}
-                                                disable={!isEditable}
-                                                style={{
-                                                    chips: {
-                                                        backgroundColor: '#3b82f6',
-                                                        color: 'white',
-                                                    },
-                                                }}
-                                            />
-                                        </div> */}
-                                        {/* } */}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        {/* {values.packages.length > 0 && values.jobType !== "CAB" && (
-                            <div>
-                                <h2 className="text-2xl font-bold mb-4">Price Details</h2>
-                                {renderPriceTable(
-                                    "LOCAL",
-                                    values.prices.filter(price => {
-                                        const package_ = packageDetails.find(p => p.id === price.packageId);
-                                        return package_?.type === 'Local';
-                                    }),
-                                    values
-                                )}
-
-                                {renderPriceTable(
-                                    "OUTSTATION",
-                                    values.prices.filter(price => {
-                                        const package_ = packageDetails.find(p => p.id === price.packageId);
-                                        return package_?.type === 'Outstation';
-                                    }),
-                                    values
-                                )}
-
-                                {renderPriceTable(
-                                    "CAR WASH",
-                                    values.prices.filter(price => {
-                                        const package_ = packageDetails.find(p => p.id === price.packageId);
-                                        return package_?.type === 'CarWash';
-                                    }),
-                                    values
-                                )}
-                            </div>
-                        )} */}
                         {!driverAdded.value &&
                             <div className='flex flex-row'>
                                 <Button
@@ -1266,19 +1067,6 @@ const DriverAdd = () => {
                                 </Button>
                             </div>
                         }
-                        {/* {driverAdded.value && isEditable && 
-                            <div className='flex flex-row'>
-                            <Button
-                                fullWidth
-                                color="black"
-                                onClick={handleSubmit}
-                                disabled={!dirty || !isValid}
-                                className='my-6 mx-2'
-                            >
-                                Save
-                            </Button>
-                        </div>  
-                        } */}
                     </Form>
                 )}
             </Formik>
@@ -1298,37 +1086,6 @@ const DriverAdd = () => {
                     <DialogBody divider>
                         <div className="flex flex-col items-center space-y-3">
                             <div className={`flex ${modalData.image2 ? "flex-row space-x-6" : "flex-col"} justify-center`}>
-                                {/* {modalData.image.toLowerCase().endsWith(".pdf") ? (
-                                    <iframe
-                                        src={modalData.image}
-                                        className="w-full rounded-lg shadow-md"
-                                        style={{ height: "45vh" }}
-                                    />
-                                ) : (
-                                    <img
-                                        src={modalData.image}
-                                        alt="Document"
-                                        className="rounded-lg shadow-md"
-                                        style={{ width: "45%", height: "45vh", objectFit: "contain" }}
-                                    />
-                                )
-                                }
-                                {modalData.image2 && (
-                                    modalData.image2.toLowerCase().endsWith(".pdf") ? (
-                                        <iframe
-                                            src={modalData.image2}
-                                            className="rounded-lg shadow-md"
-                                            style={{ height: "45vh", width: "45%" }}
-                                        />
-                                    ) : (
-                                        <img
-                                            src={modalData.image2}
-                                            alt="Document"
-                                            className="rounded-lg shadow-md"
-                                            style={{ height: "45vh", width: "45%", objectFit: "contain" }}
-                                        />
-                                    )
-                                )} */}
                                 {modalData.image && (
                                     <iframe
                                         src={modalData.image}
