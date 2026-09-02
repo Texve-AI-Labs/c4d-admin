@@ -9,7 +9,8 @@ import {
  
 const GEO_INTELLIGENCE_URL = import.meta.env.VITE_GEO_INTELLIGENCE_UAT;
 const OPERATIONAL_URL = "https://operational-dashboard-96d1b.web.app";
-const ROOTCABS_DASHBOARD = import.meta.env.VITE_ROOTCABS_DASHBOARD
+const ROOTCABS_DASHBOARD = import.meta.env.VITE_ROOTCABS_DASHBOARD_UAT || "https://rootcabs-dashboard-uat.web.app";
+
 const FULLSCREEN_REQUEST = "geo-intelligence:fullscreen-request";
 const FULLSCREEN_EXIT = "geo-intelligence:fullscreen-exit";
  
