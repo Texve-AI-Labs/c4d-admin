@@ -39,7 +39,7 @@ function AdminSubmenu({ permissions = [] }) {
   // Secondary/shortcut items that can live on a second row
   const secondaryItems = [
     { label: "Driver Cancellation History", path: "/dashboard/admin/driver-cancellation-history", requiredPermission: "Users" },
-    { label: "Driver Bonus", path: "/dashboard/users/driver-offer/list", requiredPermission: "Users" },
+    // { label: "Driver Bonus", path: "/dashboard/users/driver-offer/list", requiredPermission: "Users" },
     { label: "Trip Master Details", path: "/dashboard/tripDetails", requiredPermission: "Trip Master" },
     { label: "Trip Master Report", path: "/dashboard/reports/tripMasterReport", requiredPermission: "Trip Master" },
   ];
