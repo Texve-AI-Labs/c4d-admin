@@ -20,7 +20,6 @@ export const useBookingSummaryRealtime = ({
   customDateTo,
   buildSummaryQueryParams,
   fetchBookingSummary,
-  pagination,
   customerId,
   effectiveSearchId,
   type,
@@ -49,7 +48,7 @@ export const useBookingSummaryRealtime = ({
   });
 
   const refreshSummary = useCallback(async ({ dedupeMs = SAME_QUERY_DEDUPE_MS, force = false } = {}) => {
-      const queryParams = buildSummaryQueryParams({ page: pagination.currentPage });
+      const queryParams = buildSummaryQueryParams();
       const queryKey = JSON.stringify(queryParams || {});
       const state = scheduleRef.current;
       const now = Date.now();
@@ -63,7 +62,7 @@ export const useBookingSummaryRealtime = ({
       state.lastSuccessfulSummaryAt = Date.now();
       return result;
     },
-    [buildSummaryQueryParams, fetchBookingSummary, pagination.currentPage]
+    [buildSummaryQueryParams, fetchBookingSummary]
   );
 
   const requestSummaryRefresh = useCallback(
@@ -125,7 +124,6 @@ export const useBookingSummaryRealtime = ({
     customerId,
     effectiveSearchId,
     type,
-    pagination.currentPage,
     activeTab,
     statusFilter,
     sourceFilter,

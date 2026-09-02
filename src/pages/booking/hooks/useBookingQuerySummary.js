@@ -22,7 +22,6 @@ export const useBookingQuerySummary = ({
 }) => {
   const buildBookingQueryParams = useCallback(
     ({
-      page = pagination.currentPage,
       statusFilterParam = statusFilter,
       sourceFilterParam = sourceFilter,
       tripCoordinatorFilterParam = tripCoordinatorFilter,
@@ -72,8 +71,6 @@ export const useBookingQuerySummary = ({
       const queryParams = {
         customerId,
         type: type ? type : "",
-        page,
-        limit: pagination.itemsPerPage,
         filterType: JSON.stringify(filterType),
         bookingNumber: effectiveSearchIdParam,
       };
@@ -82,7 +79,6 @@ export const useBookingQuerySummary = ({
       return queryParams;
     },
     [
-      pagination,
       statusFilter,
       sourceFilter,
       tripCoordinatorFilter,
@@ -163,7 +159,6 @@ export const useBookingQuerySummary = ({
 
   const buildSummaryQueryParams = useCallback(
     ({
-      page = pagination.currentPage,
       statusFilterParam = statusFilter,
       sourceFilterParam = sourceFilter,
       tripCoordinatorFilterParam = tripCoordinatorFilter,
@@ -174,7 +169,6 @@ export const useBookingQuerySummary = ({
       endDateOverride,
     } = {}) =>
       buildBookingQueryParams({
-        page,
         statusFilterParam,
         sourceFilterParam,
         tripCoordinatorFilterParam,
@@ -185,7 +179,6 @@ export const useBookingQuerySummary = ({
         endDateOverride,
       }),
     [
-      pagination.currentPage,
       statusFilter,
       sourceFilter,
       tripCoordinatorFilter,
