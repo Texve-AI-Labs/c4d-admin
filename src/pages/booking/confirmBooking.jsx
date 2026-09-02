@@ -8,6 +8,9 @@ import {
     Select,
     Option,
     Input,
+    Dialog,
+    DialogHeader,
+    DialogBody,
 } from "@material-tailwind/react";
 import { Formik, Form, Field, ErrorMessage, validateYupSchema } from 'formik';
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -18,7 +21,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 import moment from "moment";
 import TextBoxWithList from "@/components/BookingNotes";
 import Swal from "sweetalert2";
-import { PencilIcon } from "@heroicons/react/24/solid";
+import { PencilIcon, FolderOpenIcon } from "@heroicons/react/24/solid";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import {fetchAdminDiscountStatusSafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
 import { shouldAutoFetchAdminDiscountStatus } from "./utils/adminDiscountFetch";
 
@@ -51,6 +55,19 @@ const getSuggestionTitle = (suggestion) => {
     if (!suggestion || typeof suggestion !== 'object') return '';
     return suggestion.title || suggestion.fullText || '';
 };
+
+const hasVehicleImages = (images) =>
+    images &&
+    typeof images === 'object' &&
+    Object.values(images).some((image) => Boolean(image?.url));
+
+const getVehicleImageEntries = (images) =>
+    Object.entries(images || {}).filter(([, image]) => Boolean(image?.url));
+
+const getVehicleImageFolderTitle = (folderName) => ({
+    actingDriverStartVehicleImages: 'Acting Driver Start Vehicle Images',
+    actingDriverEndVehicleImages: 'Acting Driver End Vehicle Images',
+}[folderName] || folderName);
 
 const makeAddressPayload = (address, placeId) => ({
     address,
@@ -126,6 +143,7 @@ const ConfirmBooking = (props) => {
     const [loading, setLoading] = useState(true);
     const [adminStatusRefreshing, setAdminStatusRefreshing] = useState(false);
     const [adminDiscountMeta, setAdminDiscountMeta] = useState(null);
+    const [vehicleImageFolder, setVehicleImageFolder] = useState(null);
     const audioUrl = bookingDetails?.deliveryDetails?.deliveryInstructionsAudioUrl;
 
     // Handler to update state
@@ -2375,6 +2393,94 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                        
                     
                     </CardBody>
+                    {(hasVehicleImages(bookingDetails?.actingDriverStartVehicleImages)
+                        || hasVehicleImages(bookingDetails?.actingDriverEndVehicleImages)) && (
+                            <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 p-2">
+                                {hasVehicleImages(bookingDetails?.actingDriverStartVehicleImages) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setVehicleImageFolder({
+                                            name: 'actingDriverStartVehicleImages',
+                                            images: bookingDetails.actingDriverStartVehicleImages,
+                                        })}
+                                        className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                        title="Open actingDriverStartVehicleImages"
+                                    >
+                                        <FolderOpenIcon className="h-5 w-5" />
+                                        <span>Acting Driver Start Vehicle Images</span>
+                                    </button>
+                                )}
+                                {hasVehicleImages(bookingDetails?.actingDriverEndVehicleImages) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setVehicleImageFolder({
+                                            name: 'actingDriverEndVehicleImages',
+                                            images: bookingDetails.actingDriverEndVehicleImages,
+                                        })}
+                                        className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                                        title="Open actingDriverEndVehicleImages"
+                                    >
+                                        <FolderOpenIcon className="h-5 w-5" />
+                                        <span>Acting Driver End Vehicle Images</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    <Dialog
+                        open={Boolean(vehicleImageFolder)}
+                        handler={() => setVehicleImageFolder(null)}
+                        size="xl"
+                        className="max-h-[90vh] overflow-y-auto"
+                    >
+                        <DialogHeader className="flex items-center justify-between gap-4">
+                            <span className="break-all text-lg">
+                                {getVehicleImageFolderTitle(vehicleImageFolder?.name)}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setVehicleImageFolder(null)}
+                                className="rounded-full p-1 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                aria-label="Close vehicle images"
+                            >
+                                <XMarkIcon className="h-6 w-6" />
+                            </button>
+                        </DialogHeader>
+                        <DialogBody divider>
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                {getVehicleImageEntries(vehicleImageFolder?.images).map(([position, image]) => (
+                                    <div key={position} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                                        <img
+                                            src={image.url}
+                                            alt={`${image.view || position} vehicle view`}
+                                            className="h-56 w-full rounded-lg bg-white object-contain"
+                                        />
+                                        <div className="mt-3 flex items-center justify-between gap-3">
+                                            <span className="text-sm font-semibold text-gray-900">{image.view || position}</span>
+                                            <a
+                                                href={image.url}
+                                                download
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                                            >
+                                                Download
+                                            </a>
+                                        </div>
+                                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                                            {/* <span className="font-semibold text-gray-500">View</span>
+                            <span className="text-gray-900">{image.view || position}</span> */}
+                                            <span className="font-semibold text-gray-500">Stage</span>
+                                            <span className="text-gray-900">{image.stage || '-'}</span>
+                                            <span className="font-semibold text-gray-500">Uploaded At</span>
+                                            <span className="text-gray-900">
+                                                {image.uploadedAt ? moment(image.uploadedAt).format('DD-MM-YYYY hh:mm A') : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </DialogBody>
+                    </Dialog>
                 </Card>
 
                 <Card className="mb-4 rounded-2xl border border-gray-100 shadow-sm">
