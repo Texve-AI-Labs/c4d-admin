@@ -9,7 +9,7 @@ import {
 
 const GEO_INTELLIGENCE_URL = import.meta.env.VITE_GEO_INTELLIGENCE_PROD || "https://geointelligence-cd5f6.web.app";
 const OPERATIONAL_URL = "https://operational-dashboard-96d1b.web.app";
-const ROOTCABS_DASHBOARD = import.meta.env.VITE_ROOTCABS_DASHBOARD || "https://rootcabs-dashboard.web.app";
+const ROOTCABS_DASHBOARD = import.meta.env.VITE_ROOTCABS_DASHBOARD_PROD || "https://rootcabs-dashboard-uat.web.app";
 
 const FULLSCREEN_REQUEST = "geo-intelligence:fullscreen-request";
 const FULLSCREEN_EXIT = "geo-intelligence:fullscreen-exit";
