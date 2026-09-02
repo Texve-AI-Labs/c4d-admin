@@ -263,6 +263,7 @@ import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
 import GeoIntelligence from "./pages/geoIntelligence";
+import WhatsAppDriverPage from "./pages/whatsappDriver/WhatsAppDriverPage";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -2388,6 +2389,14 @@ export const routes = [
         path: "/driverengagement/audit-logs",
         element: <DriverEngagementAuditLogs />,
         display: false,
+        permission: "Driver Engagement",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "WhatsApp Driver",
+        path: "/whatsapp-driver",
+        element: <WhatsAppDriverPage />,
+        display: true,
         permission: "Driver Engagement",
       },
        {

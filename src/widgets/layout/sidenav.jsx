@@ -23,7 +23,8 @@ import {
   MegaphoneIcon,
   UsersIcon,
   UserIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/solid';
 import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -47,6 +48,7 @@ const menuItems = [
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
   { type: "item", name: "Marketing", path: "/dashboard/vendors/notificationList", permission: "Marketing" },
+  { type: "item", name: "WhatsApp Driver", path: "/dashboard/whatsapp-driver", permission: "Driver Engagement" },
   { type: "item", name: "Vendor Management", path: "/dashboard/vendor-management/vendors", permission: "Vendor Management" },
   { type: "item", name: "Reports", path: "/dashboard/driver-ops", permission: "Driver Ops" },
   { type: "item", name: "Geo Int & Ops", path: "/dashboard/geo-intelligence", permission: "Users" },
@@ -262,6 +264,8 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
         return currentPath.startsWith("/dashboard/geo-intelligence");
       case "Driver Engagement":
         return currentPath.startsWith("/dashboard/driverengagement");
+      case "WhatsApp Driver":
+        return currentPath.startsWith("/dashboard/whatsapp-driver");
       case "Admin":
         return (
           currentPath.startsWith("/dashboard/users") ||
@@ -443,6 +447,11 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                         ) : null}
                         {name === "Driver Engagement" ? (
                           <UserIcon
+                            className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
+                          />
+                        ) : null}
+                        {name === "WhatsApp Driver" ? (
+                          <ChatBubbleLeftRightIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
