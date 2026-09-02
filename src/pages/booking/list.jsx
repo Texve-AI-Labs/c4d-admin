@@ -1280,7 +1280,13 @@ if (!statusFilter.includes('All')) {
                     <div className="bg-gray-300 z-0 mb-4 rounded-lg">
                     <div className="flex w-full items-center">
                         <div className="flex w-full p-1" role="tablist" aria-label="Booking date tabs">
-                            {tabs.map(({ label, value }) => (
+                                {loading ? (
+                                    <div className="flex w-full animate-pulse gap-1" aria-label="Loading booking tabs">
+                                        {Array.from({ length: tabs.length }).map((_, index) => (
+                                            <div key={index} className="h-8 flex-1 rounded-md bg-gray-100 opacity-100 " />
+                                        ))}
+                                    </div>
+                                ) : tabs.map(({ label, value }) => (
                                 <button
                                     key={value}
                                     type="button"
