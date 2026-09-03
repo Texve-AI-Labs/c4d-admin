@@ -533,7 +533,7 @@ const fetchZones = async () => {
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
               <table className="w-full min-w-[640px] table-auto">
-                <thead>
+                <thead className='whitespace-nowrap'>
                   <tr>
                     <th onClick={() => handleSort('created_at')} className="border-b border-blue-gray-50 py-3 px-5 text-left cursor-pointer">
                       <div className="flex items-center gap-1">
@@ -606,7 +606,7 @@ const fetchZones = async () => {
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="whitespace-nowrap">
                   {loading ? (
                       <tr>
                         <td colSpan={13} className="py-3 px-5">
