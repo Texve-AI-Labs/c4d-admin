@@ -115,7 +115,19 @@ function FinanceSubmenu({ permissions = [] }) {
   const navigate = useNavigate();
   const pathname = location.pathname.toLowerCase();
 
-  const isMainItemActive = (label, path, navActive) => navActive || matchesRouteFamily(pathname, label, path);
+  const isMainItemActive = (label, path, navActive) => {
+    // The master subscription path is a prefix of the return-trip route.
+    const normalizedPathname = normalizePath(pathname);
+    // Keep those two navigation items mutually exclusive.
+    if (
+      label === "Master Subscription Table" &&
+      normalizedPathname.startsWith("/finance/master-subscription/return-trip-driver")
+    ) {
+      return false;
+    }
+
+    return navActive || matchesRouteFamily(pathname, label, path);
+  };
 
   const getItemClasses = (isActive) =>
     `${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} ${

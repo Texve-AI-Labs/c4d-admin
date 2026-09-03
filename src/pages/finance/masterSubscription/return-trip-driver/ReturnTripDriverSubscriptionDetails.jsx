@@ -38,7 +38,7 @@ export default function ReturnTripDriverSubscriptionDetails() {
               <span className="text-sm text-gray-600">Yes</span>
             </div>
           </div>
-          <div className="rounded-md border p-3">
+          {/* <div className="rounded-md border p-3">
             <div className="text-xs font-semibold uppercase text-gray-500">Status</div>
             <div className="mt-2 flex items-center gap-3">
               <span className="text-sm text-gray-600">Inactive</span>
@@ -47,7 +47,7 @@ export default function ReturnTripDriverSubscriptionDetails() {
               </div>
               <span className="text-sm text-gray-600">Active</span>
             </div>
-          </div>
+          </div> */}
           <FieldRow label="Notes" value={row?.notes} />
           <div className="col-span-1 flex justify-center gap-3 pt-2 sm:col-span-2">
             <button
