@@ -94,6 +94,7 @@ import SkipLogs from "./pages/marketing/skipLogs";
 import ExternalPromotionsList from "./pages/marketing/externalPromotions/list";
 import ExternalPromotionsAdd from "./pages/marketing/externalPromotions/add";
 import ExternalPromotionsEdit from "./pages/marketing/externalPromotions/edit";
+import CustomerWhatsappPage from "./pages/customerWhatsapp";
 import InstantReward from "./pages/vendor/instantReward";
 import ReferralRuleList from "./pages/finance/referralRules/list";
 import ReferralRuleAdd from "./pages/finance/referralRules/add";
@@ -477,6 +478,22 @@ export const routes = [
         name: "external promotions edit",
         path: "/vendors/external-promotions/edit/:id",
         element: <ExternalPromotionsEdit />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "customer whatsapp",
+        path: "/customer-whatsapp",
+        element: <CustomerWhatsappPage />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "whatsapp conversation",
+        path: "/whatsapp-conversation",
+        element: <CustomerWhatsappPage />,
         display: false,
         permission: "Marketing",
       },
