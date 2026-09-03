@@ -39,6 +39,8 @@ const FINANCE_GROUPS = [
       { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
       { label: "Parcel Slot Config", path: "/dashboard/finance/parcel-slot-config", requiredPermission: "Users" },
       { label: "Parcel Daily Slots", path: "/dashboard/finance/parcel-daily-slots", requiredPermission: "Users" },
+      { label: "Acting Driver Slot Config", path: "/dashboard/finance/acting-driver-slot-config", requiredPermission: "Users" },
+      { label: "Acting Driver Daily Slots", path: "/dashboard/finance/acting-driver-daily-slots", requiredPermission: "Users" },
       { label: "Withdrawal Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission: "Users" },
       { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission: "Users" },
     ],
@@ -80,6 +82,8 @@ const ROUTE_MATCHERS = {
   "Parcel Commission": ["/finance/parcel-commission"],
   "Parcel Slot Config": ["/finance/parcel-slot-config", "/finance/parcel-slot-config/add", "/finance/parcel-slot-config/edit", "/finance/parcel-slot-config/details"],
   "Parcel Daily Slots": ["/finance/parcel-daily-slots", "/finance/parcel-daily-slots/details"],
+  "Acting Driver Slot Config": ["/finance/acting-driver-slot-config", "/finance/acting-driver-slot-config/add", "/finance/acting-driver-slot-config/edit", "/finance/acting-driver-slot-config/details"],
+  "Acting Driver Daily Slots": ["/finance/acting-driver-daily-slots", "/finance/acting-driver-daily-slots/add", "/finance/acting-driver-daily-slots/details"],
   "Withdrawal Rules": ["/finance/withdrawal-rules", "/finance/withdrawal-rules/add", "/finance/withdrawal-rules/edit"],
   "Withdrawal Transaction": ["/finance/wallet-transaction"],
   "Return Trip Driver Master Subscription Table": ["/finance/master-subscription/return-trip-driver", "/finance/master-subscription/return-trip-driver/add", "/finance/master-subscription/return-trip-driver/edit", "/finance/master-subscription/return-trip-driver/details"],
@@ -95,10 +99,11 @@ const matchesRouteFamily = (pathname, label, path) => {
 
 const matchesFinanceGroup = (pathname, group) =>
   group.items.some(({ label, path }) => {
+    const normalizedPathname = normalizePath(pathname);
     const normalizedItemPath = normalizePath(path);
     return (
-      pathname.startsWith(normalizedItemPath) ||
-      matchesRouteFamily(pathname, label, path)
+      normalizedPathname.startsWith(normalizedItemPath) ||
+      matchesRouteFamily(normalizedPathname, label, path)
     );
   });
 
