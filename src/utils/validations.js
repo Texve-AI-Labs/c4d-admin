@@ -710,15 +710,7 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
     }),
         
     zone: Yup.string().required("zone is required"),
-    // status: Yup.string().required("Status is required"),
-
-    // validityDays: Yup.number()
-    //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-    //     .when("type", {
-    //         is: (type) => type !== "PAID",
-    //         then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
-    //         otherwise: (schema) => schema.notRequired(),
-    //     }),
+    carType: Yup.string().required("Car Type is required"),
 
 });
 export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
@@ -771,14 +763,7 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
       otherwise: (schema) => schema.notRequired(),
     }),        
     zone: Yup.string().required("zone is required"),
-
-    // validityDays: Yup.number()
-    //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-    //     .when("type", {
-    //         is: (type) => type !== "PAID",
-    //         then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
-    //         otherwise: (schema) => schema.notRequired(),
-    //     }),
+    carType: Yup.string().required("Car Type is required"),
 });
 export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
     serviceType: Yup.string().required('Service Type is required'),

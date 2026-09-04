@@ -4,7 +4,7 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES } from "@/utils/constants";
+import { API_ROUTES, PLAN_GROUP_CAR_TYPES } from "@/utils/constants";
 import { SUBSCRIPTION_ADD_SCHEME } from "@/utils/validations";
 
 const PRIORITY_OPTIONS = [
@@ -47,6 +47,7 @@ const initialValues = {
   earningWindowDays: "",
   plans: [],
   assignments: [],
+  carType: "",
 };
 
 function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty, isValid, geoData, navigate, }) {
@@ -95,7 +96,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
     <Form>
       <div className="p-4 grid grid-cols-1 gap-4">
         <div className="p-4 border-gray-100 border-2 rounded-lg">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div>
               <label htmlFor="assignmentType" className="text-sm font-medium text-gray-700">Assignment Type</label>
               <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -163,6 +164,18 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
               <ErrorMessage name="zone" component="div" className="text-red-500 text-sm my-1" />
             </div>
             <div>
+              <label htmlFor="carType" className="text-sm font-medium text-gray-700">Car Type</label>
+              <Field as="select" name="carType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                <option value="">Select Car Type</option>
+                {PLAN_GROUP_CAR_TYPES.map((carType) => (
+                  <option key={carType} value={carType}>
+                    {carType}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage name="carType" component="div" className="text-red-500 text-sm my-1" />
+            </div>
+            <div>
               <label htmlFor="status" className="text-sm font-medium text-gray-700">Status</label>
               <Field as="select" name="status" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
                 <option value="">Select status</option>
@@ -221,7 +234,8 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
             </Button>
           </div>
 
-          <div className="grid grid-cols-9 gap-2">
+          <div className="overflow-x-auto">
+            <div className="grid min-w-[1350px] grid-cols-9 gap-4">
             <div>
               <label htmlFor="name" className="text-sm font-medium text-gray-700">Plan Name</label>
               <Field as="select" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -261,15 +275,6 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
               <Field type="number" name="totalPrice" readOnly className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100" />
               <ErrorMessage name="totalPrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
-            {/* {values.type !== "PAID" && (
-              <div>
-                <label htmlFor="validityDays" className="text-sm font-medium text-gray-700">Validity (Months)</label>
-                <Field type="number" name="validityDays" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                <ErrorMessage name="validityDays" component="div" className="text-red-500 text-sm my-1" />
-              </div>
-            )} */}
-            
-              
                 <div>
                   <label className="text-sm font-medium text-gray-700">Earning Strategy</label>
                   <Field as="select" name="earningStrategy" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -301,14 +306,15 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                   />
                 </div>
              
+            </div>
           </div>
 
           {values.plans && values.plans.length > 0 && (
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-4 overflow-x-auto">
               {values.plans.map((plan, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-9 gap-2 rounded-lg p-3"
+                  className="grid min-w-[1350px] grid-cols-9 gap-4 rounded-lg p-3"
                 >
                   <div>
                     <label className="text-sm font-medium text-gray-700">Plan Name</label>
@@ -344,12 +350,6 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                     <label className="text-sm font-medium text-gray-700">Total Credits</label>
                     <Field type="number" name={`plans[${index}].totalPrice`} readOnly className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" />
                   </div>
-                  {/* {plan.type !== "PAID" && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Validity (Months)</label>
-                      <Field type="number" name={`plans[${index}].validityDays`} className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                    </div>
-                  )} */}
                   
                       <div>
                         <label className="text-sm font-medium text-gray-700">Earning Strategy</label>
@@ -446,6 +446,7 @@ const MasterSubscriptionAdd = () => {
         effectiveFrom: values.effectiveFrom || "",
         effectiveTo: values.effectiveTo || "",
         priority: Number(values.priority) || 0,
+        carType: values.carType || "",
       },
       plans: [
         {
