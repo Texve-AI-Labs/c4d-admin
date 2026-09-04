@@ -386,6 +386,7 @@ export function SearchDrivers(props) {
                         latitude: props?.bookingData?.pickupLat,
                         longitude: props?.bookingData?.pickupLong,
                         type: props?.bookingData?.packageType,
+                        bookingId: props.bookingData.id,
                     }
                     data = await ApiRequestUtils.getWithQueryParam(api, queryObj);
                 } else if (props.bookingData.serviceType === 'AUTO') {
