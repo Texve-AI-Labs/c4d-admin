@@ -142,7 +142,6 @@ const DiscountView = () => {
                   <th className="py-3 px-5 text-left whitespace-nowrap">Target Mode</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Title</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Coupon Code</th>
-                  <th className="py-3 px-5 text-left whitespace-nowrap">Description</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Discount Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">
                     <button
@@ -169,10 +168,11 @@ const DiscountView = () => {
                   </th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">End Date</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Status</th>
-                  <th className="py-3 px-5 text-left whitespace-nowrap">Image</th>
+                  {/* <th className="py-3 px-5 text-left whitespace-nowrap">Image</th> */}
                   <th className="py-3 px-5 text-left whitespace-nowrap">Premium</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Cab Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">City</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Description</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
@@ -197,7 +197,6 @@ const DiscountView = () => {
                             {item.couponCode || '-'}
                         </div>
                         </td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.description || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         {(() => {
                           const normalizedType = (item.discountType || (Number(item.amount) > 0 ? 'IsAmount' : 'percentage'))?.toLowerCase();
@@ -216,7 +215,7 @@ const DiscountView = () => {
                           ? <span className="text-green-600 font-semibold">Active</span>
                           : <span className="text-red-600 font-semibold">Inactive</span>}
                       </td>
-                      <td className="py-3 px-5 whitespace-nowrap">
+                      {/* <td className="py-3 px-5 whitespace-nowrap">
                         {item.imageUrl ? (
                           <img
                             src={item.imageUrl}
@@ -228,7 +227,7 @@ const DiscountView = () => {
                             <span className="text-gray-500 text-xs">No Image</span>
                           </div>
                         )}
-                      </td>
+                      </td> */}
                       <td className="py-3 px-5 whitespace-nowrap">{item.isPremium ? 'Premium' : 'Not Premium'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">{item.cabType || item.parcelVehicleType || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
@@ -240,6 +239,7 @@ const DiscountView = () => {
                           '-'
                         )}
                       </td>
+                      <td className="py-3 px-5 whitespace-nowrap">{item.description || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         <Button
                           onClick={() =>

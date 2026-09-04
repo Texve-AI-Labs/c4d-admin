@@ -94,6 +94,7 @@ import SkipLogs from "./pages/marketing/skipLogs";
 import ExternalPromotionsList from "./pages/marketing/externalPromotions/list";
 import ExternalPromotionsAdd from "./pages/marketing/externalPromotions/add";
 import ExternalPromotionsEdit from "./pages/marketing/externalPromotions/edit";
+import CustomerWhatsappPage from "./pages/customerWhatsapp";
 import InstantReward from "./pages/vendor/instantReward";
 import ReferralRuleList from "./pages/finance/referralRules/list";
 import ReferralRuleAdd from "./pages/finance/referralRules/add";
@@ -208,6 +209,13 @@ import ParcelSlotConfigEdit from "./pages/finance/parcelSlotConfig/edit";
 import ParcelSlotConfigDetails from "./pages/finance/parcelSlotConfig/details";
 import ParcelDailySlotsList from "./pages/finance/parcelDailySlots/list";
 import ParcelDailySlotsDetails from "./pages/finance/parcelDailySlots/details";
+import ActingDriverSlotConfigList from "./pages/finance/actingDriverSlotConfig/list";
+import ActingDriverSlotRuleForm from "./pages/finance/actingDriverSlotConfig/SlotRuleForm";
+import ActingDriverSlotConfigEdit from "./pages/finance/actingDriverSlotConfig/edit";
+import ActingDriverSlotConfigDetails from "./pages/finance/actingDriverSlotConfig/details";
+import ActingDriverDailySlotsList from "./pages/finance/actingDriverDailySlots/list";
+import ActingDriverDailySlotsAdd from "./pages/finance/actingDriverDailySlots/add";
+import ActingDriverDailySlotsDetails from "./pages/finance/actingDriverDailySlots/details";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
 import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
@@ -478,6 +486,22 @@ export const routes = [
         name: "external promotions edit",
         path: "/vendors/external-promotions/edit/:id",
         element: <ExternalPromotionsEdit />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "customer whatsapp",
+        path: "/customer-whatsapp",
+        element: <CustomerWhatsappPage />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "whatsapp conversation",
+        path: "/whatsapp-conversation",
+        element: <CustomerWhatsappPage />,
         display: false,
         permission: "Marketing",
       },
@@ -1871,6 +1895,62 @@ export const routes = [
         name: "Parcel Daily Slot Details",
         path: "/finance/parcel-daily-slots/details/:id",
         element: <ParcelDailySlotsDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config",
+        path: "/finance/acting-driver-slot-config",
+        element: <ActingDriverSlotConfigList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Add",
+        path: "/finance/acting-driver-slot-config/add",
+        element: <ActingDriverSlotRuleForm mode="add" />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Edit",
+        path: "/finance/acting-driver-slot-config/edit/:id",
+        element: <ActingDriverSlotConfigEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Details",
+        path: "/finance/acting-driver-slot-config/details/:id",
+        element: <ActingDriverSlotConfigDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slots",
+        path: "/finance/acting-driver-daily-slots",
+        element: <ActingDriverDailySlotsList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slot Add",
+        path: "/finance/acting-driver-daily-slots/add",
+        element: <ActingDriverDailySlotsAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slot Details",
+        path: "/finance/acting-driver-daily-slots/details/:id",
+        element: <ActingDriverDailySlotsDetails />,
         display: false,
         permission: "Users",
       },

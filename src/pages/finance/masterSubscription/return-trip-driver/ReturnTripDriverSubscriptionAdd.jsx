@@ -22,10 +22,11 @@ const validationSchema = Yup.object({
   serviceType: Yup.string().required("Service Type is required"),
   zone: Yup.string().required("Zone is required"),
   eligibleForReturnTrip: Yup.boolean().required("Eligible For Return Trip is required"),
-  status: Yup.string().required("Status is required"),
+  // status: Yup.string().required("Status is required"),
 });
 
 const handleAddSubmit = async (values, { setSubmitting }, navigate, setModalMessage) => {
+  // console.log("Submitting values:", values);
   try {
     const response = await ApiRequestUtils.post(API_ROUTES.ADD_RETURN_TRIP_ELIGIBILITY, values, 0, { suppressAlert: true });
     if (response?.success === false) {
@@ -115,7 +116,7 @@ export default function ReturnTripDriverSubscriptionAdd() {
                 </div>
                 <ErrorMessage name="eligibleForReturnTrip" component="div" className="mt-1 text-sm text-red-600" />
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium">Status</label>
                 <div className="mt-2 flex items-center gap-3 rounded-md border p-2">
                   <span className="text-sm text-gray-600">Inactive</span>
@@ -129,7 +130,7 @@ export default function ReturnTripDriverSubscriptionAdd() {
                   <span className="text-sm text-gray-600">Active</span>
                 </div>
                 <ErrorMessage name="status" component="div" className="mt-1 text-sm text-red-600" />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium">Notes</label>
                 <Field as="textarea" name="notes" rows="4" className="mt-1 w-full rounded-md border p-2" />
