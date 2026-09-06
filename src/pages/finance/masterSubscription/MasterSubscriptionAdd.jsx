@@ -242,7 +242,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                 <option value="">Select Plan Name</option>
                 <option value="Premium">Premium</option>
                 <option value="Standard">Standard</option>
-                <option value="Regular">Regular</option>
+                <option value="Regular">Basic</option>
               </Field>
               <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
             </div>
@@ -322,7 +322,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                       <option value="">Select Plan Name</option>
                       <option value="Premium">Premium</option>
                       <option value="Standard">Standard</option>
-                      <option value="Regular">Regular</option>
+                      <option value="Regular">Basic</option>
                     </Field>
                   </div>
                   <div>

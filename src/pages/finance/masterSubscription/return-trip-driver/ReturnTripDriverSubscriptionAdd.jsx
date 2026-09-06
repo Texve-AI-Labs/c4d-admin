@@ -75,9 +75,9 @@ export default function ReturnTripDriverSubscriptionAdd() {
                 <label className="block text-sm font-medium">Plan Name</label>
                 <Field as="select" name="planName" className="mt-1 w-full rounded-md border p-2">
                   <option value="">Select Plan Name</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Regular">Regular</option>
+                  <option value="premium">Premium</option>
+                  <option value="standard">Standard</option>
+                  <option value="regular">Basic</option>
                 </Field>
                 <ErrorMessage name="planName" component="div" className="mt-1 text-sm text-red-600" />
               </div>
