@@ -152,7 +152,7 @@ const AutoMasterPriceEdit = () => {
   };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white">
       <h2 className="text-2xl font-bold mb-4">Auto Edit Pricing Details</h2>
       <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
         {({ handleSubmit, setFieldValue, isValid, dirty, values }) => (
@@ -160,7 +160,7 @@ const AutoMasterPriceEdit = () => {
            <div className="grid grid-cols-2 gap-4">
                                       <div>
                                           <label className="text-sm font-medium text-gray-700">Zone</label>
-                                          <Field type="text" name="zone"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                                          <Field type="text" name="zone" disabled className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 bg-gray-100" />
                                       </div>
                                       
                           
@@ -177,49 +177,49 @@ const AutoMasterPriceEdit = () => {
             </div>
                 <div className='hidden'>
                     <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
-                    <Field type="number" name="surchargePercentage"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="surchargePercentage"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300" />
                     
                 </div>
                  <div>
                     <label className="text-sm font-medium text-gray-700">Base Km</label>
-                    <Field type="number" name="baseKm"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="baseKm"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300" />
                     
                 </div>
                  <div>
                     <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
-                    <Field type="number" name="freeExtraMinutes"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="freeExtraMinutes"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300" />
                     
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700">Night Charge</label>
-                    <Field type="number" name="nightCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="nightCharge"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 " />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
-                    <Field type="number" name="waitingMins"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="waitingMins"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 " />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
-                    <Field type="number" name="waitingCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="waitingCharge"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 " />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
-                    <Field type="number" name="cancellationMins"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="cancellationMins"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 " />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
-                    <Field type="number" name="cancellationCharge"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="cancellationCharge"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 " />
                 </div>
                  <div>
                     <label className="text-sm font-medium text-gray-700">Addtional Km Charge</label>
-                    <Field type="number" name="extraKmPrice"  className="mt-1 p-3 w-full rounded-md border-gray-300 bg-gray-100" />
+                    <Field type="number" name="extraKmPrice"  className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 " />
                 </div>
                 <div className="lg:col-span-2">
                     <label className="text-sm font-medium text-gray-700">Night Hours</label>
                     <div className="flex items-center gap-3 mt-1">
-                        <Field type="time" name="nightHoursFrom"  className="p-3 rounded-md border-gray-300 bg-gray-100" />
+                        <Field type="time" name="nightHoursFrom"  className="p-3 rounded-md border-2 border-gray-300 " />
                         <span className="text-gray-600">to</span>
-                        <Field type="time" name="nightHoursTo"  className="p-3 rounded-md border-gray-300 bg-gray-100" />
+                        <Field type="time" name="nightHoursTo"  className="p-3 rounded-md border-2 border-gray-300 " />
                     </div>
                 </div>
                               </div>
@@ -235,21 +235,21 @@ const AutoMasterPriceEdit = () => {
                                                           <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                                       </tr>
                                                   </thead>
-                                                  <tbody className="bg-white divide-y ">
+                                                  <tbody className="bg-gray-100">
                                                       <tr className="hover:bg-gray-50">
                                                           
                                                           <td className="px-6 py-1 ">
-                                                              <Field type="number" name="baseFare"  className=" p-1  rounded-md bg-gray-50" />
+                                                              <Field type="number" name="baseFare"  className=" p-1  rounded-md bg-white" />
                                                           </td>
                                                           <td className="px-6 py-1">
-                                                              <Field type="number" name="ratePerKm"  className=" p-1  rounded-md bg-gray-50" />
+                                                              <Field type="number" name="ratePerKm"  className=" p-1  rounded-md bg-white" />
                                                           </td>
                                                           
                                                           <td className="px-6 py-1 hidden">
-                                                              <Field type="number" name="ratePerMin"  className=" p-1  rounded-md bg-gray-50" />
+                                                              <Field type="number" name="ratePerMin"  className=" p-1  rounded-md bg-white" />
                                                           </td>
                                                            <td className="px-6 py-1">
-                                                              <Field type="number" name="additionalMin"  className=" p-1  rounded-md bg-gray-50" />
+                                                              <Field type="number" name="additionalMin"  className=" p-1  rounded-md bg-white" />
                                                           </td>
                                                       </tr>
                                                       </tbody>
@@ -267,7 +267,7 @@ const AutoMasterPriceEdit = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
+                                <tr className='bg-gray-100'>
                                     <td className="border p-2">
                                         <Field
                                             type="number"

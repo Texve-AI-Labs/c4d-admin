@@ -7,7 +7,22 @@ import { Utils } from '@/utils/utils';
 import Select from 'react-select';
 import { ParcelExpandableRow } from "./ParcelExpandableRow";
 
+const MASTER_PRICE_FILTER_STORAGE_KEY = "masterPriceViewFilters";
+
+const getStoredMasterPriceFilters = () => {
+    if (typeof window === "undefined") return {};
+
+    try {
+        const storedFilters = window.sessionStorage.getItem(MASTER_PRICE_FILTER_STORAGE_KEY);
+        return storedFilters ? JSON.parse(storedFilters) : {};
+    } catch (error) {
+        console.error("Error reading master price filters:", error);
+        return {};
+    }
+};
+
 export function MasterPriceView() {
+    const [initialFilters] = useState(getStoredMasterPriceFilters);
     const normalizeText = (value) => String(value || "").trim().toLowerCase();
     const normalizeVehicleType = (value) => {
         const normalized = String(value || "").trim().toUpperCase();
@@ -24,14 +39,40 @@ export function MasterPriceView() {
     const [bikeLocalPackageList, setBikeLocalPackageList] = useState([]);
     const [parcelLocalPackageList, setParcelLocalPackageList] = useState([]);
     const navigate = useNavigate();
-    const [serviceType, setServiceType] = useState("");
+    const [serviceType, setServiceType] = useState(initialFilters.serviceType || "");
+    const [bookingType, setBookingType] = useState(initialFilters.bookingType || "");
+    const [driverPackageList, setDriverPackageList] = useState([]);
     const [ridesData, setRidesData] = useState([]);
     // const [rentalsData, setRentalsData] = useState([]);
-    const [zone, setZone] = useState("");
-    const [parcelSubService, setParcelSubService] = useState("BIKE");
+    const [zone, setZone] = useState(initialFilters.zone || "");
+    const [parcelSubService, setParcelSubService] = useState(normalizeVehicleType(initialFilters.parcelSubService));
     const [showParcelGeoError, setShowParcelGeoError] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
     const [subZones, setSubZones] = useState([]);
+
+    const applyDriverPackageFilter = (packages, selectedBookingType = bookingType) => {
+        const filteredPackages = selectedBookingType
+            ? packages.filter((item) => normalizeText(item.bookingType) === normalizeText(selectedBookingType))
+            : packages;
+        setLocalPackageList(filteredPackages.filter((item) => item.type === "Local" && item.serviceType === "DRIVER"));
+        setOutstationPackageList(filteredPackages.filter((item) => item.type === "Outstation" && item.serviceType === "DRIVER"));
+    };
+
+    const fetchDriverPackageList = async (selectedZone = zone, selectedBookingType = bookingType) => {
+        const query = { serviceType: "DRIVER" };
+        if (selectedZone) query.zone = selectedZone;
+        if (selectedBookingType) query.bookingType = selectedBookingType;
+
+        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.PACKAGES_LIST, query);
+        if (data?.success) {
+            const driverRows = Array.isArray(data?.data) ? data.data : [];
+            const filteredData = driverRows
+                .filter((item) => !selectedZone || normalizeText(item.zone) === normalizeText(selectedZone))
+                .filter((item) => item.serviceType === "DRIVER");
+            setDriverPackageList(filteredData);
+            applyDriverPackageFilter(filteredData, selectedBookingType);
+        }
+    };
 
     const fetchGeoData = async (selectedServiceType = "",selectedParcelSubService = parcelSubService, selectedZone = zone) => {
         try {
@@ -60,10 +101,6 @@ export function MasterPriceView() {
         } 
     };
 
-    useEffect(() => {
-        fetchGeoData();
-    }, []);
-
     const ZONE_OPTIONS = serviceAreas.map((area) => ({
         value: area.name, 
         label: area.name, 
@@ -82,21 +119,85 @@ export function MasterPriceView() {
         }
     };
 
+    useEffect(() => {
+        window.sessionStorage.setItem(MASTER_PRICE_FILTER_STORAGE_KEY, JSON.stringify({
+            serviceType,
+            zone,
+            bookingType: serviceType === "DRIVER" ? bookingType : "",
+            parcelSubService,
+        }));
+    }, [serviceType, zone, bookingType, parcelSubService]);
+
+    useEffect(() => {
+        const loadStoredFilters = async () => {
+            await fetchGeoData(serviceType, parcelSubService, zone);
+            if (!serviceType) return;
+
+            try {
+                if (serviceType === 'DRIVER') {
+                    await fetchDriverPackageList(zone, bookingType);
+                } else if (serviceType === 'RIDES') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setRidesData(filteredData || []);
+                    } else {
+                        setRidesData([]);
+                    }
+                } else if (serviceType === 'AUTO') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.AUTO_PACKAGE_LIST, {
+                        type: "Service area",
+                    });
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setAutoLocalPackageList(filteredData.filter(item => item.type === "Auto" && item.serviceType === "AUTO"));
+                    }
+                } else if (serviceType === 'BIKE') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.BIKE_PACKAGE_LIST, {
+                        type: "Service area",
+                    });
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setBikeLocalPackageList(filteredData.filter(item => item.type === "Bike" && item.serviceType === "BIKE"));
+                    }
+                } else if (serviceType === 'PARCEL') {
+                    await fetchParcelPackageList(zone, parcelSubService);
+                } else if (serviceType === 'RENTAL') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.RENTALS_PRICE_DETAILS);
+                    if(data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "RENTAL"));
+                        setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "RENTAL"));
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading stored master price filters:", err);
+            }
+        };
+
+        loadStoredFilters();
+    }, []);
+
     const handleChange = async (selectedOption, field) => {
         if (field === 'serviceType') {
             const selectedServiceType = selectedOption.target.value;
         setServiceType(selectedServiceType);
+        if (selectedServiceType !== "DRIVER") {
+            setBookingType("");
+            setDriverPackageList([]);
+        }
         try {
             await fetchGeoData(selectedServiceType, parcelSubService, zone);
             if (selectedServiceType === 'DRIVER') {
-                const data = await ApiRequestUtils.get(API_ROUTES.PACKAGES_LIST);
-                if (data?.success) {
-                        const filteredData = zone
-                            ? data?.data.filter(item => item.zone === zone)
-                            : data?.data;
-                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "DRIVER"));
-                    setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "DRIVER"));
-                }
+                await fetchDriverPackageList(zone, "");
             } else if (selectedServiceType === 'RIDES') {
                 const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
                 if (data?.success) {
@@ -166,14 +267,7 @@ export function MasterPriceView() {
             setZone(selectedZone);
             try {
                 if (serviceType === 'DRIVER') {
-                    const data = await ApiRequestUtils.get(API_ROUTES.PACKAGES_LIST);
-                    if (data?.success) {
-                        const filteredData = selectedZone
-                            ? data?.data.filter(item => item.zone === selectedZone)
-                            : data?.data;
-                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "DRIVER"));
-                        setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "DRIVER"));
-                    }
+                    await fetchDriverPackageList(selectedZone, bookingType);
                 } else if (serviceType === 'RIDES') {
                     const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
                     if (data?.success) {
@@ -198,6 +292,12 @@ export function MasterPriceView() {
         } catch (err) {
             console.error("Error fetching subscription data:", err);
         }
+        } else if (field === 'bookingType') {
+            const selectedBookingType = selectedOption.target.value;
+            setBookingType(selectedBookingType);
+            if (serviceType === "DRIVER") {
+                await fetchDriverPackageList(zone, selectedBookingType);
+            }
         } else if (field === 'parcelSubServices') {
             const selectedValue = normalizeVehicleType(selectedOption?.value || "");
             setParcelSubService(selectedValue);
@@ -249,23 +349,28 @@ export function MasterPriceView() {
 
     const renderLocalPriceTable = () => {
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "Zone",
                                         "Service Type",
                                         "Trip Type",
-                                        "Package (Hrs)",
-                                        "Price",
+                                        "Booking Type",
+                                        "Base Hours",
+                                        "Price (Mini)",
+                                        "Price (Sedan)",
+                                        "Price (Muv)",
+                                        "Price (Suv)",
                                         // "Price (MUV)",
-                                        "Package KM",
-                                        "Additional Mins Price",
-                                        "Extra KM Price",
+                                        // "Package KM",
+                                        // "Additional Mins Price",
+                                        // "Additional Mins Charge",
+                                        // "Extra KM Price",
                                         "Free Extra (mins)",
                                         "Waiting Charges Apply After",
                                         "Night Charge",
@@ -287,10 +392,10 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP, additionalMinCharge, extraKmPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
+                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP,priceSuv,priceSedan,bookingType, additionalMinCharge, extraKmPrice, extraPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
                                     const className = `py-3 px-5 ${key === localPackageList.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id}  className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {zone}
@@ -304,6 +409,11 @@ export function MasterPriceView() {
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {type}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {bookingType}
                                                 </Typography>
                                             </td>
                                             <td className='border-b border-blue-gray-50 py-3 px-5'>
@@ -324,26 +434,46 @@ export function MasterPriceView() {
                                                     {price}
                                                 </Typography>
                                             </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceSedan}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceMVP}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceSuv}
+                                                </Typography>
+                                            </td>
                                             {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {priceMVP}
                                                 </Typography>
                                             </td> */}
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {kilometer || "-"}
                                                 </Typography>
-                                            </td>
-                                            <td className={className}>
+                                            </td> */}
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {additionalMinCharge || "-"}
                                                 </Typography>
-                                            </td>
-                                            <td className={className}>
+                                            </td> */}
+                                             {/* <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {extraPrice || "-"}
+                                                </Typography>
+                                            </td> */}
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {extraKmPrice || "-"}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {freeExtraMinutes || "-"}
@@ -396,22 +526,27 @@ export function MasterPriceView() {
         });
 
     return (
-        <div className='my-6'>
-            <h3 className="text-3xl font-bold mb-4 ml-2">Outstation</h3>
+        <div className='my-6 bg-white rounded-xl p-2'>
+            <h3 className="text-xl font-bold mb-4 ml-2">Outstation</h3>
             <Card>
                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                     <table className="w-full min-w-[640px] table-auto">
                         <thead>
-                            <tr>
+                            <tr className="whitespace-nowrap">
                                 {[
                                     "Zone",
                                     "Service Type",
                                     "Trip Type",
+                                    "Booking Type",
                                     "Base Hours",
-                                    "Base KM",
-                                    "Base Fare",
-                                    "Extra Minute Charge",
-                                    "Extra KM rate",
+                                    // "Base KM",
+                                    "Price (Mini)",
+                                    "Price (Sedan)",
+                                    "Price (Muv)",
+                                    "Price (Suv)",
+                                    // "Additional Mins Price",
+                                    // "Additional Mins Charge",
+                                    // "Extra KM rate",
                                     "Food Charges",
                                     "Night Charges",
                                     "Drop-only charge"
@@ -431,15 +566,15 @@ export function MasterPriceView() {
                             {filteredOutstationList.map((item, index) => {
                                 const { 
                                     id, zone, serviceType, type, period, extraCabType ,kilometer,  
-                                    dropPrice, price, additionalMinCharge, dropPriceAbove, 
-                                    nightCharge, extraKmPrice 
+                                    dropPrice, price, additionalMinCharge, dropPriceAbove, bookingType,
+                                    nightCharge, extraKmPrice, extraPrice,priceMVP, priceSuv, priceSedan 
                                 } = item;
 
                                 const isLast = index === filteredOutstationList.length - 1;
                                 const className = `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"}`;
 
                                 return (
-                                    <tr key={id}>
+                                    <tr key={id} className="whitespace-nowrap">
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {zone}
@@ -457,6 +592,13 @@ export function MasterPriceView() {
                                                 </Typography>
                                             </div>
                                         </td>
+                                         <td className={className}>
+                                            <div >
+                                                <Typography className="text-xs font-semibold text-blue-gray-900" >
+                                                    {bookingType}
+                                                </Typography>
+                                            </div>
+                                        </td>
                                         <td className={className}>
                                             <Link to={`/dashboard/finance/master-price/details/${id}`}>
                                                 <Typography variant="small" color="blue" className="font-semibold underline cursor-pointer" >
@@ -464,13 +606,13 @@ export function MasterPriceView() {
                                                 </Typography>
                                             </Link>
                                         </td>
-                                        <td className={className}>
+                                        {/* <td className={className}>
                                             <div >
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {kilometer || '-'}
                                                 </Typography>
                                             </div>
-                                        </td>
+                                        </td> */}
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {price || '0'}
@@ -478,14 +620,34 @@ export function MasterPriceView() {
                                         </td>
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                {additionalMinCharge || '-'}
+                                                {priceSedan || '0'}
                                             </Typography>
                                         </td>
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                {extraKmPrice || '-'}
+                                                {priceMVP || '0'}
                                             </Typography>
                                         </td>
+                                        <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {priceSuv || '0'}
+                                            </Typography>
+                                        </td>
+                                        {/* <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {additionalMinCharge || '-'}
+                                            </Typography>
+                                        </td>
+                                         <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {extraPrice || '-'}
+                                            </Typography>
+                                        </td> */}
+                                        {/* <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {extraKmPrice || '-'}
+                                            </Typography>
+                                        </td> */}
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {dropPriceAbove || '-'}
@@ -523,13 +685,13 @@ export function MasterPriceView() {
 
     const renderRidesTable = () => {
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Rides</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Rides</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "Zone",
                                         "Rate Parameter",
@@ -574,7 +736,7 @@ export function MasterPriceView() {
                                     const className = `py-3 px-5 ${key === ridesData?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
 
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id} className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {zone}
@@ -656,13 +818,13 @@ export function MasterPriceView() {
 
     const renderLocalRentalsTable = () => {
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "Zone",
                                         "Type",
@@ -714,7 +876,7 @@ export function MasterPriceView() {
                                     const className = `py-3 px-5 ${key === localPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
 
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id} className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {zone}
@@ -810,13 +972,13 @@ export function MasterPriceView() {
     };
     const renderOutstationRentalsTable = () => {
         return (
-            <div className='my-2'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">OutStation</h3>
+            <div className='my-2 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">OutStation</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "Zone",
                                         "Type",
@@ -878,7 +1040,7 @@ export function MasterPriceView() {
                                     const className = `py-3 px-5 ${key === outstationPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
 
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id} className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {zone}
@@ -1001,13 +1163,13 @@ export function MasterPriceView() {
         const hideSubZoneColumn = false;
         const parcelTableHeaders = ["Zone", "Sub Zone", "Base Fare", "Base Km", "Kilometer Price", "Actions"];
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {parcelTableHeaders.map((el, index) => (
                                         <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
                                             <Typography
@@ -1041,13 +1203,13 @@ export function MasterPriceView() {
     };
         const LocalAutoTable = () => {
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "zone",
                                         "Type",
@@ -1081,7 +1243,7 @@ export function MasterPriceView() {
                                     const className = `py-3 px-5 ${key === autoLocalPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
 
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id} className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {zone}
@@ -1133,13 +1295,13 @@ export function MasterPriceView() {
     };
     const LocalBikeTable = () => {
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "zone",
                                         "Type",
@@ -1173,7 +1335,7 @@ export function MasterPriceView() {
                                     const className = `py-3 px-5 ${key === bikeLocalPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
 
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id} className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {zone}
@@ -1226,7 +1388,7 @@ export function MasterPriceView() {
    
     return (
         <>
-            <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
+            <div className="p-4 border bg-white border-gray-300 rounded-xl shadow-sm">
                 <div className="flex items-center justify-between">
                     <div className="relative flex-grow max-w-[860px]">
                         <div className="p-4 flex flex-row flex-wrap gap-5">
@@ -1259,6 +1421,20 @@ export function MasterPriceView() {
                                 </select>
                                 {serviceType === "" && <div className="text-red-500 text-sm mt-1">Please select a service type</div>}
                             </div>
+                            {serviceType === "DRIVER" && (
+                                <div className="flex flex-col">
+                                    <label className="text-base font-medium text-gray-700">Select Booking Type:</label>
+                                    <select
+                                        value={bookingType}
+                                        onChange={(e) => handleChange(e, 'bookingType')}
+                                        className="p-2 w-[200px] rounded-lg border-2 border-gray-300"
+                                    >
+                                        <option value="">All Booking Types</option>
+                                        <option value="ROUND TRIP">ROUND TRIP</option>
+                                        <option value="DROP ONLY">DROP ONLY</option>
+                                    </select>
+                                </div>
+                            )}
                             {serviceType === "PARCEL" && (
                                 <div className="flex flex-col">
                                     <label className="text-base font-medium text-gray-700">Parcel Sub Services:</label>

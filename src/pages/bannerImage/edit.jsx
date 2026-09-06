@@ -223,7 +223,8 @@ const EditBanner = () => {
         formData.append('eligibilityConfig', JSON.stringify(values.eligibilityConfig || {}));
       }
 
-      const response = await ApiRequestUtils.update(API_ROUTES.UPDATE_BANNER, formData);
+      // The update endpoint accepts the banner image as multipart form data.
+      const response = await ApiRequestUtils.updateDocs(API_ROUTES.UPDATE_BANNER, formData);
       if (response?.success) {
         navigate('/dashboard/user/bannerimgView', {
           state: { updatedBanner: { ...banner, ...values, status: Boolean(values.status) } },

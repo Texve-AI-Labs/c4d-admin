@@ -85,15 +85,15 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         }),
 
     carType: Yup.string().when('serviceType', {
-        is: (val) =>['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
+        is: (val) => ['DRIVER', 'RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
         then: () => Yup.string().required('Please select a car type'),
         otherwise: () => Yup.string().nullable(),
     }),
-    // transmissionType: Yup.string().when('serviceType', {
-    //     is: (val) => val === 'DRIVER',
-    //     then: () => Yup.string().required('Transmission Type is required'),
-    //     otherwise: () => Yup.string(),
-    // }),
+    transmissionType: Yup.string().when('serviceType', {
+        is: (val) => val === 'DRIVER',
+        then: () => Yup.string().required('Transmission Type is required'),
+        otherwise: () => Yup.string().nullable(),
+    }),
     tripType: Yup.string().when('serviceType', {
         is: (val) => val == 'DRIVER',
         then: () => Yup.string().required('Trip Type is required'),
@@ -171,7 +171,6 @@ export const ACCOUNT_EDIT_SCHEMA = Yup.object().shape({
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
     source: Yup.string().required('Source is required'),
-    // email: Yup.string().email('Invalid email format').required('Email is required'),
     address: Yup.string().required('Current Address is required'),
     street: Yup.string().required('Street Name is required'),
     thaluk: Yup.string().required('Thaluk is required'),
@@ -207,10 +206,6 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
     address: Yup.string()
         .required('Address is required')
         .min(5, 'Address must be at least 5 characters')
-        // .matches(
-        //     /^[a-zA-Z0-9\s,.-/#]+$/,
-        //     'Address can only contain letters, numbers, spaces, and common symbols (,./#-)'
-        // )
         .test(
             'no-multiple-spaces',
             'Address should not contain multiple consecutive spaces',
@@ -248,41 +243,8 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
         .required('Phone number 2 is required')
         .matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
     transmissionType: Yup.string().required('Transmission Type is required'),
-    // packages: Yup.array().when(['jobType'], {
-    //     is: (jobType) => jobType === 'CAB',
-    //     then: () =>
-    //         Yup.array()
-    //             .of(Yup.string().required('Each package must be selected'))
-    //             .required('At least one package must be selected'),
-    //     otherwise: () => Yup.array().nullable(),
-    // }),
-    // prices: Yup.array().when(['jobType'], {
-    //     is: (jobType) => jobType !== 'CAB',
-    //     then: () =>
-    //         Yup.array()
-    //             .of(
-    //                 Yup.object().shape({
-    //                     price: Yup.number().required('Price is required'),
-    //                     extraPrice: Yup.number().required('Extra price is required'),
-    //                     extraKmPrice: Yup.number().required('Extra KM price is required'),
-    //                     nightCharge: Yup.number().required('Night charge is required'),
-    //                     cancelCharge: Yup.number().required('Cancel charge is required'),
-    //                     extraCabType: Yup.string().required('Cab type is required'),
-    //                 })
-    //             )
-    //             .test(
-    //                 'at-least-one-price',
-    //                 'At least one price must be added',
-    //                 function (prices) {
-    //                     return prices && prices.some(price =>
-    //                         price.price || price.extraPrice || price.extraKmPrice ||
-    //                         price.nightCharge || price.cancelCharge || price.extraCabType
-    //                     );
-    //                 }
-    //             )
-    //             .required('At least one price must be added'),
-    //     otherwise: () => Yup.array().nullable(),
-    // })
+    maritalStatus: Yup.string().required('Marital Status is required'),
+    alternateNumber: Yup.string().required('Alternate Number is required').matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
 });
 
 export const DRIVER_SCHEMA = Yup.object({
@@ -310,10 +272,6 @@ export const DRIVER_SCHEMA = Yup.object({
     address: Yup.string()
         .required('Address is required')
         .min(5, 'Address must be at least 5 characters')
-        // .matches(
-        //     /^[a-zA-Z0-9\s,.-/#]+$/,
-        //     'Address can only contain letters, numbers, spaces, and common symbols (,./#-)'
-        // )
         .test(
             'no-multiple-spaces',
             'Address should not contain multiple consecutive spaces',
@@ -347,26 +305,8 @@ export const DRIVER_SCHEMA = Yup.object({
     phoneNumber2: Yup.string()
         .matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
     transmissionType: Yup.string().required('Transmission Type is required'),
-    // packages: Yup.array()
-    //     .of(Yup.string().required('Each package must be selected'))
-    //     .required('At least one package must be selected')
-    //     .min(1, 'At least one package must be selected'),
-    //wallet: Yup.string().required('Wallet is required'),
-    // prices: Yup.array().of(
-    //     Yup.object().shape({
-    //         price: Yup.number().required('Price is required'),
-    //         extraPrice: Yup.number().required('Extra price is required'),
-    //         extraKmPrice: Yup.number().required('Extra KM price is required'),
-    //         nightCharge: Yup.number().required('Night charge is required'),
-    //         cancelCharge: Yup.number().required('Cancel charge is required'),
-    //         extraCabType: Yup.string().required('Cab type is required'),
-    //     })
-    // ).test('at-least-one-price', 'At least one price must be added', function (prices) {
-    //     return prices.some(price =>
-    //         price.price || price.extraPrice || price.extraKmPrice ||
-    //         price.nightCharge || price.cancelCharge || price.extraCabType
-    //     );
-    // })
+    maritalStatus: Yup.string().required('Marital Status is required'),
+    alternateNumber: Yup.string().required('Alternate Number is required').matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
 });
 
 export const CAB_SCHEMA = Yup.object({
@@ -770,15 +710,7 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
     }),
         
     zone: Yup.string().required("zone is required"),
-    // status: Yup.string().required("Status is required"),
-
-    // validityDays: Yup.number()
-    //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-    //     .when("type", {
-    //         is: (type) => type !== "PAID",
-    //         then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
-    //         otherwise: (schema) => schema.notRequired(),
-    //     }),
+    carType: Yup.string().required("Car Type is required"),
 
 });
 export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
@@ -831,29 +763,16 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
       otherwise: (schema) => schema.notRequired(),
     }),        
     zone: Yup.string().required("zone is required"),
-
-    // validityDays: Yup.number()
-    //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-    //     .when("type", {
-    //         is: (type) => type !== "PAID",
-    //         then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
-    //         otherwise: (schema) => schema.notRequired(),
-    //     }),
+    carType: Yup.string().required("Car Type is required"),
 });
 export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
     serviceType: Yup.string().required('Service Type is required'),
     type: Yup.string().required('Type is required'),
     period: Yup.number().required('Period is required'),
-    price: Yup.number().required('Price is required'),
-    // priceMVP: Yup.number().required('Price MUV is required'),
-    // dropPrice: Yup.number().required('Drop Price is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
-    // cancelCharge: Yup.number().required('Cancel Charge is required'),
     status: Yup.string().required('Status is required'),
     zone: Yup.string().required('Zone is required'),
-    // extraPrice: Yup.number().required('Extra Price is required'),
-    // nightHoursFrom:Yup.time().required('Night Hours From Start 22:00 PM.'),
-    // nightHoursFrom:Yup.time().required('Night Hours To End 06:00 AM.')
+    bookingType:Yup.string().required('Booking Type is required')
 });
 
 export const VERSION_CONTROL_EDIT=Yup.object({

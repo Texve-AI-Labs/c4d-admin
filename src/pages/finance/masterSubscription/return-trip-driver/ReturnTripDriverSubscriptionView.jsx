@@ -7,7 +7,7 @@ import { API_ROUTES } from "@/utils/constants";
 
 const STATUS_TABS = [
   { label: "Active", value: "ACTIVE" },
-  { label: "Inactive", value: "INACTIVE" },
+  // { label: "Inactive", value: "INACTIVE" },
 ];
 
 const getStatusBadgeClass = (status,tier) => {
@@ -133,9 +133,9 @@ export default function ReturnTripDriverSubscriptionView() {
           <table className="w-full min-w-[900px] table-auto">
             <thead>
               <tr>
-                {["Tier","Plan Name", "Service Type", "Eligible", "Status","Zone", "Notes"].map((heading) => (
+                {["Tier","Plan Name", "Service Type", "Eligible", "Status","Notes"].map((heading) => (
                   <th key={heading} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                    <Typography variant="small" className="text-[11px] text-black font-bold uppercase">
+                    <Typography variant="small" className="text-[11px] text-black font-bold uppercase whitespace-nowrap">
                       {heading}
                     </Typography>
                   </th>
@@ -160,11 +160,11 @@ export default function ReturnTripDriverSubscriptionView() {
                     </span>
                   </td>
                   <td className="border-b border-blue-gray-50 py-3 px-5">{formatEligible(row.eligibleForReturnTrip)}</td>
-                  <td className="border-b border-blue-gray-50 py-3 px-5">
+                  {/* <td className="border-b border-blue-gray-50 py-3 px-5">
                     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(row.status)}`}>
                       {row.status || "-"}
                     </span>
-                  </td>
+                  </td> */}
                   <td className="border-b border-blue-gray-50 py-3 px-5">
                     <span className="inline-flex items-center rounded-full border border-blue-gray-200 bg-blue-gray-50 px-3 py-1 text-xs font-semibold text-blue-gray-700">
                       {row.zone || "-"}

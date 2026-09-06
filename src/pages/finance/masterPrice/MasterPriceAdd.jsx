@@ -18,18 +18,23 @@ export function MasterPriceAdd() {
         period: '',
         waitingMins: '',
         waitingCharge: '',
-        dropOnly: '',
-        additionalMins: '',
+        additionalMinCharge:'',
+        additionalMinChargeMVP:'',
+        additionalMinChargeSuv:'',
+        additionalMinChargeSedan:'',
         nightHoursFrom: '00:00',
         nightHoursTo: '00:00',
         nightCharge: '',
         cancelMins: '',
         cancelCharge: '',
         active: "",
-        extraPrice:'',
-        kilometer:'',
+        price:'',
+        priceMVP:'',
+        priceSuv:'',
+        priceSedan:'',
         dropPriceAbove:'',
         freeExtraMinutes:'',
+        bookingType:'',
     };
 
     const fetchGeoData = async () => {
@@ -54,6 +59,8 @@ export function MasterPriceAdd() {
                 period: values.period ,
                 price: values.price,
                 priceMVP: values.priceMVP || 0,
+                priceSuv: values.priceSuv || 0,
+                priceSedan: values.priceSedan || 0,
                 dropPrice: values.dropPrice,
                 nightCharge: values.nightCharge,
                 cancelCharge: Number(values.cancelCharge || 0),
@@ -62,21 +69,20 @@ export function MasterPriceAdd() {
                 waitingCharge: values.waitingCharge || 0,
                 nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom || '00:00:00') ,
                 nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo || '00:00:00') ,
-                extraPrice: values.extraPrice || 0,
-                kilometer: values.kilometer,
                 dropPriceAbove: values.dropPriceAbove,
                 additionalMinCharge: values.additionalMinCharge || 0,
+                additionalMinChargeMVP: values.additionalMinChargeMVP || 0,
+                additionalMinChargeSuv: values.additionalMinChargeSuv || 0,
+                additionalMinChargeSedan: values.additionalMinChargeSedan || 0,
                 freeExtraMinutes: values.freeExtraMinutes || 0,
                 status: 1,
-                extraKmPrice:values.extraKmPrice,
                 zone: values.zone,
+                bookingType:values.bookingType,
             };
             if (values.type === 'Outstation') {
                 masterpriceList['baseFare'] = values.baseFare || 0;
-                masterpriceList['kilometer'] = values.kilometer;
-                masterpriceList['extraKmPrice'] = values.extraKmPrice;
             }
-            console.log('masterpriceList -> ', masterpriceList);
+            // console.log('masterpriceList -> ', masterpriceList);
             let data;
 
             if (values.type === 'Local') {
@@ -99,9 +105,9 @@ export function MasterPriceAdd() {
     }));
 
     return (
-        <div className="p-4">
+        <div className="p-4 bg-white rounded-xl">
 
-            <h2 className="text-2xl font-bold mb-4">Add Master Price List</h2>
+            <h2 className="text-2xl font-bold mb-4">Add Master Price</h2>
             <Formik
                 initialValues={initialValues}
                 validationSchema={MASTERPRICE_ADD_SCHEME}
@@ -114,7 +120,7 @@ export function MasterPriceAdd() {
                         <pre>{JSON.stringify(errors, null, 2)}</pre>
                         <p>Package Debug: {JSON.stringify(values.package, null, 2)}</p> */}
 
-                        <div className="p-4 bg-blue-gray-100 grid grid-cols-2 gap-4">
+                        <div className="p-4  grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Zone</label>
                               <Select
@@ -130,8 +136,6 @@ export function MasterPriceAdd() {
                                 <Field as="select" name="serviceType" className="p-2 w-full rounded-md border-2 border-gray-300">
                                     <option value="">Select Service Type</option>
                                     <option value="DRIVER">Acting Driver</option>
-                                    {/* <option value="RIDES">Rides</option>
-                                    <option value="RENTAL">Rental</option> */}
                                 </Field>
                                 <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
                             </div>
@@ -144,33 +148,82 @@ export function MasterPriceAdd() {
                                 </Field>
                                 <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                             </div>
-
+                               <div>
+                                <label className="text-sm font-medium text-gray-700">Booking Type</label>
+                                <Field as="select" name="bookingType" className="p-2 w-full rounded-md border-2 border-gray-300">
+                                    <option value="">Select Booking Type</option>
+                                    <option value="DROP ONLY">Drop Only</option>
+                                    <option value="ROUND TRIP">Round Trip</option>
+                                </Field>
+                                <ErrorMessage name="bookingType" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Base Hours</label>
+                                <div className="flex items-center gap-2">
+                                     <Field type="number" name="period" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                                <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
+                            </div>
                            
 
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Hours</label>
                                 <div className="flex items-center gap-2">
-                                    <Field type="time" name="nightHoursFrom" className="p-2 rounded border-gray-300" />
+                                    <Field type="time" name="nightHoursFrom" className="p-2 rounded border-2 border-gray-300" />
                                     <span className="px-3">to</span>
-                                    <Field type="time" name="nightHoursTo" className="p-2 rounded border-gray-300" />
+                                    <Field type="time" name="nightHoursTo" className="p-2 rounded border-2 border-gray-300" />
                                 </div>
                             </div>
-                            {values?.serviceType === 'DRIVER' && values?.type === 'Outstation' &&
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Food Charges</label>
                                 <div className="flex items-center gap-2">
-                                     <Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-2" />
+                                     <Field type="number" name="dropPriceAbove" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
-                            }
-                            
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
                                 <div className="flex items-center gap-2">
-                                     <Field type="number" name="freeExtraMinutes" className="w-full text-center border rounded p-2" />
+                                     <Field type="number" name="freeExtraMinutes" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
-                            
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting (mins)</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="waitingMins" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="waitingCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Cancel Mins</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="cancelMins" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Cancel Charge</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="cancelCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Night Charge</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="nightCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            {values?.type === 'Outstation' && ( <>
+                              <div>
+                                <label className="text-sm font-medium text-gray-700">Drop-only charge</label>
+                                <div className="flex items-center gap-2">
+                                    <Field type="number" name="dropPrice" className="w-full text-center border-2 rounded p-2 border-gray-300" />
+                                </div>
+                            </div>
+                            </>)}                                                                         
 
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -182,68 +235,63 @@ export function MasterPriceAdd() {
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
                         </div>
-
-                        {/* Same Beautiful Table as Edit Page */}
                          {values?.type === 'Local' && ( 
                         <div className="overflow-x-auto rounded-lg border border-gray-300 shadow-md mt-8">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
-                                    <tr className="bg-blue-600 text-white">
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Package (Hrs/Kms)</th>
+                                    <tr className="bg-blue-600 text-white whitespace-nowrap">
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Car Type</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price</th>
-                                        {/* <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price (MUV)</th> */}
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Kilometer</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Extra KM Price</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting (mins)</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Waiting Charges Apply After</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Night Charge</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Mins</th>
-                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Cancel Charge</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr className="hover:bg-gray-50">
+                                <tbody className="bg-gray-100">
+                                    {/* 'Mini' */}
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
-                                            <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
+                                            <label className="w-full font-bold text-center rounded p-2">Mini</label>
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="price" className="w-full text-center border rounded p-2" />
-                                            <ErrorMessage name="price" component="div" className="text-red-500 text-xs" />
-                                        </td>
-                                        {/* <td className="px-2 py-3 border">
-                                            <Field type="number" name="priceMVP" className="w-full text-center border rounded p-2" />
-                                            <ErrorMessage name="priceMVP" component="div" className="text-red-500 text-xs" />
-                                        </td> */}
-                                        <td className="px-2 py-3 border">
-                                            <Field type="number" name="kilometer" className="w-full text-center border rounded p-2" />
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-2" />
                                         </td>
+                                    </tr>
+                                    {/* 'Sedan' */}
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="extraPrice" className="w-full text-center border rounded p-2" />
+                                            <label className="w-full font-bold text-center rounded p-2">Sedan</label>
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-2" />
-                                        </td>
-
-                                        <td className="px-2 py-3 border">
-                                            <Field type="number" name="waitingMins" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="priceSedan" className="w-full text-center border rounded p-2" />
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="waitingCharge" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="additionalMinChargeSedan" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                    </tr>
+                                    {/* 'Suv' */}
+                                    <tr className=" whitespace-nowrap">
+                                        <td className="px-2 py-3 border">
+                                            <label className="w-full font-bold text-center rounded p-2">Suv</label>
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="nightCharge" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="priceSuv" className="w-full text-center border rounded p-2" />
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="cancelMins" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="additionalMinChargeSuv" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                    </tr>
+                                    {/* 'MVP' */}
+                                    <tr className=" whitespace-nowrap">
+                                        <td className="px-2 py-3 border">
+                                            <label className="w-full font-bold text-center rounded p-2">Muv</label>
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="cancelCharge" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="priceMVP" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinChargeMVP" className="w-full text-center border rounded p-2" />
                                         </td>
                                     </tr>
                                 </tbody>
@@ -254,30 +302,17 @@ export function MasterPriceAdd() {
                         <div className="overflow-x-auto rounded-lg border border-gray-300 shadow-md mt-8">
                             <table className="min-w-full bg-white border border-gray-300 text-center">
                                 <thead>
-                                    <tr className="bg-blue-600 text-white">
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Hours</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base KM</th>
+                                    <tr className="bg-blue-600 text-white whitespace-nowrap">
+                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra Minute Charge</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Extra KM rate</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting (mins)</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Waiting Charges Apply After</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Mins</th>
-                                    <th className="px-4 py-3 text-xs font-bold text-white uppercase border border-gray-300">Cancel Charge</th>
-                                   
-                                    {/* <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Food Charges</th> */}
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Night Charges</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Drop-only charge</th>
+                                    <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr className="hover:bg-gray-50">
+                                <tbody className="bg-gray-100">
+                                    {/* Mini */}
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="period" className="w-full text-center border rounded p-2"  />
-                                            <ErrorMessage name="period" component="div" className="text-red-500 text-xs" />
-                                        </td>
-                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="kilometer" className="w-full text-center border rounded p-2" />
+                                            <label className="w-full font-bold text-center rounded p-2">Mini</label>
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="price" className="w-full text-center border rounded p-2" />
@@ -286,35 +321,45 @@ export function MasterPriceAdd() {
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-2" />
                                         </td>
-                                        
+                                    </tr>
+                                    {/* Sedan */}
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="extraKmPrice" className="w-full text-center border rounded p-2" />
+                                            <label className="w-full font-bold text-center rounded p-2">Sedan</label>
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="waitingMins" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="priceSedan" className="w-full text-center border rounded p-2" />
+                                            <ErrorMessage name="priceSedan" component="div" className="text-red-500 text-xs" />
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="waitingCharge" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="additionalMinChargeSedan" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                    </tr>
+                                    {/* Suv */}
+                                    <tr className=" whitespace-nowrap">
+                                        <td className="px-2 py-3 border">
+                                            <label className="w-full font-bold text-center rounded p-2">Suv</label>
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="cancelMins" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="priceSuv" className="w-full text-center border rounded p-2" />
+                                            <ErrorMessage name="priceSuv" component="div" className="text-red-500 text-xs" />
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="cancelCharge" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="additionalMinChargeSuv" className="w-full text-center border rounded p-2" />
                                         </td>
-
-                                        {/* <td className="px-2 py-3 border">
-                                            <Field type="number" name="dropPriceAbove" className="w-full text-center border rounded p-2" />
-                                        </td> */}
-                                       
-
+                                    </tr>
+                                    {/* MVP */}
+                                    <tr className=" whitespace-nowrap">
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="nightCharge" className="w-full text-center border rounded p-2" />
+                                            <label className="w-full font-bold text-center rounded p-2">Muv</label>
                                         </td>
                                         <td className="px-2 py-3 border">
-                                            <Field type="number" name="dropPrice" className="w-full text-center border rounded p-2" />
+                                            <Field type="number" name="priceMVP" className="w-full text-center border rounded p-2" />
+                                            <ErrorMessage name="priceMVP" component="div" className="text-red-500 text-xs" />
                                         </td>
-                                      
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinChargeMVP" className="w-full text-center border rounded p-2" />
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

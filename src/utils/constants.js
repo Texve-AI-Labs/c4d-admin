@@ -18,6 +18,8 @@ export const getBaseUrl = () => {
 }
 export const DISABLE_GLOBAL_AUTOCOMPLETE = true; // true -> off false -> on
 
+export const PLAN_GROUP_CAR_TYPES = ['Mini', 'Sedan', 'SUV', 'MUV'];
+
 
 export const FUTURE_FLAG = {
     DOCUMENT_DETAILS_LIST: false,
@@ -877,6 +879,7 @@ export const API_ROUTES = {
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
     'ACTING_DRIVER_EDIT_OUTSTATION_PACKAGE': '/update-outstation-package',
+    'POST_ACTING_DRIVER_ZONE_PACKAGES': '/acting-driver/zone-packages',
     'GET_PACKAGE_DETAIL': '/package-list/',
     'GET_RECEIPT_LIST': '/admin/receipt',
     'GET_INVOICE_LIST': '/admin/list-invoices',
@@ -1015,6 +1018,7 @@ export const API_ROUTES = {
     'UPDATE_CASH_BACK':'/cashback-rules/:settingId',
     'GET_CASH_BACK':'/cashback-rules',
     'DRIVER_KM_INCENTIVE_RULES':'/admin/driver-km-incentive/rules',
+    'DRIVER_DISPATCH_ZONE_CONFIGS':'/driver-dispatch-zone-configs',
     "GET_TRANSACTIONS_LIST":'/transactions',
     "GET_TRANSACTIONS_CHART":'/transactions/chart',
     "GET_BOOKING_FUNNEL": '/admin/booking-funnel',
@@ -1056,6 +1060,11 @@ export const API_ROUTES = {
     'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
     'EXPORT_DALIY_SLOT':'/admin/daily/slot/export',
+    'GET_ADMIN_ACTING_DRIVER_SLOT_RULES':'/acting-driver/slot-rules',
+    'POST_ADMIN_ACTING_DRIVER_SLOT_RULES':'/acting-driver/slot-rules',
+    'UPDATE_ADMIN_ACTING_DRIVER_SLOT_RULES':'/acting-driver/slot-rules',
+    'GET_ADMIN_ACTING_DRIVER_DAILY_SLOTS':'/admin/acting-driver/daily-slots',
+    'POST_ADMIN_ACTING_DRIVER_DAILY_SLOTS':'/acting-driver/daily-slots/process',
     'GET_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'POST_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'GET_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
@@ -1117,7 +1126,14 @@ export const API_ROUTES = {
     // 'ADD_ORDER': '/orders/add',
     // 'UPDATE_ORDER': '/orders/update',
     'GET_ORDER_BY_ID': '/orders/:id',
-    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote'
+    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote',
+
+    //service-contents
+    'GET_SERVICE_CONTENTS': '/admin/service-contents',
+    'GET_SERVICE_CONTENT_BY_ID': '/admin/service-contents',
+    'POST_SERVICE_CONTENT': '/admin/service-contents',
+    'PUT_SERVICE_CONTENT': '/admin/service-contents',
+    'DELETE_SERVICE_CONTENT': '/admin/service-contents',
 
 };
 

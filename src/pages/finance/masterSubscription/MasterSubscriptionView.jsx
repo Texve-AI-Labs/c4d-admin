@@ -199,6 +199,7 @@ export function MasterSubscriptionView() {
                                         {[
                                             "Service Type",
                                             "Plan Group",
+                                            "Car Type",
                                             "Assignment Type",
                                             "Assignment Value",
                                             "Zone",
@@ -237,6 +238,9 @@ export function MasterSubscriptionView() {
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {group.name || '-'}
+                                                </td>
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
+                                                    {group.carType || '-'}
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {formatAssignmentType(group.assignments?.[0]?.assignmentType)}

@@ -94,11 +94,15 @@ import SkipLogs from "./pages/marketing/skipLogs";
 import ExternalPromotionsList from "./pages/marketing/externalPromotions/list";
 import ExternalPromotionsAdd from "./pages/marketing/externalPromotions/add";
 import ExternalPromotionsEdit from "./pages/marketing/externalPromotions/edit";
+import CustomerWhatsappPage from "./pages/customerWhatsapp";
 import InstantReward from "./pages/vendor/instantReward";
 import ReferralRuleList from "./pages/finance/referralRules/list";
 import ReferralRuleAdd from "./pages/finance/referralRules/add";
 import ReferralRuleEdit from "./pages/finance/referralRules/edit";
 import ReferralCreditLogsList from "./pages/finance/referralRules/logs";
+import ServiceContentList from "./pages/admin/serviceContents/list";
+import ServiceContentAdd from "./pages/admin/serviceContents/add";
+import ServiceContentEdit from "./pages/admin/serviceContents/edit";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
@@ -188,6 +192,10 @@ import DriverBonusList from "./pages/finance/driverBonus/list";
 import DriverBonusAdd from "./pages/finance/driverBonus/add";
 import DriverBonusEdit from "./pages/finance/driverBonus/edit";
 import DriverBonusDetails from "./pages/finance/driverBonus/details";
+import DriverRadiusBonusList from "./pages/finance/driverRadiusBonus/list";
+import DriverRadiusBonusAdd from "./pages/finance/driverRadiusBonus/add";
+import DriverRadiusBonusEdit from "./pages/finance/driverRadiusBonus/edit";
+import DriverRadiusBonusDetails from "./pages/finance/driverRadiusBonus/details";
 import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
@@ -201,6 +209,13 @@ import ParcelSlotConfigEdit from "./pages/finance/parcelSlotConfig/edit";
 import ParcelSlotConfigDetails from "./pages/finance/parcelSlotConfig/details";
 import ParcelDailySlotsList from "./pages/finance/parcelDailySlots/list";
 import ParcelDailySlotsDetails from "./pages/finance/parcelDailySlots/details";
+import ActingDriverSlotConfigList from "./pages/finance/actingDriverSlotConfig/list";
+import ActingDriverSlotRuleForm from "./pages/finance/actingDriverSlotConfig/SlotRuleForm";
+import ActingDriverSlotConfigEdit from "./pages/finance/actingDriverSlotConfig/edit";
+import ActingDriverSlotConfigDetails from "./pages/finance/actingDriverSlotConfig/details";
+import ActingDriverDailySlotsList from "./pages/finance/actingDriverDailySlots/list";
+import ActingDriverDailySlotsAdd from "./pages/finance/actingDriverDailySlots/add";
+import ActingDriverDailySlotsDetails from "./pages/finance/actingDriverDailySlots/details";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
 import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
@@ -256,6 +271,7 @@ import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
 import GeoIntelligence from "./pages/geoIntelligence";
+import WhatsAppDriverPage from "./pages/whatsappDriver/WhatsAppDriverPage";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -470,6 +486,22 @@ export const routes = [
         name: "external promotions edit",
         path: "/vendors/external-promotions/edit/:id",
         element: <ExternalPromotionsEdit />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "customer whatsapp",
+        path: "/customer-whatsapp",
+        element: <CustomerWhatsappPage />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "whatsapp conversation",
+        path: "/whatsapp-conversation",
+        element: <CustomerWhatsappPage />,
         display: false,
         permission: "Marketing",
       },
@@ -1676,6 +1708,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus List",
+        path: "/finance/driver-radius-bonus",
+        element: <DriverRadiusBonusList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Add",
+        path: "/finance/driver-radius-bonus/add",
+        element: <DriverRadiusBonusAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Edit",
+        path: "/finance/driver-radius-bonus/edit/:id",
+        element: <DriverRadiusBonusEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Details",
+        path: "/finance/driver-radius-bonus/details/:id",
+        element: <DriverRadiusBonusDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Master Price Add",
         path: "/finance/master-price/driver-add",
         element: <MasterPriceAdd />,
@@ -1836,6 +1900,62 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config",
+        path: "/finance/acting-driver-slot-config",
+        element: <ActingDriverSlotConfigList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Add",
+        path: "/finance/acting-driver-slot-config/add",
+        element: <ActingDriverSlotRuleForm mode="add" />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Edit",
+        path: "/finance/acting-driver-slot-config/edit/:id",
+        element: <ActingDriverSlotConfigEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Details",
+        path: "/finance/acting-driver-slot-config/details/:id",
+        element: <ActingDriverSlotConfigDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slots",
+        path: "/finance/acting-driver-daily-slots",
+        element: <ActingDriverDailySlotsList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slot Add",
+        path: "/finance/acting-driver-daily-slots/add",
+        element: <ActingDriverDailySlotsAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slot Details",
+        path: "/finance/acting-driver-daily-slots/details/:id",
+        element: <ActingDriverDailySlotsDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Receipt",
         path: "/finance/receipt",
         element: <ReceiptList />,
@@ -1920,6 +2040,30 @@ export const routes = [
         path: "/admin/geo-markings",
         element: <GeoMarkings />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents",
+        path: "/admin/service-contents",
+        element: <ServiceContentList />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents add",
+        path: "/admin/service-contents/add",
+        element: <ServiceContentAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents edit",
+        path: "/admin/service-contents/edit/:id",
+        element: <ServiceContentEdit />,
+        display: false,
         permission: "Users",
       },
       {
@@ -2325,6 +2469,14 @@ export const routes = [
         path: "/driverengagement/audit-logs",
         element: <DriverEngagementAuditLogs />,
         display: false,
+        permission: "Driver Engagement",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "WhatsApp Driver",
+        path: "/whatsapp-driver",
+        element: <WhatsAppDriverPage />,
+        display: true,
         permission: "Driver Engagement",
       },
        {

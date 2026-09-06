@@ -17,6 +17,7 @@ const FINANCE_GROUPS = [
     items: [
       { label: "Master Subscription Table", path: "/dashboard/finance/master-subscription" },
       { label: "Joining Bonus", path: "/dashboard/finance/joining-bonus" },
+      { label: "Driver Radius & Bonus Configuration", path: "/dashboard/finance/driver-radius-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
     ],
@@ -38,6 +39,8 @@ const FINANCE_GROUPS = [
       { label: "Parcel Commission", path: "/dashboard/finance/parcel-commission" },
       { label: "Parcel Slot Config", path: "/dashboard/finance/parcel-slot-config", requiredPermission: "Users" },
       { label: "Parcel Daily Slots", path: "/dashboard/finance/parcel-daily-slots", requiredPermission: "Users" },
+      { label: "Acting Driver Slot Config", path: "/dashboard/finance/acting-driver-slot-config", requiredPermission: "Users" },
+      { label: "Acting Driver Daily Slots", path: "/dashboard/finance/acting-driver-daily-slots", requiredPermission: "Users" },
       { label: "Withdrawal Transaction", path: "/dashboard/finance/wallet-transaction", requiredPermission: "Users" },
       { label: "Withdrawal Rules", path: "/dashboard/finance/withdrawal-rules", requiredPermission: "Users" },
     ],
@@ -62,6 +65,12 @@ const ROUTE_MATCHERS = {
     "/finance/master-subscription/log",
   ],
   "Joining Bonus": ["/dashboard/finance/joining-bonus"],
+  "Driver Radius & Bonus Configuration": [
+    "/dashboard/finance/driver-radius-bonus",
+    "/dashboard/finance/driver-radius-bonus/add",
+    "/dashboard/finance/driver-radius-bonus/edit",
+    "/dashboard/finance/driver-radius-bonus/details",
+  ],
   "Master Price Table": ["/finance/master-price"],
   "Instant Reward": ["/finance/instant-reward"],
   "Referral Rules": ["/finance/referral-rules"],
@@ -73,6 +82,8 @@ const ROUTE_MATCHERS = {
   "Parcel Commission": ["/finance/parcel-commission"],
   "Parcel Slot Config": ["/finance/parcel-slot-config", "/finance/parcel-slot-config/add", "/finance/parcel-slot-config/edit", "/finance/parcel-slot-config/details"],
   "Parcel Daily Slots": ["/finance/parcel-daily-slots", "/finance/parcel-daily-slots/details"],
+  "Acting Driver Slot Config": ["/finance/acting-driver-slot-config", "/finance/acting-driver-slot-config/add", "/finance/acting-driver-slot-config/edit", "/finance/acting-driver-slot-config/details"],
+  "Acting Driver Daily Slots": ["/finance/acting-driver-daily-slots", "/finance/acting-driver-daily-slots/add", "/finance/acting-driver-daily-slots/details"],
   "Withdrawal Rules": ["/finance/withdrawal-rules", "/finance/withdrawal-rules/add", "/finance/withdrawal-rules/edit"],
   "Withdrawal Transaction": ["/finance/wallet-transaction"],
   "Return Trip Driver Master Subscription Table": ["/finance/master-subscription/return-trip-driver", "/finance/master-subscription/return-trip-driver/add", "/finance/master-subscription/return-trip-driver/edit", "/finance/master-subscription/return-trip-driver/details"],
@@ -86,15 +97,37 @@ const matchesRouteFamily = (pathname, label, path) => {
   return families.some((familyPath) => pathname.startsWith(normalizePath(familyPath)));
 };
 
+const matchesFinanceGroup = (pathname, group) =>
+  group.items.some(({ label, path }) => {
+    const normalizedPathname = normalizePath(pathname);
+    const normalizedItemPath = normalizePath(path);
+    return (
+      normalizedPathname.startsWith(normalizedItemPath) ||
+      matchesRouteFamily(normalizedPathname, label, path)
+    );
+  });
+
 const getFinanceGroupForPath = (groups, pathname) =>
-  groups.find((group) => group.items.some(({ label, path }) => matchesRouteFamily(pathname, label, path)));
+  groups.find((group) => matchesFinanceGroup(pathname, group));
 
 function FinanceSubmenu({ permissions = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
   const pathname = location.pathname.toLowerCase();
 
-  const isMainItemActive = (label, path, navActive) => navActive || matchesRouteFamily(pathname, label, path);
+  const isMainItemActive = (label, path, navActive) => {
+    // The master subscription path is a prefix of the return-trip route.
+    const normalizedPathname = normalizePath(pathname);
+    // Keep those two navigation items mutually exclusive.
+    if (
+      label === "Master Subscription Table" &&
+      normalizedPathname.startsWith("/finance/master-subscription/return-trip-driver")
+    ) {
+      return false;
+    }
+
+    return navActive || matchesRouteFamily(pathname, label, path);
+  };
 
   const getItemClasses = (isActive) =>
     `${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} ${

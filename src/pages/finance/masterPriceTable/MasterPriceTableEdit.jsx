@@ -171,8 +171,8 @@ const PriceEdit = () => {
     };
 
     return (
-        <div className="p-4 mx-auto">
-            <h2 className="text-2xl font-bold mb-4">Edit Rides Pricing Details</h2>
+        <div className="p-4 mx-auto bg-white">
+            <h2 className="text-2xl font-bold mb-4">Rides Pricing Edit</h2>
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
                 {({ handleSubmit, setFieldValue, isValid, dirty, values }) => (
                     <Form className="space-y-4">
@@ -253,15 +253,15 @@ const PriceEdit = () => {
                             </div> */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
-                                <Field type="number" name="surchargePercentage" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="number" name="surchargePercentage" className="p-2 w-full rounded-md border-2 border-gray-300" />
                             </div>
                              <div>
                                 <label className="text-sm font-medium text-gray-700">Base Km</label>
-                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-2 border-gray-300" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">freeExtraMinutes</label>
-                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2 border-gray-300" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Hours (10:00 PM - 06:00 AM)</label>
@@ -271,7 +271,7 @@ const PriceEdit = () => {
                                         name="nightHoursFrom"
                                         min="22:00"
                                         max="23:59"
-                                        className="p-2 w-full rounded-l-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-l-md border-2 border-gray-300 shadow-sm"
                                     />
                                     <span className="px-3 py-2 bg-gray-100 border-t border-b border-gray-300">to</span>
                                     <Field
@@ -279,7 +279,7 @@ const PriceEdit = () => {
                                         name="nightHoursTo"
                                         min="05:00"
                                         max="08:00"
-                                        className="p-2 w-full rounded-r-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-r-md border-2 border-gray-300 shadow-sm"
                                     />
                                 </div>
                                 <ErrorMessage name="nightHoursFrom" component="div" className="text-red-500 text-sm" />
@@ -287,25 +287,25 @@ const PriceEdit = () => {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
-                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2 border-gray-300" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
-                                <Field type="number" name="cancellationMins" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="number" name="cancellationMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
-                                <Field type="number" name="cancellationCharge" className="mt-1 p-3 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="cancellationCharge" className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancellationCharge" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
-                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300" />
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
                                 <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
-                                <Field type="number" name="waitingCharge" className="mt-1 p-3 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="waitingCharge" className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-xs mt-1" />
                             </div>
                            

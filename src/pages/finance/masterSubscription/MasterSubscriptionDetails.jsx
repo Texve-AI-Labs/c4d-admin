@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { Button, Switch } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES, ColorStyles } from "@/utils/constants";
+import { API_ROUTES, ColorStyles, PLAN_GROUP_CAR_TYPES } from "@/utils/constants";
 import { isSuperUserRole } from "@/utils/roleUtils";
 import { MasterSubscriptionLogTable } from "./MasterSubscriptionLogTable";
 
@@ -40,6 +40,7 @@ const MasterSubscriptionDetails = () => {
         effectiveTo: "",
         isDefault: false,
         zone: "",
+        carType: "",
         // plans list
         plans: [],
         assignments: [],
@@ -75,6 +76,7 @@ const MasterSubscriptionDetails = () => {
                         zone: group.zone || "",
                         description: group.description || "",
                         serviceType: group.serviceType || "",
+                        carType: group.carType || group.planGroup?.carType || "",
                         applicableEntity: normalizeApplicableEntity(group.applicableEntity),
                         assignmentType: group.assignments?.[0]?.assignmentType || "",
                         assignmentValue: group.assignments?.[0]?.assignmentValue || "",
@@ -201,7 +203,7 @@ const MasterSubscriptionDetails = () => {
                         {/* Plan Group (same fields as Add page) */}
                         <div className="p-4 border-2 rounded-lg mb-6">
                             {/* <h3 className="text-lg font-semibold mb-4">Plan Group</h3> */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-6">
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Assignment Type</label>
                                     <Field as="select" name="assignmentType" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -268,6 +270,15 @@ const MasterSubscriptionDetails = () => {
                                     <Field type="text" name="zone" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 </div>
                                 <div>
+                                    <label className="text-sm font-medium text-gray-700">Car Type</label>
+                                    <Field as="select" name="carType" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                                        <option value="">Select Car Type</option>
+                                        {PLAN_GROUP_CAR_TYPES.map((carType) => (
+                                            <option key={carType} value={carType}>{carType}</option>
+                                        ))}
+                                    </Field>
+                                </div>
+                                <div>
                                     <label className="text-sm font-medium text-gray-700">Effective From</label>
                                     <Field type="datetime-local" name="effectiveFrom" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 </div>
@@ -289,11 +300,11 @@ const MasterSubscriptionDetails = () => {
                         <div className="mt-6 p-4 bg-white border-2 rounded-lg">
                             <h3 className="text-lg font-semibold mb-4">Plans</h3>
                             {Array.isArray(values.plans) && values.plans.length > 0 ? (
-                                <div className="space-y-4">
+                                <div className="space-y-4 overflow-x-auto">
                                     {values.plans.map((plan, index) => (
                                         <div
                                             key={plan.id || index}
-                                            className="grid grid-cols-9 gap-4  rounded-lg p-3 bg-white"
+                                            className="grid min-w-[1350px] grid-cols-9 gap-6 rounded-lg p-3 bg-white"
                                         >
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Plan Name</label>

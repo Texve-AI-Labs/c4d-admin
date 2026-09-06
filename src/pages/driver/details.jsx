@@ -83,7 +83,9 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
         reference2: driver?.result?.reference2 || "",
         phoneNumber2: driver?.result?.reference2_phone ? driver?.result?.reference2_phone.replace(/^(\+91)/, '') : "",
         transmissionType: driver?.result?.transmissionType || "",
-        packages: driver?.result?.packages || ""
+        packages: driver?.result?.packages || "",
+        maritalStatus: driver?.result?.maritalStatus || "",
+        alternateNumber: driver?.result?.alternateNumber|| "",
     };
 
     const getDocumentByType = (type) => {
@@ -312,6 +314,20 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
                                             <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
                                             <Field type="text" name="pincode" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200" />
                                             <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="maritalStatus" className="text-sm font-medium text-gray-700">Marital Status</label>
+                                            <Field as="select" name="maritalStatus" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200">
+                                                <option value="">Select Marital Status</option>
+                                                <option value="SINGLE">Single</option>
+                                                <option value="MARRIED">Married</option>
+                                            </Field>
+                                            <ErrorMessage name="maritalStatus" component="div" className="text-red-500 text-sm" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="alternateNumber" className="text-sm font-medium text-gray-700">Alternate Number</label>
+                                            <Field type="text" name="alternateNumber" disabled className="p-2 w-full rounded-md border-gray-300 border bg-gray-200" />
+                                            <ErrorMessage name="alternateNumber" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
                                             <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>

@@ -253,7 +253,7 @@ useEffect(() => {
     };
 
     return (
-        <div className="p-4 mx-auto">
+        <div className="p-4 mx-auto bg-white">
             {alert && (
                 <div className='mb-2'>
                     <Alert color={alert.color} className='py-3 px-6 rounded-xl'>
@@ -301,13 +301,13 @@ useEffect(() => {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Base Km</label>
-                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="baseKm" component="div" className="text-red-500 text-sm" />
                             </div>
                             {values.type !== 'Outstation' && (<>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Package KM</label>
-                                <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="kilometer" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="kilometer" component="div" className="text-red-500 text-sm" />
                             </div>
                             {/* <div>
@@ -318,7 +318,7 @@ useEffect(() => {
                             </>)}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Free Extra Minutes</label>
-                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="freeExtraMinutes" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
@@ -339,7 +339,7 @@ useEffect(() => {
                             </div>} */}
                             {values?.type === 'Outstation' && <div>
                                 <label className="text-sm font-medium text-gray-700">Driver Charge</label>
-                                <Field type="number" name="driverCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="driverCharge" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="driverCharge" component="div" className="text-red-500 text-sm" />
                             </div>}
                             <div>
@@ -350,7 +350,7 @@ useEffect(() => {
                                         name="nightHoursFrom"
                                         min="22:00"
                                         max="23:59"
-                                        className="p-2 w-full rounded-l-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-l-md border-2 border-gray-300 shadow-sm"
                                     />
                                     <span className="px-3 py-2 bg-gray-100 border-t border-b border-gray-300">to</span>
                                     <Field
@@ -358,7 +358,7 @@ useEffect(() => {
                                         name="nightHoursTo"
                                         min="05:00"
                                         max="08:00"
-                                        className="p-2 w-full rounded-r-md border-gray-300 shadow-sm"
+                                        className="p-2 w-full rounded-r-md border-2 border-gray-300 shadow-sm"
                                     />
                                 </div>
                                 <ErrorMessage name="nightHoursFrom" component="div" className="text-red-500 text-sm" />
@@ -366,27 +366,27 @@ useEffect(() => {
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
-                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="nightCharge" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
-                                <Field type="number" name="cancelMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="cancelMins" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancelMins" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
-                                <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="cancelCharge" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="cancelCharge" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
-                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
-                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                <Field type="number" name="waitingCharge" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-sm" />
                             </div>                            
                         </div>
@@ -427,7 +427,7 @@ useEffect(() => {
           )}
         </tr>
       </thead>
-      <tbody>
+      <tbody className='bg-gray-100'>
         {/* Mini */}
         <tr>
           <td className="border p-2 font-semibold">Mini</td>
@@ -1012,7 +1012,7 @@ useEffect(() => {
           <th>Driver Cancellation Charge</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody className='bg-gray-100'>
         <tr>
           <td className="border p-2">
             <Field

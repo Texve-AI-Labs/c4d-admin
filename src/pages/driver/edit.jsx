@@ -233,6 +233,8 @@ const DriverEdit = () => {
         jobType: driverVal?.result?.jobType || "",
         source: driverVal?.result?.source || "",
         serviceType: driverVal?.result?.serviceType || "",
+        maritalStatus: driverVal?.result?.maritalStatus || "",
+        alternateNumber: driverVal?.result?.alternateNumber || ""
     };
     
     const [showBlockedReason, setShowBlockedReason] = useState(false);
@@ -358,6 +360,8 @@ const [blockedReason, setBlockedReason] = useState('');
                 driverId: id,
                 source: values.source,
                 serviceType: values.serviceType,
+                maritalStatus: values.maritalStatus,
+                alternateNumber: values.alternateNumber || "",
             };
             
             let driverData = { driverDetails }
@@ -702,7 +706,7 @@ const [blockedReason, setBlockedReason] = useState('');
         return pincodeObj ? pincodeObj.long_name : "";
     };
 
-    const handleGoogleAddressSelect = (addressText, place) => {
+    const handleGoogleAddressSelect = (setFieldValue, addressText, place) => {
         const resolvedAddress =
             addressText ||
             place?.formatted_address ||
@@ -847,13 +851,6 @@ const [blockedReason, setBlockedReason] = useState('');
                             </div>
                         
                            
-
-                            
-                            {/* <div>
-                                <label htmlFor="driverExperience" className="text-sm font-medium text-gray-700">Driver Experience</label>
-                                <Field type="text" name="driverExperience" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="driverExperience" component="div" className="text-red-500 text-sm my-1" />
-                            </div> */}
                             <div>
                                 <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
                                 <Field type="tel" name="phoneNumber" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
@@ -926,24 +923,6 @@ const [blockedReason, setBlockedReason] = useState('');
                                         />
                                         <span className="ml-2">Acting Driver</span>
                                     </label>
-                                    {/* <label className="inline-flex items-center">
-                                        <Field
-                                            type="radio"
-                                            name="serviceType"
-                                            value="DRIVER_WITH_CAB"
-                                            className="form-radio"
-                                        />
-                                        <span className="ml-2">Driver With Vehicle</span>
-                                    </label>
-                                    <label className="inline-flex items-center">
-                                        <Field
-                                            type="radio"
-                                            name="serviceType"
-                                            value="OWNER"
-                                            className="form-radio"
-                                        />
-                                        <span className="ml-2">OWNER</span>
-                                    </label> */}
                                 </div>
                                 <ErrorMessage
                                     name="serviceType"
@@ -961,7 +940,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                             form={form}
                                             suggestions={addressSuggestions}
                                             onSearch={searchLocations}
-                                            onSelect={handleGoogleAddressSelect}
+                                            onSelect={(addressText, place) => handleGoogleAddressSelect(setFieldValue, addressText, place)}
                                         />
                                     )}
                                 </Field>
@@ -1097,6 +1076,20 @@ const [blockedReason, setBlockedReason] = useState('');
                                     <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
                                     <Field type="text" name="pincode" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                     <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
+                                </div>
+                                <div>
+                                    <label htmlFor="maritalStatus" className="text-sm font-medium text-gray-700">Marital Status</label>
+                                    <Field as="select" name="maritalStatus" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
+                                        <option value="">Select Marital Status</option>
+                                        <option value="SINGLE">Single</option>
+                                        <option value="MARRIED">Married</option>
+                                    </Field>
+                                    <ErrorMessage name="maritalStatus" component="div" className="text-red-500 text-sm" />
+                                </div>
+                                <div>
+                                    <label htmlFor="alternateNumber" className="text-sm font-medium text-gray-700">Alternate Number</label>
+                                    <Field type="text" name="alternateNumber" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                    <ErrorMessage name="alternateNumber" component="div" className="text-red-500 text-sm my-1" />
                                 </div>
                                 <div>
                                     <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>

@@ -105,6 +105,7 @@ const getAdminDiscountUpdatedTs = (item = {}) =>
 const Booking = (props) => {
     const [loading, setLoading] = useState(false);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [driverPackageNotice, setDriverPackageNotice] = useState(null);
     const [selectedPackagePeriod, setSelectedPackagePeriod] = useState('');
     const [selectedPackageId, setSelectedPackageId] = useState('');
     const [bookingTimes, setBookingTimes] = useState([]);
@@ -395,8 +396,9 @@ const Booking = (props) => {
         }
     }, [params, navigate, location.pathname]);
 
-    const getPackageListDetails = useCallback(async (serviceType, zone) => {
+const getPackageListDetails = useCallback(async (serviceType, zone) => {
   try {
+    if (serviceType === 'DRIVER') setDriverPackageNotice(null);
     // console.log('Fetching packages with:', { serviceType, zone });
 	    if (!serviceType) {
 	      setPackageTypeSelectedData([]);
@@ -425,10 +427,48 @@ const Booking = (props) => {
       return;
     }
 
-    const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
-      serviceType: mappedServiceType,
+    const packageType = currentPackageType || 'Local';
+    const isDriverService = mappedServiceType === 'DRIVER';
+    if (isDriverService && (!pickupLocation?.lat || !pickupLocation?.lng || !dropLocation?.lat || !dropLocation?.lng)) {
+    //   console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
+    //     pickupLocation,
+    //     dropLocation,
+    //     packageType,
+    //   });
+      setPackageTypeSelectedData([]);
+      setLuggageCapacityMap({});
+      return;
+    }
+    const driverPackagePayload = {
+      serviceType: 'DRIVER',
+      bookingType: packageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY',
+      packageType: packageType.toUpperCase(),
+      pickupLat: pickupLocation?.lat,
+      pickupLong: pickupLocation?.lng,
+      dropLat: dropLocation?.lat,
+      dropLong: dropLocation?.lng,
       zone: zone || '',
-    });
+      source: 'ROOTCABS WEBSITE',
+    };
+    // if (isDriverService) {
+    //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+    // }
+    const data = isDriverService
+      ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
+      : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+          serviceType: mappedServiceType,
+          zone: zone || '',
+        });
+    if (isDriverService) {
+      //   console.log('[DRIVER PACKAGE LOOKUP] response:', data);
+      const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
+      if (notice?.title || notice?.message) {
+        setDriverPackageNotice({
+          title: notice?.title || 'Unable to load packages',
+          message: notice?.message || 'No packages are available for the selected locations.',
+        });
+      }
+    }
 
     // console.log('Raw API response:', JSON.stringify(data, null, 2));
 
@@ -437,16 +477,29 @@ const Booking = (props) => {
       setLuggageCapacityMap(data?.luggageCapacity || {});
     //   console.log('Package list fetched:', data.data);
     } else {
+      if (isDriverService) {
+        const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
+        setDriverPackageNotice({
+          title: notice?.title || 'Unable to load packages',
+          message: notice?.message || data?.message || 'No packages are available for the selected locations.',
+        });
+      }
       console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
       setPackageTypeSelectedData([]);
       setLuggageCapacityMap({});
     }
   } catch (error) {
+    if (serviceType === 'DRIVER') {
+      setDriverPackageNotice({
+        title: 'Unable to load packages',
+        message: error?.response?.data?.message || error?.message || 'Unable to load packages for the selected locations.',
+      });
+    }
     console.error('Error fetching package list:', error.message || error);
     setPackageTypeSelectedData([]);
     setLuggageCapacityMap({});
   }
-}, []);
+}, [currentPackageType, dropLocation, pickupLocation]);
 
 useEffect(() => {
 //   console.log('useEffect for package list:', { selectedAreaId, currentServiceType, currentPackageType });
@@ -463,7 +516,7 @@ useEffect(() => {
   if (params?.bookingDetails?.packageType === 'Outstation' && params?.bookingDetails?.fromDate && params?.bookingDetails?.toDate) {
     setRange({ startDate: params?.bookingDetails?.fromDate, endDate: params?.bookingDetails?.toDate });
   }
-}, [selectedAreaId, currentServiceType, currentPackageType, getPackageListDetails, params, serviceAreas]);
+}, [selectedAreaId, currentServiceType, currentPackageType, dropLocation, getPackageListDetails, params, pickupLocation, serviceAreas]);
     const handleTypeChange = (type) => {
         setBookingType(type);
     };
@@ -585,7 +638,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         const isDriverService = values?.serviceType === 'DRIVER';
         const driverPackageType = isDriverService
             ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
-            : 'Outstation';
+            : (values?.packageTypeSelected || 'Outstation');
         const driverBookingType = isDriverService
             ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
             : (values?.tripType ? values.tripType.toUpperCase() : '');
@@ -598,7 +651,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             packageType: driverPackageType,
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
-            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : {}),
+            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : 
+            { carType: values.carType || '', 
+            transmissionType: values.transmissionType || '' 
+            }),
             pickupLat: values?.pickupLocation?.lat,
             pickupLong: values?.pickupLocation?.lng,
             driverStartLat: values?.driverPickUpLocation?.lat,
@@ -615,14 +671,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             quoteData.bookingType = driverBookingType;
         }
         const isDriverOutstation = isDriverService && values?.packageTypeSelected === 'Outstation';
-        const isRoundTripCustom =
-            isDriverOutstation &&
-            values?.tripType === 'Round Trip' &&
-            values?.packageSelected === 'custom_date';
-        if (!isDriverOutstation || isRoundTripCustom) {
+        if (!isDriverOutstation) {
             quoteData.toDate = moment(`${values?.toDate} ${values?.toTime}`, "YYYY-MM-DD HH:mm:ss").toISOString();
         }
-        if (isDriverService && values?.packageTypeSelected === 'Outstation'  && values?.packageSelected !== 'custom_date') {
+        if (isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected) {
             quoteData.packageId = Number(values.packageSelected);
             const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
             quoteData.period = selectedPackage?.period ?? selectedPackagePeriod ?? '';
@@ -737,7 +789,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         const isDriverService = val?.serviceType === 'DRIVER';
         const driverPackageType = isDriverService
             ? (val?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
-            : 'Local';
+            : (val?.packageTypeSelected || 'Local');
         const driverBookingType = isDriverService
             ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
             : (val?.tripType ? val.tripType.toUpperCase() : '');
@@ -751,7 +803,10 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             serviceFor: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : val.serviceType,
             packageType: driverPackageType,
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-            ...(val.serviceType !== 'DRIVER' ? { carType: val.carType || '' } : {}),
+            ...(val.serviceType !== 'DRIVER' ? { carType: val.carType || '' } : 
+                { carType: val.carType || '', 
+                  transmissionType: val.transmissionType || '' 
+                }),
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
             driverStartLat: val?.driverPickUpLocation?.lat,
@@ -869,7 +924,9 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         toDate: "",
         customerId: '',
         serviceType: '',
+        carType: '',
         cabType: '',
+        transmissionType: '',
         pickupPlaceId: '',
         dropPlaceId: '',
         driverPickUpAddress: '',
@@ -1337,7 +1394,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         );
 
         const isDriverService = values?.serviceType === 'DRIVER';
-        const shouldOmitDriverPackage = isDriverService && values?.packageTypeSelected === 'Outstation' && values?.packageSelected === 'custom_date';
         const driverPackagePeriod = selectedPackage?.period ?? selectedPackagePeriod ?? '';
 
         const bookingData = {
@@ -1349,9 +1405,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             customerId: values.customerId?.id,
             adminBooking: true,
             serviceType: values.serviceType || mappedServiceType,
-            cabType: values.cabType,
+            ...(isDriverService ? {} : { cabType: values.cabType }),
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
-            ...(!shouldOmitDriverPackage && {
+            ...(values?.packageSelected && {
                 packageId: values?.packageSelected === "0" ? 0 : Number(values?.packageSelected),
             }),
             ...((values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') && {
@@ -1363,7 +1419,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             ...(values.acType ? { acType: values.acType.toUpperCase() } : {}),
             // transmissionType: values.transmissionType,
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
-            ...(isDriverService ? {} : { carType: values.carType || '' }),
+            ...(isDriverService ? { carType: values.carType || '', 
+                transmissionType: values.transmissionType || '' }
+                : { carType: values.carType || '' }),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
@@ -1421,7 +1479,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
            }
        }
 
-        if (values.toDate && values.toTime) {
+        if (values.serviceType !== 'DRIVER' && values.toDate && values.toTime) {
             bookingData.toDate = moment(`${values.toDate} ${values.toTime}`, "YYYY-MM-DD HH:mm:ss").toISOString()
         };
         let data;
@@ -1578,12 +1636,12 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setFieldValue('deliveryInstructions', '');
 
         // Clear vehicle / service-related fields
-        setFieldValue('carType', newServiceType === 'DRIVER' ? null : '');
+        setFieldValue('carType', '');
         // setFieldValue('cabType', '');
         // setFieldValue('luggage', '');
         // setFieldValue('seaterCapacity', '');
         setFieldValue('acType', '');
-        // setFieldValue('transmissionType', '');
+        setFieldValue('transmissionType', '');
 
         // Clear package selection
         setFieldValue('packageSelected', '');
@@ -1593,8 +1651,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         } else if (newServiceType === 'DRIVER') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
-            setFieldValue('packageTypeSelected', 'Outstation');
-            setFieldValue('tripType', 'Round Trip');
+            setCurrentPackageType('Local');
         } else if (newServiceType === 'RENTAL_HOURLY_PACKAGE') {
             setFieldValue('packageTypeSelected', 'Local');
             setFieldValue('tripType', 'Drop Only');
@@ -1749,7 +1806,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         // }
 
         if (val.packageTypeSelected === "Outstation" && val.tripType === "Round Trip") {
-            if (!val.dropLocation || !val.toDate || !val.toTime) { return true; } return false;
+            if (!val.packageSelected || !val.dropLocation) { return true; } return false;
         }
 
         return false;
@@ -2330,6 +2387,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 onClick={() => {
                                                                     if (values.packageTypeSelected !== 'Local') {
                                                                         setFieldValue('packageTypeSelected', 'Local');
+                                                                        setCurrentPackageType('Local');
                                                                         setFieldValue('packageSelected', '');
                                                                         setRange({});
                                                                         setFieldValue('fromDate', '');
@@ -2350,6 +2408,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     onClick={() => {
                                                                         if (values.packageTypeSelected !== 'Outstation') {
                                                                             setFieldValue('packageTypeSelected', 'Outstation');
+                                                                            setCurrentPackageType('Outstation');
                                                                             setFieldValue('packageSelected', '');
                                                                             setRange({});
                                                                             setFieldValue('fromDate', '');
@@ -2365,8 +2424,8 @@ const priceDetailsCardClass = isPeakHour
                                                                     Outstation
                                                                 </Button>}
                                                         </div>
-                                                        {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.packageTypeSelected === 'Local') || (values.serviceType === 'RENTAL_DROP_TAXI' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation')) && (
-                                                            <div className={values.serviceType === 'DRIVER' ? 'hidden' : ['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
+                                                        {((values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation') || (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.packageTypeSelected === 'Local') || (values.serviceType === 'RENTAL_DROP_TAXI' && values.packageTypeSelected === 'Outstation') || values.serviceType === 'DRIVER') && (
+                                                            <div className={['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) ? 'hidden' : ''}>
                                                                 <Typography className="text-sm font-medium text-black-700">Trip Type</Typography>
                                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                                     {(values.serviceType === 'RENTAL_DROP_TAXI' ||
@@ -2393,7 +2452,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                 <div className='flex mt-2 space-x-3'>
-                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                {(['DRIVER', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values?.serviceType)) && (
                                                     <div className="flex gap-2">
                                                         <div>
                                                             <div className="mt-3 flex gap-3">
@@ -2453,7 +2512,7 @@ const priceDetailsCardClass = isPeakHour
                                                         {!values?.isPremiumService && ( <>
                                                                 <label className="text-sm font-medium text-black-700">Car Type <span className='text-red-500 text-sm'>*</span></label>
                                                                 <div className='pt-3 grid grid-cols-6 gap-3'>
-                                                                {(values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                                {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
                                                                     ['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
                                                                         <label key={carType} className="flex items-center space-x-2">
                                                                             <Field
@@ -2469,7 +2528,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     )))}
                                                                 </div>
-                                                                {['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
+                                                                {['DRIVER', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
                                                                     <div className="text-red-500 text-sm mt-1">
                                                                         {errors.carType}
                                                                     </div>
@@ -2477,7 +2536,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </>)}
                                                             </div>
                                                             </div>
-                                                            {/* {(values.serviceType === 'DRIVER') && (
+                                                            {(values.serviceType === 'DRIVER') && (
                                                                 <div className='pt-4'>
                                                                     <label className="text-sm font-medium text-black-700">Transmission Type</label>
                                                                     <div className="flex gap-2 pt-3">
@@ -2495,7 +2554,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     </div>
                                                                     <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm mt-1" />
                                                                 </div>
-                                                            )} */}
+                                                            )}
                                                                 </div>
                                                         )}
                                                         </div>
@@ -2521,98 +2580,6 @@ const priceDetailsCardClass = isPeakHour
                                                             >
                                                                 NON AC
                                                             </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                
-                                               
-                                                                                                {values.serviceType === 'DRIVER' && values.packageTypeSelected === 'Outstation'  && (
-                                                    <div className="flex-1 mb-4">
-                                                        <div>
-                                                            <Typography variant="h6" className="mb-2">
-                                                                Choose a package
-                                                            </Typography>
-                                                            <Field
-                                                                as="select"
-                                                                disabled={bookingStage === 1}
-                                                                name="packageSelected"
-                                                                className="p-2 w-full rounded-xl border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
-                                                                value={values.packageSelected}
-                                                                onChange={(e) => {
-                                                                    const selectedId = e.target.value;
-                                                                    setFieldValue('packageSelected', selectedId);
-                                                                    if (selectedId === 'custom_date') {
-                                                                        setRange({});
-                                                                        return;
-                                                                    }
-
-                                                                    const selectedPackage = packageTypeSelectedData.find(
-                                                                        (pkg) => pkg.id === Number(selectedId)
-                                                                    );
-
-                                                                    if (selectedPackage) {
-                                                                        setSelectedPackageId(String(selectedPackage.id));
-                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
-                                                                        const period = Number(selectedPackage.period) || 0;
-                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
-
-                                                                        
-                                                                        let baseMoment;
-                                                                        let baseDateStr = values.rideDate;
-                                                                        let baseTimeStr = values.rideTime;
-
-                                                                        if (values.rideDate && values.rideTime) {
-                                                                            baseMoment = moment(`${values.rideDate} ${values.rideTime}`, 'YYYY-MM-DD HH:mm');
-                                                                        } else {
-                                                                            baseMoment = moment();
-                                                                            baseDateStr = baseMoment.format('YYYY-MM-DD');
-                                                                            baseTimeStr = baseMoment.format('HH:mm');
-                                                                            setFieldValue('rideDate', baseDateStr);
-                                                                            setFieldValue('rideTime', baseTimeStr);
-                                                                        }
-
-                                                                        
-                                                                        if (values.tripType === 'Round Trip' && period > 0) {
-                                                                            const start = baseMoment.toDate();
-
-                                                                            
-                                                                            const extraType = (selectedPackage.extraCabType || '').toString().toLowerCase();
-                                                                            let endMoment;
-                                                                            if (extraType.includes('hour')) {
-                                                                                
-                                                                                const hours = parseInt(extraType, 10) || period;
-                                                                                endMoment = baseMoment.clone().add(hours, 'hours');
-                                                                            } else {
-                                                                                
-                                                                                endMoment = baseMoment.clone().add(period, 'days');
-                                                                            }
-
-                                                                            const end = endMoment.toDate();
-                                                                            const endDateStr = endMoment.format('YYYY-MM-DD');
-                                                                            const endTimeStr = endMoment.format('HH:mm');
-
-                                                                            setFieldValue('fromDate', baseDateStr);
-                                                                            setFieldValue('toDate', endDateStr);
-                                                                            setFieldValue('toTime', endTimeStr);
-                                                                            setRange({ startDate: start, endDate: end });
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <option value="">Select Package</option>
-                                                                {packageTypeSelectedData
-                                                                    .filter((item) => item.serviceType === 'DRIVER' && item.type === 'Outstation' && !(item.extraCabType === '0' || item.extraCabType === 0))
-                                                                    .map((item) => {
-                                                                        const label = item.extraCabType === '0' || item.extraCabType === 0 ? '1 Day' : (item.extraCabType || `${item.period} Days`);
-                                                                        return (
-                                                                            <option key={item.id} value={item.id}> {label} </option>
-                                                                        );
-                                                                    })}
-                                                                    {values.tripType === 'Round Trip' && (
-                                                                    <option value="custom_date">Custom Date</option>
-                                                                    )}
-                                                            </Field>
-                                                            <ErrorMessage name="packageSelected" component="div" className="text-red-500 text-sm" />
                                                         </div>
                                                     </div>
                                                 )}
@@ -2653,15 +2620,9 @@ const priceDetailsCardClass = isPeakHour
                                                         </div>
                                                     )}
 
-                                                    {(
-                                                        (values.serviceType === 'RENTAL' &&
-                                                            values.packageTypeSelected === 'Outstation' &&
-                                                            values.tripType === 'Round Trip') ||
-                                                        (values.serviceType === 'DRIVER' &&
-                                                            values.packageTypeSelected === 'Outstation' &&
-                                                            values.tripType === 'Round Trip' &&
-                                                            values.packageSelected === 'custom_date')
-                                                    ) && (
+                                                    {values.serviceType === 'RENTAL' &&
+                                                        values.packageTypeSelected === 'Outstation' &&
+                                                        values.tripType === 'Round Trip' && (
                                                         <div className="flex-1 mb-2">
                                                             <Typography variant="h6" className="mb-2">
                                                                 Return Date & Time
@@ -2692,7 +2653,7 @@ const priceDetailsCardClass = isPeakHour
                                                     )}
                                                 </div>
 
-                                                {(values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE') && values.packageTypeSelected == 'Local' &&
+                                                {(values.serviceType === 'CAR_WASH' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE') && values.packageTypeSelected == 'Local' &&
                                                     <div className="flex-1 mb-4">
                                                         <div>
                                                             <Typography variant="h6" className="mb-2">
@@ -2715,16 +2676,8 @@ const priceDetailsCardClass = isPeakHour
                                                                         if (values.serviceType === 'CAR_WASH') {
                                                                             return item.type === 'CarWash';
                                                                         }
-                                                                        else if (values.serviceType === 'DRIVER') {
-                                                                            return item.serviceType === 'DRIVER' && item.type === 'Local' && item.status === '1';
-                                                                        }
                                                                         else if (values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE') {
                                                                             return item.serviceType === 'RENTAL'  && item.type === 'Local' && item.status === '1';
-                                                                        }
-                                                                        const isLocal = values.packageTypeSelected === 'Local';
-
-                                                                        if (isLocal) {
-                                                                        return item.type === 'Local' && [2, 4, 6, 8].includes(item.period);
                                                                         }
                                                                     })
                                                                     .map((item) => (
@@ -2968,7 +2921,7 @@ const priceDetailsCardClass = isPeakHour
                                                     </div>
                                                 )}
                                                     <div className="p-2 space-y-2 space-x-3">
-                                                        {((values.packageSelected && values.tripType == "Local" && values.serviceType !== 'RENTAL_HOURLY_PACKAGE') || (values.packageSelected && values.tripType == "Round Trip" && values.serviceType !== 'CAR_WASH') || (values.packageTypeSelected == 'Outstation') || (values.serviceType == 'RIDES' || values.serviceType =='AUTO' || values.serviceType == 'PARCEL')) && (
+                                                        {((values.serviceType === 'DRIVER') || (values.packageSelected && values.tripType == "Local" && values.serviceType !== 'RENTAL_HOURLY_PACKAGE') || (values.packageSelected && values.tripType == "Round Trip" && values.serviceType !== 'CAR_WASH') || (values.packageTypeSelected == 'Outstation') || (values.serviceType == 'RIDES' || values.serviceType =='AUTO' || values.serviceType == 'PARCEL')) && (
                                                             <div>
                                                                 <label className="block text-sm font-medium text-black-700">Drop Location<span className="text-red-500">*</span></label>
                                                                 <div className="relative">
@@ -3025,6 +2978,69 @@ const priceDetailsCardClass = isPeakHour
 
                                                         )}
                                                     </div>
+                                                    {values.serviceType === 'DRIVER' && (
+                                                    <div className="flex-1 mb-4">
+                                                        <div>
+                                                            <Typography variant="h6" className="mb-2">
+                                                                Choose a package
+                                                            </Typography>
+                                                            <Field
+                                                                as="select"
+                                                                disabled={bookingStage === 1}
+                                                                name="packageSelected"
+                                                                className="p-2 w-full rounded-xl border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                                                                value={values.packageSelected}
+                                                                // onFocus={() =>  console.log('[DRIVER PACKAGE DROPDOWN]:', {
+                                                                //     packageType: values.packageTypeSelected,
+                                                                //     packageCount: packageTypeSelectedData.length,
+                                                                //     packages: packageTypeSelectedData,
+                                                                //     disabled: bookingStage === 1,
+                                                                // })}
+                                                                onChange={(e) => {
+                                                                    const selectedId = e.target.value;
+                                                                    setFieldValue('packageSelected', selectedId);
+                                                                    // console.log('[DRIVER PACKAGE SELECTED]:', selectedId);
+
+                                                                    const selectedPackage = packageTypeSelectedData.find(
+                                                                        (pkg) => pkg.id === Number(selectedId)
+                                                                    );
+                                                                    if (selectedPackage) {
+                                                                        setSelectedPackageId(String(selectedPackage.id));
+                                                                        setSelectedPackagePeriod(selectedPackage.period || '');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <option value="">Select Package</option>
+                                                                {packageTypeSelectedData
+                                                                    .filter(
+                                                                        (item) =>
+                                                                            (!item.serviceType || item.serviceType === 'DRIVER') &&
+                                                                            (item.status === undefined || item.status === null || String(item.status) === '1')
+                                                                    )
+                                                                    .map((item) => {
+                                                                        const periodHours = Number(item.period);
+                                                                        const periodDays = periodHours / 24;
+                                                                        const periodLabel =
+                                                                            periodHours >= 24
+                                                                                ? `${Number.isInteger(periodDays) ? periodDays : periodDays.toFixed(1)} ${periodDays === 1 ? 'Day' : 'Days'}`
+                                                                                : `${item.period} Hrs`;
+                                                                        return (
+                                                                            <option key={item.id} value={item.id}>
+                                                                                {periodLabel}
+                                                                            </option>
+                                                                        );
+                                                                    })}
+                                                            </Field>
+                                                            <ErrorMessage name="packageSelected" component="div" className="text-red-500 text-sm" />
+                                                            {driverPackageNotice && (
+                                                                <div className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                                                                    <div className="font-semibold">{driverPackageNotice.title}</div>
+                                                                    <div>{driverPackageNotice.message}</div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                                    {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' ? 'visible' : '') && (
                                                                     <div className="p-2 space-y-2">
                                                                         <label className="block text-sm font-medium text-black-700">
@@ -4319,7 +4335,7 @@ const priceDetailsCardClass = isPeakHour
                                                     </Button>
                                                 }
                                                  {(values?.serviceType=="DRIVER" && values.packageTypeSelected == 'Outstation') &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady || Boolean(driverPackageNotice)} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
@@ -4341,7 +4357,7 @@ const priceDetailsCardClass = isPeakHour
                                                     </Button>
                                                 }
                                                 {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Local' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady || Boolean(driverPackageNotice)} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }

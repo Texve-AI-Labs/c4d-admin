@@ -175,7 +175,7 @@ function ParcelSlotConfigList() {
 
   return (
     <div className="mb-8 mt-5 flex flex-col gap-6">
-      <div className="mb-2 p-4 rounded-xl border flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="bg-white mb-2 p-4 rounded-xl border flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <label className="flex min-w-[220px] flex-col gap-1 text-sm font-semibold text-blue-gray-700">
             <span className="cursor-pointer font-medium">Rule Type</span>
