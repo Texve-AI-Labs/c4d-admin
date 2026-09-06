@@ -9,6 +9,22 @@ const formatValue = (value) => {
     return String(value);
 };
 
+const formatPlanName = (value) => {
+    if (String(value || "").trim().toLowerCase() === "regular") return "Basic";
+    return formatValue(value);
+};
+
+const formatLocalDateTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return formatValue(value);
+    const pad = (part) => String(part).padStart(2, "0");
+    const hours = date.getHours();
+    const hour12 = hours % 12 || 12;
+    const meridiem = hours >= 12 ? "PM" : "AM";
+    return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} / ${pad(hour12)}:${pad(date.getMinutes())} ${meridiem}`;
+};
+
 const getSummaryEntries = (value) => {
     if (!value || typeof value !== "object") return [];
     return Object.entries(value).filter(([key, entryValue]) => {
@@ -67,6 +83,7 @@ const getPlanRows = (data) => {
     if (!Array.isArray(data?.plans)) return [];
     return data.plans.map((plan) => ({
         id: plan?.id ?? "-",
+        name: plan?.name ?? "-",
         price: plan?.price ?? "-",
         bonusPrice: plan?.bonusPrice ?? "-",
         totalPrice: plan?.totalPrice ?? "-",
@@ -163,6 +180,7 @@ const renderFriendlyData = (data, variant) => {
                     plans,
                     [
                         { key: "id", label: "ID" },
+                        { key: "name", label: "Plan Name", render: formatPlanName },
                         { key: "price", label: "Price" },
                         { key: "bonusPrice", label: "Bonus Price" },
                         { key: "totalPrice", label: "Total Price" },
@@ -476,10 +494,10 @@ export function MasterSubscriptionLogTable({
                                                         {row?.User?.name || row?.userId || "-"}
                                                     </td>
                                                     <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
-                                                        {(row?.created_at)}
+                                                        {formatLocalDateTime(row?.created_at)}
                                                     </td>
                                                     <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
-                                                        {(row?.updated_at)}
+                                                        {formatLocalDateTime(row?.updated_at)}
                                                     </td>
                                                 </tr>
                                                 {isExpanded && (

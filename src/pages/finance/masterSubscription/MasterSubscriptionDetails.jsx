@@ -308,7 +308,7 @@ const MasterSubscriptionDetails = () => {
                                         >
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Plan Name</label>
-                                                <Field type="text" name={`plans[${index}].name`} disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                                <Field type="text" name={`plans[${index}].name`} value={plan?.name === "Regular" ? "Basic" : plan?.name} disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             </div>
                                             <div className="hidden">
                                                 <label className="text-sm font-medium text-gray-700">Service Type</label>
