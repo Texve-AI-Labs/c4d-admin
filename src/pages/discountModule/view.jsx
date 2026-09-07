@@ -16,6 +16,18 @@ const DiscountView = () => {
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('active');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [expandedImage, setExpandedImage] = useState(null);
+
+  useEffect(() => {
+    if (!expandedImage) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setExpandedImage(null);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [expandedImage]);
 
   useEffect(() => {
     const fetchDiscounts = async () => {
@@ -168,11 +180,11 @@ const DiscountView = () => {
                   </th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">End Date</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Status</th>
-                  {/* <th className="py-3 px-5 text-left whitespace-nowrap">Image</th> */}
                   <th className="py-3 px-5 text-left whitespace-nowrap">Premium</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Cab Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">City</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Description</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Image</th>                  
                   <th className="py-3 px-5 text-left whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
@@ -215,19 +227,6 @@ const DiscountView = () => {
                           ? <span className="text-green-600 font-semibold">Active</span>
                           : <span className="text-red-600 font-semibold">Inactive</span>}
                       </td>
-                      {/* <td className="py-3 px-5 whitespace-nowrap">
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt="discount"
-                            className="w-32 h-auto rounded-md"
-                          />
-                        ) : (
-                          <div className="w-32  bg-gray-200 border-2 border-dashed rounded-md flex items-center justify-center  h-20">
-                            <span className="text-gray-500 text-xs">No Image</span>
-                          </div>
-                        )}
-                      </td> */}
                       <td className="py-3 px-5 whitespace-nowrap">{item.isPremium ? 'Premium' : 'Not Premium'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">{item.cabType || item.parcelVehicleType || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
@@ -242,6 +241,19 @@ const DiscountView = () => {
                       <td className="py-3 px-5 whitespace-nowrap">{item.description || '-'}</td>
                       <td className="py-3 px-5 whitespace-nowrap">
                         <Button
+                          type="button"
+                          size="sm"
+                          className="bg-primary-500 px-4 py-1 text-white rounded hover:bg-primary-600"
+                          onClick={() => setExpandedImage({
+                            src: item.imageUrl || null,
+                            alt: item.title || 'Discount image',
+                          })}
+                        >
+                          View
+                        </Button>
+                      </td>
+                      <td className="py-3 px-5 whitespace-nowrap">
+                        <Button
                           onClick={() =>
                             navigate(`/dashboard/finance/discountModule/edit/${item.id}`, {
                               state: { discount: item },
@@ -252,7 +264,7 @@ const DiscountView = () => {
                         >
                           Edit
                         </Button>
-                      </td>
+                      </td>                      
                     </tr>
                   ))
                 )}
@@ -261,6 +273,41 @@ const DiscountView = () => {
           )}
         </CardBody>
       </Card>
+
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Expanded discount image"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div
+            className="relative max-h-full max-w-full"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Close expanded image"
+              className="absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-gray-700 shadow-lg hover:bg-gray-100"
+              onClick={() => setExpandedImage(null)}
+            >
+              &times;
+            </button>
+            {expandedImage.src ? (
+              <img
+                src={expandedImage.src}
+                alt={expandedImage.alt}
+                className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+              />
+            ) : (
+              <div className="flex h-64 w-80 items-center justify-center rounded-lg bg-gray-200 text-gray-500 shadow-2xl">
+                No Image
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

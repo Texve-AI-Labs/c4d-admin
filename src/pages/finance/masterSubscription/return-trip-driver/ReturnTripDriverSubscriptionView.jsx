@@ -32,7 +32,7 @@ const normalizePlanName = (value) => {
   const normalized = String(value).trim().toLowerCase();
   if (normalized === "premium") return "Premium";
   if (normalized === "standard") return "Standard";
-  if (normalized === "regular") return "Regular";
+  if (normalized === "regular") return "Basic";
   return value;
 };
 

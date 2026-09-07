@@ -18,6 +18,8 @@ export const getBaseUrl = () => {
 }
 export const DISABLE_GLOBAL_AUTOCOMPLETE = false; // true -> off false -> on
 
+export const PLAN_GROUP_CAR_TYPES = ['Mini', 'Sedan', 'SUV', 'MUV'];
+
 
 export const FUTURE_FLAG = {
     DOCUMENT_DETAILS_LIST: false,

@@ -13,16 +13,40 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import FinanceSubscriptionTabs from "@/pages/finance/components/FinanceSubscriptionTabs";
 
+const MASTER_SUBSCRIPTION_FILTERS_KEY = "masterSubscriptionFilters";
+
+const getStoredFilters = () => {
+    try {
+        return JSON.parse(sessionStorage.getItem(MASTER_SUBSCRIPTION_FILTERS_KEY) || "{}") || {};
+    } catch {
+        return {};
+    }
+};
+
+const storeFilters = (filters) => {
+    try {
+        sessionStorage.setItem(MASTER_SUBSCRIPTION_FILTERS_KEY, JSON.stringify(filters));
+    } catch {
+        // Ignore storage errors such as private browsing restrictions.
+    }
+};
+
 export function MasterSubscriptionView() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(() => getStoredFilters().searchQuery || '');
     const [allAccounts, setAllAccounts] = useState([]);
-    const [serviceFilter, setServiceFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [serviceFilter, setServiceFilter] = useState(() => getStoredFilters().serviceFilter || '');
+    const [statusFilter, setStatusFilter] = useState(() => getStoredFilters().statusFilter || '');
     const [expandedGroups, setExpandedGroups] = useState({});
     const [tabLoadingPath, setTabLoadingPath] = useState("");
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        storeFilters(
+            { searchQuery, serviceFilter, statusFilter }
+        );
+    }, [searchQuery, serviceFilter, statusFilter]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -138,6 +162,7 @@ export function MasterSubscriptionView() {
                         <div className="relative flex-grow max-w-[320px]">
                             <input
                                 type="text"
+                                value={searchQuery}
                                 className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="Search Subscription"
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -199,6 +224,7 @@ export function MasterSubscriptionView() {
                                         {[
                                             "Service Type",
                                             "Plan Group",
+                                            "Car Type",
                                             "Assignment Type",
                                             "Assignment Value",
                                             "Zone",
@@ -237,6 +263,9 @@ export function MasterSubscriptionView() {
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {group.name || '-'}
+                                                </td>
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
+                                                    {group.carType || '-'}
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {formatAssignmentType(group.assignments?.[0]?.assignmentType)}
@@ -309,7 +338,7 @@ export function MasterSubscriptionView() {
                                                                     {group.plans.map((plan) => (
                                                                         <tr key={plan.id} className="hover:bg-blue-gray-100">
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
-                                                                                {plan.name || '-'}
+                                                                                {plan.name === 'Regular' ? 'Basic' : plan.name}
                                                                             </td>
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-blue-600 underline cursor-pointer whitespace-nowrap">
                                                                                 <Link to={`/dashboard/finance/master-subscription/details/${group.id}`}>
