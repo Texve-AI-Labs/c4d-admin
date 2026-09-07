@@ -297,6 +297,24 @@ export const customerWhatsappApi = {
     });
     return response.data;
   },
+  downloadMediaForRetry: async (media) => {
+    const endpoint = media?.id
+      ? `${getBaseUrl()}/whatsapp-media/${media.id}/download`
+      : media?.directUrl;
+    if (!endpoint) throw new Error("Media file is unavailable");
+
+    const token = getWhatsappToken();
+    const response = await fetch(endpoint, {
+      headers: media?.id
+        ? {
+            ...getNgrokSkipHeaders(),
+            ...(token ? { token, Authorization: `Bearer ${token}` } : {}),
+          }
+        : undefined,
+    });
+    if (!response.ok) throw new Error("Unable to retrieve the media file for retry");
+    return response.blob();
+  },
   loadTemplates: async (conversationId) => {
     const payload = await request("get", `/whatsapp-conversations/${conversationId}/reply-templates`, {
       params: { limit: 100 },

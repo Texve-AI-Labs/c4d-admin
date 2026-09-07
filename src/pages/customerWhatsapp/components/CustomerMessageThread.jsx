@@ -1,14 +1,17 @@
 import React from "react";
 import {
+  ArrowPathIcon,
   ArrowDownIcon,
   CheckIcon,
   ClipboardDocumentIcon,
+  DocumentIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   PaperClipIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import WhatsAppMediaAttachment from "@/components/WhatsAppMediaAttachment";
+import { formatMediaSize } from "@/utils/whatsappMediaUtils";
 
 const formatDateLabel = (value) => {
   const date = value ? new Date(value) : new Date();
@@ -82,6 +85,8 @@ export function CustomerMessageThread({
   messages,
   loading,
   messageText,
+  mediaUploadError,
+  pendingMedia,
   chatSearch,
   replyTo,
   canSendText,
@@ -98,6 +103,8 @@ export function CustomerMessageThread({
   onChangeMessage,
   onSend,
   onSendMedia,
+  allowedMediaAccept,
+  onCancelPendingMedia,
   onRetry,
   onOpenTemplates,
   onJumpLatest,
@@ -171,6 +178,7 @@ export function CustomerMessageThread({
             const showDate = currentDate && currentDate !== lastDate;
             lastDate = currentDate || lastDate;
             const outbound = message.direction === "outbound";
+            const failed = String(message.providerStatus || "").toLowerCase() === "failed";
             return (
               <React.Fragment key={message.id}>
                 {showDate && (
@@ -202,7 +210,22 @@ export function CustomerMessageThread({
                         {message.text || `[${message.type}]`}
                       </p>
                     )}
-                    {message.errorMessage && <p className="mt-1 text-xs text-red-600">{message.errorMessage}</p>}
+                    {message.errorMessage && (
+                      <div className="mt-2 flex items-center justify-between gap-3 text-xs text-red-600">
+                        <p>{message.errorMessage}</p>
+                        {failed && (
+                          <button
+                            type="button"
+                            onClick={() => onRetry(message)}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-50 px-2 py-1 font-semibold text-red-700 hover:bg-red-100"
+                            title={(message.mediaAttachments || []).length ? "Retry media" : "Retry message"}
+                          >
+                            <ArrowPathIcon className="h-3.5 w-3.5" />
+                            Retry
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="mt-1 flex items-center justify-end gap-2 text-[11px] text-[#667781]">
                       <button type="button" onClick={() => onCopy(message)} title="Copy message">
                         <ClipboardDocumentIcon className="h-3.5 w-3.5" />
@@ -210,7 +233,7 @@ export function CustomerMessageThread({
                       <button type="button" onClick={() => onReply(message)} className="font-semibold text-[#008069]">
                         Reply
                       </button>
-                      {message.providerStatus === "failed" && (
+                      {failed && !message.errorMessage && (
                         <button type="button" onClick={() => onRetry(message)} className="font-semibold text-red-600">
                           Retry
                         </button>
@@ -238,7 +261,57 @@ export function CustomerMessageThread({
         </button>
       )}
 
+      {pendingMedia && (
+        <div className="border-t border-[#d9e1dd] bg-white px-4 py-4">
+          <div className="mx-auto max-w-xl">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={onCancelPendingMedia}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#54656f] hover:bg-[#f0f2f5]"
+                title="Remove attachment"
+                aria-label="Remove attachment"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+              <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-[#111b21]">{pendingMedia.fileName}</p>
+              <span className="h-9 w-9 shrink-0" aria-hidden="true" />
+            </div>
+            <div className="grid min-h-[220px] place-items-center rounded-lg bg-[#f0f2f5] p-4">
+              {pendingMedia.kind === "image" ? (
+                <img
+                  src={pendingMedia.previewUrl}
+                  alt={pendingMedia.fileName}
+                  className="max-h-[260px] max-w-full rounded object-contain shadow-sm"
+                />
+              ) : pendingMedia.kind === "video" ? (
+                <video
+                  src={pendingMedia.previewUrl}
+                  controls
+                  className="max-h-[260px] max-w-full rounded bg-black shadow-sm"
+                />
+              ) : pendingMedia.kind === "audio" ? (
+                <audio src={pendingMedia.previewUrl} controls className="w-full max-w-md" />
+              ) : (
+                <div className="text-center text-[#9aa6ad]">
+                  <DocumentIcon className="mx-auto h-24 w-24 text-white drop-shadow-sm" />
+                  <p className="mt-4 text-2xl font-medium">No preview available</p>
+                  <p className="mt-1 text-sm">
+                    {[formatMediaSize(pendingMedia.sizeBytes), pendingMedia.mimeType || pendingMedia.kind].filter(Boolean).join(" - ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="border-t border-[#d9e1dd] bg-[#f0f2f5] px-4 py-3">
+        {mediaUploadError && (
+          <div role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+            {mediaUploadError}
+          </div>
+        )}
         {!canSendText && (
           <div className="mb-2 flex items-center justify-between gap-3 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <span>24-hour session expired. You can only send template messages.</span>
@@ -275,6 +348,7 @@ export function CustomerMessageThread({
             <PaperClipIcon className="h-5 w-5" />
             <input
               type="file"
+              accept={allowedMediaAccept}
               className="hidden"
               disabled={!canSendText}
               onChange={(event) => {
@@ -288,12 +362,12 @@ export function CustomerMessageThread({
             value={messageText}
             onChange={(event) => onChangeMessage(event.target.value)}
             disabled={!canSendText}
-            placeholder={canSendText ? "Type a message" : "Session expired"}
+            placeholder={canSendText ? (pendingMedia ? "Add a caption" : "Type a message") : "Session expired"}
             className="min-w-0 flex-1 rounded-lg bg-white px-4 py-2 text-sm outline-none disabled:bg-gray-100"
           />
           <button
             type="submit"
-            disabled={!canSendText || !messageText.trim()}
+            disabled={!canSendText || (!messageText.trim() && !pendingMedia)}
             className="grid h-10 w-10 place-items-center rounded-full bg-[#00a884] text-white disabled:opacity-50"
             title="Send"
           >
