@@ -48,6 +48,9 @@ import { BOOKING_FEATURES, BOOKING_SERVICE_TYPE } from "./utils/constants";
 import { AllVehicles } from "./pages/vendor";
 import { CabSubscriptionView } from "./pages/finance/subscription/cab-subscription-view";
 import CabSubscriptionAdd from "./pages/finance/subscription/cab-subscription-add";
+import DriverSubscriptionList from "./pages/finance/driverSubscription/list";
+import DriverSubscriptionForm from "./pages/finance/driverSubscription/form";
+import DriverSubscriptionDetails from "./pages/finance/driverSubscription/details";
 import ReassignDriver from "./components/ReassignDriver";
 import PayableView from "./pages/finance/payable/view";
 import PayableDetails from "./pages/finance/payable/details";
@@ -1527,6 +1530,38 @@ export const routes = [
         name: "Cab Subscription",
         path: "/finance/cab-subscription",
         element: <CabSubscriptionView />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription",
+        path: "/finance/driver-subscription-feedback",
+        element: <DriverSubscriptionList />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Add",
+        path: "/finance/driver-subscription-feedback/add",
+        element: <DriverSubscriptionForm />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Details",
+        path: "/finance/driver-subscription-feedback/details/:id",
+        element: <DriverSubscriptionDetails />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Edit",
+        path: "/finance/driver-subscription-feedback/edit/:id",
+        element: <DriverSubscriptionForm />,
         display: false,
         permission: "Finance",
       },

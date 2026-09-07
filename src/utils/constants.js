@@ -14,7 +14,7 @@ export const constants = {
 };
 
 export const getBaseUrl = () => {
-    return import.meta.env.VITE_URL_SIT + '/api/customer/dev';
+    return import.meta.env.VITE_URL_DEV + '/api/customer/dev';
 }
 export const DISABLE_GLOBAL_AUTOCOMPLETE = false; // true -> off false -> on
 
@@ -858,6 +858,9 @@ export const API_ROUTES = {
     'GET_SUBCRIPTION_PLAN': '/admin/plan',
     'GET_SUBSCRIPTION_LIST': '/admin/subscription',
     'CREATE_SUBSCRIPTION': '/admin/subscription/create',
+    'GET_DRIVER_SUBSCRIPTIONS_FEEDBACK': '/admin/marketing-feedbacks',
+    'CREATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
+    'UPDATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
     'GET_ACCOUNTS': '/admin/accounts',
     'GET_DRIVERS_FOR_SUBSCRIPTION': '/admin/subscription/drivers',
     'GET_ACCOUNT_CABS': '/account/cabs/',
