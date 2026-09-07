@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { API_ROUTES, getBaseUrl } from "@/utils/constants";
+import { API_ROUTES, getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { useAuth } from "@/context/auth";
 
@@ -227,8 +227,7 @@ export const RealtimeEventsProvider = ({ children }) => {
       method: "GET",
       headers: {
         Accept: "text/event-stream",
-        // "ngrok-skip-browser-warning": "true",
-        // 'ngrok-skip-browser-warning': '69420',
+        ...getNgrokSkipHeaders(),
         token: authToken,
       },
       signal: abortController.signal,

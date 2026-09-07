@@ -3,6 +3,7 @@ import {
   CheckIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
+  PaperClipIcon,
   XMarkIcon,
   ArrowUturnLeftIcon,
 } from "@heroicons/react/24/outline";
@@ -14,6 +15,7 @@ import {
   isSessionOpen,
 } from "../utils/whatsappUtils";
 import TemplatePickerModal from "./TemplatePickerModal";
+import WhatsAppMediaAttachment from "@/components/WhatsAppMediaAttachment";
 
 function StatusTicks({ status }) {
   const normalized = String(status || "").toLowerCase();
@@ -46,7 +48,7 @@ function QuotedPreview({ message, compact = false }) {
   );
 }
 
-function MessageBubble({ message, onReply }) {
+function MessageBubble({ message, onReply, forwardTargets, onForwardMessage }) {
   const sent = message.fromAdmin;
   return (
     <div className={`group flex ${sent ? "justify-end" : "justify-start"}`}>
@@ -56,6 +58,12 @@ function MessageBubble({ message, onReply }) {
         }`}
       >
         <QuotedPreview message={message.quotedMessage} compact />
+        <WhatsAppMediaAttachment
+          media={message.mediaAttachments || []}
+          message={message}
+          forwardTargets={forwardTargets}
+          onForward={onForwardMessage}
+        />
         {message.mediaLabel && (
           <div className="mb-2 rounded-lg bg-black/5 px-2 py-1 text-xs font-semibold text-[#008069]">
             {message.mediaLabel}
@@ -82,7 +90,7 @@ function MessageBubble({ message, onReply }) {
   );
 }
 
-function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQuery }) {
+function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQuery, forwardTargets, onForwardMessage }) {
   const scrollerRef = React.useRef(null);
   const bottomRef = React.useRef(null);
   const [stickToBottom, setStickToBottom] = React.useState(true);
@@ -150,7 +158,12 @@ function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQ
                   </span>
                 </div>
               )}
-              <MessageBubble message={message} onReply={onReply} />
+              <MessageBubble
+                message={message}
+                onReply={onReply}
+                forwardTargets={forwardTargets}
+                onForwardMessage={onForwardMessage}
+              />
             </React.Fragment>
           );
         })}
@@ -177,14 +190,22 @@ function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQ
   );
 }
 
-function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onOpenTemplates }) {
+function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onSendMedia, onOpenTemplates }) {
   const [text, setText] = React.useState("");
+  const fileInputRef = React.useRef(null);
 
   const submit = async (event) => {
     event.preventDefault();
     if (!text.trim() || disabled) return;
     await onSend(text);
     setText("");
+  };
+
+  const sendMedia = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || disabled || sending) return;
+    await onSendMedia(file);
   };
 
   return (
@@ -213,6 +234,17 @@ function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onO
           aria-label="Open templates"
         >
           Use Template
+        </button>
+        <input ref={fileInputRef} type="file" className="hidden" onChange={sendMedia} />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled || sending}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#54656F] transition hover:bg-[#E7FCE3] hover:text-[#008069] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Attach file"
+          title="Attach file"
+        >
+          <PaperClipIcon className="h-5 w-5" />
         </button>
         <input
           value={text}
@@ -249,6 +281,9 @@ export default function ChatWindow({
   onClearReply,
   onClose,
   onSend,
+  onSendMedia,
+  conversations = [],
+  onForwardMessage,
   templates,
   templateDetail,
   setTemplateDetail,
@@ -346,6 +381,8 @@ export default function ChatWindow({
         onLoadOlder={onLoadOlder}
         onReply={onReply}
         searchQuery={messageSearch}
+        forwardTargets={conversations}
+        onForwardMessage={onForwardMessage}
       />
       <MessageInputBar
         disabled={!sessionOpen}
@@ -353,6 +390,7 @@ export default function ChatWindow({
         replyTo={replyTo}
         onClearReply={onClearReply}
         onSend={onSend}
+        onSendMedia={onSendMedia}
         onOpenTemplates={() => {
           setTemplateOpen(true);
           loadTemplates();
