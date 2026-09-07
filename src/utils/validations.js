@@ -710,7 +710,11 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
     }),
         
     zone: Yup.string().required("zone is required"),
-    carType: Yup.string().required("Car Type is required"),
+    carType: Yup.string().when("serviceType", {
+        is: "RIDES_RENTAL_CABS",
+        then: (schema) => schema.required("Car Type is required"),
+        otherwise: (schema) => schema.notRequired(),
+    }),
 
 });
 export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
@@ -763,7 +767,11 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
       otherwise: (schema) => schema.notRequired(),
     }),        
     zone: Yup.string().required("zone is required"),
-    carType: Yup.string().required("Car Type is required"),
+    carType: Yup.string().when("serviceType", {
+        is: "RIDES_RENTAL_CABS",
+        then: (schema) => schema.required("Car Type is required"),
+        otherwise: (schema) => schema.notRequired(),
+    }),
 });
 export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
     serviceType: Yup.string().required('Service Type is required'),
