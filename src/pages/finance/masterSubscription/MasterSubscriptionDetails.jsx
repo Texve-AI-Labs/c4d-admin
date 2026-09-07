@@ -269,6 +269,7 @@ const MasterSubscriptionDetails = () => {
                                     <label className="text-sm font-medium text-gray-700">zone</label>
                                     <Field type="text" name="zone" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 </div>
+                                {values.serviceType === "RIDES_RENTAL_CABS" && (
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Car Type</label>
                                     <Field as="select" name="carType" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -278,6 +279,7 @@ const MasterSubscriptionDetails = () => {
                                         ))}
                                     </Field>
                                 </div>
+                                )}
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Effective From</label>
                                     <Field type="datetime-local" name="effectiveFrom" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
