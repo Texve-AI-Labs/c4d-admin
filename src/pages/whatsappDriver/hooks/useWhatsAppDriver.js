@@ -234,6 +234,25 @@ export function useWhatsAppDriver() {
     [replyTo, selectedConversationId]
   );
 
+  const sendMediaReply = React.useCallback(
+    async (file) => {
+      if (!selectedConversationId || !file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      if (replyTo?.id) formData.append("contextMessageId", replyTo.id);
+      setSending(true);
+      try {
+        await whatsappConversationsApi.sendMediaReply(selectedConversationId, formData);
+        setReplyTo(null);
+        await loadMessages({ conversationId: selectedConversationId, page: 1, query: "" });
+        await loadConversations({ page: 1, append: false });
+      } finally {
+        setSending(false);
+      }
+    },
+    [loadConversations, loadMessages, replyTo, selectedConversationId]
+  );
+
   const loadTemplates = React.useCallback(async () => {
     if (!selectedConversationId) return;
     setLoadingTemplates(true);
@@ -270,6 +289,23 @@ export function useWhatsAppDriver() {
     [loadMessages, selectedConversationId]
   );
 
+  const forwardMessage = React.useCallback(
+    async ({ message, media, targetConversationId }) => {
+      if (!selectedConversationId || !targetConversationId || !message) return;
+      await whatsappConversationsApi.forwardMessage(selectedConversationId, {
+        targetConversationId,
+        messageId: message.id,
+        metaMessageId: message.metaMessageId || message.meta_message_id,
+        mediaId: media?.id,
+      });
+      if (String(targetConversationId) === String(selectedConversationId)) {
+        await loadMessages({ conversationId: selectedConversationId, page: 1, query: "" });
+      }
+      await loadConversations({ page: 1, append: false });
+    },
+    [loadConversations, loadMessages, selectedConversationId]
+  );
+
   const applyIncomingMessage = React.useCallback(
     (rawMessage, rawConversation) => {
       const message = normalizeMessage(rawMessage);
@@ -297,6 +333,13 @@ export function useWhatsAppDriver() {
           id: conversationId,
           lastMessage: message.text,
           lastMessageAt: message.createdAt,
+          ...(message.fromAdmin
+            ? {}
+            : {
+                isSessionWindowOpen: true,
+                lastInboundAt: message.createdAt,
+                sessionWindowExpiresAt: new Date(new Date(message.createdAt || Date.now()).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+              }),
         });
         const next = mergeById(prev, [
           {
@@ -476,12 +519,14 @@ export function useWhatsAppDriver() {
     replyTo,
     setReplyTo,
     sendReply,
+    sendMediaReply,
     templates,
     templateDetail,
     setTemplateDetail,
     loadTemplates,
     loadTemplateDetail,
     sendTemplateReply,
+    forwardMessage,
     loadingTemplates,
     sending,
     eventState,

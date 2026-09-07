@@ -61,7 +61,12 @@ export default function CustomerWhatsappPage() {
     [messagesByConversation, selectedConversation?.id]
   );
 
-  const canSendText = selectedConversation?.isSessionWindowOpen !== false;
+  const selectedConversationId = selectedConversation?.id || "";
+  const activeConversation = useMemo(
+    () => conversations.find((item) => item.id === selectedConversationId) || selectedConversation,
+    [conversations, selectedConversation, selectedConversationId]
+  );
+  const canSendText = activeConversation?.isSessionWindowOpen !== false;
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }));
@@ -77,6 +82,11 @@ export default function CustomerWhatsappPage() {
         limit: CONVERSATION_LIMIT,
       });
       setConversations(response.items);
+      setSelectedConversation((current) => {
+        if (!current?.id) return current;
+        const refreshed = response.items.find((item) => item.id === current.id);
+        return refreshed ? { ...current, ...refreshed } : current;
+      });
       const nextTotalPages = Math.max(1, Number(response.pagination?.totalPages || response.pagination?.total_pages || 1) || 1);
       const responsePage = Math.min(nextTotalPages, Math.max(1, Number(response.pagination?.page || requestedPage) || requestedPage));
       setTotalPages(nextTotalPages);
@@ -379,6 +389,43 @@ export default function CustomerWhatsappPage() {
     }
   };
 
+  const handleSendMedia = async (file) => {
+    if (!selectedConversation?.id || !file) return;
+    if (!canSendText) {
+      setError("Session expired. Please send a template message.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    if (replyTo?.metaMessageId) formData.append("contextMessageId", replyTo.metaMessageId);
+    try {
+      await customerWhatsappApi.sendMediaReply(selectedConversation.id, formData);
+      setReplyTo(null);
+      await loadMessages(selectedConversation.id, { silent: true, searchText: "", nextPage: 1 });
+      await loadConversations({ silent: true, nextPage: pageRef.current, nextSearch: searchRef.current });
+    } catch (err) {
+      setError(friendlyError(err));
+    }
+  };
+
+  const handleForwardMessage = async ({ message, media, targetConversationId }) => {
+    if (!selectedConversation?.id || !targetConversationId || !message) return;
+    try {
+      await customerWhatsappApi.forwardMessage(selectedConversation.id, {
+        targetConversationId,
+        messageId: message.id,
+        metaMessageId: message.metaMessageId,
+        mediaId: media?.id,
+      });
+      if (String(targetConversationId) === String(selectedConversation.id)) {
+        await loadMessages(selectedConversation.id, { silent: true, searchText: "", nextPage: 1 });
+      }
+      await loadConversations({ silent: true, nextPage: pageRef.current, nextSearch: searchRef.current });
+    } catch (err) {
+      setError(friendlyError(err));
+    }
+  };
+
   const loadOlder = () => {
     if (!selectedConversation?.id) return;
     const next = messagePage + 1;
@@ -400,7 +447,7 @@ export default function CustomerWhatsappPage() {
         onPageChange={handleThreadPageChange}
       />
       <CustomerMessageThread
-        conversation={selectedConversation}
+        conversation={activeConversation}
         messages={activeMessages}
         loading={loadingMessages}
         messageText={messageText}
@@ -423,9 +470,12 @@ export default function CustomerWhatsappPage() {
         onCancelReply={() => setReplyTo(null)}
         onChangeMessage={setMessageText}
         onSend={handleSend}
+        onSendMedia={handleSendMedia}
         onRetry={handleRetry}
         onOpenTemplates={openTemplates}
         onJumpLatest={scrollToBottom}
+        conversations={conversations}
+        onForwardMessage={handleForwardMessage}
       />
       {error && (
         <div className="fixed bottom-5 right-5 z-[80] rounded bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg">

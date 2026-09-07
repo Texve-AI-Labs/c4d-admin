@@ -1,5 +1,6 @@
 import axios from "axios";
-import { getBaseUrl } from "@/utils/constants";
+import { getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
+import { normalizeMessageMedia } from "@/utils/whatsappMediaUtils";
 
 const TOKEN_KEY = "rootcabs_access_token";
 
@@ -10,6 +11,7 @@ const authHeaders = () => {
   const token = getWhatsappToken();
   const headers = {
     "Content-Type": "application/json",
+    ...getNgrokSkipHeaders(),
   };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
@@ -38,6 +40,30 @@ const pick = (source, keys, fallback = "") => {
     if (value !== undefined && value !== null && value !== "") return value;
   }
   return fallback;
+};
+
+const parseBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["true", "1", "yes", "open"].includes(normalized)) return true;
+  if (["false", "0", "no", "closed", "expired"].includes(normalized)) return false;
+  return null;
+};
+
+const isRecentInboundSession = (row = {}) => {
+  const explicitOpen = parseBoolean(pick(row, ["is_session_window_open", "isSessionWindowOpen", "sessionWindowOpen"], null));
+  if (explicitOpen !== null) return explicitOpen;
+  const remainingSeconds = pick(row, ["session_window_remaining_seconds", "sessionWindowRemainingSeconds"], null);
+  if (remainingSeconds !== null) return Number(remainingSeconds) > 0;
+  const expiry = pick(row, ["session_window_expires_at", "sessionWindowExpiresAt"], null);
+  if (expiry) {
+    const expiryDate = new Date(expiry);
+    return !Number.isNaN(expiryDate.getTime()) && expiryDate.getTime() > Date.now();
+  }
+  const lastInbound = pick(row, ["lastInboundAt", "last_inbound_at", "lastMessageAt", "last_message_at"], null);
+  if (!lastInbound) return true;
+  const inboundDate = new Date(lastInbound);
+  return !Number.isNaN(inboundDate.getTime()) && Date.now() - inboundDate.getTime() < 24 * 60 * 60 * 1000;
 };
 
 const extractQuotedMessage = (row = {}) => {
@@ -130,7 +156,7 @@ export const normalizeConversation = (row = {}) => {
     lastTime: pick(row, ["last_time", "lastTime", "lastMessageAt", "updated_at", "last_message_time"], null),
     unread: Number(pick(row, ["unread", "unreadCount", "unread_count"], 0)) || 0,
     audienceType: pick(row, ["audience_type", "audienceType"], "CUSTOMER"),
-    isSessionWindowOpen: pick(row, ["is_session_window_open", "isSessionWindowOpen", "sessionWindowOpen"], true) !== false,
+    isSessionWindowOpen: isRecentInboundSession(row),
     sessionWindowExpiresAt: pick(row, ["session_window_expires_at", "sessionWindowExpiresAt"], null),
     sessionWindowRemainingSeconds: pick(row, ["session_window_remaining_seconds", "sessionWindowRemainingSeconds"], null),
     lastStatus: pick(row, [
@@ -177,6 +203,7 @@ export const normalizeMessage = (row = {}) => {
     templateHeaderMediaUrl: pick(row, ["templateHeaderMediaUrl", "template_header_media_url"], ""),
     templateName: pick(row, ["templateName", "template_name"], ""),
     metaMessageId,
+    mediaAttachments: normalizeMessageMedia(row),
     metaContextMessageId: pick(row, ["metaContextMessageId", "meta_context_message_id"], ""),
     rawPayload: pick(row, ["rawPayload", "raw_payload"], null),
   };
@@ -259,6 +286,17 @@ export const customerWhatsappApi = {
     request("post", `/whatsapp-conversations/${conversationId}/reply`, {
       data: { text, ...(contextMessageId ? { contextMessageId } : {}) },
     }),
+  sendMediaReply: async (conversationId, formData) => {
+    const token = getWhatsappToken();
+    const response = await axios.post(`${getBaseUrl()}/whatsapp-conversations/${conversationId}/reply-media`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getNgrokSkipHeaders(),
+        ...(token ? { token, Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    return response.data;
+  },
   loadTemplates: async (conversationId) => {
     const payload = await request("get", `/whatsapp-conversations/${conversationId}/reply-templates`, {
       params: { limit: 100 },
@@ -272,6 +310,8 @@ export const customerWhatsappApi = {
   },
   sendTemplate: (conversationId, body) =>
     request("post", `/whatsapp-conversations/${conversationId}/reply-template`, { data: body }),
+  forwardMessage: (conversationId, body) =>
+    request("post", `/whatsapp-conversations/${conversationId}/forward`, { data: body }),
   getEventsUrl: () => `${getBaseUrl()}/whatsapp-conversations/events`,
   authHeaders,
 };

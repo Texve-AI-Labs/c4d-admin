@@ -16,6 +16,13 @@ export const constants = {
 export const getBaseUrl = () => {
     return import.meta.env.VITE_URL_SIT + '/api/customer/dev';
 }
+
+export const isNgrokSkipEnabled = () =>
+    String(import.meta.env.VITE_ENABLE_NGROK_SKIP || "false").toLowerCase() === "true";
+
+export const getNgrokSkipHeaders = () =>
+    isNgrokSkipEnabled() ? { "ngrok-skip-browser-warning": "69420" } : {};
+
 export const DISABLE_GLOBAL_AUTOCOMPLETE = false; // true -> off false -> on
 
 export const PLAN_GROUP_CAR_TYPES = ['Mini', 'Sedan', 'SUV', 'MUV'];

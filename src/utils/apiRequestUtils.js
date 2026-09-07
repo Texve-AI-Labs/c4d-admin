@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ASYNC_STORAGE_KEYS, getBaseUrl, KYC_PROCESS } from "./constants";
+import { ASYNC_STORAGE_KEYS, getBaseUrl, getNgrokSkipHeaders, KYC_PROCESS } from "./constants";
 
 const showDefaultFailureAlert = (message) => {
     if (typeof window !== "undefined" && typeof window.alert === "function") {
@@ -13,8 +13,7 @@ export const ApiRequestUtils = {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning' : true,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -36,7 +35,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -63,7 +62,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
                 'Content-Type': 'application/json',
                 'token': token,
                 'custID': 63,
-                // 'ngrok-skip-browser-warning': '69420',
+                ...getNgrokSkipHeaders(),
             },
             params: params
         });
@@ -84,7 +83,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -106,7 +105,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -133,7 +132,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
                 'Content-Type': 'application/json',
                 'token': token,
                 'custID': 63,
-                // 'ngrok-skip-browser-warning': '69420',
+                ...getNgrokSkipHeaders(),
             },
             data: body
         });
@@ -154,7 +153,8 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
             headers: {
                 'Content-Type': 'multipart/form-data',
-                'token': token
+                'token': token,
+                ...getNgrokSkipHeaders(),
             }
         });
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
@@ -173,7 +173,8 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const { data } = await axios.put(getBaseUrl() + apiRoute, body, {
             headers: {
                 'Content-Type': 'multipart/form-data',
-                'token': token
+                'token': token,
+                ...getNgrokSkipHeaders(),
             }
         });
         console.log('data in POST DOCS :', data);
@@ -195,8 +196,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'token': token,
-            // 'ngrok-skip-browser-warning' : true,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         };
 
         if (custID !== 0) {
@@ -218,6 +218,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
     const response = await axios.get(getBaseUrl() + apiRoute, {
         headers: {
             'token': token,
+            ...getNgrokSkipHeaders(),
         },
         responseType: 'blob', 
     });

@@ -1,11 +1,14 @@
 import React from "react";
 import {
   ArrowDownIcon,
+  CheckIcon,
   ClipboardDocumentIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
+  PaperClipIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import WhatsAppMediaAttachment from "@/components/WhatsAppMediaAttachment";
 
 const formatDateLabel = (value) => {
   const date = value ? new Date(value) : new Date();
@@ -35,6 +38,25 @@ const statusLabel = (status) => {
   if (normalized === "sent") return "✓";
   return normalized;
 };
+
+function StatusTicks({ status }) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "sending") return <span>sending</span>;
+  if (normalized === "pending") return <span>pending</span>;
+  if (normalized === "failed") return <span className="text-red-600">failed</span>;
+  if (!normalized) return null;
+  const read = normalized === "read" || normalized === "seen";
+  const delivered = read || normalized === "delivered";
+  if (normalized === "sent" || delivered) {
+    return (
+      <span className={`inline-flex items-center ${read ? "text-[#53BDEB]" : ""}`} title={normalized}>
+        <CheckIcon className="h-3.5 w-3.5" />
+        {delivered && <CheckIcon className="-ml-2 h-3.5 w-3.5" />}
+      </span>
+    );
+  }
+  return <span>{normalized}</span>;
+}
 
 const getQuotedText = (quotedMessage) => {
   if (!quotedMessage) return "";
@@ -75,9 +97,12 @@ export function CustomerMessageThread({
   onCancelReply,
   onChangeMessage,
   onSend,
+  onSendMedia,
   onRetry,
   onOpenTemplates,
   onJumpLatest,
+  conversations = [],
+  onForwardMessage,
 }) {
   if (!conversation) {
     return (
@@ -166,7 +191,17 @@ export function CustomerMessageThread({
                     {message.templateHeaderMediaUrl && (
                       <img src={message.templateHeaderMediaUrl} alt="" className="mb-2 max-h-44 rounded object-cover" />
                     )}
-                    <p className="whitespace-pre-wrap break-words text-sm leading-5 text-[#111b21]">{message.text || `[${message.type}]`}</p>
+                    <WhatsAppMediaAttachment
+                      media={message.mediaAttachments || []}
+                      message={message}
+                      forwardTargets={conversations}
+                      onForward={onForwardMessage}
+                    />
+                    {(message.text || !(message.mediaAttachments || []).length) && (
+                      <p className="whitespace-pre-wrap break-words text-sm leading-5 text-[#111b21]">
+                        {message.text || `[${message.type}]`}
+                      </p>
+                    )}
                     {message.errorMessage && <p className="mt-1 text-xs text-red-600">{message.errorMessage}</p>}
                     <div className="mt-1 flex items-center justify-end gap-2 text-[11px] text-[#667781]">
                       <button type="button" onClick={() => onCopy(message)} title="Copy message">
@@ -181,7 +216,7 @@ export function CustomerMessageThread({
                         </button>
                       )}
                       <span>{formatTime(message.sentAt)}</span>
-                      {outbound && <span className={String(message.providerStatus).toLowerCase() === "read" ? "text-blue-500" : ""}>{statusLabel(message.providerStatus)}</span>}
+                      {outbound && <StatusTicks status={message.providerStatus} />}
                     </div>
                   </div>
                 </div>
@@ -230,6 +265,25 @@ export function CustomerMessageThread({
           <button type="button" onClick={onOpenTemplates} className="rounded bg-white px-3 py-2 text-sm font-semibold text-[#008069]">
             Use Template
           </button>
+          <label
+            className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-[#54656f] ${
+              canSendText ? "cursor-pointer hover:bg-[#e7fce3] hover:text-[#008069]" : "cursor-not-allowed opacity-50"
+            }`}
+            title="Attach file"
+            aria-label="Attach file"
+          >
+            <PaperClipIcon className="h-5 w-5" />
+            <input
+              type="file"
+              className="hidden"
+              disabled={!canSendText}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) onSendMedia?.(file);
+              }}
+            />
+          </label>
           <input
             value={messageText}
             onChange={(event) => onChangeMessage(event.target.value)}
