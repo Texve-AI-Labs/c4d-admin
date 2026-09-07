@@ -24,8 +24,7 @@ import {
   MegaphoneIcon,
   UsersIcon,
   UserIcon,
-  GlobeAltIcon,
-  ChatBubbleLeftRightIcon
+  GlobeAltIcon
 } from '@heroicons/react/24/solid';
 import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
