@@ -6,6 +6,7 @@ import {
   ForwardIcon,
   MusicalNoteIcon,
   PhotoIcon,
+  VideoCameraIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
@@ -25,6 +26,7 @@ const mediaIcon = {
   pdf: DocumentIcon,
   document: DocumentIcon,
   file: DocumentIcon,
+  video: VideoCameraIcon,
 };
 
 const fetchMediaBlob = async (media, action) => {
@@ -173,6 +175,14 @@ export default function WhatsAppMediaAttachment({ media = [], message, forwardTa
                 <button type="button" onClick={() => handleView(item)} className="block w-full">
                   <img src={item.directUrl} alt={item.fileName} className="max-h-56 w-full object-cover" />
                 </button>
+              )}
+              {item.kind === "video" && item.directUrl && (
+                <video src={item.directUrl} controls className="max-h-56 w-full bg-black" />
+              )}
+              {["audio", "voice"].includes(item.kind) && item.directUrl && (
+                <div className="p-2">
+                  <audio src={item.directUrl} controls className="w-full" />
+                </div>
               )}
               <div className="flex items-center gap-2 p-2">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/70 text-[#008069]">

@@ -6,6 +6,51 @@ import { customerWhatsappApi, getWhatsappToken, normalizeMessage } from "./custo
 
 const CONVERSATION_LIMIT = 20;
 const MESSAGE_LIMIT = 50;
+const ALLOWED_MEDIA_MIME_TYPES = new Set([
+  "audio/aac",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/amr",
+  "audio/ogg",
+  "audio/opus",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "video/mp4",
+  "video/3gpp",
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]);
+const ALLOWED_MEDIA_ACCEPT = Array.from(ALLOWED_MEDIA_MIME_TYPES).join(",");
+const EXTENSION_MIME_TYPES = {
+  ".aac": "audio/aac",
+  ".m4a": "audio/mp4",
+  ".mp3": "audio/mpeg",
+  ".amr": "audio/amr",
+  ".ogg": "audio/ogg",
+  ".opus": "audio/opus",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".mp4": "video/mp4",
+  ".3gp": "video/3gpp",
+  ".3gpp": "video/3gpp",
+  ".pdf": "application/pdf",
+  ".txt": "text/plain",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
 
 const friendlyError = (error) => {
   const status = error?.response?.status;
@@ -17,6 +62,31 @@ const friendlyError = (error) => {
     return "Session expired. Please send a template message.";
   }
   return "Unable to complete the action. Please try again.";
+};
+
+const validateMediaFile = (file) => {
+  const name = String(file?.name || "").toLowerCase();
+  const type = String(file?.type || "").toLowerCase();
+  if (ALLOWED_MEDIA_MIME_TYPES.has(type)) return "";
+  const extension = Object.keys(EXTENSION_MIME_TYPES).find((item) => name.endsWith(item));
+  if (extension && ALLOWED_MEDIA_MIME_TYPES.has(EXTENSION_MIME_TYPES[extension])) return "";
+  return "This file format is not supported. Please upload AAC, MP4 audio, MP3, AMR, OGG, OPUS, JPEG, PNG, WebP, MP4 video, 3GPP, PDF, TXT, DOC, DOCX, XLS, XLSX, PPT, or PPTX.";
+};
+
+const getPendingMimeType = (file) => {
+  const name = String(file?.name || "").toLowerCase();
+  const type = String(file?.type || "");
+  const extension = Object.keys(EXTENSION_MIME_TYPES).find((item) => name.endsWith(item));
+  return type || EXTENSION_MIME_TYPES[extension] || "application/octet-stream";
+};
+
+const getPendingMediaKind = (file) => {
+  const mimeType = getPendingMimeType(file).toLowerCase();
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("audio/")) return "audio";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType === "application/pdf") return "pdf";
+  return "document";
 };
 
 export default function CustomerWhatsappPage() {
@@ -32,6 +102,8 @@ export default function CustomerWhatsappPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState("");
   const [messageText, setMessageText] = useState("");
+  const [mediaUploadError, setMediaUploadError] = useState("");
+  const [pendingMedia, setPendingMedia] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [showJumpLatest, setShowJumpLatest] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -67,6 +139,13 @@ export default function CustomerWhatsappPage() {
     [conversations, selectedConversation, selectedConversationId]
   );
   const canSendText = activeConversation?.isSessionWindowOpen !== false;
+
+  const clearPendingMedia = useCallback(() => {
+    setPendingMedia((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      return null;
+    });
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }));
@@ -138,6 +217,19 @@ export default function CustomerWhatsappPage() {
   }, [selectedConversation?.id]);
 
   useEffect(() => {
+    if (!mediaUploadError) return undefined;
+    const timeout = setTimeout(() => setMediaUploadError(""), 5000);
+    return () => clearTimeout(timeout);
+  }, [mediaUploadError]);
+
+  useEffect(() => () => {
+    setPendingMedia((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      return null;
+    });
+  }, []);
+
+  useEffect(() => {
     if (!selectedConversation?.id) return;
     const timeout = setTimeout(() => {
       setMessagePage(1);
@@ -149,6 +241,7 @@ export default function CustomerWhatsappPage() {
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
     setReplyTo(null);
+    clearPendingMedia();
     setChatSearch("");
     setMessagePage(1);
     await loadMessages(conversation.id, { searchText: "", nextPage: 1 });
@@ -266,11 +359,16 @@ export default function CustomerWhatsappPage() {
 
   const handleSend = async (event) => {
     event.preventDefault();
-    if (!selectedConversation || !messageText.trim()) return;
+    if (!selectedConversation) return;
     if (!canSendText) {
       setError("Session expired. Please send a template message.");
       return;
     }
+    if (pendingMedia) {
+      await sendPendingMedia();
+      return;
+    }
+    if (!messageText.trim()) return;
     const text = messageText.trim();
     const localId = `local-${Date.now()}`;
     const optimistic = normalizeMessage({
@@ -307,7 +405,35 @@ export default function CustomerWhatsappPage() {
     }
   };
 
-  const handleRetry = (message) => {
+  const handleRetry = async (message) => {
+    const media = message.mediaAttachments?.[0];
+    if (media) {
+      try {
+        const blob = await customerWhatsappApi.downloadMediaForRetry(media);
+        const file = new File([blob], media.fileName || "whatsapp-media", {
+          type: blob.type || media.mimeType || "application/octet-stream",
+        });
+        const validationError = validateMediaFile(file);
+        if (validationError) {
+          setMessagesByConversation((prev) => ({
+            ...prev,
+            [selectedConversation.id]: (prev[selectedConversation.id] || []).map((item) =>
+              item.id === message.id ? { ...item, errorMessage: validationError } : item
+            ),
+          }));
+          return;
+        }
+        const formData = new FormData();
+        formData.append("file", file);
+        if (message.metaContextMessageId) formData.append("contextMessageId", message.metaContextMessageId);
+        await customerWhatsappApi.sendMediaReply(selectedConversation.id, formData);
+        await loadMessages(selectedConversation.id, { silent: true, searchText: "", nextPage: 1 });
+        await loadConversations({ silent: true, nextPage: pageRef.current, nextSearch: searchRef.current });
+      } catch (err) {
+        setError(friendlyError(err));
+      }
+      return;
+    }
     setMessageText(message.text);
     setReplyTo(null);
   };
@@ -395,16 +521,78 @@ export default function CustomerWhatsappPage() {
       setError("Session expired. Please send a template message.");
       return;
     }
+    const validationError = validateMediaFile(file);
+    if (validationError) {
+      setMediaUploadError(validationError);
+      return;
+    }
+    setMediaUploadError("");
+    setPendingMedia((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      const mimeType = getPendingMimeType(file);
+      return {
+        file,
+        kind: getPendingMediaKind(file),
+        fileName: file.name,
+        mimeType,
+        sizeBytes: file.size,
+        previewUrl: URL.createObjectURL(file),
+      };
+    });
+  };
+
+  const sendPendingMedia = async () => {
+    if (!selectedConversation?.id || !pendingMedia?.file) return;
+    const { file, previewUrl, kind, fileName, mimeType, sizeBytes } = pendingMedia;
+    const caption = messageText.trim();
+    const localId = `local-media-${Date.now()}`;
+    const optimistic = {
+      id: localId,
+      text: caption,
+      type: mimeType || "document",
+      direction: "outbound",
+      providerStatus: "sending",
+      sentAt: new Date().toISOString(),
+      mediaAttachments: [
+        {
+          id: "",
+          kind,
+          fileName,
+          mimeType,
+          sizeBytes,
+          directUrl: previewUrl,
+        },
+      ],
+    };
+    setPendingMedia(null);
+    setMessagesByConversation((prev) => ({
+      ...prev,
+      [selectedConversation.id]: [...(prev[selectedConversation.id] || []), optimistic],
+    }));
+    setMessageText("");
+    scrollToBottom();
     const formData = new FormData();
     formData.append("file", file);
+    if (caption) formData.append("caption", caption);
     if (replyTo?.metaMessageId) formData.append("contextMessageId", replyTo.metaMessageId);
     try {
       await customerWhatsappApi.sendMediaReply(selectedConversation.id, formData);
+      URL.revokeObjectURL(previewUrl);
+      setMessagesByConversation((prev) => ({
+        ...prev,
+        [selectedConversation.id]: (prev[selectedConversation.id] || []).filter((message) => message.id !== localId),
+      }));
       setReplyTo(null);
       await loadMessages(selectedConversation.id, { silent: true, searchText: "", nextPage: 1 });
       await loadConversations({ silent: true, nextPage: pageRef.current, nextSearch: searchRef.current });
     } catch (err) {
       setError(friendlyError(err));
+      setMessagesByConversation((prev) => ({
+        ...prev,
+        [selectedConversation.id]: (prev[selectedConversation.id] || []).map((message) =>
+          message.id === localId ? { ...message, providerStatus: "failed", errorMessage: friendlyError(err) } : message
+        ),
+      }));
     }
   };
 
@@ -451,13 +639,18 @@ export default function CustomerWhatsappPage() {
         messages={activeMessages}
         loading={loadingMessages}
         messageText={messageText}
+        mediaUploadError={mediaUploadError}
+        pendingMedia={pendingMedia}
         chatSearch={chatSearch}
         replyTo={replyTo}
         canSendText={canSendText}
         showJumpLatest={showJumpLatest}
         messagesEndRef={messagesEndRef}
         messagesContainerRef={messagesContainerRef}
-        onCloseChat={() => setSelectedConversation(null)}
+        onCloseChat={() => {
+          clearPendingMedia();
+          setSelectedConversation(null);
+        }}
         onChatSearch={setChatSearch}
         onLoadOlder={loadOlder}
         onScroll={() => {
@@ -471,6 +664,8 @@ export default function CustomerWhatsappPage() {
         onChangeMessage={setMessageText}
         onSend={handleSend}
         onSendMedia={handleSendMedia}
+        allowedMediaAccept={ALLOWED_MEDIA_ACCEPT}
+        onCancelPendingMedia={clearPendingMedia}
         onRetry={handleRetry}
         onOpenTemplates={openTemplates}
         onJumpLatest={scrollToBottom}
