@@ -20,7 +20,6 @@ import {
   ChartBarIcon,
   DocumentCheckIcon,
   UserGroupIcon,
-  ChatBubbleLeftRightIcon,
   MegaphoneIcon,
   UsersIcon,
   UserIcon,
