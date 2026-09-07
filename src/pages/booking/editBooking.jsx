@@ -79,6 +79,7 @@ const EditBooking = (props) => {
     const [cityLimitExceedModal, setCityLimitExceedModal] = useState(false);
     const [zoneErrorModal, setZoneErrorModal] = useState({ show: false, text: '', title: '' });
     const [dropTaxiDistanceExceedModal, setDropTaxiDistanceExceedModal] = useState(false);
+    const [dropTaxiModalContent, setDropTaxiModalContent] = useState("Booking not available for the selected route. Try outstation service.");
     const [driverPickUpLocation, setDriverPickUpLocation] = useState(null);
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
     const [serviceAreaLoading, setServiceAreaLoading] = useState(false);
@@ -860,24 +861,36 @@ const getQuoteOutstationDetails = async (values) => {
     };
 
     const calculateDistance = async (values) => {
+        const isDropTaxi = values.serviceType === 'RENTAL_DROP_TAXI';
         const calculateDistance = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DISTANCE_CHECKING, {
             pickupLat: values.pickupLocation?.lat || bookingData?.pickupLat,
             pickupLong: values.pickupLocation?.lng || bookingData?.pickupLong,
             dropLat: values?.dropLocation?.lat || bookingData?.dropLat,
             dropLong: values?.dropLocation?.lng || bookingData?.dropLong,
-            serviceType: values.serviceType === 'RENTAL_DROP_TAXI' ? "RENTAL" : values.serviceType,
+            serviceType: isDropTaxi ? "RENTAL" : values.serviceType,
+            ...(isDropTaxi && { rentalBookingType: "DROP_ONLY" }),
         });
 
         if (calculateDistance?.success) {
+            const distanceData = calculateDistance?.data || {};
+            const shouldShowAlert = distanceData?.showAlert === true;
             if (values.serviceType === "RIDES") {
-                // Backend returns showAlert flag for RIDES
-                return calculateDistance?.data?.showAlert;
+                return !shouldShowAlert;
             } else if (values.serviceType === "AUTO") {
-                // Backend returns kilometer for AUTO; apply 15 km limit
-                return calculateDistance?.data?.showAlert;
-            } else if (values.serviceType === 'RENTAL_DROP_TAXI') {
-                const distance = calculateDistance?.data?.estimatedDistance || 0;
-                return distance <= 300;
+                return !shouldShowAlert;
+            } else if (isDropTaxi) {
+                if (shouldShowAlert) {
+                    if (
+                        distanceData?.suggestedService === "RIDES" ||
+                        distanceData?.reason === "SAME_SERVICE_AREA"
+                    ) {
+                        setDropTaxiModalContent("Try our Local Ride, it s faster and more affordable for short distances!");
+                    } else {
+                        setDropTaxiModalContent("Booking not available for the selected route. Try outstation service.");
+                    }
+                    return false;
+                }
+                return true;
             }
         }
         // For other service types (like RENTAL_HOURLY_PACKAGE), return true to skip distance check
@@ -3124,7 +3137,7 @@ const getQuoteOutstationDetails = async (values) => {
                         }}
                     </Formik>
                 </>)}
-            <DistanceExceedModal isVisible={dropTaxiDistanceExceedModal} onClose={() => { setDropTaxiDistanceExceedModal(false); }} title="Going a bit far?" content="You can choose Outstation within 300km only for the DropTaxi service." />
+            <DistanceExceedModal isVisible={dropTaxiDistanceExceedModal} onClose={() => { setDropTaxiDistanceExceedModal(false); }} title="Going a bit far?" content={dropTaxiModalContent} />
             <DistanceExceedModal isVisible={distanceExceedModal} onClose={() => { setDistanceExceedModal(false); }} title="Going a bit far?" content="Rides above 15 km are allowed only through DropTaxi or Outstation service." />
             <DistanceExceedModal isVisible={cityLimitExceedModal} onClose={() => { setCityLimitExceedModal(false); }} title="Oops!" content="We currently serve only Vellore, Kanchipuram, Tiruvannamalai. Try another pickup location nearby." />
             <DistanceExceedModal isVisible={zoneErrorModal.show} onClose={() => { setZoneErrorModal({ show: false }); }} title={zoneErrorModal.title} content={zoneErrorModal.text} />

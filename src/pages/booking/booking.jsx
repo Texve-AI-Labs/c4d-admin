@@ -985,39 +985,45 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
     }
 
     const calculateDistance = async (values) => {
-    const calculateDistance = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DISTANCE_CHECKING, {
-        pickupLat: values.pickupLocation.lat,
-        pickupLong: values.pickupLocation.lng,
-        dropLat: values.dropLocation?.lat,
-        dropLong: values.dropLocation?.lng,
-        serviceType: values.serviceType === 'RENTAL_DROP_TAXI' ? "RENTAL" : values.serviceType,
-    });
+        const isDropTaxi = values.serviceType === 'RENTAL_DROP_TAXI';
+        const isRentalOutstationRoundTrip =
+            values.serviceType === "RENTAL" &&
+            values.packageTypeSelected === 'Outstation' &&
+            values.tripType === 'Round Trip';
+        const calculateDistance = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DISTANCE_CHECKING, {
+            pickupLat: values.pickupLocation.lat,
+            pickupLong: values.pickupLocation.lng,
+            dropLat: values.dropLocation?.lat,
+            dropLong: values.dropLocation?.lng,
+            serviceType: isDropTaxi ? "RENTAL" : values.serviceType,
+            ...(isDropTaxi && { rentalBookingType: "DROP_ONLY" }),
+            ...(isRentalOutstationRoundTrip && { rentalBookingType: "ROUND_TRIP" }),
+        });
 
-    if (calculateDistance?.success) {
-        if (values.serviceType === "RIDES") {
-            return calculateDistance?.data?.showAlert; // Existing logic for RIDES
-        } else if (values.serviceType === "AUTO") {
-            return calculateDistance?.data?.showAlert;
-        } else if (values.serviceType === "RENTAL" && values.packageTypeSelected === 'Outstation' && values.tripType === 'Round Trip') {
-            const showAlert = calculateDistance?.data?.showAlert;
-            return showAlert !== undefined ? showAlert : true;
-        } else if (values.serviceType ==='RENTAL_DROP_TAXI') {
-                const rawDistance = calculateDistance?.data?.estimatedDistance || calculateDistance?.data?.kilometer;
-                const distance = rawDistance ? parseFloat(rawDistance) : 0;
-                const showAlert = calculateDistance?.data?.showAlert;
-                if (distance > 300) {
-                    setDropTaxiModalContent("Booking not available for the selected route. Try outstation service.");
-                    return false;
-                }
-                if (showAlert === false) {
-                    setDropTaxiModalContent("Try our Local Ride, it s faster and more affordable for short distances!");
+        if (calculateDistance?.success) {
+            const distanceData = calculateDistance?.data || {};
+            const shouldShowAlert = distanceData?.showAlert === true;
+            if (values.serviceType === "RIDES" || values.serviceType === "AUTO") {
+                return !shouldShowAlert;
+            } else if (isRentalOutstationRoundTrip) {
+                return !shouldShowAlert;
+            } else if (isDropTaxi) {
+                if (shouldShowAlert) {
+                    if (
+                        distanceData?.suggestedService === "RIDES" ||
+                        distanceData?.reason === "SAME_SERVICE_AREA"
+                    ) {
+                        setDropTaxiModalContent("Try our Local Ride, it s faster and more affordable for short distances!");
+                    } else {
+                        setDropTaxiModalContent("Booking not available for the selected route. Try outstation service.");
+                    }
                     return false;
                 }
                 return true;
+            }
         }
-    }
-    return true;
-};
+        return true;
+    };
 
     const calcluateCityLimit = async (values) => {
         let calculateDistance = await ApiRequestUtils.getWithQueryParam(API_ROUTES.CITY_LIMIT_CHECKING, {
