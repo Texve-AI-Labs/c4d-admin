@@ -2517,7 +2517,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "WhatsApp Driver",
+        name: "Driver WhatsApp",
         path: "/whatsapp-driver",
         element: <WhatsAppDriverPage />,
         display: true,

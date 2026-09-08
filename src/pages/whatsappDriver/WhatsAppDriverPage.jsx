@@ -14,7 +14,7 @@ export default function WhatsAppDriverPage() {
   return (
     <div className="h-[calc(100vh-150px)] min-h-[620px] overflow-hidden rounded-xl border border-blue-gray-100 bg-white shadow-sm">
       <div className="sr-only" aria-live="polite">
-        WhatsApp Driver stream is {liveText}
+        Driver WhatsApp stream is {liveText}
       </div>
       <div className="flex h-full min-h-0 flex-col md:flex-row">
         <ConversationList

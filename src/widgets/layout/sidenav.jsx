@@ -50,7 +50,7 @@ const menuItems = [
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
   { type: "item", name: "Marketing", path: "/dashboard/vendors/notificationList", permission: "Marketing" },
   { type: "item", name: "Customer WhatsApp", path: "/dashboard/customer-whatsapp", permission: "Marketing" },
-    { type: "item", name: "WhatsApp Driver", path: "/dashboard/whatsapp-driver", permission: "Driver Engagement" },
+  { type: "item", name: "Driver WhatsApp", path: "/dashboard/whatsapp-driver", permission: "Marketing" },
   { type: "item", name: "Vendor Management", path: "/dashboard/vendor-management/vendors", permission: "Vendor Management" },
   { type: "item", name: "Reports", path: "/dashboard/driver-ops", permission: "Driver Ops" },
   { type: "item", name: "Geo Int & Ops", path: "/dashboard/geo-intelligence", permission: "Users" },
@@ -274,7 +274,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
         return currentPath.startsWith("/dashboard/geo-intelligence");
       case "Driver Engagement":
         return currentPath.startsWith("/dashboard/driverengagement");
-      case "WhatsApp Driver":
+      case "Driver WhatsApp":
         return currentPath.startsWith("/dashboard/whatsapp-driver");
       case "Admin":
         return (
@@ -465,7 +465,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
-                        {name === "WhatsApp Driver" ? (
+                        {name === "Driver WhatsApp" ? (
                           <ChatBubbleLeftRightIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
@@ -491,7 +491,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                           {customerWhatsappBadgeCount > 99 ? "99+" : customerWhatsappBadgeCount}
                         </span>
                       )}
-                      {name === "WhatsApp Driver" && driverWhatsappBadgeCount > 0 && (
+                      {name === "Driver WhatsApp" && driverWhatsappBadgeCount > 0 && (
                         <span className="ml-auto rounded-full bg-[#25d366] px-2 py-0.5 text-xs font-bold text-white leading-none">
                           {driverWhatsappBadgeCount > 99 ? "99+" : driverWhatsappBadgeCount}
                         </span>
