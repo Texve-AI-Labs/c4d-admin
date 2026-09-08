@@ -10,8 +10,9 @@ import {
   PaperClipIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import WhatsAppMediaAttachment from "@/components/WhatsAppMediaAttachment";
-import { formatMediaSize } from "@/utils/whatsappMediaUtils";
+import WhatsAppMediaAttachment from "@/components/whatsapp/WhatsAppMediaAttachment";
+import WhatsAppVoiceRecorder from "@/components/whatsapp/WhatsAppVoiceRecorder";
+import { formatMediaSize } from "@/utils/whatsapp/media";
 
 const formatDateLabel = (value) => {
   const date = value ? new Date(value) : new Date();
@@ -29,17 +30,6 @@ const formatTime = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-};
-
-const statusLabel = (status) => {
-  const normalized = String(status || "").toLowerCase();
-  if (normalized === "sending") return "...";
-  if (normalized === "pending") return "pending";
-  if (normalized === "failed") return "failed";
-  if (normalized === "read") return "✓✓";
-  if (normalized === "delivered") return "✓✓";
-  if (normalized === "sent") return "✓";
-  return normalized;
 };
 
 function StatusTicks({ status }) {
@@ -86,10 +76,12 @@ export function CustomerMessageThread({
   loading,
   messageText,
   mediaUploadError,
+  mediaSending = false,
   pendingMedia,
   chatSearch,
   replyTo,
   canSendText,
+  hasMoreMessages = false,
   showJumpLatest,
   messagesEndRef,
   messagesContainerRef,
@@ -165,11 +157,13 @@ export function CustomerMessageThread({
           backgroundSize: "34px 34px",
         }}
       >
-        <div className="mb-3 flex justify-center">
-          <button className="rounded-full bg-white/90 px-3 py-1 text-xs text-[#54656f] shadow-sm" onClick={onLoadOlder}>
-            Load older messages
-          </button>
-        </div>
+        {hasMoreMessages && (
+          <div className="mb-3 flex justify-center">
+            <button className="rounded-full bg-white/90 px-3 py-1 text-xs text-[#54656f] shadow-sm" onClick={onLoadOlder}>
+              Load older messages
+            </button>
+          </div>
+        )}
         {loading && messages.length === 0 ? (
           <p className="text-center text-sm text-[#667781]">Loading messages...</p>
         ) : (
@@ -340,7 +334,7 @@ export function CustomerMessageThread({
           </button>
           <label
             className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-[#54656f] ${
-              canSendText ? "cursor-pointer hover:bg-[#e7fce3] hover:text-[#008069]" : "cursor-not-allowed opacity-50"
+              canSendText && !mediaSending ? "cursor-pointer hover:bg-[#e7fce3] hover:text-[#008069]" : "cursor-not-allowed opacity-50"
             }`}
             title="Attach file"
             aria-label="Attach file"
@@ -350,7 +344,7 @@ export function CustomerMessageThread({
               type="file"
               accept={allowedMediaAccept}
               className="hidden"
-              disabled={!canSendText}
+              disabled={!canSendText || mediaSending}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";
@@ -365,9 +359,10 @@ export function CustomerMessageThread({
             placeholder={canSendText ? (pendingMedia ? "Add a caption" : "Type a message") : "Session expired"}
             className="min-w-0 flex-1 rounded-lg bg-white px-4 py-2 text-sm outline-none disabled:bg-gray-100"
           />
+          <WhatsAppVoiceRecorder disabled={!canSendText} sending={mediaSending} onSendVoice={onSendMedia} />
           <button
             type="submit"
-            disabled={!canSendText || (!messageText.trim() && !pendingMedia)}
+            disabled={!canSendText || mediaSending || (!messageText.trim() && !pendingMedia)}
             className="grid h-10 w-10 place-items-center rounded-full bg-[#00a884] text-white disabled:opacity-50"
             title="Send"
           >

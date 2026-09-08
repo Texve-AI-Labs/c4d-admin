@@ -1,5 +1,8 @@
 import React from "react";
 import { whatsappConversationsApi } from "../api/whatsappConversations";
+import { useRealtimeEvents } from "@/context/realtimeEvents";
+import { friendlyWhatsAppError, unsupportedWhatsAppMediaMessage } from "@/utils/whatsapp/errors";
+import { canSendWhatsAppMediaFile, ensureFileMimeType, getFileMimeType } from "@/utils/whatsapp/media";
 import {
   extractList,
   hasMoreFromResponse,
@@ -24,6 +27,10 @@ const mergeById = (oldItems = [], nextItems = []) => {
   });
   return Array.from(map.values());
 };
+
+const getResponsePagination = (response = {}) => response?.data?.pagination || response?.pagination || {};
+
+const getResponseConversation = (response = {}) => response?.data?.conversation || response?.conversation || null;
 
 const normalizeEvent = (message) => {
   if (!String(message?.data || "").trim()) return null;
@@ -102,6 +109,7 @@ const isNonDriverEvent = (payload = {}) => {
 
 export function useWhatsAppDriver() {
   const token = localStorage.getItem("token") || "";
+  const { updateWhatsappUnreadCount } = useRealtimeEvents();
   const [search, setSearch] = React.useState("");
   const [conversations, setConversations] = React.useState([]);
   const [conversationPage, setConversationPage] = React.useState(1);
@@ -141,7 +149,14 @@ export function useWhatsAppDriver() {
           limit: CONVERSATION_LIMIT,
         });
         const list = extractList(response, "conversations").map(normalizeConversation).filter((item) => item.id);
-        setConversations((prev) => sortConversations(append ? mergeById(prev, list) : list));
+        setConversations((prev) => {
+          const next = sortConversations(append ? mergeById(prev, list) : list);
+          updateWhatsappUnreadCount?.(
+            DRIVER_AUDIENCE_TYPE,
+            next.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0)
+          );
+          return next;
+        });
         setConversationPage(page);
         setHasMoreConversations(hasMoreFromResponse(response, list, CONVERSATION_LIMIT));
       } catch (error) {
@@ -150,7 +165,7 @@ export function useWhatsAppDriver() {
         setLoadingConversations(false);
       }
     },
-    [search]
+    [search, updateWhatsappUnreadCount]
   );
 
   const loadMessages = React.useCallback(
@@ -159,19 +174,43 @@ export function useWhatsAppDriver() {
       setLoadingMessages(true);
       setMessageError("");
       try {
-        const response = await whatsappConversationsApi.getMessages(conversationId, {
+        let response = await whatsappConversationsApi.getMessages(conversationId, {
           page,
           limit: MESSAGE_LIMIT,
           search: query,
         });
+        let loadedPage = Math.max(1, Number(getResponsePagination(response).page || page) || 1);
+        const totalMessagePages = Math.max(1, Number(getResponsePagination(response).totalPages || getResponsePagination(response).total_pages || 1) || 1);
+        const expectedLastId = String(getResponseConversation(response)?.lastMessageId || getResponseConversation(response)?.last_message_id || "");
         const list = extractList(response, "messages")
           .filter(isRenderableMessage)
           .map(normalizeMessage)
           .filter((item) => item.id)
           .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
-        setMessages((prev) => (appendOlder ? mergeById(list, prev).sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)) : list));
-        setMessagePage(page);
-        setHasMoreMessages(hasMoreFromResponse(response, list, MESSAGE_LIMIT));
+
+        const hasExpectedLastMessage = expectedLastId && list.some((message) => String(message.id) === expectedLastId || String(message.raw?.id) === expectedLastId);
+        let visibleList = list;
+        if (!appendOlder && !query && loadedPage === 1 && totalMessagePages > 1 && (!expectedLastId || !hasExpectedLastMessage)) {
+          response = await whatsappConversationsApi.getMessages(conversationId, {
+            page: totalMessagePages,
+            limit: MESSAGE_LIMIT,
+            search: query,
+          });
+          loadedPage = Math.max(1, Number(getResponsePagination(response).page || totalMessagePages) || totalMessagePages);
+          visibleList = extractList(response, "messages")
+            .filter(isRenderableMessage)
+            .map(normalizeMessage)
+            .filter((item) => item.id)
+            .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        }
+
+        setMessages((prev) =>
+          appendOlder
+            ? mergeById(visibleList, prev).sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
+            : visibleList
+        );
+        setMessagePage(loadedPage);
+        setHasMoreMessages(loadedPage > 1);
       } catch (error) {
         setMessageError(error?.message || "Unable to load messages");
       } finally {
@@ -188,10 +227,17 @@ export function useWhatsAppDriver() {
       setReplyTo(null);
       setMessageSearch("");
       loadMessages({ conversationId: conversation.id, page: 1, query: "" });
-      setConversations((prev) => prev.map((item) => (item.id === conversation.id ? { ...item, unreadCount: 0 } : item)));
+      setConversations((prev) => {
+        const next = prev.map((item) => (item.id === conversation.id ? { ...item, unreadCount: 0 } : item));
+        updateWhatsappUnreadCount?.(
+          DRIVER_AUDIENCE_TYPE,
+          next.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0)
+        );
+        return next;
+      });
       whatsappConversationsApi.markAsRead(conversation.id).catch(() => {});
     },
-    [loadMessages]
+    [loadMessages, updateWhatsappUnreadCount]
   );
 
   const closeConversation = React.useCallback(() => {
@@ -235,22 +281,112 @@ export function useWhatsAppDriver() {
   );
 
   const sendMediaReply = React.useCallback(
-    async (file) => {
+    async (file, options = {}) => {
       if (!selectedConversationId || !file) return;
+      if (!canSendWhatsAppMediaFile(file, options.mediaType)) {
+        setMessageError(unsupportedWhatsAppMediaMessage);
+        return;
+      }
+      const tempId = `optimistic-media-${Date.now()}`;
+      const localUrl = URL.createObjectURL(file);
+      const uploadMimeType = options.mimeType || getFileMimeType(file) || file.type || "";
+      const uploadFile = ensureFileMimeType(file, uploadMimeType);
+      const optimisticMessage = normalizeMessage({
+        id: tempId,
+        direction: "outbound",
+        status: "sending",
+        type: options.mediaType || uploadMimeType || "document",
+        createdAt: new Date().toISOString(),
+        media: [
+          {
+            url: localUrl,
+            fileName: file.name,
+            mediaType: options.mediaType || uploadMimeType,
+            mimeType: uploadMimeType,
+            sizeBytes: file.size,
+          },
+        ],
+        isOptimistic: true,
+      });
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
+      if (options.mediaType) formData.append("mediaType", options.mediaType);
+      formData.append("mimeType", uploadMimeType);
+      formData.append("fileName", options.fileName || uploadFile.name || file.name || "");
+      if (options.caption) formData.append("caption", options.caption);
       if (replyTo?.id) formData.append("contextMessageId", replyTo.id);
+      setMessages((prev) => [...prev, optimisticMessage]);
       setSending(true);
       try {
-        await whatsappConversationsApi.sendMediaReply(selectedConversationId, formData);
+        const response = await whatsappConversationsApi.sendMediaReply(selectedConversationId, formData);
+        const saved = normalizeMessage(response?.data?.message || response?.data || response?.message || response);
+        const savedMediaAttachments = saved.mediaAttachments?.length
+          ? saved.mediaAttachments.map((item, index) => {
+              const localMedia = optimisticMessage.mediaAttachments[index] || {};
+              return {
+                ...localMedia,
+                ...item,
+                kind: item.kind && item.kind !== "file" ? item.kind : localMedia.kind,
+                mediaType: item.mediaType || localMedia.mediaType,
+                directUrl: item.directUrl || localMedia.directUrl,
+              };
+            })
+          : optimisticMessage.mediaAttachments;
+        setMessages((prev) =>
+          prev.map((item) =>
+            item.id === tempId
+              ? {
+                  ...optimisticMessage,
+                  ...saved,
+                  mediaAttachments: savedMediaAttachments,
+                  isOptimistic: false,
+                }
+              : item
+          )
+        );
         setReplyTo(null);
-        await loadMessages({ conversationId: selectedConversationId, page: 1, query: "" });
         await loadConversations({ page: 1, append: false });
+      } catch (error) {
+        setMessages((prev) =>
+          prev.map((item) => (item.id === tempId ? { ...item, status: "failed", isOptimistic: false, failedReason: friendlyWhatsAppError(error) } : item))
+        );
+        throw error;
       } finally {
         setSending(false);
       }
     },
     [loadConversations, loadMessages, replyTo, selectedConversationId]
+  );
+
+  const retryMessage = React.useCallback(
+    async (message) => {
+      if (!selectedConversationId || !message) return;
+      const media = message.mediaAttachments?.[0];
+      if (media) {
+        try {
+          const blob = await whatsappConversationsApi.downloadMediaForRetry(media);
+          const file = new File([blob], media.fileName || "whatsapp-media", {
+            type: blob.type || media.mimeType || "application/octet-stream",
+          });
+          await sendMediaReply(file, {
+            mediaType: media.mediaType,
+            mimeType: media.mimeType || blob.type,
+            fileName: media.fileName,
+            caption: message.text,
+          });
+        } catch (error) {
+          setMessageError(friendlyWhatsAppError(error));
+        }
+        return;
+      }
+
+      try {
+        await sendReply(message.text);
+      } catch (error) {
+        setMessageError(friendlyWhatsAppError(error));
+      }
+    },
+    [selectedConversationId, sendMediaReply, sendReply]
   );
 
   const loadTemplates = React.useCallback(async () => {
@@ -350,14 +486,19 @@ export function useWhatsAppDriver() {
                 : Number(normalizedConversation.unreadCount || 0) + 1,
           },
         ]);
-        return sortConversations(next);
+        const sorted = sortConversations(next);
+        updateWhatsappUnreadCount?.(
+          DRIVER_AUDIENCE_TYPE,
+          sorted.reduce((sum, item) => sum + Number(item.unreadCount || 0), 0)
+        );
+        return sorted;
       });
 
       if (conversationId === selectedConversationId) {
         setMessages((prev) => mergeById(prev, [message]).sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)));
       }
     },
-    [selectedConversationId]
+    [selectedConversationId, updateWhatsappUnreadCount]
   );
 
   const applyStatusUpdate = React.useCallback(
@@ -370,11 +511,11 @@ export function useWhatsAppDriver() {
       const failedReason = payload?.errorMessage || payload?.error_message || payload?.errors?.[0]?.message || "";
       setMessages((prev) =>
         prev.map((message) =>
-          message.id === messageId
+          [message.id, message.metaMessageId, message.providerMessageId, message.whatsappMessageId].map(String).includes(messageId)
             ? {
                 ...message,
                 status: nextStatus || message.status,
-                failedReason: failedReason || message.failedReason,
+                failedReason: failedReason ? friendlyWhatsAppError(failedReason) : message.failedReason,
               }
             : message
         )
@@ -509,7 +650,11 @@ export function useWhatsAppDriver() {
     loadingConversations,
     conversationError,
     messages,
-    loadOlderMessages: () => loadMessages({ page: messagePage + 1, appendOlder: true }),
+    loadOlderMessages: () => {
+      const previousPage = messagePage - 1;
+      if (previousPage < 1) return undefined;
+      return loadMessages({ page: previousPage, appendOlder: true });
+    },
     hasMoreMessages,
     loadingMessages,
     messageError,
@@ -520,6 +665,7 @@ export function useWhatsAppDriver() {
     setReplyTo,
     sendReply,
     sendMediaReply,
+    retryMessage,
     templates,
     templateDetail,
     setTemplateDetail,

@@ -26,12 +26,14 @@ const FALLBACK_REALTIME_CONTEXT = {
   totalPendings: 0,
   homeTotalPendings: 0,
   inquiriesPendingsByType: {},
+  whatsappUnreadCounts: { CUSTOMER: 0, DRIVER: 0 },
   lastSummaryAt: null,
   isSummaryRefreshing: false,
   refreshGlobalSummary: async () => {},
   requestSummaryRefresh: () => {},
   updateHomeTotalPendings: () => {},
   updateInquiryTotalPendings: () => {},
+  updateWhatsappUnreadCount: () => {},
 };
 
 const EVENT_TYPES = new Set(["connected", "booking_created", "booking_status_changed", "message"]);
@@ -68,6 +70,7 @@ export const RealtimeEventsProvider = ({ children }) => {
   const [summaryCounts, setSummaryCounts] = useState({});
   const [homeTotalPendings, setHomeTotalPendings] = useState(0);
   const [inquiriesPendingsByType, setInquiriesPendingsByType] = useState({});
+  const [whatsappUnreadCounts, setWhatsappUnreadCounts] = useState({ CUSTOMER: 0, DRIVER: 0 });
   const [lastSummaryAt, setLastSummaryAt] = useState(null);
   const [isSummaryRefreshing, setIsSummaryRefreshing] = useState(false);
 
@@ -83,6 +86,15 @@ export const RealtimeEventsProvider = ({ children }) => {
     }));
   }, []);
 
+  const updateWhatsappUnreadCount = useCallback((audienceType, value) => {
+    const key = String(audienceType || "").toUpperCase();
+    if (!["CUSTOMER", "DRIVER"].includes(key)) return;
+    setWhatsappUnreadCounts((prev) => ({
+      ...prev,
+      [key]: Math.max(0, Number(value || 0)),
+    }));
+  }, []);
+
   const refreshGlobalSummary = useCallback(async () => {
     if (!authToken) return;
     setIsSummaryRefreshing(true);
@@ -91,6 +103,13 @@ export const RealtimeEventsProvider = ({ children }) => {
       if (!data?.success) return;
       const counts = data?.counts || data?.data || {};
       setSummaryCounts(counts);
+      const whatsappCounts = counts?.whatsappUnreadCounts || counts?.whatsapp_unread_counts || counts?.whatsapp || {};
+      const customerUnread = counts?.customerWhatsAppUnreadCount ?? counts?.customer_whatsapp_unread_count ?? whatsappCounts?.CUSTOMER ?? whatsappCounts?.customer;
+      const driverUnread = counts?.driverWhatsAppUnreadCount ?? counts?.driver_whatsapp_unread_count ?? whatsappCounts?.DRIVER ?? whatsappCounts?.driver;
+      setWhatsappUnreadCounts((prev) => ({
+        CUSTOMER: customerUnread !== undefined && customerUnread !== null ? Math.max(0, Number(customerUnread || 0)) : prev.CUSTOMER,
+        DRIVER: driverUnread !== undefined && driverUnread !== null ? Math.max(0, Number(driverUnread || 0)) : prev.DRIVER,
+      }));
       const pending = Number(counts?.totalPendings || 0);
       setHomeTotalPendings(pending);
       setInquiriesPendingsByType((prev) => ({
@@ -214,6 +233,7 @@ export const RealtimeEventsProvider = ({ children }) => {
       setSummaryCounts({});
       setHomeTotalPendings(0);
       setInquiriesPendingsByType({});
+      setWhatsappUnreadCounts({ CUSTOMER: 0, DRIVER: 0 });
       setLastSummaryAt(null);
       return;
     }
@@ -337,12 +357,14 @@ export const RealtimeEventsProvider = ({ children }) => {
       totalPendings: Number(summaryCounts?.totalPendings || 0),
       homeTotalPendings,
       inquiriesPendingsByType,
+      whatsappUnreadCounts,
       lastSummaryAt,
       isSummaryRefreshing,
       refreshGlobalSummary,
       requestSummaryRefresh,
       updateHomeTotalPendings,
       updateInquiryTotalPendings,
+      updateWhatsappUnreadCount,
     }),
     [
       isLive,
@@ -353,12 +375,14 @@ export const RealtimeEventsProvider = ({ children }) => {
       summaryCounts,
       homeTotalPendings,
       inquiriesPendingsByType,
+      whatsappUnreadCounts,
       lastSummaryAt,
       isSummaryRefreshing,
       refreshGlobalSummary,
       requestSummaryRefresh,
       updateHomeTotalPendings,
       updateInquiryTotalPendings,
+      updateWhatsappUnreadCount,
     ]
   );
 

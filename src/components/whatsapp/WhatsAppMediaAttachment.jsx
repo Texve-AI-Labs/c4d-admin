@@ -10,12 +10,29 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
-import { formatMediaSize } from "@/utils/whatsappMediaUtils";
+import { formatMediaSize } from "@/utils/whatsapp/media";
 
 const getToken = () => localStorage.getItem("rootcabs_access_token") || localStorage.getItem("token") || "";
 
+const resolveMediaUrl = (url = "") => {
+  if (!url) return "";
+  if (url.startsWith("blob:") || /^https?:\/\//i.test(url)) return url;
+  if (!url.startsWith("/")) return url;
+  try {
+    return `${new URL(getBaseUrl()).origin}${url}`;
+  } catch {
+    return url;
+  }
+};
+
+const isApiMediaUrl = (url = "") => /\/api\/customer\/[^/]+\/whatsapp-media\/[^/]+\/(view|download)/i.test(url);
+
+const canUseDirectMediaUrl = (url = "") => Boolean(url) && !isApiMediaUrl(resolveMediaUrl(url));
+
 const mediaEndpoint = (media, action) => {
-  if (!media?.id) return media?.directUrl || "";
+  const actionUrl = action === "download" ? media?.downloadUrl : media?.viewUrl;
+  if (actionUrl) return resolveMediaUrl(actionUrl);
+  if (!media?.id) return resolveMediaUrl(media?.directUrl || "");
   return `${getBaseUrl()}/whatsapp-media/${media.id}/${action}`;
 };
 
@@ -30,7 +47,10 @@ const mediaIcon = {
 };
 
 const fetchMediaBlob = async (media, action) => {
-  if (media.directUrl && !media.id) return media.directUrl;
+  if (media.directUrl && media.directUrl.startsWith("blob:")) return media.directUrl;
+  if (media.directUrl && !media.id && !media.viewUrl && !media.downloadUrl && canUseDirectMediaUrl(media.directUrl)) {
+    return resolveMediaUrl(media.directUrl);
+  }
   const token = getToken();
   const response = await fetch(mediaEndpoint(media, action), {
     headers: {
@@ -41,6 +61,18 @@ const fetchMediaBlob = async (media, action) => {
   if (!response.ok) throw new Error("Unable to load media");
   const blob = await response.blob();
   return URL.createObjectURL(blob);
+};
+
+const getViewUrl = async (media) => {
+  const directUrl = resolveMediaUrl(media.directUrl || "");
+  if (directUrl && canUseDirectMediaUrl(directUrl)) return directUrl;
+  return fetchMediaBlob(media, "view");
+};
+
+const getDownloadUrl = async (media) => {
+  const directUrl = resolveMediaUrl(media.directUrl || "");
+  if (directUrl && !media.downloadUrl && !media.viewUrl && !media.id && canUseDirectMediaUrl(directUrl)) return directUrl;
+  return fetchMediaBlob(media, "download");
 };
 
 function MediaPreviewModal({ media, objectUrl, onClose }) {
@@ -129,15 +161,69 @@ export default function WhatsAppMediaAttachment({ media = [], message, forwardTa
   const [previewUrl, setPreviewUrl] = React.useState("");
   const [forwardMedia, setForwardMedia] = React.useState(null);
   const [loadingId, setLoadingId] = React.useState("");
+  const [inlineUrls, setInlineUrls] = React.useState({});
+  const fetchedInlineKeysRef = React.useRef(new Set());
+  const mediaSignature = React.useMemo(
+    () =>
+      media
+        .map((item, index) =>
+          [
+            item.id || index,
+            item.kind,
+            item.mediaType,
+            item.mimeType,
+            item.directUrl,
+            item.viewUrl,
+            item.downloadUrl,
+            item.fileName,
+          ].join("|")
+        )
+        .join("||"),
+    [media]
+  );
 
   React.useEffect(() => () => {
     if (previewUrl && previewUrl.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
+  React.useEffect(() => {
+    let cancelled = false;
+    const objectUrls = [];
+
+    media.forEach((item, index) => {
+      const key = item.id || item.directUrl || index;
+      if (!["image", "audio", "voice", "video"].includes(item.kind)) return;
+      const directUrl = resolveMediaUrl(item.directUrl || "");
+      if (directUrl && canUseDirectMediaUrl(directUrl)) {
+        setInlineUrls((prev) => ({ ...prev, [key]: directUrl }));
+        return;
+      }
+      if (fetchedInlineKeysRef.current.has(key)) return;
+      if (!item.id && !item.viewUrl && !item.directUrl) return;
+
+      fetchedInlineKeysRef.current.add(key);
+      fetchMediaBlob(item, "view")
+        .then((url) => {
+          if (cancelled) {
+            if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+            return;
+          }
+          if (url.startsWith("blob:")) objectUrls.push(url);
+          setInlineUrls((prev) => ({ ...prev, [key]: url }));
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      cancelled = true;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [mediaSignature]);
+
   const handleView = async (item) => {
     setLoadingId(`view-${item.id || item.directUrl}`);
     try {
-      const url = item.id ? await fetchMediaBlob(item, "view") : item.directUrl;
+      const url = await getViewUrl(item);
       setPreview(item);
       setPreviewUrl(url);
     } finally {
@@ -148,7 +234,7 @@ export default function WhatsAppMediaAttachment({ media = [], message, forwardTa
   const handleDownload = async (item) => {
     setLoadingId(`download-${item.id || item.directUrl}`);
     try {
-      const url = item.id ? await fetchMediaBlob(item, "download") : item.directUrl;
+      const url = await getDownloadUrl(item);
       const link = document.createElement("a");
       link.href = url;
       link.download = item.fileName || "whatsapp-media";
@@ -171,17 +257,17 @@ export default function WhatsAppMediaAttachment({ media = [], message, forwardTa
           const key = item.id || item.directUrl || index;
           return (
             <div key={key} className="overflow-hidden rounded-lg border border-black/5 bg-black/5">
-              {item.kind === "image" && item.directUrl && (
+              {item.kind === "image" && inlineUrls[key] && (
                 <button type="button" onClick={() => handleView(item)} className="block w-full">
-                  <img src={item.directUrl} alt={item.fileName} className="max-h-56 w-full object-cover" />
+                  <img src={inlineUrls[key]} alt={item.fileName} className="max-h-56 w-full object-cover" />
                 </button>
               )}
-              {item.kind === "video" && item.directUrl && (
-                <video src={item.directUrl} controls className="max-h-56 w-full bg-black" />
+              {item.kind === "video" && inlineUrls[key] && (
+                <video src={inlineUrls[key]} controls className="max-h-56 w-full bg-black" />
               )}
-              {["audio", "voice"].includes(item.kind) && item.directUrl && (
+              {["audio", "voice"].includes(item.kind) && inlineUrls[key] && (
                 <div className="p-2">
-                  <audio src={item.directUrl} controls className="w-full" />
+                  <audio src={inlineUrls[key]} controls className="w-full" />
                 </div>
               )}
               <div className="flex items-center gap-2 p-2">
