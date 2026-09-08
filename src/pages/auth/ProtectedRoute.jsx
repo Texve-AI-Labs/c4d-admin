@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { isSuperUserRole } from "@/utils/roleUtils";
 
-const ProtectedRoute = ({ element, permission, permissions, superUserOnly = false, requirePermission = false }) => {
+const ProtectedRoute = ({ element, permission, permissions, permissionsAny = [], superUserOnly = false, requirePermission = false }) => {
   const token = localStorage.getItem("token");
   if (!token) {
     return <Navigate to="/auth/sign-in" replace />;
@@ -22,8 +22,15 @@ const ProtectedRoute = ({ element, permission, permissions, superUserOnly = fals
     String(item || "").trim().toLowerCase()
   );
   const requiredPermission = String(permission || "").trim().toLowerCase();
+  const requiredAnyPermissions = permissionsAny
+    .map((item) => String(item || "").trim().toLowerCase())
+    .filter(Boolean);
 
-  if (permission && !normalizedPermissions.includes(requiredPermission)) {
+  if (
+    requiredAnyPermissions.length > 0
+      ? !requiredAnyPermissions.some((item) => normalizedPermissions.includes(item))
+      : permission && !normalizedPermissions.includes(requiredPermission)
+  ) {
     return <Navigate to="/dashboard/unauthorized" replace />;
   }
 

@@ -500,6 +500,7 @@ export const routes = [
         element: <CustomerWhatsappPage />,
         display: true,
         permission: "Marketing",
+        permissionsAny: ["Support", "Marketing"],
       },
       {
         icon: <UserIcon {...icon} />,
@@ -2521,7 +2522,8 @@ export const routes = [
         path: "/whatsapp-driver",
         element: <WhatsAppDriverPage />,
         display: true,
-        permission: "Driver Engagement",
+        permission: "Marketing",
+        permissionsAny: ["Support", "Marketing"],
       },
        {
         icon: <UserIcon {...icon} />,
