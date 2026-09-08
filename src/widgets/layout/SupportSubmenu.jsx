@@ -13,6 +13,7 @@ function SupportSubmenu({ permissions = [] }) {
 
   const items = [
     { label: "Rate Card", path: "/dashboard/rental-rate-card", requiredPermission: "Support" },
+    { label: "Hourly Package Rate Card", path: "/dashboard/hourly-package-rate-card", requiredPermission: "Support" },
     { label: "Leads", path: "/dashboard/leads", requiredPermission: "Support" },
     { label: "Payment Failed Records", path: "/dashboard/support/payment-failed-records", requiredPermission: "Support" },
     ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW

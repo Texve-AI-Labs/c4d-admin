@@ -39,6 +39,7 @@ const menuItems = [
     permissionsAny: ["Support"],
     landingRoutes: [
       { permission: "Support", path: "/dashboard/rental-rate-card" },
+      { permission: "Support", path: "/dashboard/hourly-package-rate-card" },
     ],
   },
   { type: "item", name: "Calls", path: "/dashboard/exotel-calls/list", permission: "Calls" },
@@ -226,6 +227,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       case "Support":
         return (
           currentPath.startsWith("/dashboard/rental-rate-card") ||
+          currentPath.startsWith("/dashboard/hourly-package-rate-card") ||
           currentPath.startsWith("/dashboard/leads") ||
           (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
             currentPath.startsWith("/dashboard/support/admin-discount-history"))

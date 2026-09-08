@@ -9,6 +9,7 @@ import { SignIn, SignUp } from "@/pages/auth";
 import { DeleteAccount } from "@/pages/public/DeleteAccount";
 import { PriceList } from "@/pages/public/price";
 import { RentalTariffRateCard } from "@/pages/public/rentalRateCard";
+import { HourlyPackageRateCard } from "@/pages/public/hourlyPackageRateCard";
 
 import { CustomerView } from "@/pages/customer";
 import { AccountView } from "@/pages/account";
@@ -2402,6 +2403,14 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Hourly Package Rate Card",
+        path: "/hourly-package-rate-card",
+        element: <HourlyPackageRateCard />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Support Review & Reward Management",
         path: "/support/review-reward-management",
         element: <SupportReviewRewardManagement />,
@@ -2565,6 +2574,11 @@ export const routes = [
       {
         path: "/rate-card",
         element: <RentalTariffRateCard />,
+        display: false
+      },
+      {
+        path: "/hourly-package-rate-card",
+        element: <HourlyPackageRateCard />,
         display: false
       },
     ],

@@ -908,6 +908,7 @@ export const API_ROUTES = {
     'GEO_MARKINGS': '/geo-markings',
     'GEO_MARKINGS_LIST': '/geo-markings/filter',
     'RENTAL_OUTSTATION_TARIFFS': '/rental/outstation/tariffs',
+    'RENTAL_HOURLY_PACKAGE_TARIFFS': '/rental/hourly-package/tariffs',
     'GEO_MARKINGS_DELETE': '/geo-markings',
     'GET_CAR_TYPE': '/car-type/',
     'POST_NOTIFICATION_ADD': '/send-notification',
