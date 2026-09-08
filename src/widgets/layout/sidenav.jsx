@@ -24,6 +24,7 @@ import {
   UsersIcon,
   UserIcon,
   GlobeAltIcon,
+  ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/solid';
 import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
@@ -446,7 +447,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                           />
                         ) : null}
                         {name === "Customer WhatsApp" ? (
-                          <ChatBubbleLeftRightIcon
+                          <ChatBubbleLeftEllipsisIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
