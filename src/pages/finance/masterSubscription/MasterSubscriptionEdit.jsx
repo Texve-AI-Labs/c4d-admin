@@ -162,6 +162,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               </Field>
               <ErrorMessage name="zone" component="div" className="text-red-500 text-sm my-1" />
             </div>
+            {values.serviceType === 'RIDES_RENTAL_CABS' && (
             <div>
               <label htmlFor="carType" className="text-sm font-medium text-gray-700">Car Type</label>
               <Field as="select" name="carType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -174,6 +175,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               </Field>
               <ErrorMessage name="carType" component="div" className="text-red-500 text-sm my-1" />
             </div>
+            )}
             <div>
               <label htmlFor="status" className="text-sm font-medium text-gray-700">Status</label>
               <Field as="select" name="status" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -575,7 +577,7 @@ const MasterSubscriptionEdit = () => {
           effectiveFrom: values.effectiveFrom || "",
           effectiveTo: values.effectiveTo || "",
           priority: Number(values.priority) || 0,
-          carType: values.carType || "",
+          carType: values.serviceType === "RIDES_RENTAL_CABS" ? values.carType || "" : "",
         },
         plans: [primaryPlan, ...extraPlans],
         assignments: [

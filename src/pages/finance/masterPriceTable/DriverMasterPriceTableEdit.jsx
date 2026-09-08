@@ -191,7 +191,12 @@ const DriverMasterPriceTableEdit = () => {
                             </div>
                               <div>
                                     <label className="text-sm font-medium text-gray-700">Booking Type</label>
-                                    <Field type="text" name="bookingType" disabled className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-200" />
+                                    <Field as="select" name="bookingType" className="p-2 w-full rounded-md border-2 border-gray-300">
+                                        <option value="">Select Booking Type</option>
+                                        <option value="DROP ONLY">Drop Only</option>
+                                        <option value="ROUND TRIP">Round Trip</option>
+                                    </Field>
+                                    <ErrorMessage name="bookingType" component="div" className="text-red-500 text-sm" />
                             </div>
                                  <div>
                                     <label className="text-sm font-medium text-gray-700">Base Hours</label>
