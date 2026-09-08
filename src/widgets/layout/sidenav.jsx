@@ -89,7 +89,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       return "";
     }
   });
-  const { homeTotalPendings, inquiriesPendingsByType, isLive, isReconnecting } = useRealtimeEvents();
+  const { homeTotalPendings, inquiriesPendingsByType, whatsappUnreadCounts, isLive, isReconnecting } = useRealtimeEvents();
   const getInquiryTypeFromPath = (pathname = "") => {
     const path = String(pathname || "").toLowerCase();
     if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
@@ -111,6 +111,8 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
   );
 
   const homeBadgeCount = Number(homeTotalPendings ?? inquiriesPendingsByType?.ALL_CABS ?? 0);
+  const customerWhatsappBadgeCount = Number(whatsappUnreadCounts?.CUSTOMER || 0);
+  const driverWhatsappBadgeCount = Number(whatsappUnreadCounts?.DRIVER || 0);
   const connectionStatus = isLive ? "live" : isReconnecting ? "reconnecting" : "offline";
 
   // useEffect(() => {
@@ -482,6 +484,16 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                       {name === "All Inquiries" && inquiriesBadgeCount > 0 && (
                         <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
                           {inquiriesBadgeCount}
+                        </span>
+                      )}
+                      {name === "Customer WhatsApp" && customerWhatsappBadgeCount > 0 && (
+                        <span className="ml-auto rounded-full bg-[#25d366] px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          {customerWhatsappBadgeCount > 99 ? "99+" : customerWhatsappBadgeCount}
+                        </span>
+                      )}
+                      {name === "WhatsApp Driver" && driverWhatsappBadgeCount > 0 && (
+                        <span className="ml-auto rounded-full bg-[#25d366] px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          {driverWhatsappBadgeCount > 99 ? "99+" : driverWhatsappBadgeCount}
                         </span>
                       )}
                         </>

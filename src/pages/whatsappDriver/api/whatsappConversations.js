@@ -19,6 +19,22 @@ export const whatsappConversationsApi = {
 
   sendMediaReply: (conversationId, body) => ApiRequestUtils.postDocs(`${BASE}/${conversationId}/reply-media`, body),
 
+  downloadMediaForRetry: async (media) => {
+    const endpoint = media?.id ? `${getBaseUrl()}/whatsapp-media/${media.id}/download` : media?.directUrl;
+    if (!endpoint) throw new Error("Media file is unavailable");
+    const token = localStorage.getItem("token") || localStorage.getItem("rootcabs_access_token") || "";
+    const response = await fetch(endpoint, {
+      headers: media?.id
+        ? {
+            ...getNgrokSkipHeaders(),
+            ...(token ? { token, Authorization: `Bearer ${token}` } : {}),
+          }
+        : undefined,
+    });
+    if (!response.ok) throw new Error("Unable to retrieve the media file for retry");
+    return response.blob();
+  },
+
   getReplyTemplates: (conversationId, limit = 100) =>
     ApiRequestUtils.getWithQueryParam(`${BASE}/${conversationId}/reply-templates`, { limit }),
 

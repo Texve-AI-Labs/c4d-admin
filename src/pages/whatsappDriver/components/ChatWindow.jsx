@@ -1,6 +1,7 @@
 import React from "react";
 import {
   CheckIcon,
+  DocumentIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
   PaperClipIcon,
@@ -15,7 +16,14 @@ import {
   isSessionOpen,
 } from "../utils/whatsappUtils";
 import TemplatePickerModal from "./TemplatePickerModal";
-import WhatsAppMediaAttachment from "@/components/WhatsAppMediaAttachment";
+import WhatsAppMediaAttachment from "@/components/whatsapp/WhatsAppMediaAttachment";
+import WhatsAppVoiceRecorder from "@/components/whatsapp/WhatsAppVoiceRecorder";
+import {
+  formatMediaSize,
+  getFileMimeType,
+  getMediaKindFromMimeType,
+  WHATSAPP_SUPPORTED_MEDIA_ACCEPT,
+} from "@/utils/whatsapp/media";
 
 function StatusTicks({ status }) {
   const normalized = String(status || "").toLowerCase();
@@ -48,8 +56,9 @@ function QuotedPreview({ message, compact = false }) {
   );
 }
 
-function MessageBubble({ message, onReply, forwardTargets, onForwardMessage }) {
+function MessageBubble({ message, onReply, onRetry, forwardTargets, onForwardMessage }) {
   const sent = message.fromAdmin;
+  const failed = message.status === "failed";
   return (
     <div className={`group flex ${sent ? "justify-end" : "justify-start"}`}>
       <div
@@ -70,12 +79,26 @@ function MessageBubble({ message, onReply, forwardTargets, onForwardMessage }) {
           </div>
         )}
         <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{message.text}</p>
-        {message.status === "failed" && message.failedReason && (
-          <p className="mt-1 text-[11px] font-medium text-red-600">Message undeliverable: {message.failedReason}</p>
+        {failed && message.failedReason && (
+          <div className="mt-1 flex items-center justify-between gap-3 text-[11px] font-medium text-red-600">
+            <p>{message.failedReason}</p>
+            <button
+              type="button"
+              onClick={() => onRetry?.(message)}
+              className="shrink-0 rounded-md bg-red-50 px-2 py-1 font-semibold text-red-700 hover:bg-red-100"
+            >
+              Retry
+            </button>
+          </div>
         )}
         <div className="mt-1 flex items-center justify-end gap-1">
           <span className="text-[10px] text-blue-gray-400">{formatMessageTime(message.createdAt)}</span>
           {sent && <StatusTicks status={message.status} />}
+          {failed && !message.failedReason && (
+            <button type="button" onClick={() => onRetry?.(message)} className="ml-1 font-semibold text-red-600">
+              Retry
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onReply(message)}
@@ -90,7 +113,7 @@ function MessageBubble({ message, onReply, forwardTargets, onForwardMessage }) {
   );
 }
 
-function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQuery, forwardTargets, onForwardMessage }) {
+function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, onRetry, searchQuery, forwardTargets, onForwardMessage }) {
   const scrollerRef = React.useRef(null);
   const bottomRef = React.useRef(null);
   const [stickToBottom, setStickToBottom] = React.useState(true);
@@ -161,6 +184,7 @@ function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQ
               <MessageBubble
                 message={message}
                 onReply={onReply}
+                onRetry={onRetry}
                 forwardTargets={forwardTargets}
                 onForwardMessage={onForwardMessage}
               />
@@ -192,11 +216,34 @@ function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, searchQ
 
 function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onSendMedia, onOpenTemplates }) {
   const [text, setText] = React.useState("");
+  const [pendingMedia, setPendingMedia] = React.useState(null);
   const fileInputRef = React.useRef(null);
+
+  React.useEffect(
+    () => () => {
+      if (pendingMedia?.previewUrl) URL.revokeObjectURL(pendingMedia.previewUrl);
+    },
+    [pendingMedia?.previewUrl]
+  );
+
+  const clearPendingMedia = () => {
+    setPendingMedia((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      return null;
+    });
+  };
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!text.trim() || disabled) return;
+    if (disabled || sending) return;
+    if (pendingMedia) {
+      const media = pendingMedia;
+      setPendingMedia(null);
+      await onSendMedia(media.file, { caption: text.trim() });
+      setText("");
+      return;
+    }
+    if (!text.trim()) return;
     await onSend(text);
     setText("");
   };
@@ -205,11 +252,58 @@ function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onS
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file || disabled || sending) return;
-    await onSendMedia(file);
+    const mimeType = getFileMimeType(file) || file.type || "application/octet-stream";
+    setPendingMedia((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+      return {
+        file,
+        fileName: file.name,
+        mimeType,
+        kind: getMediaKindFromMimeType(mimeType) || "document",
+        sizeBytes: file.size,
+        previewUrl: URL.createObjectURL(file),
+      };
+    });
   };
 
   return (
     <div className="border-t border-blue-gray-100 bg-[#F0F2F5]">
+      {pendingMedia && (
+        <div className="border-b border-blue-gray-100 bg-white px-4 py-4">
+          <div className="mx-auto max-w-xl">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={clearPendingMedia}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#54656F] hover:bg-[#F0F2F5]"
+                title="Remove attachment"
+                aria-label="Remove attachment"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+              <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-[#111B21]">{pendingMedia.fileName}</p>
+              <span className="h-9 w-9 shrink-0" aria-hidden="true" />
+            </div>
+            <div className="grid min-h-[180px] place-items-center rounded-lg bg-[#F0F2F5] p-4">
+              {pendingMedia.kind === "image" ? (
+                <img src={pendingMedia.previewUrl} alt={pendingMedia.fileName} className="max-h-[240px] max-w-full rounded object-contain shadow-sm" />
+              ) : pendingMedia.kind === "video" ? (
+                <video src={pendingMedia.previewUrl} controls className="max-h-[240px] max-w-full rounded bg-black shadow-sm" />
+              ) : pendingMedia.kind === "audio" ? (
+                <audio src={pendingMedia.previewUrl} controls className="w-full max-w-md" />
+              ) : (
+                <div className="text-center text-[#667781]">
+                  <DocumentIcon className="mx-auto h-16 w-16 text-white drop-shadow-sm" />
+                  <p className="mt-3 text-sm font-semibold text-[#111B21]">{pendingMedia.fileName}</p>
+                  <p className="mt-1 text-xs">
+                    {[formatMediaSize(pendingMedia.sizeBytes), pendingMedia.mimeType].filter(Boolean).join(" - ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {replyTo && (
         <div className="mx-3 mt-3 flex items-start justify-between gap-2 rounded-xl bg-white p-2">
           <QuotedPreview message={replyTo} />
@@ -235,7 +329,7 @@ function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onS
         >
           Use Template
         </button>
-        <input ref={fileInputRef} type="file" className="hidden" onChange={sendMedia} />
+        <input ref={fileInputRef} type="file" accept={WHATSAPP_SUPPORTED_MEDIA_ACCEPT} className="hidden" onChange={sendMedia} />
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -250,12 +344,13 @@ function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onS
           value={text}
           onChange={(event) => setText(event.target.value)}
           disabled={disabled}
-          placeholder={disabled ? "Choose a template" : "Type a message"}
+          placeholder={disabled ? "Choose a template" : pendingMedia ? "Add a caption" : "Type a message"}
           className="min-w-0 flex-1 rounded-lg border border-transparent bg-white px-4 py-2 text-sm outline-none transition focus:border-[#00A884] focus:ring-2 focus:ring-[#D9FDD3] disabled:cursor-not-allowed disabled:opacity-70"
         />
+        <WhatsAppVoiceRecorder disabled={disabled} sending={sending} onSendVoice={onSendMedia} />
         <button
           type="submit"
-          disabled={disabled || sending || !text.trim()}
+          disabled={disabled || sending || (!text.trim() && !pendingMedia)}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-[#008069] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Send message"
         >
@@ -282,6 +377,7 @@ export default function ChatWindow({
   onClose,
   onSend,
   onSendMedia,
+  onRetry,
   conversations = [],
   onForwardMessage,
   templates,
@@ -380,6 +476,7 @@ export default function ChatWindow({
         hasMore={hasMore}
         onLoadOlder={onLoadOlder}
         onReply={onReply}
+        onRetry={onRetry}
         searchQuery={messageSearch}
         forwardTargets={conversations}
         onForwardMessage={onForwardMessage}

@@ -1,6 +1,8 @@
 import axios from "axios";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
-import { normalizeMessageMedia } from "@/utils/whatsappMediaUtils";
+import { friendlyWhatsAppError, isWhatsAppMediaTypeError } from "@/utils/whatsapp/errors";
+import { normalizeMessageMedia } from "@/utils/whatsapp/media";
 
 const TOKEN_KEY = "rootcabs_access_token";
 
@@ -189,20 +191,27 @@ export const normalizeMessage = (row = {}) => {
     "provider_message_id",
     "wamid",
   ], "");
+  const providerMessageId = pick(row, ["providerMessageId", "provider_message_id", "wamid"], metaMessageId);
+  const whatsappMessageId = pick(row, ["whatsappMessageId", "whatsapp_message_id", "wamid"], metaMessageId);
+  const rawText = String(pick(row, ["textBody", "text", "body", "content", "message"], ""));
+  const rawErrorMessage = pick(row, ["errorMessage", "error_message"], "");
   return {
     raw: row,
     id,
-    text: String(pick(row, ["textBody", "text", "body", "content", "message"], "")),
+    text: isWhatsAppMediaTypeError(rawText) ? "" : rawText,
     type: String(pick(row, ["type", "messageType", "message_type"], "text")),
     direction: outbound ? "outbound" : "inbound",
     providerStatus: String(pick(row, ["providerStatus", "provider_status", "status"], outbound ? "sent" : "")),
     errorCode: pick(row, ["errorCode", "error_code"], ""),
-    errorMessage: pick(row, ["errorMessage", "error_message"], ""),
+    errorMessage: rawErrorMessage ? friendlyWhatsAppError(rawErrorMessage) : "",
     sentAt: pick(row, ["sentAt", "created_at", "time", "timestamp", "deliveredAt", "readAt"], null),
+    createdAt: pick(row, ["createdAt", "created_at", "createdOn", "created_on", "timestamp"], null),
     quotedMessage,
     templateHeaderMediaUrl: pick(row, ["templateHeaderMediaUrl", "template_header_media_url"], ""),
     templateName: pick(row, ["templateName", "template_name"], ""),
     metaMessageId,
+    providerMessageId,
+    whatsappMessageId,
     mediaAttachments: normalizeMessageMedia(row),
     metaContextMessageId: pick(row, ["metaContextMessageId", "meta_context_message_id"], ""),
     rawPayload: pick(row, ["rawPayload", "raw_payload"], null),
@@ -279,7 +288,11 @@ export const customerWhatsappApi = {
       params: { page, limit, ...(search ? { search } : {}) },
     });
     const { items, pagination } = unwrapList(payload, ["items", "messages", "results"]);
-    return { items: items.map(normalizeMessage), pagination };
+    return {
+      items: items.map(normalizeMessage),
+      pagination,
+      conversation: payload?.data?.conversation || payload?.conversation || null,
+    };
   },
   markRead: (conversationId) => request("post", `/whatsapp-conversations/${conversationId}/mark-read`, { data: {} }),
   sendReply: (conversationId, text, contextMessageId) =>
@@ -331,5 +344,20 @@ export const customerWhatsappApi = {
   forwardMessage: (conversationId, body) =>
     request("post", `/whatsapp-conversations/${conversationId}/forward`, { data: body }),
   getEventsUrl: () => `${getBaseUrl()}/whatsapp-conversations/events`,
+  subscribeEvents: ({ signal, onOpen, onMessage, onClose, onError }) =>
+    fetchEventSource(`${getBaseUrl()}/whatsapp-conversations/events`, {
+      method: "GET",
+      headers: {
+        Accept: "text/event-stream",
+        ...getNgrokSkipHeaders(),
+        ...(getWhatsappToken() ? { token: getWhatsappToken(), Authorization: `Bearer ${getWhatsappToken()}` } : {}),
+      },
+      signal,
+      openWhenHidden: true,
+      onopen: onOpen,
+      onmessage: onMessage,
+      onclose: onClose,
+      onerror: onError,
+    }),
   authHeaders,
 };

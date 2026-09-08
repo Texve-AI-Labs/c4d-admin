@@ -1,5 +1,6 @@
 import moment from "moment";
-import { normalizeMessageMedia } from "@/utils/whatsappMediaUtils";
+import { normalizeMessageMedia } from "@/utils/whatsapp/media";
+import { friendlyWhatsAppError, isWhatsAppMediaTypeError } from "@/utils/whatsapp/errors";
 
 const pickFirst = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
 
@@ -46,14 +47,15 @@ export const getMessageText = (raw = {}) =>
     raw.template?.name ? `[TEMPLATE] ${raw.template.name}` : "",
     raw.templateName ? `[TEMPLATE] ${raw.templateName}` : "",
     raw.template_name ? `[TEMPLATE] ${raw.template_name}` : "",
-    raw.errorMessage ? `Message undeliverable: ${raw.errorMessage}` : "",
-    raw.errors?.[0]?.message ? `Message undeliverable: ${raw.errors[0].message}` : "",
     ""
   );
 
 export const isRenderableMessage = (raw = {}) => {
   if (!raw || typeof raw !== "object") return false;
   if (String(getMessageText(raw) || "").trim()) return true;
+  if (normalizeMessageMedia(raw).length > 0) return true;
+  const type = String(raw.messageType || raw.message_type || raw.type || raw.mediaType || raw.media_type || "").toLowerCase();
+  if (["image", "video", "audio", "voice", "document", "pdf", "sticker"].some((item) => type.includes(item))) return true;
   return Boolean(
     raw.mediaUrl ||
       raw.media?.url ||
@@ -217,8 +219,10 @@ export const normalizeMessage = (raw = {}) => {
   );
   const mediaLabel = getMediaLabel(raw);
   const mediaAttachments = normalizeMessageMedia(raw);
-  const text = getMessageText(raw) || (mediaLabel ? `[${mediaLabel}]` : "");
-  const failedReason = pickFirst(raw.errorMessage, raw.error_message, raw.errors?.[0]?.message, raw.errors?.[0]?.title, "");
+  const rawText = getMessageText(raw);
+  const rawFailedReason = pickFirst(raw.errorMessage, raw.error_message, raw.errors?.[0]?.message, raw.errors?.[0]?.title, "");
+  const text = isWhatsAppMediaTypeError(rawText) ? "" : rawText || (mediaLabel ? `[${mediaLabel}]` : "");
+  const failedReason = rawFailedReason ? friendlyWhatsAppError(rawFailedReason) : "";
 
   return {
     ...raw,

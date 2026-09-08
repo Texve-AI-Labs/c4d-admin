@@ -150,12 +150,14 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
     },
     postDocs: async (apiRoute, body) => {
         const token = localStorage.getItem('token');
+        const headers = {
+            'Content-Type': 'multipart/form-data',
+            'token': token,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...getNgrokSkipHeaders(),
+        };
         const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'token': token,
-                ...getNgrokSkipHeaders(),
-            }
+            headers
         });
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             // Alert.alert('Failure', data.message, [{
@@ -177,7 +179,6 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
                 ...getNgrokSkipHeaders(),
             }
         });
-        console.log('data in POST DOCS :', data);
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             // Alert.alert('Failure', data.message, [{
             //     style: 'default', onPress: () => {

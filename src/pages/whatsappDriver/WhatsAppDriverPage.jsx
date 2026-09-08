@@ -48,6 +48,7 @@ export default function WhatsAppDriverPage() {
           onClose={whatsapp.closeConversation}
           onSend={whatsapp.sendReply}
           onSendMedia={whatsapp.sendMediaReply}
+          onRetry={whatsapp.retryMessage}
           conversations={whatsapp.conversations}
           onForwardMessage={whatsapp.forwardMessage}
           templates={whatsapp.templates}
