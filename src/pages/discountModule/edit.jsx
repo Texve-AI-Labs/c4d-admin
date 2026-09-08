@@ -12,6 +12,7 @@ const DiscountEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isViewMode = new URLSearchParams(location.search).get('mode') === 'view';
 
   const [initialValues, setInitialValues] = useState(null);
   const [serviceAreas, setServiceAreas] = useState([]);
@@ -413,7 +414,7 @@ const DiscountEdit = () => {
           <Alert color={alert.color}>{alert.message}</Alert>
         </div>
       )}
-      <h2 className="text-2xl font-bold mb-4">Edit Discount</h2>
+      <h2 className="text-2xl font-bold mb-4">{isViewMode ? 'Discount Details' : 'Edit Discount'}</h2>
 
       <Formik
         enableReinitialize
@@ -423,7 +424,7 @@ const DiscountEdit = () => {
       >
         {({ isSubmitting, isValid, setFieldValue, values }) => (
           <Form className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <fieldset disabled={isViewMode} className="grid grid-cols-2 gap-4">
               {(() => {
                 const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
                 const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
@@ -841,6 +842,7 @@ const DiscountEdit = () => {
                 <label htmlFor="serviceArea" className="text-sm font-medium text-gray-700">Select Service Area</label>
                 <Select
                   name="serviceArea"
+                  isDisabled={isViewMode}
                   options={values.serviceType === 'PARCEL' ? PARCEL_ZONE_OPTIONS : ZONE_OPTIONS}
                   isMulti={values.serviceType !== 'PARCEL'}
                   value={
@@ -889,8 +891,18 @@ const DiscountEdit = () => {
                   </>
                 );
               })()}
+            </fieldset>
+            {isViewMode ? (
+              <div className="my-6 flex justify-center">
+                <Button
+                  type="button"
+                  className={`rounded-xl px-8 ${ColorStyles.backButton}`}
+                  onClick={() => navigate('/dashboard/finance/discountModuleList')}
+                >
+                  Back
+                </Button>
             </div>
-
+            ) : (
             <div className="flex flex-row">
               <Button
                 fullWidth
@@ -909,6 +921,7 @@ const DiscountEdit = () => {
                 Update
               </Button>
             </div>
+            )}
           </Form>
         )}
       </Formik>

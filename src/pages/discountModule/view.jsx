@@ -3,7 +3,7 @@ import {
   Card, CardHeader, CardBody, Typography, Button,
   Spinner,
 } from '@material-tailwind/react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import moment from 'moment';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
@@ -198,7 +198,15 @@ const DiscountView = () => {
                 ) : (
                   displayedDiscounts.map((item, index) => (
                     <tr key={index} className="border-b border-blue-gray-50 text-sm hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-5 py-3">{serviceTypeLabels[item.serviceType] || item.serviceType}</td>
+                      <td className="whitespace-nowrap px-5 py-3">
+                        <Link
+                          to={`/dashboard/finance/discountModule/edit/${item.id}?mode=view`}
+                          state={{ discount: item }}
+                          className="font-medium text-primary underline decoration-primary underline-offset-2 hover:text-primary-700"
+                        >
+                          {serviceTypeLabels[item.serviceType] || item.serviceType}
+                        </Link>
+                      </td>
                       <td className="whitespace-nowrap px-5 py-3">{item.offerType || '-'}</td>
                       <td className="whitespace-nowrap px-5 py-3">{item.targetMode || '-'}</td>
                       <td className="whitespace-nowrap px-5 py-3">{item.title || '-'}</td>
