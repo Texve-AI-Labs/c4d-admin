@@ -27,6 +27,7 @@ import {
   ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/solid';
+import { FaCar } from "react-icons/fa";
 import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 
@@ -46,6 +47,7 @@ const menuItems = [
   { type: "item", name: "Calls", path: "/dashboard/exotel-calls/list", permission: "Calls" },
   { type: "item", name: "All Inquiries", path: "/dashboard/booking/list", permission: "All bookings" },
   { type: "item", name: "Vendors", path: "/dashboard/vendors/account/owner-onboarding-cab", permission: "Vendors" },
+  { type: "item", name: "Driver List", path: "/dashboard/vendors/vehicleList", permission: "Vendors" },
   { type: "item", name: "Customers", path: "/dashboard/customers", permission: "Customers" },
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
@@ -241,10 +243,23 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       case "Vendors":
         return (
           currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-cab") ||
-          currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
+          currentPath.startsWith("/dashboard/vendors/account/drivers") ||
+          currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-auto") ||
+          (currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-bike") &&
+            !currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi")) ||
+          currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi") ||
           currentPath.startsWith("/dashboard/vendors/onlinevehicleslist") ||
+          currentPath.startsWith("/dashboard/vendors/root-web-reg") ||
           currentPath.startsWith("/dashboard/doc-verification") || 
           currentPath.startsWith("/dashboard/vendors/driver-return-trips")
+        );
+      case "Driver List":
+        return (
+          currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
+          currentPath.startsWith("/dashboard/vendors/account/allvehicles") ||
+          currentPath.startsWith("/dashboard/vendors/account/autolist") ||
+          currentPath.startsWith("/dashboard/vendors/account/parcel") ||
+          currentPath.startsWith("/dashboard/vendors/account/biketaxilist")
         );
       case "Customers":
         return currentPath.startsWith("/dashboard/customers");
@@ -423,6 +438,11 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                         ) : null}
                         {name === "Vendors" ? (
                           <BuildingStorefrontIcon
+                            className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
+                          />
+                        ) : null}
+                        {name === "Driver List" ? (
+                          <FaCar
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}

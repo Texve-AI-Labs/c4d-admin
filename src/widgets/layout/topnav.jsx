@@ -9,6 +9,7 @@ import AllRecordsSubmenu from "./AllRecordsSubmenu";
 import SupportSubmenu from "./SupportSubmenu";
 import FinanceSubmenu from "./FinanceSubmenu";
 import DriverEngagementSubmenu from "./DriverEngagementSubmenu";
+import DriverListSubmenu from "./DriverListSubmenu";
 import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 export function Topnav({ permissions = [] }) {
   const location = useLocation();
@@ -38,20 +39,25 @@ export function Topnav({ permissions = [] }) {
     path.startsWith("/dashboard/support") ||
     (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && path.startsWith("/dashboard/support/admin-discount-history"));
 
+  const isDriverListSection =
+    path.startsWith("/dashboard/vendors/vehiclelist") ||
+    path.startsWith("/dashboard/vendors/account/allvehicles") ||
+    path.startsWith("/dashboard/vendors/account/autolist") ||
+    path.startsWith("/dashboard/vendors/account/parcel") ||
+    path.startsWith("/dashboard/vendors/account/biketaxilist");
+
   const isVendorsSection =
+    !isDriverListSection && (
     path.startsWith("/dashboard/vendors/account/owner-onboarding-cab") ||
     path.startsWith("/dashboard/vendors/account") ||
     path.startsWith("/dashboard/vendors/account/drivers") ||
-    path.startsWith("/dashboard/vendors/vehiclelist") ||
     path.startsWith("/dashboard/vendors/onlinevehicleslist") ||
-    path.startsWith("/dashboard/vendors/account/allvehicles") ||
     path.startsWith("/dashboard/vendors/account/autoview") ||
-    path.startsWith("/dashboard/vendors/account/autolist") ||
     path.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi") ||
-    path.startsWith("/dashboard/vendors/account/biketaxilists") ||
     path.startsWith("/dashboard/vendors/root-web-reg") ||
     path.startsWith("/dashboard/doc-verification") ||
-    path.startsWith("/dashboard/doc-verification/pending");
+    path.startsWith("/dashboard/doc-verification/pending")
+    );
   
   const isMarketingSection = 
     path.startsWith("/dashboard/vendors/driver-incentive") ||
@@ -106,6 +112,7 @@ export function Topnav({ permissions = [] }) {
     !isSupportSection &&
     !isCustomersSection &&
     !isVendorsSection &&
+    !isDriverListSection &&
     !isShoppVendorSubmenu &&
     // !isDocVerifiction &&
     !isMarketingSection &&
@@ -134,6 +141,7 @@ return (
       {isAllRecordsSection && <AllRecordsSubmenu />}
       {isCustomersSection && <CustomersSubmenu />}
       {isVendorsSection && <VendorsSubmenu />}
+      {isDriverListSection && <DriverListSubmenu />}
       {isShoppVendorSubmenu && <VendorManagementSubmenu />}
       {isMarketingSection && <MarketingSubmenu />}
       {isFinanceSection && <FinanceSubmenu permissions={permissions} />}
