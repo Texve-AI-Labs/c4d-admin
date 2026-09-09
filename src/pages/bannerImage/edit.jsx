@@ -226,8 +226,22 @@ const EditBanner = () => {
       // The update endpoint accepts the banner image as multipart form data.
       const response = await ApiRequestUtils.updateDocs(API_ROUTES.UPDATE_BANNER, formData);
       if (response?.success) {
+        const responseBanner = response?.data?.data || response?.data || {};
+        const updatedImageUrl = responseBanner?.imageUrl
+          || responseBanner?.image
+          || (values.image ? URL.createObjectURL(values.image) : banner?.imageUrl);
+
         navigate('/dashboard/user/bannerimgView', {
-          state: { updatedBanner: { ...banner, ...values, status: Boolean(values.status) } },
+          state: {
+            updatedBanner: {
+              ...banner,
+              ...responseBanner,
+              ...values,
+              image: null,
+              imageUrl: updatedImageUrl,
+              status: Boolean(values.status),
+            },
+          },
         });
       } else {
         setModalMessage(response?.error || response?.message || 'Banner update failed.');

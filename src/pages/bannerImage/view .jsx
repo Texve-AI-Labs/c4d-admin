@@ -104,7 +104,11 @@ const BannerView = () => {
 
   const getPrimaryBannerImage = (item) => {
     if (!item) return '';
-    return item.imageUrl || '';
+    return typeof item.imageUrl === 'string' && item.imageUrl
+      ? item.imageUrl
+      : typeof item.image === 'string'
+        ? item.image
+        : '';
   };
 
   const handleEditBanner = (item) => {
