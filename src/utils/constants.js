@@ -14,7 +14,7 @@ export const constants = {
 };
 
 export const getBaseUrl = () => {
-    return import.meta.env.VITE_URL_SIT + '/api/customer/dev';
+    return import.meta.env.VITE_URL_DEV+ '/api/customer/dev';
 }
 
 export const isNgrokSkipEnabled = () =>

@@ -1685,6 +1685,19 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    const displayBookingStatus = data?.status === "CONFIRMED" && data?.assignmentStatus === "ASSIGNED"
+                                                        ? "DRIVER_ACCEPTED"
+                                                        : data?.status === "CONFIRMED"
+                                                            ? "BOOKING CONFIRMED"
+                                                            : data?.status === "BOOKING_ACCEPTED"
+                                                                ? "DRIVER_ACCEPTED"
+                                                                : data?.status === "ENDED" && data?.tripStatus === true
+                                                                    ? "Completed"
+                                                                    : data?.status === "QUOTED" && data?.followup === "FOLLOWUP"
+                                                                        ? "Follow Up"
+                                                                        : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED"
+                                                                            ? "Call Back Completed"
+                                                                            : data?.status;
                                                     // if (data?.status === 'REQUEST_DRIVER' && Number(data?.returnTripId) > 0) {
                                                     //     console.log('Return trip row debug:', {
                                                     //         id: data?.id,
@@ -1841,7 +1854,7 @@ if (!statusFilter.includes('All')) {
                                                             <Chip
                                                                 variant="ghost"
                                                                 // color={"blue"}
-                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED" : data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
+                                                              value={displayBookingStatus}
                                                                 className={`py-0.5 px-2 text-[11px] font-medium w-fit ${
                                                                     data?.status === "QUOTED" ? "bg-yellow-600 text-white ":
                                                                     data?.status === "REQUEST_DRIVER" ? "bg-orange-600 text-white" :

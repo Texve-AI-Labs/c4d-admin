@@ -13,6 +13,13 @@ const formatStatusLabel = (value) => {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
+const formatBookingLogStatus = (status, assignmentStatus) => {
+  if (status === 'BOOKING_ACCEPTED') {
+    return 'DRIVER_ACCEPTED';
+  }
+  return status;
+};
+
 const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
   const [text, setText] = useState('');
   const [noteType, setNoteType] = useState('')
@@ -447,10 +454,29 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
               ...bookingFollowupLogs.map((log) => ({ ...log, type: "followup" })),
             ]
               .map((log) => (
-              <li
-                key={`${log.type}-${log.id}`}
-                className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
-              >
+              <React.Fragment key={`${log.type}-${log.id}`}>
+              {log.type === 'booking' &&
+                log?.new_status === 'CONFIRMED' &&
+                bookingDetails?.assignmentStatus === 'ASSIGNED' && (
+                  <li className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserIcon className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-800">
+                        {log?.createdBy?.name || 'System'}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-auto">
+                        {moment(log?.created_at).format('DD-MM-YYYY / hh:mm A')}
+                      </span>
+                    </div>
+                    <div className="text-base text-gray-700 flex items-center gap-2">
+                      Customer Trip Status changed from{' '}
+                      <span className="font-medium text-primary-600">Confirmed</span>{' '}
+                      to{' '}
+                      <span className="font-medium text-green-600">Driver Accepted</span>
+                    </div>
+                  </li>
+                )}
+              <li className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-2 mb-2">
                   <UserIcon className="h-5 w-5 text-gray-600" />
                   <span className="text-sm font-medium text-gray-800">
@@ -468,9 +494,9 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
                   <>
                     Customer Trip Status changed from{' '}
                     <span className="font-medium text-primary-600">{
-                    formatStatusLabel(log?.old_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.old_status)}</span>{' '}
+                    formatStatusLabel(formatBookingLogStatus(log?.old_status, log?.old_assignmentStatus || log?.assignmentStatus))}</span>{' '}
                     to{' '}
-                    <span className="font-medium text-green-600">{formatStatusLabel(log?.new_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.new_status)}</span>
+                    <span className="font-medium text-green-600">{formatStatusLabel(formatBookingLogStatus(log?.new_status, log?.new_assignmentStatus || log?.assignmentStatus))}</span>
                         </>
                       ) : (
                         <>
@@ -487,6 +513,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
                   </span>
                 </div>
               </li>
+              </React.Fragment>
             ))}
           </ul>
         )}

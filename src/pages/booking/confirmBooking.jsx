@@ -307,6 +307,9 @@ const ConfirmBooking = (props) => {
         return 'Outstation';
     };
     const formatStatus = (status = '', assignmentStatus = '') => {
+         if (status === 'CONFIRMED' && assignmentStatus === 'ASSIGNED') {
+                return 'Driver Accepted';
+            }
          if (status === 'BOOKING_ACCEPTED') {
                 return 'Driver Accepted';
             }
@@ -1132,7 +1135,10 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         {bookingDetails?.status && (
                             <span
                                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                                    bookingDetails?.assignmentStatus
+                                    bookingDetails?.status === 'BOOKING_ACCEPTED' ||
+                                    (bookingDetails?.status === 'CONFIRMED' && bookingDetails?.assignmentStatus === 'ASSIGNED')
+                                        ? "bg-green-600 text-white"
+                                        : bookingDetails?.assignmentStatus
                                         ? "bg-red-600 text-white"
                                         : "bg-blue-100 text-blue-800"
                                 }`}
