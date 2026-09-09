@@ -36,7 +36,7 @@ const formatDuration = (seconds) => {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 };
 
-export default function WhatsAppVoiceRecorder({ disabled, sending, onSendVoice }) {
+export default function WhatsAppVoiceRecorder({ disabled, sending, onSendVoice, onRecordingChange }) {
   const [recording, setRecording] = React.useState(false);
   const [duration, setDuration] = React.useState(0);
   const [draft, setDraft] = React.useState(null);
@@ -45,6 +45,10 @@ export default function WhatsAppVoiceRecorder({ disabled, sending, onSendVoice }
   const streamRef = React.useRef(null);
   const chunksRef = React.useRef([]);
   const cancelledRef = React.useRef(false);
+
+  React.useEffect(() => {
+    onRecordingChange?.(recording);
+  }, [recording, onRecordingChange]);
 
   React.useEffect(() => {
     if (!recording) return undefined;

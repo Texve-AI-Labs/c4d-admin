@@ -217,6 +217,7 @@ function MessageList({ messages, loading, hasMore, onLoadOlder, onReply, onRetry
 function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onSendMedia, onOpenTemplates }) {
   const [text, setText] = React.useState("");
   const [pendingMedia, setPendingMedia] = React.useState(null);
+  const [isRecording, setIsRecording] = React.useState(false);
   const fileInputRef = React.useRef(null);
 
   React.useEffect(
@@ -333,7 +334,7 @@ function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onS
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || sending}
+          disabled={disabled || sending || isRecording}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#54656F] transition hover:bg-[#E7FCE3] hover:text-[#008069] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Attach file"
           title="Attach file"
@@ -343,14 +344,14 @@ function MessageInputBar({ disabled, sending, replyTo, onClearReply, onSend, onS
         <input
           value={text}
           onChange={(event) => setText(event.target.value)}
-          disabled={disabled}
+          disabled={disabled || isRecording}
           placeholder={disabled ? "Choose a template" : pendingMedia ? "Add a caption" : "Type a message"}
           className="min-w-0 flex-1 rounded-lg border border-transparent bg-white px-4 py-2 text-sm outline-none transition focus:border-[#00A884] focus:ring-2 focus:ring-[#D9FDD3] disabled:cursor-not-allowed disabled:opacity-70"
         />
-        <WhatsAppVoiceRecorder disabled={disabled} sending={sending} onSendVoice={onSendMedia} />
+        <WhatsAppVoiceRecorder disabled={disabled} sending={sending} onRecordingChange={setIsRecording} onSendVoice={onSendMedia} />
         <button
           type="submit"
-          disabled={disabled || sending || (!text.trim() && !pendingMedia)}
+          disabled={disabled || sending || isRecording || (!text.trim() && !pendingMedia)}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#00A884] text-white transition hover:bg-[#008069] disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Send message"
         >

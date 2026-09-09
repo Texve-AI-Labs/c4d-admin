@@ -103,6 +103,7 @@ export function CustomerMessageThread({
   conversations = [],
   onForwardMessage,
 }) {
+  const [isRecording, setIsRecording] = React.useState(false);
   if (!conversation) {
     return (
       <section className="grid h-full min-h-[520px] flex-1 place-items-center bg-[#f0f2f5]">
@@ -329,12 +330,12 @@ export function CustomerMessageThread({
           </div>
         )}
         <form onSubmit={onSend} className="flex items-center gap-2">
-          <button type="button" onClick={onOpenTemplates} className="rounded bg-white px-3 py-2 text-sm font-semibold text-[#008069]">
+          <button type="button" onClick={onOpenTemplates} disabled={isRecording} className="rounded bg-white px-3 py-2 text-sm font-semibold text-[#008069] disabled:cursor-not-allowed disabled:opacity-50">
             Use Template
           </button>
           <label
             className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-[#54656f] ${
-              canSendText && !mediaSending ? "cursor-pointer hover:bg-[#e7fce3] hover:text-[#008069]" : "cursor-not-allowed opacity-50"
+              canSendText && !mediaSending && !isRecording ? "cursor-pointer hover:bg-[#e7fce3] hover:text-[#008069]" : "cursor-not-allowed opacity-50"
             }`}
             title="Attach file"
             aria-label="Attach file"
@@ -344,7 +345,7 @@ export function CustomerMessageThread({
               type="file"
               accept={allowedMediaAccept}
               className="hidden"
-              disabled={!canSendText || mediaSending}
+              disabled={!canSendText || mediaSending || isRecording}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 event.target.value = "";
@@ -355,14 +356,14 @@ export function CustomerMessageThread({
           <input
             value={messageText}
             onChange={(event) => onChangeMessage(event.target.value)}
-            disabled={!canSendText}
+            disabled={!canSendText || isRecording}
             placeholder={canSendText ? (pendingMedia ? "Add a caption" : "Type a message") : "Session expired"}
             className="min-w-0 flex-1 rounded-lg bg-white px-4 py-2 text-sm outline-none disabled:bg-gray-100"
           />
-          <WhatsAppVoiceRecorder disabled={!canSendText} sending={mediaSending} onSendVoice={onSendMedia} />
+          <WhatsAppVoiceRecorder disabled={!canSendText} sending={mediaSending} onRecordingChange={setIsRecording} onSendVoice={onSendMedia} />
           <button
             type="submit"
-            disabled={!canSendText || mediaSending || (!messageText.trim() && !pendingMedia)}
+            disabled={!canSendText || mediaSending || isRecording || (!messageText.trim() && !pendingMedia)}
             className="grid h-10 w-10 place-items-center rounded-full bg-[#00a884] text-white disabled:opacity-50"
             title="Send"
           >
