@@ -599,12 +599,58 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
     };
     setQuotationLogs((prevLogs) => [...prevLogs, newLog]);
 };
-  const getQuoteOutstationDetails = async (values) => {
+  const estimateRentalRoundTripDates = async (values, setFieldValue, locationOverrides = {}) => {
+        const estimatePayload = {
+            pickupLat: locationOverrides.pickupLocation?.lat || values?.pickupLocation?.lat,
+            pickupLong: locationOverrides.pickupLocation?.lng || values?.pickupLocation?.lng,
+            dropLat: locationOverrides.dropLocation?.lat || values?.dropLocation?.lat,
+            dropLong: locationOverrides.dropLocation?.lng || values?.dropLocation?.lng,
+        };
+        if (Object.values(estimatePayload).some((value) => value === undefined || value === null)) {
+            return values;
+        }
+
+        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+        const estimate = await ApiRequestUtils.post(
+            API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
+            estimatePayload
+        );
+        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+
+        const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
+        if (!estimate?.success || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+            return values;
+        }
+        if (!values?.rideDate || !values?.rideTime) {
+            return values;
+        }
+
+        const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
+        const toDateTime = fromDateTime.clone().add(durationMinutes, 'minutes');
+        const toDate = toDateTime.format('YYYY-MM-DD');
+        const toTime = toDateTime.format('HH:mm');
+        setFieldValue?.('toDate', toDate);
+        setFieldValue?.('toTime', toTime);
+        return { ...values, toDate, toTime };
+    };
+
+  const getQuoteOutstationDetails = async (values, setFieldValue) => {
         const isRentalOutstationRoundTrip =
             values?.serviceType === 'RENTAL' &&
             values?.packageTypeSelected === 'Outstation' &&
-            values?.tripType === 'Round Trip';
+            String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
         const isDropTaxiOutstation = values?.serviceType === 'RENTAL_DROP_TAXI';
+
+        console.log('[RENTAL ROUND TRIP CHECK]', {
+            serviceType: values?.serviceType,
+            packageType: values?.packageTypeSelected,
+            tripType: values?.tripType,
+            isRentalOutstationRoundTrip,
+        });
+
+        if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
+            values = await estimateRentalRoundTripDates(values, setFieldValue);
+        }
 
         // For Outstation Round Trip and Drop Taxi: check distance BEFORE estimation
         if (isRentalOutstationRoundTrip || isDropTaxiOutstation) {
@@ -1724,6 +1770,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             setFieldValue("pickupLocation", location);
             setPickupLocation(location);
             setPickupSuggestions([]);
+            if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && values?.dropLocation) {
+                estimateRentalRoundTripDates({ ...values, pickupLocation: location }, setFieldValue);
+            }
             if (values?.serviceType === 'PARCEL') {
                 setFieldValue("senderAddress", address);
             }
@@ -1780,6 +1829,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             setFieldValue("dropLocation", location);
             setDropLocation(location);
             setDropSuggestions([]);
+            if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && values?.pickupLocation) {
+                estimateRentalRoundTripDates({ ...values, dropLocation: location }, setFieldValue);
+            }
             if (values?.serviceType === 'PARCEL') {
                 setFieldValue("receiverAddress", address);
             }
@@ -2620,6 +2672,13 @@ const priceDetailsCardClass = isPeakHour
                                                                         setFieldValue('fromDate', '');
                                                                         setFieldValue('toDate', '');
                                                                     }
+                                                                    if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && values?.pickupLocation && values?.dropLocation) {
+                                                                        estimateRentalRoundTripDates({
+                                                                            ...values,
+                                                                            rideDate: formattedDate,
+                                                                            rideTime: formattedTime,
+                                                                        }, setFieldValue);
+                                                                    }
                                                                 }}
                                                             />
                                                             <ErrorMessage name="rideDateTime" component="div" className="text-red-500 text-sm" />
@@ -2636,7 +2695,7 @@ const priceDetailsCardClass = isPeakHour
                                                             <Field
                                                                 type="datetime-local"
                                                                 name="returnDateTime"
-                                                                disabled={bookingStage === 1}
+                                                                disabled={bookingStage === 1 || (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP')}
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                                 value={values.toDate && values.toTime ? `${values.toDate}T${values.toTime}` : ''}
                                                                 min={values.rideDate && values.rideTime? `${values.rideDate}T${values.rideTime}` : `${moment().format('YYYY-MM-DD')}T00:00`}
@@ -4336,7 +4395,7 @@ const priceDetailsCardClass = isPeakHour
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
 
                                                 {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }

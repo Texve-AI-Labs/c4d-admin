@@ -556,7 +556,58 @@ const EditBooking = (props) => {
         }
     }, [bookingData, currentPackageType, dropLocation, pickupLocation]);
 
-const getQuoteOutstationDetails = async (values) => {
+const estimateRentalRoundTripDates = async (values, setFieldValue, locationOverrides = {}) => {
+    const estimatePayload = {
+        pickupLat: locationOverrides.pickupLocation?.lat || values?.pickupLocation?.lat || (values?.pickupAddress ? bookingData?.pickupLat : undefined),
+        pickupLong: locationOverrides.pickupLocation?.lng || values?.pickupLocation?.lng || (values?.pickupAddress ? bookingData?.pickupLong : undefined),
+        dropLat: locationOverrides.dropLocation?.lat || values?.dropLocation?.lat || (values?.dropAddress ? bookingData?.dropLat : undefined),
+        dropLong: locationOverrides.dropLocation?.lng || values?.dropLocation?.lng || (values?.dropAddress ? bookingData?.dropLong : undefined),
+    };
+    if (Object.values(estimatePayload).some((value) => value === undefined || value === null)) {
+        return values;
+    }
+
+    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+    const estimate = await ApiRequestUtils.post(
+        API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
+        estimatePayload
+    );
+    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+
+    const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
+    if (!estimate?.success || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+        return values;
+    }
+    if (!values?.rideDate || !values?.rideTime) {
+        return values;
+    }
+
+    const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
+    const toDateTime = fromDateTime.clone().add(durationMinutes, 'minutes');
+    const toDate = toDateTime.format('YYYY-MM-DD');
+    const toTime = toDateTime.format('HH:mm');
+    setFieldValue?.('toDate', toDate);
+    setFieldValue?.('toTime', toTime);
+    return { ...values, toDate, toTime };
+};
+
+const getQuoteOutstationDetails = async (values, setFieldValue) => {
+    const isRentalOutstationRoundTrip =
+        values?.serviceType === 'RENTAL' &&
+        values?.packageTypeSelected === 'Outstation' &&
+        String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
+
+    console.log('[RENTAL ROUND TRIP CHECK]', {
+        serviceType: values?.serviceType,
+        packageType: values?.packageTypeSelected,
+        tripType: values?.tripType,
+        isRentalOutstationRoundTrip,
+    });
+
+    if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
+        values = await estimateRentalRoundTripDates(values, setFieldValue);
+    }
+
     const zoneData = await zoneCheckUpFun(values);
     let actualZone = '';
     if (zoneData.success && zoneData.serviceArea) {
@@ -949,6 +1000,9 @@ const getQuoteOutstationDetails = async (values) => {
                 safeSetFieldValue?.("pickupLocation", location);
                 setPickupLocation(location);
                 setPickupSuggestions([]);
+                if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && (values?.dropLocation || values?.dropAddress)) {
+                    estimateRentalRoundTripDates({ ...values, pickupLocation: location }, safeSetFieldValue);
+                }
 
                 // Automatic service area detection for pickup location
                 if (values && values.serviceType) {
@@ -996,6 +1050,9 @@ const getQuoteOutstationDetails = async (values) => {
                 safeSetFieldValue?.("dropLocation", location);
                 setDropLocation(location);
                 setDropSuggestions([]);
+                if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && (values?.pickupLocation || values?.pickupAddress)) {
+                    estimateRentalRoundTripDates({ ...values, dropLocation: location }, safeSetFieldValue);
+                }
             }
         }
     };
@@ -1595,6 +1652,13 @@ const getQuoteOutstationDetails = async (values) => {
                                                             setFieldValue('fromDate', '');
                                                             setFieldValue('toDate', '');
                                                         }
+                                                        if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && (values?.pickupLocation || values?.pickupAddress) && (values?.dropLocation || values?.dropAddress)) {
+                                                            estimateRentalRoundTripDates({
+                                                                ...values,
+                                                                rideDate: formattedDate,
+                                                                rideTime: formattedTime,
+                                                            }, setFieldValue);
+                                                        }
                                                     }}
                                                 />
                                             </div>
@@ -1604,6 +1668,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                     type="datetime-local"
                                                     name="toDateTime"
                                                     className="p-2 w-full rounded-xl border-2 border-gray-300"
+                                                    disabled={values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP'}
                                                     value={values.toDate ? `${values.toDate}T${values.toTime}` : ''}
                                                     min={`${values.rideDate || moment().format('YYYY-MM-DD')}T00:00`}
                                                     onChange={(e) => {
@@ -2281,7 +2346,7 @@ const getQuoteOutstationDetails = async (values) => {
 
 
                                         {values.packageTypeSelected == 'Outstation' && values.serviceType === 'RENTAL' &&
-                                <Button fullWidth className='my-6 mx-2 bg-primary' onClick={() => getQuoteOutstationDetails(values)}>
+                                <Button fullWidth className='my-6 mx-2 bg-primary' onClick={() => getQuoteOutstationDetails(values, setFieldValue)}>
                                     Check Estimated Price
                                             </Button>
                                         }
