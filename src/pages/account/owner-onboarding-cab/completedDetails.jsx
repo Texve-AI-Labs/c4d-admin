@@ -528,6 +528,14 @@ const CompletedOnboardingDetails = () => {
           : String(account?.type || "").toLowerCase() === "individual"
             ? [{ label: "With Driver", value: cabResult?.withDriver || "-" }]
             : []),
+        ...(String(account?.type || "").toLowerCase() === "individual"
+          ? [
+              { label: "Driver Name", value: cabResult?.Drivers?.[0]?.firstName || "-" },
+              { label: "Driver Phone Number", value: cabResult?.Drivers?.[0]?.phoneNumber || "-" },
+              { label: "Driver Address", value: cabResult?.Drivers?.[0]?.curAddress || "-" },
+              { label: "Driver License Number", value: cabResult?.Drivers?.[0]?.license || "-" },
+            ]
+          : []),
       ].filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
 
       const creditLogRows = (Array.isArray(cabPayload?.creditLog) ? cabPayload.creditLog : []).map((log, logIndex) => ({
@@ -840,8 +848,10 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
-      const isTravelsAccount = String(account?.type || "").toLowerCase() === "company";
-      const canManageDriver = ["company", "individual"].includes(String(account?.type || "").toLowerCase());
+      const accountType = String(account?.type || "").toLowerCase();
+      const isTravelsAccount = accountType === "company";
+      const isIndividualAccount = accountType === "individual";
+      const canManageDriver = ["company", "individual"].includes(accountType);
       const rawCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").trim().toUpperCase();
       const mappedCarType = rawCarType === "MINI" ? "Mini" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
       const mappedAssignedTo = String(draftValues?.["Assigned To"] || "").trim();
@@ -881,6 +891,9 @@ const CompletedOnboardingDetails = () => {
           canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver License Number"] || "")
             : (cabResult?.driverLicense || ""),
+        ...(isIndividualAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          ? { isVerified: true }
+          : {}),
         packages: Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []),
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         driverId:
@@ -1288,6 +1301,7 @@ const CompletedOnboardingDetails = () => {
             getLuggageForCarType={getLuggageForCarType}
             isTravels={String(account?.type || "").toLowerCase() === "company"}
             canManageDriver={["company", "individual"].includes(String(account?.type || "").toLowerCase())}
+            showIndividualDriverDetails={String(account?.type || "").toLowerCase() === "individual"}
             accountRelatedDrivers={accountRelatedDrivers}
             getVehicleAddressSuggestionsBySection={(sectionId) =>
               vehicleAddressSuggestionsById[String(sectionId)] || []

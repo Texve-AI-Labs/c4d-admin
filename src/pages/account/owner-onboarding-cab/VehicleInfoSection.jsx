@@ -45,6 +45,7 @@ const VehicleInfoSection = ({
   getLuggageForCarType,
   isTravels = false,
   canManageDriver = false,
+  showIndividualDriverDetails = false,
   accountRelatedDrivers = [],
   getVehicleAddressSuggestionsBySection,
   onVehicleAddressSearch,
@@ -164,8 +165,14 @@ const VehicleInfoSection = ({
     const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
     return isTravels
       ? [...base, "Address", "Insurance Expiry Date", "Owner Name", "Assigned To", ...(canManageDriver ? ["With Driver"] : [])]
-      : [...base, "Address", "Insurance Expiry Date", ...(canManageDriver ? ["With Driver"] : [])];
-  }, [isTravels, canManageDriver]);
+      : [
+          ...base,
+          "Address",
+          "Insurance Expiry Date",
+          ...(canManageDriver ? ["With Driver"] : []),
+          ...(showIndividualDriverDetails ? ["Driver Name", "Driver Phone Number", "Driver Address", "Driver License Number"] : []),
+        ];
+  }, [isTravels, canManageDriver, showIndividualDriverDetails]);
 
   const rightDisplayOrder = useMemo(
     () => [
