@@ -525,7 +525,9 @@ const CompletedOnboardingDetails = () => {
               { label: "Assigned To", value: cabResult?.assigned || "-" },
               { label: "With Driver", value: cabResult?.withDriver || "-" },
             ]
-          : []),
+          : String(account?.type || "").toLowerCase() === "individual"
+            ? [{ label: "With Driver", value: cabResult?.withDriver || "-" }]
+            : []),
       ].filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
 
       const creditLogRows = (Array.isArray(cabPayload?.creditLog) ? cabPayload.creditLog : []).map((log, logIndex) => ({
@@ -759,7 +761,7 @@ const CompletedOnboardingDetails = () => {
   };
 
   useEffect(() => {
-    if (String(account?.type || "").toLowerCase() === "company" && account?.id) {
+    if (["company", "individual"].includes(String(account?.type || "").toLowerCase()) && account?.id) {
       getAccountRelatedDrivers(account.id);
     } else {
       setAccountRelatedDrivers([]);
@@ -839,6 +841,7 @@ const CompletedOnboardingDetails = () => {
     try {
       setVehicleDetailsSavingId(sectionId);
       const isTravelsAccount = String(account?.type || "").toLowerCase() === "company";
+      const canManageDriver = ["company", "individual"].includes(String(account?.type || "").toLowerCase());
       const rawCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").trim().toUpperCase();
       const mappedCarType = rawCarType === "MINI" ? "Mini" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
       const mappedAssignedTo = String(draftValues?.["Assigned To"] || "").trim();
@@ -861,27 +864,27 @@ const CompletedOnboardingDetails = () => {
         assigned: isTravelsAccount
           ? (mappedAssignedTo.toLowerCase() === "owner" ? "Individual" : mappedAssignedTo || cabResult?.assigned || "")
           : (cabResult?.assigned || ""),
-        withDriver: isTravelsAccount ? mappedWithDriver : (cabResult?.withDriver || ""),
+        withDriver: canManageDriver ? mappedWithDriver : (cabResult?.withDriver || ""),
         driverName:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver Name"] || "")
             : (cabResult?.driverName || ""),
         phoneNumber:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver Phone Number"] || "")
             : (cabResult?.phoneNumber || ""),
         driverAddress:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver Address"] || "")
             : (cabResult?.driverAddress || ""),
         driverLicense:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver License Number"] || "")
             : (cabResult?.driverLicense || ""),
         packages: Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []),
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         driverId:
-          isTravelsAccount && mappedWithDriver === "Yes"
+          canManageDriver && mappedWithDriver === "Yes"
             ? (assignOrAddDriver === "Add"
               ? ""
               : (draftValues?.["Driver ID"] || cabResult?.Drivers?.[0]?.id || ""))
@@ -1284,6 +1287,7 @@ const CompletedOnboardingDetails = () => {
             packageOptions={packageOptions}
             getLuggageForCarType={getLuggageForCarType}
             isTravels={String(account?.type || "").toLowerCase() === "company"}
+            canManageDriver={["company", "individual"].includes(String(account?.type || "").toLowerCase())}
             accountRelatedDrivers={accountRelatedDrivers}
             getVehicleAddressSuggestionsBySection={(sectionId) =>
               vehicleAddressSuggestionsById[String(sectionId)] || []
