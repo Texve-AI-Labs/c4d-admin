@@ -564,7 +564,7 @@ const CompletedOnboardingDetails = () => {
 
               { label: "Driver Name", value: cabResult?.Drivers?.[0]?.firstName || cabResult?.driverName || "-" },
               { label: "Driver Phone Number", value: cabResult?.Drivers?.[0]?.phoneNumber || cabResult?.phoneNumber || "-" },
-              { label: "Driver Address", value: cabResult?.Drivers?.[0]?.curAddress || cabResult?.driverAddress || "-" },
+              { label: "Driver Address", value: formatAddressValue(cabResult?.Drivers?.[0]?.curAddress || cabResult?.driverAddress || "-") },
               { label: "Driver License Number", value: cabResult?.Drivers?.[0]?.license || cabResult?.driverLicense || "-" },
             ]
           : []),
