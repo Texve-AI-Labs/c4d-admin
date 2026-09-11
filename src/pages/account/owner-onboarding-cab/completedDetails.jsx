@@ -561,6 +561,11 @@ const CompletedOnboardingDetails = () => {
               },
               { label: "Assigned To", value: cabResult?.assigned || "-" },
               { label: "With Driver", value: cabResult?.withDriver || "-" },
+
+              { label: "Driver Name", value: cabResult?.driverName || "-" },
+              { label: "Driver Phone", value: formatIndianPhone(cabResult?.phoneNumber || "-") },
+              { label: "Driver Address", value: formatAddressValue(cabResult?.driverAddress || "-") },
+              { label: "Driver License", value: cabResult?.driverLicense || "-" },
             ]
           : []),
       ].filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
