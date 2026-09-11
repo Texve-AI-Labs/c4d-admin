@@ -66,12 +66,15 @@ const normalizeBannerType = (type) => {
     'Future Booking Intro (Driver)': 'FUTURE_BOOKING_INTRO_DRIVER',
     'Return Trip Intro (Driver)': 'RETURN_TRIP_INTRO_DRIVER',
     'Training Video (Driver)': 'TRAINING_VIDEO_DRIVER',
+    'Driver Ads Demo Video': 'DRIVER_ADS_DEMO_VIDEO',
+    DRIVER_ADS_DEMO: 'DRIVER_ADS_DEMO_VIDEO',
   };
 
   return typeMap[type] || type;
 };
 
-const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER';
+const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER' || type === 'DRIVER_ADS_DEMO_VIDEO';
+const isDriverAdsDemoVideo = (type) => type === 'DRIVER_ADS_DEMO_VIDEO';
 const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
 const isBannerTargetedMode = (type, mode) => type === 'BANNER' && mode === 'TARGETED';
 const isIntroType = (type) => type === 'INTRO_SLIDES' || type === 'INTRO_SLIDES_DRIVER' || type === 'FUTURE_BOOKING_INTRO_DRIVER' || type === 'RETURN_TRIP_INTRO_DRIVER';
@@ -126,7 +129,7 @@ const EditBanner = () => {
       otherwise: (schema) => schema.notRequired(),
     }),
     zone: Yup.string().when('type', {
-      is: (type) => Boolean(type) && type !== 'NEW_CUSTOMER' && !isIntroType(type) && !isTrainingVideoDriver(type),
+      is: (type) => isDriverAdsDemoVideo(type) || (Boolean(type) && type !== 'NEW_CUSTOMER' && !isIntroType(type) && !isTrainingVideoDriver(type)),
       then: (schema) => schema.required('Zone is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
@@ -166,7 +169,7 @@ const EditBanner = () => {
     try {
       const formData = new FormData();
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'FUTURE_BOOKING_INTRO_DRIVER' || values.type === 'RETURN_TRIP_INTRO_DRIVER';
-      const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
+      const isTrainingVideo = isTrainingVideoDriver(values.type) || isDriverAdsDemoVideo(values.type);
       const isQrPageImageType = values.type === 'QR_DRIVER_TO_DRIVER' || values.type === 'QR_DRIVER_TO_CUSTOMER' || values.type === 'QR_CUSTOMER_TO_CUSTOMER';
       const isNewCustomer = values.type === 'NEW_CUSTOMER';
       const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
@@ -211,7 +214,7 @@ const EditBanner = () => {
         formData.append('driverType', values.driverType || '');
       }
 
-      formData.append('zone', values.zone || 'All');
+      formData.append('zone', isDriverAdsDemoVideo(values.type) ? (values.zone || 'All') : 'All');
 
       if (values.image) {
         formData.append('image', values.image, values.image.name);
@@ -266,6 +269,7 @@ const EditBanner = () => {
     { value: 'FUTURE_BOOKING_INTRO_DRIVER', label: 'Future Booking Intro (Driver)' },
     { value: 'RETURN_TRIP_INTRO_DRIVER', label: 'Return Trip Intro (Driver)' },
     { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' },
+    { value: 'DRIVER_ADS_DEMO_VIDEO', label: 'Driver Ads Demo Video' },
   ];
   const getTypeLabel = (type) => typeOptions.find((option) => option.value === type)?.label || type || '-';
   const getTargetedServiceLabel = (service) => {
@@ -343,7 +347,7 @@ const EditBanner = () => {
         {({ isSubmitting, values, setFieldValue }) => {
           const showModeField = values.type === 'BANNER';
           const showTargetedBannerFields = isBannerTargetedMode(values.type, values.mode);
-          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType(values.type) || isTrainingVideoDriver(values.type);
+          const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType(values.type) || isTrainingVideoDriver(values.type) || isDriverAdsDemoVideo(values.type);
           const showImageField = !isTrainingVideoDriver(values.type);
           const showDropAndNavigate = isStandardBannerType(values.type) && !isServiceIntroImage(values.type) && !isQrPageImageType(values.type);
 
@@ -370,7 +374,7 @@ const EditBanner = () => {
                   </Field>
                 </div>
               )}
-              {!hideStandardFields && (
+              {(!hideStandardFields || isDriverAdsDemoVideo(values.type)) && (
                 <>
                   <div>
                     <label className="text-sm font-medium text-gray-700">From Date</label>
