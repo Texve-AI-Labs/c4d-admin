@@ -524,6 +524,10 @@ const CompletedOnboardingDetails = () => {
               },
               { label: "Assigned To", value: cabResult?.assigned || "-" },
               { label: "With Driver", value: cabResult?.withDriver || "-" },
+              { label: "Driver Name", value: cabResult?.Drivers?.[0]?.firstName || cabResult?.driverName || "-" },
+              { label: "Driver Phone Number", value: cabResult?.Drivers?.[0]?.phoneNumber || cabResult?.phoneNumber || "-" },
+              { label: "Driver Address", value: cabResult?.Drivers?.[0]?.curAddress || cabResult?.driverAddress || "-" },
+              { label: "Driver License Number", value: cabResult?.Drivers?.[0]?.license || cabResult?.driverLicense || "-" },
             ]
           : String(account?.type || "").toLowerCase() === "individual"
             ? [{ label: "With Driver", value: cabResult?.withDriver || "-" }]

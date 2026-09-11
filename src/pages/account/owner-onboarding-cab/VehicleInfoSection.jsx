@@ -164,7 +164,14 @@ const VehicleInfoSection = ({
   const leftDisplayOrder = useMemo(() => {
     const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
     return isTravels
-      ? [...base, "Address", "Insurance Expiry Date", "Owner Name", "Assigned To", ...(canManageDriver ? ["With Driver"] : [])]
+      ? [
+          ...base,
+          "Address",
+          "Insurance Expiry Date",
+          "Owner Name",
+          "Assigned To",
+          ...(canManageDriver ? ["With Driver", "Driver Name", "Driver Phone Number", "Driver Address", "Driver License Number"] : []),
+        ]
       : [
           ...base,
           "Address",
