@@ -1090,6 +1090,7 @@ export const API_ROUTES = {
     'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity',
     'GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID':'/admin/driver-advertisement-registration-cycles/:cycleId',
     'UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS':'/admin/driver-advertisement-registration-cycles/:cycleId/status',
+    'GET_DRIVER_ADS_REGISTRATION_WALLET_HISTORY':'/admin/driver-advertisement-registrations/:registrationId/wallet-history',
     'MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
