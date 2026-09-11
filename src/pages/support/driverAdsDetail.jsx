@@ -95,6 +95,10 @@ function DriverAdsDetail() {
                 <Input value={data.tier || ""} disabled className="w-full" />
               </div>
               <div>
+                <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Available Vehicle</Typography>
+                <Input value={data.availableVehicle || ""} disabled className="w-full" />
+              </div>
+              <div>
                 <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">Zone</Typography>
                 <Input value={zoneName} disabled className="w-full" />
               </div>
@@ -141,6 +145,23 @@ function DriverAdsDetail() {
                     <Typography className="text-sm text-blue-gray-600">No placements available</Typography>
                   ) : null}
                 </div>
+              </div>
+              <div className="md:col-span-2">
+                <Typography variant="small" className="mb-2 font-medium text-blue-gray-700">Vehicle Images</Typography>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {(Array.isArray(data.vehicleImages) ? data.vehicleImages : []).map((item, index) => 
+                  <div key={index} className="rounded-lg border p-3">
+                    <Typography className="text-sm font-semibold">{item.position || "Image"}</Typography>
+                    {item.url ? <img src={item.url} alt={item.position || "vehicle"} className="mt-2 h-32 w-full rounded object-contain" /> : null}
+                  </div>)}
+                </div>
+                {!data.vehicleImages?.length ? <Typography className="text-sm text-blue-gray-600">No vehicle images</Typography> : null}
+              </div>
+              <div className="md:col-span-2">
+                <Typography variant="small" className="mb-2 font-medium text-blue-gray-700">Plan Benefits</Typography>
+                <ul className="list-disc pl-5 text-sm text-blue-gray-700">
+                  {(data.planBenefits?.benefits || []).map((benefit, index) => 
+                  <li key={index}>{benefit}</li>)}</ul>
               </div>
             </div>
           ) : null}

@@ -269,6 +269,7 @@ function DriverAdsList() {
                   // "Name",
                   "Zone",
                   "Sub Zone",
+                  "Available Vehicle",
                   "Is Active",
                   "Created At",
                   "Contract Period",
@@ -335,6 +336,11 @@ function DriverAdsList() {
                           </Typography>
                         </Link>
                       </td>
+                      <td className={`${className} whitespace-nowrap`}>
+                        <Typography className="text-xs font-semibold text-black">
+                          {row?.availableVehicle || "-"}
+                          </Typography>
+                        </td>
                       <td className={`${className} whitespace-nowrap`}>
                         <span
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
