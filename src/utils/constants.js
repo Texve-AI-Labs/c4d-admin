@@ -955,6 +955,7 @@ export const API_ROUTES = {
     'GET_AUTO_LIST':"/admin/autos",
     'ADD_NEW_AUTO_BOOKING':'/add-auto-booking',
     'POST_AUTO_SEARCH':'/search/auto',
+    'POST_PARCEL_SEARCH':'/search/parcel',
     'ADD_NEW_AUTO_DETAILS':'/register/admin/auto',
     'CREATE_PARCEL_ADMIN' :'/register/admin/parcel',
     'GET_ALL_PARCEL': '/admin/parcel',

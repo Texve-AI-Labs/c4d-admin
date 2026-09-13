@@ -32,6 +32,7 @@ export function SearchDrivers(props) {
     const [cabTypeFilter, setCabTypeFilter] = useState(['All']);
     const [checkingAllStatus, setCheckingAllStatus] = useState(false);
     const [seconds, setSeconds] = useState(30);
+    const [driverSearchMeta, setDriverSearchMeta] = useState(null);
     const parcelVehicleType = props?.bookingData?.parcelVehicleType || "BIKE";
     const parcelSubZoneId =  props?.bookingData?.subZoneId || null;
     const returnTripId = props?.bookingData?.returnTripId ?? props?.bookingData?.fullData?.returnTripId ?? null;
@@ -63,6 +64,50 @@ export function SearchDrivers(props) {
                 : props?.bookingData?.serviceType !== "DRIVER"
                     ? "Assign Cab"
                     : "Assign Captain";
+    const requestVehicleLabel = props?.bookingData?.serviceType === "AUTO"
+        ? "auto"
+        : props?.bookingData?.serviceType === "PARCEL"
+            ? parcelVehicleLabel.toLowerCase()
+            : "cab";
+    const requestVehiclePluralLabel = props?.bookingData?.serviceType === "AUTO"
+        ? "autos"
+        : props?.bookingData?.serviceType === "PARCEL"
+            ? parcelVehiclePlural.toLowerCase()
+            : "cabs";
+    const driverSearchState = {
+        attemptNo: driverSearchMeta?.attemptNo ?? props?.bookingData?.driverSearchAttemptNo ?? 0,
+        currentRadiusKm: driverSearchMeta?.currentRadiusKm ?? props?.bookingData?.driverSearchRadiusKm ?? 0,
+        maxRadiusKm: driverSearchMeta?.maxRadiusKm ?? props?.bookingData?.driverSearchMaxRadiusKm ?? 0,
+        searchStatus: driverSearchMeta?.searchStatus ?? props?.bookingData?.driverSearchStatus ?? "",
+        driverCount: driverSearchMeta?.driverCount ?? props?.bookingData?.driverSearchDriverCount ?? props?.bookingData?.driverCount ?? 0,
+    };
+    const isMaxDriverSearchRadius = driverSearchState.searchStatus === "MAX_RADIUS_REACHED";
+    const driverSearchButtonLabel = loadingRides
+        ? "Searching..."
+        : isMaxDriverSearchRadius
+            ? "Maximum Radius Reached"
+            : Number(driverSearchState.attemptNo || 0) > 0
+                ? "Search Again"
+                : "Search Drivers";
+    const driverSearchStatusClass = isMaxDriverSearchRadius
+        ? "bg-red-100 text-red-800"
+        : driverSearchState.searchStatus === "DRIVERS_FOUND"
+            ? "bg-green-100 text-green-800"
+            : driverSearchState.searchStatus === "SEARCHING"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-gray-100 text-gray-700";
+
+    const updateDriverSearchMeta = (response) => {
+        const payload = response?.data?.data || response?.data || {};
+        if (!payload || typeof payload !== "object") return;
+        setDriverSearchMeta((prev) => ({
+            attemptNo: payload?.attemptNo ?? prev?.attemptNo,
+            currentRadiusKm: payload?.currentRadiusKm ?? prev?.currentRadiusKm,
+            maxRadiusKm: payload?.maxRadiusKm ?? prev?.maxRadiusKm,
+            searchStatus: payload?.searchStatus ?? prev?.searchStatus,
+            driverCount: payload?.driverCount ?? prev?.driverCount,
+        }));
+    };
 
     const checkPresence = async (driverId, rowId) => {
         setCheckingStatusDriverIds((prev) => [...prev, driverId]);
@@ -83,21 +128,22 @@ export function SearchDrivers(props) {
         }
     };
 
-    const CountdownTimer = ({ duration = 30 }) => {
-  const [seconds, setSeconds] = useState(duration);
+    useEffect(() => {
+        if (!loadingRides) return;
 
-  useEffect(() => {
-    if (seconds <= 0) return;
+        setSeconds(30);
+        const timer = setInterval(() => {
+            setSeconds((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
 
-    const timer = setInterval(() => {
-      setSeconds((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [seconds]);
-
-  return <span>{seconds}</span>;
-};
+        return () => clearInterval(timer);
+    }, [loadingRides]);
 
     const checkAllStatus = async () => {
         const driversToCheck = drivers.filter(
@@ -108,7 +154,7 @@ export function SearchDrivers(props) {
         );
 
         if (driversToCheck.length === 0) {
-            console.log("No drivers available to check status");
+            // console.log("No drivers available to check status");
             return;
         }
 
@@ -133,7 +179,7 @@ export function SearchDrivers(props) {
                 ]);
                 setCheckingStatusDriverIds([]);
                 setCheckingAllStatus(false);
-                console.log("All driver statuses checked");
+                // console.log("All driver statuses checked");
             }, 30000);
         
         } catch (error) {
@@ -142,33 +188,6 @@ export function SearchDrivers(props) {
             setCheckingAllStatus(false);
         }
     };
-//     const AnimatedProgress = ({ duration = 30000 }) => {
-//   const [progress, setProgress] = useState(0);
-
-//   useEffect(() => {
-//     let startTime = null;
-//     let animationFrameId = null;
-
-//     const animate = (timestamp) => {
-//       if (!startTime) startTime = timestamp;
-//       const elapsed = timestamp - startTime;
-//       const newProgress = Math.min((elapsed / duration) * 100, 100);
-//       setProgress(newProgress);
-
-//       if (elapsed < duration) {
-//         animationFrameId = requestAnimationFrame(animate);
-//       }
-//     };
-
-//     animationFrameId = requestAnimationFrame(animate);
-
-//     return () => {
-//       cancelAnimationFrame(animationFrameId);
-//     };
-//   }, [duration]);
-
-//   return <Progress value={progress} size="sm" color="blue" className="w-16 inline-block ml-1" />;
-// };
 
 
     const getDriversList = async (searchQuery = '') => {
@@ -189,16 +208,17 @@ export function SearchDrivers(props) {
                 setDrivers(filtredOptions);
             } else if (props.bookingData.serviceType === 'RIDES' && props.bookingData.requestType === 'REQUEST_ALL') {
                 setLoadingRides(true);
+                setSeconds(30);
                 try {
                     let data = {
                         'bookingId': props.bookingData.id,
-                        'customerId': props.bookingData.CustomerId
                     }
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.GET_RIDES_CAB_DRIVERS, data);
+                    updateDriverSearchMeta(requestDriver);
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
-                            console.log("30 seconds passed. Checking driver availability...");
+                            // console.log("30 seconds passed. Checking driver availability...");
                             let checkDriverStatus = await ApiRequestUtils.get(API_ROUTES.RIDES_DRIVER_LIST + '/' + props.bookingData.id);
                             if (checkDriverStatus?.data?.length > 0) {
                                 const formattedDrivers = checkDriverStatus.data.map((item) => ({
@@ -218,10 +238,12 @@ export function SearchDrivers(props) {
                                     intercityCount: item.localCount || 0,
                                     outstationCount: item.outstationCount || 0,
                                 }));
-                                console.log("Formatted Drivers:", formattedDrivers);
+                                // console.log("Formatted Drivers:", formattedDrivers);
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: formattedDrivers.length }));
                                 setDrivers(formattedDrivers);
                             } else {
-                                console.log("No driver found.");
+                                // console.log("No driver found.");
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: 0 }));
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
@@ -235,6 +257,7 @@ export function SearchDrivers(props) {
                 }
             } else if (props.bookingData.serviceType === 'RENTAL' && props.bookingData.requestType == 'REQUEST_ALL') {
                 setLoadingRides(true);
+                setSeconds(30);
                 try {
                     let data = {
                         bookingId: props.bookingData.id,
@@ -247,10 +270,11 @@ export function SearchDrivers(props) {
                         ...(returnTripId != null ? { returnTripId } : {}),
                     }
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.GET_RENTAL_CAB_DRIVERS, data);
+                    updateDriverSearchMeta(requestDriver);
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
-                            console.log("30 seconds passed. Checking driver availability...");
+                            // console.log("30 seconds passed. Checking driver availability...");
                             let checkDriverStatus = await ApiRequestUtils.get(API_ROUTES.RIDES_DRIVER_LIST + '/' + props.bookingData.id);
                             if (checkDriverStatus?.data?.length > 0) {
                                 const formattedDrivers = checkDriverStatus.data.map((item) => ({
@@ -270,9 +294,11 @@ export function SearchDrivers(props) {
                                     intercityCount: item.localCount || 0,
                                     outstationCount: item.outstationCount || 0,
                                 }));
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: formattedDrivers.length }));
                                 setDrivers(formattedDrivers);
                             } else {
-                                console.log("No driver found.");
+                                // console.log("No driver found.");
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: 0 }));
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
@@ -286,17 +312,19 @@ export function SearchDrivers(props) {
                 }
             } else if (props.bookingData.serviceType === 'AUTO' && props.bookingData.requestType === 'REQUEST_ALL') {
                 setLoadingRides(true);
+                setSeconds(30);
                 try {
                     let data = {
                         bookingId: props.bookingData.id,
-                        distance: 1, // Adjust if distance is available in bookingData
+                        // distance: 1, // Adjust if distance is available in bookingData
                         customerId: props.bookingData.CustomerId
                     };
-                    let requestDriver = await ApiRequestUtils.post('/search/auto', data);
+                    let requestDriver = await ApiRequestUtils.post(API_ROUTES.POST_AUTO_SEARCH, data);
+                    updateDriverSearchMeta(requestDriver);
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
-                            console.log("30 seconds passed. Checking driver availability...");
+                            // console.log("30 seconds passed. Checking driver availability...");
                             let checkDriverStatus = await ApiRequestUtils.get(API_ROUTES.RIDES_DRIVER_LIST + '/' + props.bookingData.id);
                             if (checkDriverStatus?.data?.length > 0) {
                                 const formattedDrivers = checkDriverStatus.data.map((item) => ({
@@ -316,10 +344,12 @@ export function SearchDrivers(props) {
                                     intercityCount: item.localCount || 0,
                                     outstationCount: item.outstationCount || 0,
                                 }));
-                                console.log("Formatted Drivers for AUTO:", formattedDrivers);
+                                // console.log("Formatted Drivers for AUTO:", formattedDrivers);
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: formattedDrivers.length }));
                                 setDrivers(formattedDrivers);
                             } else {
-                                console.log("No driver found.");
+                                // console.log("No driver found.");
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: 0 }));
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
@@ -333,20 +363,22 @@ export function SearchDrivers(props) {
                 }
             } else if (props.bookingData.serviceType === 'PARCEL' && props.bookingData.requestType === 'REQUEST_ALL') {
                 setLoadingRides(true);
+                setSeconds(30);
                 try {
                     let data = {
                         bookingId: props.bookingData.id,
-                        distance: 0,
+                        // distance: 0,
                         customerId: props.bookingData.CustomerId,
                         serviceType: "PARCEL",
                         parcelVehicleType,
                         ...(shouldIncludeParcelSubZone ? { subZoneId: parcelSubZoneId } : {}),
                     };
-                    let requestDriver = await ApiRequestUtils.post('/search/parcel', data);
+                    let requestDriver = await ApiRequestUtils.post(API_ROUTES.POST_PARCEL_SEARCH, data);
+                    updateDriverSearchMeta(requestDriver);
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
-                            console.log("30 seconds passed. Checking driver availability...");
+                            // console.log("30 seconds passed. Checking driver availability...");
                             let checkDriverStatus = await ApiRequestUtils.get(API_ROUTES.RIDES_DRIVER_LIST + '/' + props.bookingData.id);
                             if (checkDriverStatus?.data?.length > 0) {
                                 const formattedDrivers = checkDriverStatus.data.map((item) => ({
@@ -363,10 +395,12 @@ export function SearchDrivers(props) {
                                     travelDistance: item.travelDistance || '',
                                     travelDuration: item.travelDuration || 0,
                                 }));
-                                console.log(`Formatted Drivers for ${parcelVehicleLabel}:`, formattedDrivers);
+                                // console.log(`Formatted Drivers for ${parcelVehicleLabel}:`, formattedDrivers);
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: formattedDrivers.length }));
                                 setDrivers(formattedDrivers);
                             } else {
-                                console.log("No driver found.");
+                                // console.log("No driver found.");
+                                setDriverSearchMeta((prev) => ({ ...prev, driverCount: 0 }));
                                 setDrivers([]);
                             }
                             setLoadingRides(false);
@@ -505,7 +539,7 @@ export function SearchDrivers(props) {
                     setDrivers(formattedDrivers);
                 } else {
                     setDrivers([]);
-                    console.log("No drivers found.");
+                    // console.log("No drivers found.");
                 }
             }
         } else if (service === "RENTAL") {
@@ -624,7 +658,7 @@ export function SearchDrivers(props) {
                     setDrivers(formattedDrivers);
                 } else {
                     setDrivers([]);
-                    console.log("No drivers found.");
+                    // console.log("No drivers found.");
                 }
             }
         }
@@ -824,41 +858,75 @@ export function SearchDrivers(props) {
                 <div className="flex flex-col w-full">
                     <Card>
                         {props.bookingData?.requestType === 'REQUEST_ALL' ? (
-                            <CardBody className="py-16">
-                                <div className="text-center max-w-md mx-auto">
+                            <CardBody className="px-4 py-5">
+                                <div className="text-center max-w-xl mx-auto">
+                                    <div className="mb-5 flex flex-wrap justify-center gap-2">
+                                        <div className="w-28 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <Typography className="text-[11px] font-bold uppercase text-blue-gray-400">
+                                                Attempt
+                                            </Typography>
+                                            <Typography className="text-sm font-semibold text-blue-gray-900">
+                                                {driverSearchState.attemptNo || 0}
+                                            </Typography>
+                                        </div>
+                                        <div className="w-32 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <Typography className="text-[11px] font-bold uppercase text-blue-gray-400">
+                                                Radius
+                                            </Typography>
+                                            <Typography className="text-sm font-semibold text-blue-gray-900">
+                                                {driverSearchState.currentRadiusKm || 0} km / {driverSearchState.maxRadiusKm || 0} km
+                                            </Typography>
+                                        </div>
+                                        <div className="w-36 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <Typography className="text-[11px] font-bold uppercase text-blue-gray-400">
+                                                Status
+                                            </Typography>
+                                            <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${driverSearchStatusClass}`}>
+                                                {driverSearchState.searchStatus || "Not Started"}
+                                            </span>
+                                        </div>
+                                        <div className="w-32 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <Typography className="text-[11px] font-bold uppercase text-blue-gray-400">
+                                                Drivers Found
+                                            </Typography>
+                                            <Typography className="text-sm font-semibold text-blue-gray-900">
+                                                {driverSearchState.driverCount || 0}
+                                            </Typography>
+                                        </div>
+                                    </div>
                         {loadingRides ? (
                                         <div>
-                                            <Spinner className="h-16 w-16 mx-auto mb-6" color="blue" />
-                                <Typography variant="h5" color="blue-gray" className="mb-3">
-                                Request Sent to Nearby Drivers
-                                </Typography>
-                                            <Typography color="gray" className="mb-6 text-lg">
-                                                Waiting for a driver to accept...
+                                            <Spinner className="h-14 w-14 mx-auto mb-4" color="blue" />
+                                            <Typography variant="h5" color="blue-gray" className="mb-2">
+                                                Request Sent to Nearby {requestVehiclePluralLabel}
                                             </Typography>
-                                            <div className="flex flex-col items-center gap-4">
-                                                <div className="text-5xl font-bold text-blue-600">
-                                                    <CountdownTimer duration={30} />
+                                            <Typography color="gray" className="mb-4 text-base">
+                                                Waiting for a {requestVehicleLabel} to accept...
+                                            </Typography>
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="text-4xl font-bold text-blue-600">
+                                                    {seconds}
                                                 </div>
                                                 <Progress
                                                     value={((30 - seconds) / 30) * 100}
                                                     color="blue"
-                                                    className="w-80 h-4"
+                                                    className="w-72 h-3"
                                                 />
                                                 <Typography color="gray" className="text-sm">
-                                                    Please wait while drivers respond
+                                                    Please wait while {requestVehiclePluralLabel} respond
                                                 </Typography>
                                             </div>
                                         </div>
                                     ) : drivers.length > 0 ? (
                                         <div>
-                                            <Typography variant="h4" color="green" className="mb-3 font-bold">
+                                            <Typography variant="h4" color="green" className="mb-2 font-bold">
                                                 Driver Accepted!
                                             </Typography>
-                                            <Typography color="gray" className="mb-6">
+                                            <Typography color="gray" className="mb-4">
                                                 Great! A driver has accepted the ride.
                                             </Typography>
                                             {drivers[0] && (
-                                                <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+                                                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                                                     <Typography variant="lead" className="font-bold text-green-800">
                                                         {(drivers[0].driverName || drivers[0].name || 'Driver')}
                                                     </Typography>
@@ -866,16 +934,16 @@ export function SearchDrivers(props) {
                                             )}
                                         </div>
                                     ) : (
-                                        <div>
-                                            <Typography variant="h4" color="red" className="mb-3 font-bold">
+                                        <div className="mx-auto max-w-md rounded-md border border-gray-100 bg-white px-4 py-4 text-center">
+                                            <Typography variant="h5" color="red" className="mb-2 font-bold">
                                                 No Response
                                             </Typography>
-                                            <Typography color="gray" className="mb-6 max-w-sm">
-                                                No driver accepted the request in 30 seconds.
+                                            <Typography color="gray" className="mb-4 text-sm">
+                                                No {requestVehicleLabel} accepted the request in 30 seconds.
                                             </Typography>
-                                            {/* <Button color="blue" onClick={() => props?.onNext()}>
-                                                Assign Manually
-                                            </Button> */}
+                                            <Button color="blue" size="sm" className="min-w-[210px]" onClick={() => getDriversList()} disabled={isMaxDriverSearchRadius} >
+                                                {driverSearchButtonLabel}
+                                            </Button>
                                         </div>
                                     )}
                                 </div>
