@@ -12,6 +12,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -81,7 +82,22 @@ const resolveSubZoneValue = (value) =>
       value
   );
 
-const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "" });
+const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
+
+const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", slotType: "NORMAL" });
+
+const normalizeSlot = (slot = {}) => ({ ...emptySlot(), ...slot, slotType: normalizeSlotType(slot?.slotType) });
+
+const normalizeSlotGroup = (slotGroup = {}) =>
+  Object.entries(slotGroup || {}).reduce((acc, [key, slots]) => {
+    acc[key] = Array.isArray(slots) ? slots.map(normalizeSlot) : [];
+    return acc;
+  }, {});
+
+const normalizeConfig = (config = {}) => ({
+  weekly: normalizeSlotGroup(config.weekly),
+  specialDates: normalizeSlotGroup(config.specialDates),
+});
 
 const formatDayLabels = (dayValues = []) =>
   dayValues
@@ -126,7 +142,7 @@ const buildInitialForm = (initialValues = {}) => ({
   priority: initialValues.priority ?? (initialValues.ruleType === "SPECIAL_DATE" ? 1 : 10),
   isActive: initialValues.isActive ?? true,
   notes: initialValues.notes || "",
-  config: initialValues.config || { weekly: {}, specialDates: {} },
+  config: normalizeConfig(initialValues.config || { weekly: {}, specialDates: {} }),
 });
 
 function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
@@ -278,7 +294,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
     setForm((prev) => {
       const next = { ...prev, config: { ...prev.config } };
       const existing = Array.isArray(next.config?.[scope]?.[key]) ? [...next.config[scope][key]] : [];
-      const slot = { ...(existing[index] || emptySlot()), [field]: value };
+      const slot = { ...emptySlot(), ...(existing[index] || {}), [field]: value };
       existing[index] = slot;
       next.config[scope] = { ...(next.config?.[scope] || {}), [key]: existing };
       return next;
@@ -333,7 +349,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
     if (form.ruleType === "WEEKLY") {
       payload.daysOfWeek = form.daysOfWeek;
       payload.config = {
-        weekly: form.config?.weekly || {},
+        weekly: normalizeSlotGroup(form.config?.weekly || {}),
       };
     } else {
       payload.fromDate = form.fromDate;
@@ -341,7 +357,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       payload.config = {
         specialDates:
           Object.keys(form.config?.specialDates || {}).length > 0
-            ? form.config.specialDates
+            ? normalizeSlotGroup(form.config.specialDates)
             : form.fromDate
               ? {
                   [form.fromDate]: [],
@@ -639,7 +655,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                           <div className="flex flex-col gap-3">
                             {Array.isArray(slots) && slots.length > 0 ? (
                               slots.map((slot, index) => (
-                                <div key={`${dateKey}-${index}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                <div key={`${dateKey}-${index}`} className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
                                   <Input
                                     type="time"
                                     value={slot.startTime || ""}
@@ -661,13 +677,25 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                                     disabled={isViewMode}
                                     label="Max Bookings"
                                   />
+                                  <div className="flex items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                                    <Switch
+                                      checked={normalizeSlotType(slot.slotType) === "PEAK"}
+                                      onChange={(event) =>
+                                        updateSlot("specialDates", dateKey, index, "slotType", event.target.checked ? "PEAK" : "NORMAL")
+                                      }
+                                      label={normalizeSlotType(slot.slotType)}
+                                      disabled={isViewMode}
+                                    />
+                                  </div>
                                   <Button
                                     type="button"
-                                    className="w-full md:col-span-2 xl:col-span-1 bg-red-600 text-white hover:bg-red-700"
+                                    size="sm"
+                                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 p-0 text-white hover:bg-red-700"
                                     onClick={() => removeSlot("specialDates", dateKey, index)}
                                     disabled={isViewMode}
+                                    title="Remove slot"
                                   >
-                                    Remove
+                                    <TrashIcon className="h-5 w-5" />
                                   </Button>
                                 </div>
                               ))
