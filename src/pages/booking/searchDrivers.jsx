@@ -64,6 +64,9 @@ export function SearchDrivers(props) {
                 : props?.bookingData?.serviceType !== "DRIVER"
                     ? "Assign Cab"
                     : "Assign Captain";
+    const driverActionButtonLabel = props?.bookingData?.Driver?.id
+        ? "ReAssign Captain"
+        : "Assign Captain";
     const requestVehicleLabel = props?.bookingData?.serviceType === "AUTO"
         ? "auto"
         : props?.bookingData?.serviceType === "PARCEL"
@@ -784,6 +787,9 @@ export function SearchDrivers(props) {
         if (typeof slot === "string") return slot;
         if (typeof slot !== "object") return String(slot);
 
+        if (slot.date || slot.startTime || slot.endTime) {
+            return [slot.date, [slot.startTime, slot.endTime].filter(Boolean).join(" - ")].filter(Boolean).join(" / ");
+        }
         return slot.name || slot.label || slot.slotName || slot.time || slot.startTime || slot.id || "-";
     };
     const driverTableColumns = ["Name", "Phone Number", "Zone","Current Address", "Distance", "Rating", "Slot", "Status", "Assign/ReAssign"];
@@ -813,7 +819,7 @@ export function SearchDrivers(props) {
                     {driverTableColumns.map((el) => (
                                                 <th
                                                     key={el}
-                                                    className="border-b border-blue-gray-50 py-3 px-5 text-left"
+                                                    className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left"
                                                 >
                                                     <Typography
                                                         variant="small"
@@ -840,7 +846,7 @@ export function SearchDrivers(props) {
                                             </tr>
                                         )}
                                         {rows.map(({ id, firstName, name, zone,Shifts, curAddress, status, phoneNumber, distance, rating, slot, Drivers, priorityType, routing }, key) => {
-                                                const className = `py-3 px-5 ${key === rows.length - 1
+                                                const className = `whitespace-nowrap py-3 px-5 ${key === rows.length - 1
                                                     ? ""
                                                     : "border-b border-blue-gray-50"
                                                     }`;
@@ -919,7 +925,7 @@ export function SearchDrivers(props) {
                                                                 onClick={() => { onAssignDriver(props?.bookingData?.serviceType, id, props?.bookingData?.serviceType == 'DRIVER' ? id : Drivers[0]?.id) }}
                                                                 className="text-xs font-semibold text-white bg-primary"
                                                             >
-                                                                {assignButtonLabel}
+                                                                {driverActionButtonLabel}
                                                             </Button>}
                                                         </td>
                                                     </tr>
