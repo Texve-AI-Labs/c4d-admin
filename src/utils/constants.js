@@ -1149,7 +1149,8 @@ export const API_ROUTES = {
     'PUT_SERVICE_CONTENT': '/admin/service-contents',
     'DELETE_SERVICE_CONTENT': '/admin/service-contents',
 
-    'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate'
+    'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate',
+    'PROCESS_PARCEL_DAILY_SLOTS': '/process-parcel-daily-slots',
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [

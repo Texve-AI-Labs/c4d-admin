@@ -212,6 +212,7 @@ import SlotRuleForm from "./pages/finance/parcelSlotConfig/SlotRuleForm";
 import ParcelSlotConfigEdit from "./pages/finance/parcelSlotConfig/edit";
 import ParcelSlotConfigDetails from "./pages/finance/parcelSlotConfig/details";
 import ParcelDailySlotsList from "./pages/finance/parcelDailySlots/list";
+import ParcelDailySlotsAdd from "./pages/finance/parcelDailySlots/add";
 import ParcelDailySlotsDetails from "./pages/finance/parcelDailySlots/details";
 import ActingDriverSlotConfigList from "./pages/finance/actingDriverSlotConfig/list";
 import ActingDriverSlotRuleForm from "./pages/finance/actingDriverSlotConfig/SlotRuleForm";
@@ -1924,6 +1925,14 @@ export const routes = [
         name: "Parcel Daily Slots",
         path: "/finance/parcel-daily-slots",
         element: <ParcelDailySlotsList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Parcel Daily Slot Add",
+        path: "/finance/parcel-daily-slots/add",
+        element: <ParcelDailySlotsAdd />,
         display: false,
         permission: "Users",
       },
