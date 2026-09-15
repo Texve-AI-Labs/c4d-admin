@@ -97,16 +97,80 @@ export function SearchDrivers(props) {
                 ? "bg-blue-100 text-blue-800"
                 : "bg-gray-100 text-gray-700";
 
+    const getRequestAllDriverItems = (response) => {
+        const data = response?.data || {};
+        const payload = data?.data || {};
+        const searchSummary = response?.searchSummary || data?.searchSummary || {};
+        const topPriorityDrivers = Array.isArray(payload?.TopPriorityActingDrivers) ? payload.TopPriorityActingDrivers : [];
+        const recommendedDrivers = Array.isArray(payload?.RecommendedDrivers) ? payload.RecommendedDrivers : [];
+        const summaryDrivers = Array.isArray(searchSummary?.drivers) ? searchSummary.drivers : [];
+        const mergedDrivers = [...topPriorityDrivers, ...recommendedDrivers];
+        return mergedDrivers.length > 0 ? mergedDrivers : summaryDrivers;
+    };
+
     const updateDriverSearchMeta = (response) => {
         const payload = response?.data?.data || response?.data || {};
+        const searchSummary = response?.searchSummary || response?.data?.searchSummary || {};
         if (!payload || typeof payload !== "object") return;
+        const immediateDriverCount = getRequestAllDriverItems(response).length;
         setDriverSearchMeta((prev) => ({
             attemptNo: payload?.attemptNo ?? prev?.attemptNo,
-            currentRadiusKm: payload?.currentRadiusKm ?? prev?.currentRadiusKm,
+            currentRadiusKm: payload?.currentRadiusKm ?? searchSummary?.searchRadiusKm ?? prev?.currentRadiusKm,
             maxRadiusKm: payload?.maxRadiusKm ?? prev?.maxRadiusKm,
-            searchStatus: payload?.searchStatus ?? prev?.searchStatus,
-            driverCount: payload?.driverCount ?? prev?.driverCount,
+            searchStatus: payload?.searchStatus ?? (immediateDriverCount > 0 ? "DRIVERS_FOUND" : prev?.searchStatus),
+            driverCount: payload?.driverCount ?? searchSummary?.totalDrivers ?? immediateDriverCount ?? prev?.driverCount,
         }));
+    };
+
+    const formatActingDrivers = (items, searchGroup = "") => items.map((item) => ({
+        id: item.cabId || item.autoId || item.parcelId || item.driverId || item.DriverId || item.id,
+        firstName: item.driverName || item.firstName || item.Driver?.firstName || "N/A",
+        name: item.cabName || item.autoName || item.parcelName || item.driverName || item.Driver?.Cab?.name || item.name || "N/A",
+        driverName: item.driverName || item.Driver?.firstName || "N/A",
+        status: item.availability === "ONLINE" || item.availability === "AVAILABLE" || item.Shift?.availability === "AVAILABLE" ? "ACTIVE" : "INACTIVE",
+        carType: item.carType || item.Driver?.Cab?.carType || "",
+        phoneNumber: item.phoneNumber || item.Driver?.phoneNumber || "",
+        zone: item.zone || item.Zone?.name || "",
+        rating: item.rating ?? item.Driver?.rating ?? "",
+        priceOffered: item.offerPrice || item.driverPrice || 0,
+        tripCount: item.totalRides || item.Driver?.totalRides || 0,
+        Drivers: [{ id: item.driverId || item.DriverId || item.Driver?.id }],
+        fullData: item,
+        curAddress: item.currentAddress?.name || item.curAddress?.name || item.Shift?.curAddress?.name || "",
+        distance: item.distance ?? item.distanceKm ?? item.Driver?.distance ?? "",
+        travelDistance: item.travelDistance || item.distanceKm || "",
+        travelDuration: item.travelDuration || 0,
+        intercityCount: item.localCount || 0,
+        outstationCount: item.outstationCount || 0,
+        priorityType: item.priorityType || "",
+        routing: item.routing || "",
+        slot: item.slot || null,
+        searchGroup,
+    }));
+
+    const normalizeDriverList = (payload) => {
+        if (Array.isArray(payload)) return payload;
+        if (!payload || typeof payload !== "object") return [];
+
+        const responseData = payload?.data && typeof payload.data === "object" ? payload.data : {};
+        const topPriorityDrivers = Array.isArray(payload.TopPriorityActingDrivers)
+            ? payload.TopPriorityActingDrivers
+            : Array.isArray(responseData.TopPriorityActingDrivers)
+                ? responseData.TopPriorityActingDrivers
+                : [];
+        const recommendedDrivers = Array.isArray(payload.RecommendedDrivers)
+            ? payload.RecommendedDrivers
+            : Array.isArray(responseData.RecommendedDrivers)
+                ? responseData.RecommendedDrivers
+                : [];
+        const groupedActingDrivers = [
+            ...formatActingDrivers(topPriorityDrivers, "Top Priority Acting Drivers"),
+            ...formatActingDrivers(recommendedDrivers, "Recommended Drivers"),
+        ];
+        if (groupedActingDrivers.length > 0) return groupedActingDrivers;
+
+        const nestedList = payload.drivers || payload.cabs || payload.autos || payload.parcels || payload.data;
+        return Array.isArray(nestedList) ? nestedList : [];
     };
 
     const checkPresence = async (driverId, rowId) => {
@@ -448,7 +512,9 @@ export function SearchDrivers(props) {
                     });
                 }
                 if (data?.success) {
-                    let driverData = data?.data
+                    let driverData = props.bookingData.serviceType === 'DRIVER'
+                        ? normalizeDriverList(data)
+                        : normalizeDriverList(data?.data);
                     let filteredDrivers = driverData.map((val) => ({ ...val, fullData: val }))
                     setDrivers(filteredDrivers);
                 } else {
@@ -713,24 +779,38 @@ export function SearchDrivers(props) {
         }
     }, [drivers, props.bookingData?.requestType]);
 
-    return (
-        <>
-            <ConfirmBooking bookingData={props.bookingData} hideAllNewButton={true} />
-            {props?.bookingData?.serviceType === 'DRIVER' && (
-                <div className="flex flex-col w-full gap-y-4">
-                    <Card>
-                        {loading ? (
-                            <CardHeader variant="gradient" color="blue" className="mb-8 p-6">
-                                <Typography variant="h6" color="white">
-                                    {`Loading drivers....`}
-                                </Typography>
-                            </CardHeader>
-                        ) : drivers.length > 0 ? (
-                            <CardBody className="overflow-x-auto overflow-y-auto px-0 pt-0 pb-2">
+    const getDriverSlotLabel = (slot) => {
+        if (!slot) return "-";
+        if (typeof slot === "string") return slot;
+        if (typeof slot !== "object") return String(slot);
+
+        return slot.name || slot.label || slot.slotName || slot.time || slot.startTime || slot.id || "-";
+    };
+    const driverTableColumns = ["Name", "Phone Number", "Zone","Current Address", "Distance", "Rating", "Slot", "Status", "Assign/ReAssign"];
+    const driverGroupTitles = ["Top Priority Acting Drivers", "Recommended Drivers"];
+    const groupedDriverTables = drivers.reduce((groups, driver) => {
+        const title = driver.searchGroup || "Drivers";
+        const existingGroup = groups.find((group) => group.title === title);
+        if (existingGroup) {
+            existingGroup.rows.push(driver);
+        } else {
+            groups.push({ title, rows: [driver] });
+        }
+        return groups;
+    }, []);
+    const hasGroupedDriverTables = groupedDriverTables.length > 1 || Boolean(drivers[0]?.searchGroup);
+    const visibleDriverTables = hasGroupedDriverTables
+        ? driverGroupTitles.map((title) => ({
+            title,
+            rows: groupedDriverTables.find((group) => group.title === title)?.rows || [],
+        }))
+        : groupedDriverTables;
+
+    const renderDriverTable = (rows) => (
                                 <table className="w-full">
                                     <thead>
                                         <tr>
-                                            {["Name", "Phone Number", "Current Address", "Distance", "Local Count", "Outstation Count", "Status", "Assign/ReAssign"].map((el) => (
+                    {driverTableColumns.map((el) => (
                                                 <th
                                                     key={el}
                                                     className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -750,14 +830,22 @@ export function SearchDrivers(props) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {drivers.map(
-                                            ({ id, firstName, name, Shifts, curAddress, status, phoneNumber, distance, localCount, outstationCount, Drivers }, key) => {
-                                                const className = `py-3 px-5 ${key === drivers.length - 1
+                                        {rows.length === 0 && (
+                                            <tr>
+                                                <td colSpan={driverTableColumns.length} className="px-5 py-4 text-center">
+                                                    <Typography className="text-xs font-semibold text-blue-gray-400">
+                                                        No drivers found
+                                                    </Typography>
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {rows.map(({ id, firstName, name, zone,Shifts, curAddress, status, phoneNumber, distance, rating, slot, Drivers, priorityType, routing }, key) => {
+                                                const className = `py-3 px-5 ${key === rows.length - 1
                                                     ? ""
                                                     : "border-b border-blue-gray-50"
                                                     }`;
 
-                                                return (
+                    return (
                                                     <tr key={id}>
                                                         <td className={className}>
                                                             <div className="flex items-center gap-4">
@@ -778,23 +866,28 @@ export function SearchDrivers(props) {
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                                {zone || "-"}
+                                                            </Typography>
+                                                        </td>
+                                                        <td className={className}>
                                                             <Typography className='text-xs font-semibold text-blue-gray-600'>
-                                                                {Shifts?.[0]?.curAddress?.name || curAddress?.name}
+                                                                {Shifts?.[0]?.curAddress?.name || curAddress?.name || curAddress || "-"}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                                {(props?.bookingData?.serviceType == "CAB" && Drivers?.[0]?.distance) ? `${Math.round(Drivers?.[0]?.distance)} km` : distance ? `${Math.round(distance)} km` : 'Unknown'}
+                                                                {(props?.bookingData?.serviceType == "CAB" && Drivers?.[0]?.distance) ? `${Math.round(Drivers?.[0]?.distance)} km` : distance !== undefined && distance !== null && distance !== "" ? `${Number(distance).toFixed(2)} km` : 'Unknown'}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                                {localCount}
+                                                                {rating !== undefined && rating !== null && rating !== "" ? rating : "-"}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                                {outstationCount}
+                                                                {getDriverSlotLabel(slot)}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
@@ -831,10 +924,41 @@ export function SearchDrivers(props) {
                                                         </td>
                                                     </tr>
                                                 );
-                                            }
-                                        )}
+                                            })}
                                     </tbody>
                                 </table>
+    );
+
+    return (
+        <>
+            <ConfirmBooking bookingData={props.bookingData} hideAllNewButton={true} />
+            {props?.bookingData?.serviceType === 'DRIVER' && (
+                <div className="flex flex-col w-full gap-y-4">
+                    <Card>
+                        {loading ? (
+                            <CardHeader variant="gradient" color="blue" className="mb-8 p-6">
+                                <Typography variant="h6" color="white">
+                                    {`Loading drivers....`}
+                                </Typography>
+                            </CardHeader>
+                        ) : drivers.length > 0 ? (
+                            <CardBody className="overflow-x-auto overflow-y-auto px-0 pt-0 pb-2">
+                                {hasGroupedDriverTables ? (
+                                    <div className="space-y-5">
+                                        {visibleDriverTables.map(({ title, rows }) => (
+                                            <div key={title}>
+                                                <div className="border-b border-blue-gray-50 bg-blue-gray-50 px-5 py-3">
+                                                    <Typography className="text-xs font-bold uppercase text-blue-gray-600">
+                                                        {title}
+                                                    </Typography>
+                                                </div>
+                                                {renderDriverTable(rows)}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    renderDriverTable(drivers)
+                                )}
                             </CardBody>) : (
                             <CardHeader variant="gradient" color="blue" className="mb-8 p-6">
                                 <Typography variant="h6" color="white">
