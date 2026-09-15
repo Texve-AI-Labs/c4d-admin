@@ -11,6 +11,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -18,7 +19,8 @@ import { EMPTY_INITIAL_VALUES, RULE_TYPES } from "./constants";
 import DaysOfWeekSelector from "./DaysOfWeekSelector";
 
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
-const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "" });
+const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
+const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", slotType: "NORMAL" });
 
 const fetchActingDriverGeoOptions = async () => {
   const areaResp = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" });
@@ -42,7 +44,10 @@ const readText = (value) => {
 const resolveZoneValue = (value) =>
   readText(value?.zone || value?.zoneName || value?.name || value?.label || value?.serviceArea || value);
 
-const normalizeSlots = (config = {}) => (Array.isArray(config?.slots) ? config.slots : []);
+const normalizeSlots = (config = {}) =>
+  Array.isArray(config?.slots)
+    ? config.slots.map((slot) => ({ ...emptySlot(), ...slot, slotType: normalizeSlotType(slot?.slotType) }))
+    : [];
 
 const buildInitialForm = (initialValues = {}) => ({
   zoneId: initialValues.zoneId || "",
@@ -139,13 +144,18 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
   };
 
   const buildPayload = () => {
+    const payloadSlots = slots.map((slot) => ({
+      ...slot,
+      slotType: normalizeSlotType(slot?.slotType),
+    }));
+
     const payload = {
       zone: form.zone,
       ruleType: form.ruleType,
       priority: form.ruleType === "SPECIAL_DATE" ? 1 : 100,
       isActive: Boolean(form.isActive),
       notes: form.notes || "",
-      config: { slots },
+      config: { slots: payloadSlots },
     };
 
     if (form.ruleType === "WEEKLY") {
@@ -357,7 +367,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                     </Typography>
                   ) : (
                     slots.map((slot, index) => (
-                      <div key={index} className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+                      <div key={index} className="flex flex-col-1 gap-3">
                         <Input
                           type="time"
                           value={slot.startTime || ""}
@@ -379,13 +389,23 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                           label="Max Bookings"
                           disabled={isViewMode}
                         />
+                        <div className="flex items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                          <Switch
+                            checked={normalizeSlotType(slot.slotType) === "PEAK"}
+                            onChange={(event) => updateSlot(index, "slotType", event.target.checked ? "PEAK" : "NORMAL")}
+                            label={normalizeSlotType(slot.slotType)}
+                            disabled={isViewMode}
+                          />
+                        </div>
                         <Button
                           type="button"
-                          className="bg-red-600 text-white hover:bg-red-700"
+                          size="sm"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 p-2 text-white hover:bg-red-700"
                           onClick={() => removeSlot(index)}
                           disabled={isViewMode}
+                          title="Remove slot"
                         >
-                          Remove
+                          <TrashIcon className="h-5 w-5" />
                         </Button>
                       </div>
                     ))
