@@ -84,13 +84,29 @@ const resolveSubZoneValue = (value) =>
 
 const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
 
-const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", slotType: "NORMAL" });
+const normalizeExpectedEarnings = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+};
+
+const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", expectedEarnings: "", slotType: "NORMAL" });
 
 const normalizeSlot = (slot = {}) => ({ ...emptySlot(), ...slot, slotType: normalizeSlotType(slot?.slotType) });
+
+const normalizePayloadSlot = (slot = {}) => ({
+  ...normalizeSlot(slot),
+  expectedEarnings: normalizeExpectedEarnings(slot?.expectedEarnings),
+});
 
 const normalizeSlotGroup = (slotGroup = {}) =>
   Object.entries(slotGroup || {}).reduce((acc, [key, slots]) => {
     acc[key] = Array.isArray(slots) ? slots.map(normalizeSlot) : [];
+    return acc;
+  }, {});
+
+const normalizePayloadSlotGroup = (slotGroup = {}) =>
+  Object.entries(slotGroup || {}).reduce((acc, [key, slots]) => {
+    acc[key] = Array.isArray(slots) ? slots.map(normalizePayloadSlot) : [];
     return acc;
   }, {});
 
@@ -349,7 +365,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
     if (form.ruleType === "WEEKLY") {
       payload.daysOfWeek = form.daysOfWeek;
       payload.config = {
-        weekly: normalizeSlotGroup(form.config?.weekly || {}),
+        weekly: normalizePayloadSlotGroup(form.config?.weekly || {}),
       };
     } else {
       payload.fromDate = form.fromDate;
@@ -357,7 +373,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       payload.config = {
         specialDates:
           Object.keys(form.config?.specialDates || {}).length > 0
-            ? normalizeSlotGroup(form.config.specialDates)
+            ? normalizePayloadSlotGroup(form.config.specialDates)
             : form.fromDate
               ? {
                   [form.fromDate]: [],
@@ -383,11 +399,17 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
         const weeklyConfig = form.config?.weekly || {};
         const missingWeeklyDays = form.daysOfWeek.filter((dayKey) => {
           const slots = Array.isArray(weeklyConfig[dayKey]) ? weeklyConfig[dayKey] : [];
-          return !slots.some((slot) => slot?.startTime && slot?.endTime && String(slot?.maxBookings ?? "").trim() !== "");
+          return !slots.some(
+            (slot) =>
+              slot?.startTime &&
+              slot?.endTime &&
+              String(slot?.maxBookings ?? "").trim() !== "" &&
+              String(slot?.expectedEarnings ?? "").trim() !== ""
+          );
         });
 
         if (missingWeeklyDays.length > 0) {
-          nextErrors.weeklyConfig = "Add at least one complete time slot for each selected weekday";
+          nextErrors.weeklyConfig = "Add at least one complete time slot with expected earnings for each selected weekday";
         }
       }
     }
@@ -415,11 +437,17 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       const specialDatesConfig = form.config?.specialDates || {};
       const missingSlotDates = rangeDates.filter((dateKey) => {
         const slots = Array.isArray(specialDatesConfig[dateKey]) ? specialDatesConfig[dateKey] : [];
-        return !slots.some((slot) => slot?.startTime && slot?.endTime && String(slot?.maxBookings ?? "").trim() !== "");
+        return !slots.some(
+          (slot) =>
+            slot?.startTime &&
+            slot?.endTime &&
+            String(slot?.maxBookings ?? "").trim() !== "" &&
+            String(slot?.expectedEarnings ?? "").trim() !== ""
+        );
       });
 
       if (rangeDates.length > 0 && missingSlotDates.length > 0) {
-        nextErrors.specialDates = "Add at least one complete time slot for each selected special date";
+        nextErrors.specialDates = "Add at least one complete time slot with expected earnings for each selected special date";
       }
     }
 
@@ -655,7 +683,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                           <div className="flex flex-col gap-3">
                             {Array.isArray(slots) && slots.length > 0 ? (
                               slots.map((slot, index) => (
-                                <div key={`${dateKey}-${index}`} className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                                <div key={`${dateKey}-${index}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                                   <Input
                                     type="time"
                                     value={slot.startTime || ""}
@@ -677,7 +705,16 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                                     disabled={isViewMode}
                                     label="Max Bookings"
                                   />
-                                  <div className="flex items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                                  <Input
+                                    type="number"
+                                    value={slot.expectedEarnings || ""}
+                                    onChange={(event) =>
+                                      updateSlot("specialDates", dateKey, index, "expectedEarnings", event.target.value)
+                                    }
+                                    disabled={isViewMode}
+                                    label="Expected Earnings"
+                                  />
+                                  <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
                                     <Switch
                                       checked={normalizeSlotType(slot.slotType) === "PEAK"}
                                       onChange={(event) =>

@@ -57,7 +57,7 @@ const WeeklyConfig = ({
                   </Typography>
                 ) : (
                   daySlots.map((slot, index) => (
-                    <div key={`${day.value}-${index}`} className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                    <div key={`${day.value}-${index}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                       <Input
                         type="time"
                         value={slot.startTime || ""}
@@ -79,7 +79,14 @@ const WeeklyConfig = ({
                         label="Max Bookings"
                         disabled={disabled}
                       />
-                      <div className="flex items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                      <Input
+                        type="number"
+                        value={slot.expectedEarnings || ""}
+                        onChange={(event) => onUpdateSlot("weekly", day.value, index, "expectedEarnings", event.target.value)}
+                        label="Expected Earnings"
+                        disabled={disabled}
+                      />
+                      <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
                         <Switch
                           checked={normalizeSlotType(slot.slotType) === "PEAK"}
                           onChange={(event) =>
@@ -92,7 +99,7 @@ const WeeklyConfig = ({
                       <Button
                         type="button"
                         size="sm"
-                        className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 p-2 text-white hover:bg-red-700"
+                        className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 p-0 text-white hover:bg-red-700"
                         onClick={() => onRemoveSlot("weekly", day.value, index)}
                         disabled={disabled}
                         title="Remove slot"
