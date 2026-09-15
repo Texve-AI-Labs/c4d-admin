@@ -1151,6 +1151,7 @@ export const API_ROUTES = {
 
     'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate',
     'PROCESS_PARCEL_DAILY_SLOTS': '/process-parcel-daily-slots',
+    'GET_ACTING_DRIVER_PENALTIES': '/admin/acting-driver/penalties'
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [

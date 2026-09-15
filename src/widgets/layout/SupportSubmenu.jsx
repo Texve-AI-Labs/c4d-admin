@@ -23,6 +23,7 @@ function SupportSubmenu({ permissions = [] }) {
     { label: "Driver Ads Reg", path: "/dashboard/support/driver-ads-reg", requiredPermission: "Support" },    
     { label: "Support Review & Reward Management", path: "/dashboard/support/review-reward-management", requiredPermission: "Support" },
     { label: "Customer Cancellation Charge Logs", path: "/dashboard/support/customer-cancellation-charge-logs", requiredPermission: "Users" },
+    { label: "Acting Driver Cancellation Logs", path: "/dashboard/support/acting-driver-cancellation-logs", requiredPermission: "Users" },
   ];
   const filteredItems = items.filter(({ requiredPermission }) => permissions.includes(requiredPermission));
 

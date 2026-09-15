@@ -269,6 +269,7 @@ import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
+import ActingDriverCancellationLogs from "./pages/support/ActingDriverCancellationLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
 import DriverAdsRegList from "./pages/support/driverAdsRegList";
 import DriverAdsRegistrationDetails from "./pages/support/driverAdsRegistrationDetails";
@@ -2432,6 +2433,14 @@ export const routes = [
         name: "Customer Cancellation Charge Logs",
         path: "/support/customer-cancellation-charge-logs",
         element: <CustomerCancellationChargeLogs />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Cancellation Logs",
+        path: "/support/acting-driver-cancellation-logs",
+        element: <ActingDriverCancellationLogs />,
         display: true,
         permission: "Users"
       },
