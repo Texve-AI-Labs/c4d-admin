@@ -20,7 +20,11 @@ import DaysOfWeekSelector from "./DaysOfWeekSelector";
 
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
 const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
-const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", slotType: "NORMAL" });
+const normalizeExpectedEarnings = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+};
+const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", expectedEarnings: "", slotType: "NORMAL" });
 
 const fetchActingDriverGeoOptions = async () => {
   const areaResp = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" });
@@ -146,6 +150,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
   const buildPayload = () => {
     const payloadSlots = slots.map((slot) => ({
       ...slot,
+      expectedEarnings: normalizeExpectedEarnings(slot?.expectedEarnings),
       slotType: normalizeSlotType(slot?.slotType),
     }));
 
@@ -192,8 +197,16 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       }
     }
 
-    if (!slots.some((slot) => slot?.startTime && slot?.endTime && String(slot?.maxBookings ?? "").trim() !== "")) {
-      nextErrors.slots = "Add at least one complete slot";
+    if (
+      !slots.some(
+        (slot) =>
+          slot?.startTime &&
+          slot?.endTime &&
+          String(slot?.maxBookings ?? "").trim() !== "" &&
+          String(slot?.expectedEarnings ?? "").trim() !== ""
+      )
+    ) {
+      nextErrors.slots = "Add at least one complete slot with expected earnings";
     }
 
     setErrors(nextErrors);
@@ -367,7 +380,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                     </Typography>
                   ) : (
                     slots.map((slot, index) => (
-                      <div key={index} className="flex flex-col-1 gap-3">
+                      <div key={index} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                         <Input
                           type="time"
                           value={slot.startTime || ""}
@@ -389,7 +402,14 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                           label="Max Bookings"
                           disabled={isViewMode}
                         />
-                        <div className="flex items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                        <Input
+                          type="number"
+                          value={slot.expectedEarnings || ""}
+                          onChange={(event) => updateSlot(index, "expectedEarnings", event.target.value)}
+                          label="Expected Earnings"
+                          disabled={isViewMode}
+                        />
+                        <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
                           <Switch
                             checked={normalizeSlotType(slot.slotType) === "PEAK"}
                             onChange={(event) => updateSlot(index, "slotType", event.target.checked ? "PEAK" : "NORMAL")}
