@@ -5,6 +5,12 @@ import { DAYS } from "./constants";
 
 const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
 
+const SlotFieldLabel = ({ children }) => (
+  <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
+    {children}
+  </Typography>
+);
+
 const WeeklyConfig = ({
   weeklySlots,
   selectedDays = [],
@@ -58,43 +64,54 @@ const WeeklyConfig = ({
                 ) : (
                   daySlots.map((slot, index) => (
                     <div key={`${day.value}-${index}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      <Input
-                        type="time"
-                        value={slot.startTime || ""}
-                        onChange={(event) => onUpdateSlot("weekly", day.value, index, "startTime", event.target.value)}
-                        label="Start Time"
-                        disabled={disabled}
-                      />
-                      <Input
-                        type="time"
-                        value={slot.endTime || ""}
-                        onChange={(event) => onUpdateSlot("weekly", day.value, index, "endTime", event.target.value)}
-                        label="End Time"
-                        disabled={disabled}
-                      />
-                      <Input
-                        type="number"
-                        value={slot.maxBookings || ""}
-                        onChange={(event) => onUpdateSlot("weekly", day.value, index, "maxBookings", event.target.value)}
-                        label="Max Bookings"
-                        disabled={disabled}
-                      />
-                      <Input
-                        type="number"
-                        value={slot.expectedEarnings || ""}
-                        onChange={(event) => onUpdateSlot("weekly", day.value, index, "expectedEarnings", event.target.value)}
-                        label="Expected Earnings"
-                        disabled={disabled}
-                      />
-                      <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
-                        <Switch
-                          checked={normalizeSlotType(slot.slotType) === "PEAK"}
-                          onChange={(event) =>
-                            onUpdateSlot("weekly", day.value, index, "slotType", event.target.checked ? "PEAK" : "NORMAL")
-                          }
-                          label={normalizeSlotType(slot.slotType)}
+                      <div>
+                        <SlotFieldLabel>Start Time</SlotFieldLabel>
+                        <Input
+                          type="time"
+                          value={slot.startTime || ""}
+                          onChange={(event) => onUpdateSlot("weekly", day.value, index, "startTime", event.target.value)}
                           disabled={disabled}
                         />
+                      </div>
+                      <div>
+                        <SlotFieldLabel>End Time</SlotFieldLabel>
+                        <Input
+                          type="time"
+                          value={slot.endTime || ""}
+                          onChange={(event) => onUpdateSlot("weekly", day.value, index, "endTime", event.target.value)}
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div>
+                        <SlotFieldLabel>Max Bookings</SlotFieldLabel>
+                        <Input
+                          type="number"
+                          value={slot.maxBookings || ""}
+                          onChange={(event) => onUpdateSlot("weekly", day.value, index, "maxBookings", event.target.value)}
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div>
+                        <SlotFieldLabel>Expected Earnings</SlotFieldLabel>
+                        <Input
+                          type="number"
+                          value={slot.expectedEarnings || ""}
+                          onChange={(event) => onUpdateSlot("weekly", day.value, index, "expectedEarnings", event.target.value)}
+                          disabled={disabled}
+                        />
+                      </div>
+                      <div>
+                        <SlotFieldLabel>Slot Type</SlotFieldLabel>
+                        <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                          <Switch
+                            checked={normalizeSlotType(slot.slotType) === "PEAK"}
+                            onChange={(event) =>
+                              onUpdateSlot("weekly", day.value, index, "slotType", event.target.checked ? "PEAK" : "NORMAL")
+                            }
+                            label={normalizeSlotType(slot.slotType)}
+                            disabled={disabled}
+                          />
+                        </div>
                       </div>
                       <Button
                         type="button"
