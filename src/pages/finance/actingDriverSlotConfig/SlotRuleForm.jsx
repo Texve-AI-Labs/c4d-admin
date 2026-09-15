@@ -67,6 +67,11 @@ const buildInitialForm = (initialValues = {}) => ({
 });
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
+const SlotFieldLabel = ({ children }) => (
+  <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
+    {children}
+  </Typography>
+);
 
 function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
   const isViewMode = mode === "view";
@@ -381,41 +386,52 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                   ) : (
                     slots.map((slot, index) => (
                       <div key={index} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                        <Input
-                          type="time"
-                          value={slot.startTime || ""}
-                          onChange={(event) => updateSlot(index, "startTime", event.target.value)}
-                          label="Start Time"
-                          disabled={isViewMode}
-                        />
-                        <Input
-                          type="time"
-                          value={slot.endTime || ""}
-                          onChange={(event) => updateSlot(index, "endTime", event.target.value)}
-                          label="End Time"
-                          disabled={isViewMode}
-                        />
-                        <Input
-                          type="number"
-                          value={slot.maxBookings || ""}
-                          onChange={(event) => updateSlot(index, "maxBookings", event.target.value)}
-                          label="Max Bookings"
-                          disabled={isViewMode}
-                        />
-                        <Input
-                          type="number"
-                          value={slot.expectedEarnings || ""}
-                          onChange={(event) => updateSlot(index, "expectedEarnings", event.target.value)}
-                          label="Expected Earnings"
-                          disabled={isViewMode}
-                        />
-                        <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
-                          <Switch
-                            checked={normalizeSlotType(slot.slotType) === "PEAK"}
-                            onChange={(event) => updateSlot(index, "slotType", event.target.checked ? "PEAK" : "NORMAL")}
-                            label={normalizeSlotType(slot.slotType)}
+                        <div>
+                          <SlotFieldLabel>Start Time</SlotFieldLabel>
+                          <Input
+                            type="time"
+                            value={slot.startTime || ""}
+                            onChange={(event) => updateSlot(index, "startTime", event.target.value)}
                             disabled={isViewMode}
                           />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>End Time</SlotFieldLabel>
+                          <Input
+                            type="time"
+                            value={slot.endTime || ""}
+                            onChange={(event) => updateSlot(index, "endTime", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>Max Bookings</SlotFieldLabel>
+                          <Input
+                            type="number"
+                            value={slot.maxBookings || ""}
+                            onChange={(event) => updateSlot(index, "maxBookings", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>Expected Earnings</SlotFieldLabel>
+                          <Input
+                            type="number"
+                            value={slot.expectedEarnings || ""}
+                            onChange={(event) => updateSlot(index, "expectedEarnings", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>Slot Type</SlotFieldLabel>
+                          <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                            <Switch
+                              checked={normalizeSlotType(slot.slotType) === "PEAK"}
+                              onChange={(event) => updateSlot(index, "slotType", event.target.checked ? "PEAK" : "NORMAL")}
+                              label={normalizeSlotType(slot.slotType)}
+                              disabled={isViewMode}
+                            />
+                          </div>
                         </div>
                         <Button
                           type="button"
