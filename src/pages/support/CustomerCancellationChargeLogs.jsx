@@ -318,9 +318,9 @@ function CustomerCancellationChargeLogs() {
                     "Payment Total",
                     "Created At",
                   ].map((label) => (
-                    <th key={label} className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                    <th key={label} className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left">
                       <div className="flex items-center">
-                        <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
+                        <Typography variant="small" className="whitespace-nowrap text-[11px] font-bold uppercase text-black">
                           {label}
                         </Typography>
                         {label === "Created At" && (
