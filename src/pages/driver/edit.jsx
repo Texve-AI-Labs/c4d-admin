@@ -11,6 +11,26 @@ import Select from 'react-select';
 import moment from "moment";
 
 const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
+const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const DOCUMENT_REQUIREMENTS = {
+    aadhaarImage: { title: "Aadhaar Image", count: 2 },
+    drivingLicenseImage: { title: "Driving License Image", count: 2 },
+    livePhoto: { title: "Live Photo", count: 1 },
+};
+
+const DocumentUploadInstructions = () => (
+    <div className="mb-4 rounded-lg border border-blue-gray-100 bg-blue-gray-50 p-4">
+        <Typography className="text-sm font-semibold text-blue-gray-800">Document Upload Instructions</Typography>
+        <ul className="mt-2 list-disc list-inside text-sm text-blue-gray-700 space-y-1">
+            <li>All listed documents are required.</li>
+            <li>Allowed file types: JPG, PNG, PDF. Maximum size: 10 MB per file.</li>
+            <li>Aadhaar Image: upload 2 documents.</li>
+            <li>Driving License Image: upload 2 documents.</li>
+            <li>Live Photo: upload 1 document.</li>
+        </ul>
+    </div>
+);
 
 const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -496,16 +516,42 @@ const [blockedReason, setBlockedReason] = useState('');
         );
     };
 
+    const validateDocumentFiles = (files, label) => {
+        const selectedFiles = Array.from(files || []);
+        const requirement = DOCUMENT_REQUIREMENTS[label];
+
+        if (!selectedFiles.length) return "Please select a document to upload.";
+        if (requirement && selectedFiles.length !== requirement.count) {
+            return `${requirement.title} requires ${requirement.count} document${requirement.count > 1 ? "s" : ""}.`;
+        }
+        if (!requirement && selectedFiles.length > 2) return "You can upload a maximum of two documents.";
+
+        for (const file of selectedFiles) {
+            if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+                return "Invalid file type. Please upload JPG, PNG, or PDF.";
+            }
+            if (file.size > MAX_DOCUMENT_SIZE) {
+                return "File size exceeds 10MB limit.";
+            }
+        }
+
+        return "";
+    };
+
     const handleImageUpload = async (e, setFieldValue, label, docId) => {
         try {
             setLoading(true);
-            const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-            const maxSize = 10 * 1024 * 1024; // 10MB
             const files = e.target.files;
+            const validationError = validateDocumentFiles(files, label);
 
-            if (files.length > 2) {
+            if (validationError) {
                 setLoading(false);
-                alert("You can upload a maximum of two documents.");
+                setAlert({
+                    message: validationError,
+                    color: "red",
+                });
+                setTimeout(() => setAlert(null), 5000);
+                e.target.value = "";
                 return;
             }
 
@@ -513,24 +559,6 @@ const [blockedReason, setBlockedReason] = useState('');
             const previews = {};
 
             for (let i = 0; i < files.length; i++) {
-                setLoading(false);
-                if (!allowedTypes.includes(files[i].type)) {
-                    setAlert({
-                        message: "Invalid file type. Please upload JPG, PNG, or PDF.",
-                        color: "red",
-                    });
-                    setTimeout(() => setAlert(null), 5000);
-                    return;
-                }
-                if (files[i].size > maxSize) {
-                    setLoading(false);
-                    setAlert({
-                        message: "File size exceeds 10MB limit.",
-                        color: "red",
-                    });
-                    setTimeout(() => setAlert(null), 5000);
-                    return;
-                }
                 const file = files[i];
                 uploadedFiles.push(file);
 
@@ -605,32 +633,28 @@ const [blockedReason, setBlockedReason] = useState('');
             }
         } catch (err) {
             console.error("Error during image upload:", err);
+            setLoading(false);
+            setAlert({
+                message: "An error occurred while uploading the document.",
+                color: "red",
+            });
+            setTimeout(() => setAlert(null), 5000);
         }
     };
     const handlePhotoUpload = async (e, setFieldValue, label, docId) => {
         try {
             setLoading(true);
-            const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-            const maxSize = 10 * 1024 * 1024; // 10MB
             const file = e.target.files[0];
+            const validationError = validateDocumentFiles(e.target.files, label);
 
-            if (!allowedTypes.includes(file.type)) {
+            if (validationError) {
                 setLoading(false);
                 setAlert({
-                    message: "Invalid file type. Please upload JPG, PNG, or PDF.",
+                    message: validationError,
                     color: "red",
                 });
                 setTimeout(() => setAlert(null), 5000);
-                return;
-            }
-
-            if (file.size > maxSize) {
-                setLoading(false);
-                setAlert({
-                    message: "File size exceeds 10MB limit.",
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                e.target.value = "";
                 return;
             }
             setFieldValue(label, file);
@@ -649,7 +673,7 @@ const [blockedReason, setBlockedReason] = useState('');
 
             formData.append("driverId", driverVal?.result?.id);
             formData.append('image1', file);
-            formData.append('extImage1', file.name.split('.')[1]);
+            formData.append('extImage1', file.name.split('.').pop());
             formData.append('fileTypeImage1', file.type);
             formData.append('type', type);
             formData.append("documentId", docId);
@@ -686,6 +710,7 @@ const [blockedReason, setBlockedReason] = useState('');
             // console.log('DATA IN DOC UPDATE :', data);
         }
         catch (err) {
+            setLoading(false);
             setAlert({
                 message: "An error occurred while uploading the photo.",
                 color: "red",
@@ -1159,6 +1184,9 @@ const [blockedReason, setBlockedReason] = useState('');
                                 </div>
                                 <Card>
                                     <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
+                                        <div className="px-5 pt-4">
+                                            <DocumentUploadInstructions />
+                                        </div>
                                         <table className="w-full min-w-[640px] table-auto">
                                             <thead>
                                                 <tr>

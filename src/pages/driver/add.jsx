@@ -10,6 +10,26 @@ import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
 
 const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
+const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const DOCUMENT_REQUIREMENTS = {
+    aadhaarImage: { title: "Aadhaar Image", count: 2 },
+    drivingLicenseImage: { title: "Driving License Image", count: 2 },
+    livePhoto: { title: "Live Photo", count: 1 },
+};
+
+const DocumentUploadInstructions = () => (
+    <div className="mb-4 rounded-lg border border-blue-gray-100 bg-blue-gray-50 p-4">
+        <Typography className="text-sm font-semibold text-blue-gray-800">Document Upload Instructions</Typography>
+        <ul className="mt-2 list-disc list-inside text-sm text-blue-gray-700 space-y-1">
+            <li>All listed documents are required.</li>
+            <li>Allowed file types: JPG, PNG, PDF. Maximum size: 10 MB per file.</li>
+            <li>Aadhaar Image: upload 2 documents.</li>
+            <li>Driving License Image: upload 2 documents.</li>
+            <li>Live Photo: upload 1 document.</li>
+        </ul>
+    </div>
+);
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
@@ -373,15 +393,42 @@ const DriverAdd = () => {
         );
     };
 
+    const validateDocumentFiles = (files, label) => {
+        const selectedFiles = Array.from(files || []);
+        const requirement = DOCUMENT_REQUIREMENTS[label];
+
+        if (!selectedFiles.length) return "Please select a document to upload.";
+        if (requirement && selectedFiles.length !== requirement.count) {
+            return `${requirement.title} requires ${requirement.count} document${requirement.count > 1 ? "s" : ""}.`;
+        }
+        if (!requirement && selectedFiles.length > 2) return "You can upload a maximum of two documents.";
+
+        for (const file of selectedFiles) {
+            if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
+                return "Invalid file type. Please upload JPG, PNG, or PDF.";
+            }
+            if (file.size > MAX_DOCUMENT_SIZE) {
+                return "File size exceeds 10MB limit.";
+            }
+        }
+
+        return "";
+    };
+
     const handleImageUpload = async (e, setFieldValue, label) => {
         try {
             setLoading(true);
-            const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-            const maxSize = 10 * 1024 * 1024; // 10MB
             const files = e.target.files;
-            if (files.length > 2) {
+            const validationError = validateDocumentFiles(files, label);
+
+            if (validationError) {
                 setLoading(false);
-                alert("You can upload a maximum of two documents.");
+                setAlert({
+                    message: validationError,
+                    color: "red",
+                });
+                setTimeout(() => setAlert(null), 5000);
+                e.target.value = "";
                 return;
             }
 
@@ -390,24 +437,6 @@ const DriverAdd = () => {
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                if (!allowedTypes.includes(file.type)) {
-                    setLoading(false);
-                    setAlert({
-                        message: "Invalid file type. Please upload JPG, PNG, or PDF.",
-                        color: "red",
-                    });
-                    setTimeout(() => setAlert(null), 5000);
-                    return;
-                }
-                if (file.size > maxSize) {
-                    setLoading(false);
-                    setAlert({
-                        message: "File size exceeds 10MB limit.",
-                        color: "red",
-                    });
-                    setTimeout(() => setAlert(null), 5000);
-                    return;
-                }
                 uploadedFiles.push(file);
 
                 const reader = new FileReader();
@@ -429,11 +458,13 @@ const DriverAdd = () => {
             formData.append('name', 'name');
 
             formData.append('image1', files[0]);
-            formData.append('extImage1', files[0].name.split('.')[1]);
+            formData.append('extImage1', files[0].name.split('.').pop());
             formData.append('fileTypeImage1', files[0].type);
+            if (files[1]) {
             formData.append('image2', files[1]);
-            formData.append('extImage2', files[1].name.split('.')[1]);
+            formData.append('extImage2', files[1].name.split('.').pop());
             formData.append('fileTypeImage2', files[1].type);
+            }
             console.log('formData ->', formData);
             const data = await ApiRequestUtils.postDocs(API_ROUTES.UPLOAD_KYC_DOCUMENTS, formData);
             console.log('DATA IN DOC INSERT :', data);
@@ -464,24 +495,16 @@ const DriverAdd = () => {
         try {
             setLoading(true);
             const file = e.target.files[0];
-            const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            if (!allowedTypes.includes(file.type)) {
+            const validationError = validateDocumentFiles(e.target.files, label);
+
+            if (validationError) {
                 setLoading(false);
                 setAlert({
-                    message: "Invalid file type. Please upload JPG, PNG, or PDF.",
+                    message: validationError,
                     color: "red",
                 });
                 setTimeout(() => setAlert(null), 5000);
-                return;
-            }
-            if (file.size > maxSize) {
-                setLoading(false);
-                setAlert({
-                    message: "File size exceeds 10MB limit.",
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                e.target.value = "";
                 return;
             }
             setFieldValue(label, file);
@@ -499,7 +522,7 @@ const DriverAdd = () => {
             const formData = new FormData();
 
             formData.append('image1', file);
-            formData.append('extImage1', file.name.split('.')[1]);
+            formData.append('extImage1', file.name.split('.').pop());
             formData.append('fileTypeImage1', file.type);
             formData.append('type', type);
             formData.append('driverId', driverAdded.driverId);
@@ -958,6 +981,9 @@ const DriverAdd = () => {
                                 </div>
                                 <Card>
                                     <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
+                                        <div className="px-5 pt-4">
+                                            <DocumentUploadInstructions />
+                                        </div>
                                         <table className="w-full min-w-[640px] table-auto">
                                             <thead>
                                                 <tr>
