@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { themeColors } from '@/theme/colors';
-import { useLoadScript, GoogleMap, Polygon, Marker } from '@react-google-maps/api';
+import { useLoadScript, GoogleMap, Polygon, OverlayView } from '@react-google-maps/api';
 import { PencilSquareIcon, CursorArrowRaysIcon, ArrowsPointingOutIcon, RectangleGroupIcon, ArrowUturnLeftIcon, TrashIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 // Keep libraries array static outside component.
@@ -590,6 +590,19 @@ const GoogleMapDrawing = ({
             />
           )}
 
+          {isMapLoaded && isCreateMode && completedPath.map((position, index) => (
+            <OverlayView
+              key={`completed-point-${index}`}
+              position={position}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width, height) => ({ x: -width / 2, y: -height / 2 })}
+            >
+              <div className="pointer-events-none rounded-full bg-red-600 px-3 py-2 text-sm font-extrabold leading-none text-white shadow-sm">
+                {index + 1}
+              </div>
+            </OverlayView>
+          ))}
+
           {isMapLoaded && isCreateMode && draftPath.length > 0 && (
             <Polygon
               path={draftPath}
@@ -618,6 +631,19 @@ const GoogleMapDrawing = ({
             />
           )}
 
+          {isMapLoaded && isCreateMode && draftPath.map((position, index) => (
+            <OverlayView
+              key={`draft-point-${index}`}
+              position={position}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width, height) => ({ x: -width / 2, y: -height / 2 })}
+            >
+              <div className="pointer-events-none rounded-full bg-red-600 px-3 py-2 text-sm font-extrabold leading-none text-white shadow-sm">
+                {index + 1}
+              </div>
+            </OverlayView>
+          ))}
+
           {isMapLoaded && (!showDrawingManager || hasEditablePolygon) && Array.isArray(initialPolygon) && initialPolygon.length > 0 && (
             <Polygon
               path={initialPolygon}
@@ -645,6 +671,19 @@ const GoogleMapDrawing = ({
               }}
             />
           )}
+
+          {isMapLoaded && hasEditablePolygon && initialPolygon.map((position, index) => (
+            <OverlayView
+              key={`edit-point-${index}`}
+              position={position}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width, height) => ({ x: -width / 2, y: -height / 2 })}
+            >
+              <div className="pointer-events-none rounded-full bg-red-600 px-3 py-1 text-sm font-extrabold leading-none text-white shadow-sm">
+                {index + 1}
+              </div>
+            </OverlayView>
+          ))}
 
           {isMapLoaded && Array.isArray(backgroundPolygons) && backgroundPolygons.map((polygonCoords, index) => (
             Array.isArray(polygonCoords) && polygonCoords.length > 0 ? (
