@@ -9,6 +9,8 @@ import { DRIVER_ADD_SCHEMA } from '@/utils/validations';
 import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
 
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
+
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
     const searchTimerRef = useRef(null);
@@ -598,7 +600,7 @@ const DriverAdd = () => {
                             <div className="grid grid-cols-1 gap-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation</label>
+                                        <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation<RequiredMark /></label>
                                         <Field as="select" name="salutation" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
                                             <option value="">Select salutation</option>
                                             <option value="Mr">Mr</option>
@@ -609,17 +611,17 @@ const DriverAdd = () => {
                                         <ErrorMessage name="salutation" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name</label>
+                                        <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name<RequiredMark /></label>
                                         <Field type="text" name="firstName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
-                                        <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name</label>
+                                        <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name<RequiredMark /></label>
                                         <Field type="text" name="fatherName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="fatherName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
-                                        <label htmlFor="dateOfBirth" className="text-sm font-medium text-gray-700">Date of Birth</label>
+                                        <label htmlFor="dateOfBirth" className="text-sm font-medium text-gray-700">Date of Birth<RequiredMark /></label>
                                         <Field type="date" disabled={!isEditable} name="dateOfBirth" className="p-2 w-full rounded-xl border-2 border-gray-300" value={values.dateOfBirth} max={currentDate()}
                                             onChange={(e) => {
                                                 setFieldValue('dateOfBirth', e.target.value);
@@ -645,17 +647,17 @@ const DriverAdd = () => {
                                         <ErrorMessage name="age" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
-                                        <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                        <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
                                         <Field type="tel" name="phoneNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                         <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="license" className="text-sm font-medium text-gray-700">License Number</label>
+                                        <label htmlFor="license" className="text-sm font-medium text-gray-700">License Number<RequiredMark /></label>
                                         <Field type="text" name="license" disabled={!isEditable} className="p-2 w-full rounded-md  border-2 border-gray-300" maxLength={15} />
                                         <ErrorMessage name="license" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-700 mb-2">License Type</p>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">License Type<RequiredMark /></p>
                                         <div className="space-x-4">
                                             <label className="inline-flex items-center">
                                                 <Field type="radio" name="licenseType" disabled={!isEditable} value="type1" className="form-radio" />
@@ -669,12 +671,12 @@ const DriverAdd = () => {
                                         <ErrorMessage name="mode" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="licenseExpiryDate" className="text-sm font-medium text-gray-700">License Expiry Date</label>
+                                        <label htmlFor="licenseExpiryDate" className="text-sm font-medium text-gray-700">License Expiry Date<RequiredMark /></label>
                                         <Field type="date" name="licenseExpiryDate" disabled={!isEditable} className="p-2 w-full rounded-xl border-2 border-gray-300" value={values.licenseExpiryDate} min={currentDate()} ></Field>
                                         <ErrorMessage name="licenseExpiryDate" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-700 mb-2">Preference</p>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Preference<RequiredMark /></p>
                                         <div className="space-x-4">
                                             <label className="inline-flex items-center">
                                                 <Field type="radio" disabled={!isEditable} name="transmissionType" value="Automatic" className="form-radio" />
@@ -688,7 +690,7 @@ const DriverAdd = () => {
                                         <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="source" className="text-sm font-medium text-gray-700">Source</label>
+                                        <label htmlFor="source" className="text-sm font-medium text-gray-700">Source<RequiredMark /></label>
                                         <Field as="select" name="source" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                             <option value="">Select Source</option>
                                             <option value="Walk In">Walk In</option>
@@ -699,7 +701,7 @@ const DriverAdd = () => {
                                         <ErrorMessage name="source" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-700 mb-2">Service Type</p>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Service Type<RequiredMark /></p>
                                         <div className="space-x-4">
                                             <label className="inline-flex items-center">
                                                 <Field
@@ -719,7 +721,7 @@ const DriverAdd = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="address" className="text-sm font-medium text-gray-700">Current Address</label>
+                                        <label htmlFor="address" className="text-sm font-medium text-gray-700">Current Address<RequiredMark /></label>
                                         <Field name="address">
                                             {({ field, form }) => (
                                                 <LocationInput
@@ -773,13 +775,13 @@ const DriverAdd = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="streetName" className="text-sm font-medium text-gray-700">Street Name</label>
+                                            <label htmlFor="streetName" className="text-sm font-medium text-gray-700">Street Name<RequiredMark /></label>
                                             <Field type="text" name="streetName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             <ErrorMessage name="streetName" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
                                             <label htmlFor="thaluk" className="text-sm font-medium text-gray-700">
-                                                Thaluk
+                                                Thaluk<RequiredMark />
                                             </label>
                                             <select
                                                 id="thaluk"
@@ -804,7 +806,7 @@ const DriverAdd = () => {
                                         </div>
                                         <div>
                                             <label htmlFor="district" className="text-sm font-medium text-gray-700">
-                                                Zone
+                                                Zone<RequiredMark />
                                             </label>
                                             <select
                                                 id="district"
@@ -829,7 +831,7 @@ const DriverAdd = () => {
                                         </div>
                                         <div>
                                             <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">
-                                                Account District
+                                                Account District<RequiredMark />
                                             </label>
                                             <select
                                                 id="accountDistrict"
@@ -854,7 +856,7 @@ const DriverAdd = () => {
                                         </div>
                                         <div>
                                             <label htmlFor="state" className="text-sm font-medium text-gray-700">
-                                                State
+                                                State<RequiredMark />
                                             </label>
                                             <select
                                                 id="state"
@@ -878,12 +880,12 @@ const DriverAdd = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode</label>
+                                            <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode<RequiredMark /></label>
                                             <Field type="text" name="pincode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                     <div>
-                                        <label htmlFor="maritalStatus" className="text-sm font-medium text-gray-700">Marital Status</label>
+                                        <label htmlFor="maritalStatus" className="text-sm font-medium text-gray-700">Marital Status<RequiredMark /></label>
                                         <Field as="select" name="maritalStatus" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
                                             <option value="">Select Marital Status</option>
                                             <option value="SINGLE">Single</option>
@@ -892,27 +894,27 @@ const DriverAdd = () => {
                                         <ErrorMessage name="maritalStatus" component="div" className="text-red-500 text-sm" />
                                     </div>
 									<div>
-                                        <label htmlFor="alternateNumber" className="text-sm font-medium text-gray-700">Alternate Number</label>
+                                        <label htmlFor="alternateNumber" className="text-sm font-medium text-gray-700">Alternate Number<RequiredMark /></label>
                                         <Field type="text" name="alternateNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 border-2" />
                                         <ErrorMessage name="alternateNumber" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
-                                            <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>
+                                            <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1<RequiredMark /></label>
                                             <Field type="text" name="reference1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
                                             <ErrorMessage name="reference1" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="phoneNumber1" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                            <label htmlFor="phoneNumber1" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
                                             <Field type="tel" name="phoneNumber1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber1" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="reference2" className="text-sm font-medium text-gray-700">Reference 2</label>
+                                            <label htmlFor="reference2" className="text-sm font-medium text-gray-700">Reference 2<RequiredMark /></label>
                                             <Field type="text" name="reference2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
                                             <ErrorMessage name="reference2" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="phoneNumber2" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                            <label htmlFor="phoneNumber2" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
                                             <Field type="tel" name="phoneNumber2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber2" component="div" className="text-red-500 text-sm" />
                                         </div>
