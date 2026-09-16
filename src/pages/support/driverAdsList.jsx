@@ -39,7 +39,6 @@ function DriverAdsList() {
   const [alert, setAlert] = useState("");
   const [search, setSearch] = useState("");
   const [isActive, setIsActive] = useState("");
-  const [toLaunchAt, setToLaunchAt] = useState("");
   const [selectedServiceArea, setSelectedServiceArea] = useState("");
   const [selectedZone, setSelectedZone] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -76,7 +75,6 @@ function DriverAdsList() {
       if (selectedZone) params.subZoneId = selectedZone;
       if (isActive !== "") params.isActive = isActive;
       // if (fromLaunchAt) params.fromLaunchAt = fromLaunchAt;
-      if (toLaunchAt) params.toLaunchAt = toLaunchAt;
 
       const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_DRIVER_ADVERISEMENT, params);
 
@@ -106,7 +104,7 @@ function DriverAdsList() {
     fetchDriverAds(pagination.currentPage, true);
   }, [pagination.currentPage, pagination.itemsPerPage, search, isActive, 
     // fromLaunchAt, 
-    toLaunchAt, selectedServiceArea, selectedZone, refreshKey]);
+    selectedServiceArea, selectedZone, refreshKey]);
 
   useEffect(() => {
     fetchGeoMarkings();
@@ -122,7 +120,6 @@ function DriverAdsList() {
     setSearch("");
     setIsActive("");
     // setFromLaunchAt("");
-    setToLaunchAt("");
     setSelectedServiceArea("");
     setSelectedZone("");
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -196,11 +193,12 @@ function DriverAdsList() {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <DriverAdsZone
               label="Zone"
               value={selectedServiceArea}
               refreshKey={refreshKey}
+              returnLabel
               onChange={(value) => {
                 setSelectedServiceArea(value);
                 setSelectedZone("");
@@ -234,21 +232,6 @@ function DriverAdsList() {
                 <Option value="false">Inactive</Option>
               </Select>
             </div>
-            <div>
-              <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
-                To Launch At
-              </Typography>
-              <Input
-                type="date"
-                value={toLaunchAt}
-                onChange={(e) => {
-                  setToLaunchAt(e.target.value);
-                  setPagination((prev) => ({ ...prev, currentPage: 1 }));
-                }}
-              />
-            </div>
-
-
           </div>
         </CardBody>
 
