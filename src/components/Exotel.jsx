@@ -27,6 +27,7 @@ const ExotelCallsList = () => {
   const [showCustomDate, setShowCustomDate] = useState(false);
   const [startTimeFrom, setStartTimeFrom] = useState('');
   const [startTimeTo, setStartTimeTo] = useState('');
+  const [dateRangeError, setDateRangeError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [directionFilter, setDirectionFilter] = useState('all');
@@ -49,6 +50,25 @@ const ExotelCallsList = () => {
   });
 
   const formatDateTimeLocal = (date) => moment(date).format("YYYY-MM-DDTHH:mm");
+  const currentDateTime = formatDateTimeLocal(new Date());
+
+  const handleStartTimeFromChange = (value) => {
+    setStartTimeFrom(value);
+    if (startTimeTo && value && new Date(startTimeTo) < new Date(value)) {
+      setDateRangeError('Please select a valid date range. From Date cannot be later than To Date');
+      return;
+    }
+    setDateRangeError('');
+  };
+
+  const handleStartTimeToChange = (value) => {
+    setStartTimeTo(value);
+    if (startTimeFrom && value && new Date(startTimeFrom) > new Date(value)) {
+      setDateRangeError('Please select a valid date range. From Date cannot be later than To Date');
+      return;
+    }
+    setDateRangeError('');
+  };
 
   // Apply quick date filter
   const applyDateFilter = (type) => {
@@ -66,7 +86,7 @@ const ExotelCallsList = () => {
 
       const endOfDay = new Date(now);
       endOfDay.setHours(23, 59, 59, 999);
-      to = formatDateTimeLocal(endOfDay);
+      to = formatDateTimeLocal(endOfDay > now ? now : endOfDay);
     } else if (type === '7days') {
       const start = new Date();
       start.setDate(now.getDate() - 6);
@@ -75,7 +95,7 @@ const ExotelCallsList = () => {
 
       const end = new Date(now);
       end.setHours(23, 59, 59, 999);
-      to = formatDateTimeLocal(end);
+      to = formatDateTimeLocal(end > now ? now : end);
     } else if (type === '30days') {
       const start = new Date();
       start.setDate(now.getDate() - 29);
@@ -84,15 +104,21 @@ const ExotelCallsList = () => {
 
       const end = new Date(now);
       end.setHours(23, 59, 59, 999);
-      to = formatDateTimeLocal(end);
+      to = formatDateTimeLocal(end > now ? now : end);
     }
 
     setStartTimeFrom(from);
     setStartTimeTo(to);
+    setDateRangeError('');
   };
 
   // Main API function - uses current state directly
   const callsList = async (page = 1, showLoader = false) => {
+    if (startTimeFrom && startTimeTo && new Date(startTimeFrom) > new Date(startTimeTo)) {
+      setDateRangeError('Please select a valid date range. From Date cannot be later than To Date');
+      return;
+    }
+
     if (showLoader) setLoading(true);
     try {
       const queryParams = {
@@ -233,6 +259,11 @@ const getDirectionLabel = (direction) => {
     return 'text-blue-600';
   };
 
+  const hasActiveFilters =
+    Boolean(startTimeFrom || startTimeTo || searchQuery.trim()) ||
+    statusFilter !== 'all' ||
+    directionFilter !== 'all';
+
   return (
     <div className="flex flex-col gap-6">
 
@@ -281,15 +312,20 @@ const getDirectionLabel = (direction) => {
               </div>
 
               {showCustomDate && (
-                <div className="flex flex-wrap items-center gap-3 mt-2">
+                <div className="mt-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-600">From:</span>
-                    <input type="datetime-local" value={startTimeFrom} onChange={(e) => setStartTimeFrom(e.target.value)} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm" />
+                    <input type="datetime-local" value={startTimeFrom} onChange={(e) => handleStartTimeFromChange(e.target.value)} max={currentDateTime} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-600">To:</span>
-                    <input type="datetime-local" value={startTimeTo} onChange={(e) => setStartTimeTo(e.target.value)} min={startTimeFrom} className="px-2 py-1 border border-gray-300 rounded-md text-sm" />
+                    <input type="datetime-local" value={startTimeTo} onChange={(e) => handleStartTimeToChange(e.target.value)} min={startTimeFrom} max={currentDateTime} className="px-2 py-1 border border-gray-300 rounded-md text-sm" />
+                    </div>
                   </div>
+                  {dateRangeError && (
+                    <p className="mt-1 text-xs font-medium text-red-600">{dateRangeError}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -306,6 +342,7 @@ const getDirectionLabel = (direction) => {
               setStatusFilter('all');
               setDirectionFilter('all');
               setSearchQuery('');
+              setDateRangeError('');
             }}
           >
             Clear Filters
@@ -314,7 +351,7 @@ const getDirectionLabel = (direction) => {
       </div>
 
       <Card>
-        {callList.length > 0 ? (
+        {callList.length > 0 || loading || hasActiveFilters ? (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 p-10 lg:grid-cols-6 gap-4">
               {[
@@ -391,7 +428,7 @@ const getDirectionLabel = (direction) => {
                         <div className="flex justify-center"><Spinner className="h-12 w-12" /></div>
                       </td>
                     </tr>
-                  ) : (
+                  ) : callList.length > 0 ? (
                     callList.map((call) => (
                         <tr key={call.id}>
                           <td className="py-3 px-5 border-b border-blue-gray-50">
@@ -434,6 +471,14 @@ const getDirectionLabel = (direction) => {
                         </tr>
                       )
                     )
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-10 text-center">
+                        <Typography className="text-sm font-medium text-blue-gray-500">
+                          No Call Records Available
+                        </Typography>
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
