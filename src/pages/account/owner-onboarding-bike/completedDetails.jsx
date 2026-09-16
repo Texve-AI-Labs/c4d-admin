@@ -373,6 +373,8 @@ const CompletedOnboardingDetails = () => {
     return Object.entries(account)
       .filter(([key, value]) => {
         if (["requiredDocuments", "uploads", "accountDocumentStatus", "vehicleDocumentStatus", "cab"].includes(key)) return false;
+        // `zone` mirrors `district` in the account payload; display only the canonical Zone row.
+        if (key === "zone") return false;
         if (value === null || value === undefined || value === "") return false;
         if (typeof value === "object") return false;
         return true;
