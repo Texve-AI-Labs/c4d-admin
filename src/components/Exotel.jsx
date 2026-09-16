@@ -48,6 +48,8 @@ const ExotelCallsList = () => {
     itemsPerPage: 15,
   });
 
+  const formatDateTimeLocal = (date) => moment(date).format("YYYY-MM-DDTHH:mm");
+
   // Apply quick date filter
   const applyDateFilter = (type) => {
     setDateFilterType(type);
@@ -60,23 +62,29 @@ const ExotelCallsList = () => {
     if (type === 'today') {
       const startOfDay = new Date(now);
       startOfDay.setHours(0, 0, 0, 0);
-      from = startOfDay.toISOString().slice(0, 16);
+      from = formatDateTimeLocal(startOfDay);
 
       const endOfDay = new Date(now);
       endOfDay.setHours(23, 59, 59, 999);
-      to = endOfDay.toISOString().slice(0, 16);
+      to = formatDateTimeLocal(endOfDay);
     } else if (type === '7days') {
       const start = new Date();
       start.setDate(now.getDate() - 6);
       start.setHours(0, 0, 0, 0);
-      from = start.toISOString().slice(0, 16);
-      to = new Date(now.setHours(23, 59, 59, 999)).toISOString().slice(0, 16);
+      from = formatDateTimeLocal(start);
+
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      to = formatDateTimeLocal(end);
     } else if (type === '30days') {
       const start = new Date();
       start.setDate(now.getDate() - 29);
       start.setHours(0, 0, 0, 0);
-      from = start.toISOString().slice(0, 16);
-      to = new Date(now.setHours(23, 59, 59, 999)).toISOString().slice(0, 16);
+      from = formatDateTimeLocal(start);
+
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      to = formatDateTimeLocal(end);
     }
 
     setStartTimeFrom(from);
