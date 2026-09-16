@@ -18,6 +18,7 @@ export const useBookingSummaryRealtime = ({
   activeTab,
   customDateFrom,
   customDateTo,
+  customDateRangeValid = true,
   buildSummaryQueryParams,
   fetchBookingSummary,
   customerId,
@@ -118,6 +119,7 @@ export const useBookingSummaryRealtime = ({
 
   useEffect(() => {
     if (!filtersLoaded) return;
+    if (!customDateRangeValid) return;
     if (activeTab === "CUSTOM_DATE" && (!customDateFrom || !customDateTo)) return;
     requestSummaryRefresh({ immediate: true, force: false });
   }, [
@@ -132,12 +134,14 @@ export const useBookingSummaryRealtime = ({
     dateFilter,
     customDateFrom,
     customDateTo,
+    customDateRangeValid,
     filtersLoaded,
     requestSummaryRefresh,
   ]);
 
   useEffect(() => {
     if (!filtersLoaded) return;
+    if (!customDateRangeValid) return;
     if (activeTab === "CUSTOM_DATE" && (!customDateFrom || !customDateTo)) return;
     if (!lastEvent) return;
 
@@ -161,6 +165,7 @@ export const useBookingSummaryRealtime = ({
     activeTab,
     customDateFrom,
     customDateTo,
+    customDateRangeValid,
     requestSummaryRefresh,
   ]);
 

@@ -38,6 +38,16 @@ const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 const getDateFilterFromTab = (tab) =>
     tab === 'TODAY' ? 'Today' : tab === 'REMAINING' ? 'Future' : tab === 'CUSTOM_DATE' ? 'Custom date' : 'All';
 
+const getCustomDateRangeError = (startDate, endDate) => {
+    const today = moment().format('YYYY-MM-DD');
+    if (startDate && startDate > today) return 'Start date cannot be a future date.';
+    if (endDate && endDate > today) return 'End date cannot be a future date.';
+    if (startDate && endDate && endDate < startDate) {
+        return 'End date cannot be earlier than the start date.';
+    }
+    return '';
+};
+
 const getItemSafe = (key) => {
     if (!isBrowser()) return null;
     try {
@@ -178,6 +188,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [dateFilter, setDateFilter] = useState('All');
     const [customDateFrom, setCustomDateFrom] = useState('');
     const [customDateTo, setCustomDateTo] = useState('');
+    const [customDateError, setCustomDateError] = useState('');
     const [isManualDateFilter, setIsManualDateFilter] = useState(false);
     const [filtersLoaded, setFiltersLoaded] = useState(false);
     const [effectiveSearchId, setEffectiveSearchId] = useState(searchBookingId);
@@ -423,6 +434,7 @@ const handleTabChange = (value) => {
         setZoneFilter(resetZoneFilter);
                 setCustomDateFrom('');
                 setCustomDateTo('');
+                setCustomDateError('');
         setDateFilter(getDateFilterFromTab(value));
 
             if (value === 'CUSTOM_DATE') {
@@ -431,6 +443,16 @@ const handleTabChange = (value) => {
                 setIsCustomDatePopoverOpen(false);
             }
         }
+    };
+
+    const handleCustomDateFromChange = (value) => {
+        setCustomDateFrom(value);
+        setCustomDateError(getCustomDateRangeError(value, customDateTo));
+    };
+
+    const handleCustomDateToChange = (value) => {
+        setCustomDateTo(value);
+        setCustomDateError(getCustomDateRangeError(customDateFrom, value));
     };
 
     const handleFilterChange = (filterType, value) => {
@@ -536,6 +558,7 @@ const handleTabChange = (value) => {
     const getBookingsList = async (page = 1) => {
         // For custom date tab, only hit API when both dates are selected
         if (activeTab === 'CUSTOM_DATE' && (!customDateFrom || !customDateTo)) {return;}
+        if (activeTab === 'CUSTOM_DATE' && getCustomDateRangeError(customDateFrom, customDateTo)) {return;}
         const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
     try {
@@ -686,7 +709,7 @@ if (!statusFilter.includes('All')) {
         // return () => clearInterval(intervalId);
     }, [customerId, effectiveSearchId, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
 
-    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,buildSummaryQueryParams,fetchBookingSummary,customerId,effectiveSearchId,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter});
+    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,customDateRangeValid: !getCustomDateRangeError(customDateFrom, customDateTo),buildSummaryQueryParams,fetchBookingSummary,customerId,effectiveSearchId,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter});
 
     useEffect(() => {
         const totalPendings = Number(counts?.totalPendings || 0);
@@ -974,6 +997,7 @@ if (!statusFilter.includes('All')) {
         setDateFilter(getDateFilterFromTab(refreshedTab));
         setCustomDateFrom('');
         setCustomDateTo('');
+        setCustomDateError('');
         setIsCustomDatePopoverOpen(false);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setEffectiveSearchId('');
@@ -1312,10 +1336,10 @@ if (!statusFilter.includes('All')) {
                                             <input
                                                 type="date"
                                                 value={customDateFrom}
-                                                onChange={(e) => setCustomDateFrom(e.target.value)}
+                                                onChange={(e) => handleCustomDateFromChange(e.target.value)}
                                                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                                 className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                                                // max={customDateTo || undefined}
+                                                max={moment().format('YYYY-MM-DD')}
                                             />
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -1325,17 +1349,23 @@ if (!statusFilter.includes('All')) {
                                            <input
                                                 type="date"
                                                 value={customDateTo}
-                                                onChange={(e) => setCustomDateTo(e.target.value)}
+                                                onChange={(e) => handleCustomDateToChange(e.target.value)}
                                                 onBlur={() => {
-                                                    if (customDateFrom && customDateTo) {
+                                                    if (customDateFrom && customDateTo && !customDateError) {
                                                     setIsCustomDatePopoverOpen(false);
                                                     }
                                                 }}
                                                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                                 className="px-3 py-1 ml-4 border border-gray-300 rounded-md text-sm"
-                                                // min={customDateFrom || undefined}
+                                                min={customDateFrom || undefined}
+                                                max={moment().format('YYYY-MM-DD')}
                                                 />
                                         </div>
+                                        {customDateError && (
+                                            <Typography className="text-sm font-medium text-red-600">
+                                                {customDateError}
+                                            </Typography>
+                                        )}
                                         {/* <Button
                                             size="sm"
                                             className="bg-primary text-white hover:bg-primary-600 flex items-center gap-2"
