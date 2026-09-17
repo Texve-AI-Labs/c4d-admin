@@ -53,7 +53,7 @@ const getTierBadgeClass = (tier) => {
   }  
 };
 
-const STATUS_FILTERS = ["ALL", "NEW", "IN_PROGRESS", "FOLLOW_UP_SCHEDULED", "COMPLETED"];
+const STATUS_FILTERS = ["ALL", "NEW", "IN_PROGRESS", "FOLLOW_UP_SCHEDULED", "ACTIVE", "COMPLETED", "CANCELLED"];
 
 const resolveValue = (row, keys) => {
   const source = row;
@@ -137,6 +137,7 @@ function DriverAdsRegList() {
   };
 
   const handleRefresh = () => {
+    setStatusFilter("ALL");
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
     setRefreshKey((prev) => prev + 1);
   };
@@ -195,10 +196,11 @@ function DriverAdsRegList() {
         <CardBody className="pt-0">
           <div className="flex w-full max-w-xs items-center gap-3 rounded-xl">
             <Typography variant="small" className="whitespace-nowrap font-medium text-blue-gray-700">
-              Status
+              Registration Status
             </Typography>
             <Select
               value={statusFilter}
+              selected={() => formatStatusLabel(statusFilter)}
               onChange={(value) => {
                 setPagination((prev) => ({ ...prev, currentPage: 1 }));
                 setStatusFilter(value || "ALL");
