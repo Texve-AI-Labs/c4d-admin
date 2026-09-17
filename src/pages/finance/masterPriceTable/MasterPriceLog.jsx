@@ -116,6 +116,22 @@ const MasterPriceLog = ({ id }) => {
         surChargePercentage: "Surcharge Percentage",
         nightHoursFrom: "Night Hours From",
         nightHoursTo: "Night Hours To",
+        common: "Common",
+        DROP_ONLY: "Drop Only",
+        ROUND_TRIP: "Round Trip",
+        AC: "AC",
+        NON_AC: "Non AC",
+        kilometer: "Kilometer",
+        cancelMins: "Cancellation Minutes",
+        cancelCharge: "Cancellation Charge",
+        driverCharge: "Driver Charge",
+        kilometerRoundPrice: "Kilometer Round Price",
+        extraKilometerPrice: "Extra Kilometer Price",
+        extraKilometerRoundPrice: "Extra Kilometer Round Price",
+        acKilometerPrice: "AC Kilometer Price",
+        acExtraKilometerPrice: "AC Extra Kilometer Price",
+        acKilometerRoundPrice: "AC Kilometer Round Price",
+        acExtraKilometerRoundPrice: "AC Extra Kilometer Round Price",
     };
 
     const parseMaybeJson = (value, fallback) => {
@@ -224,6 +240,27 @@ const MasterPriceLog = ({ id }) => {
         return value;
     };
 
+    const formatPricingObject = (pricing, parentLabel = "") => {
+        if (!pricing || typeof pricing !== "object") return "-";
+
+        return Object.entries(pricing)
+            .flatMap(([key, value]) => {
+                const label = pricingLabels[key] || prettyFieldLabel(key);
+                const scopedLabel = parentLabel ? `${parentLabel} ${label}` : label;
+
+                if (Array.isArray(value) && key === "peakHours") {
+                    return [`${scopedLabel}: ${formatPeakHours(value)}`];
+                }
+
+                if (value && typeof value === "object" && !Array.isArray(value)) {
+                    return formatPricingObject(value, scopedLabel);
+                }
+
+                return [`${scopedLabel}: ${formatPricingValue(key, value)}`];
+            })
+            .join(", ");
+    };
+
     const formatCategoryPricings = (categoryPricingsRaw) => {
         const parsed = parseMaybeJson(categoryPricingsRaw, []);
         const categoryPricings = Array.isArray(parsed) ? parsed : [parsed].filter(Boolean);
@@ -237,14 +274,9 @@ const MasterPriceLog = ({ id }) => {
                     ? carTypesRaw.map(normalizeCarTypeLabel).join(", ")
                     : "-";
                 const pricing = parseMaybeJson(item?.pricing, {});
-                const pricingDetails = Object.entries(pricingLabels)
-                    .map(([key, label]) => {
-                        return `${label}: ${formatPricingValue(key, pricing?.[key])}`;
-                    })
-                    .join(", ");
-                const peakHours = formatPeakHours(pricing?.peakHours);
+                const pricingDetails = formatPricingObject(pricing);
 
-                return `${category} [${carTypes}] - ${pricingDetails}, Peak Hours: ${peakHours}`;
+                return `${category} [${carTypes}] - ${pricingDetails}`;
             })
             .join(" | ");
     };
