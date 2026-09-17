@@ -77,6 +77,36 @@ const MasterPriceLog = ({ id }) => {
         "premium_config": "Premium Config",
         "demandRules": "Demand Rules",
         "demand_rules": "Demand Rules",
+        "categoryPricings": "Category Pricings",
+        "category_pricings": "Category Pricings",
+    };
+
+    const categoryLabels = {
+        ECONOMY_GO: "Economy Go",
+        COMFORT: "Comfort",
+        PREMIUM: "Premium",
+        PREMIUM_XL: "Premium XL",
+    };
+
+    const carTypeLabels = {
+        MINI: "Mini",
+        SEDAN: "Sedan",
+        SUV: "Suv",
+        MUV: "Muv",
+    };
+
+    const pricingLabels = {
+        baseKm: "Base Km",
+        baseFare: "Base Fare",
+        kilometerPrice: "Kilometer Price",
+        minCharge: "Min Charge",
+        nightCharge: "Night Charge",
+        waitingCharge: "Waiting Charge",
+        freeExtraMinutes: "Free Extra Minutes",
+        additionalMinCharge: "Additional Min Charge",
+        surChargePercentage: "Surcharge Percentage",
+        nightHoursFrom: "Night Hours From",
+        nightHoursTo: "Night Hours To",
     };
 
     const canonicalField = (field) => {
@@ -111,6 +141,8 @@ const MasterPriceLog = ({ id }) => {
             premiumconfig: "premiumConfig",
             demand_rules: "demandRules",
             demandrules: "demandRules",
+            category_pricings: "categoryPricings",
+            categorypricings: "categoryPricings",
         };
         return aliasMap[lower] || key;
     };
@@ -142,7 +174,7 @@ const MasterPriceLog = ({ id }) => {
 
     const formatPeakHours = (peakHours) => {
         let hoursArray = Array.isArray(peakHours) ? peakHours : [];
-                if (hoursArray.length > 0 && Array.isArray(hoursArray[0])) {
+        if (hoursArray.length > 0 && Array.isArray(hoursArray[0])) {
             hoursArray = hoursArray[0];
         }
         if (!hoursArray || hoursArray.length === 0) {
@@ -150,10 +182,38 @@ const MasterPriceLog = ({ id }) => {
         }
         return hoursArray
             .map((hour) => {
-                const { start, end, kilometerPrice, kilometerPriceMVP, kilometerPriceSuv, kilometerPriceSedan } = hour;
-                return `${start}-${end} (Mini: ${kilometerPrice || "-"}, MUV: ${kilometerPriceMVP || "-"}, SUV: ${kilometerPriceSuv || "-"}, Sedan: ${kilometerPriceSedan || "-"})`;
+                const { start, end, kilometerPrice } = hour;
+                return `${start || "-"}-${end || "-"} (Km Price: ${kilometerPrice ?? "-"})`;
             })
             .join(", ");
+    };
+
+    const formatCategoryPricings = (categoryPricingsRaw) => {
+        const categoryPricings = Array.isArray(categoryPricingsRaw) ? categoryPricingsRaw : [];
+        if (!categoryPricings.length) return "-";
+
+        return categoryPricings
+            .map((item) => {
+                const category = categoryLabels[item?.category] || item?.category || "-";
+                const carTypes = Array.isArray(item?.carTypes) && item.carTypes.length
+                    ? item.carTypes.map((carType) => carTypeLabels[carType] || carType).join(", ")
+                    : "-";
+                const pricing = item?.pricing || {};
+                const pricingDetails = Object.entries(pricingLabels)
+                    .map(([key, label]) => {
+                        const value = pricing?.[key];
+                        const displayValue = typeof value === "string" && (key.includes("HoursFrom") || key.includes("HoursTo"))
+                            ? value.slice(0, 5)
+                            : value;
+
+                        return `${label}: ${displayValue ?? "-"}`;
+                    })
+                    .join(", ");
+                const peakHours = formatPeakHours(pricing?.peakHours);
+
+                return `${category} [${carTypes}] - ${pricingDetails}, Peak Hours: ${peakHours}`;
+            })
+            .join(" | ");
     };
 
     const formatDemandRules = (rulesRaw) => {
@@ -186,6 +246,10 @@ const MasterPriceLog = ({ id }) => {
 
         if (lowerField === "demandrules") {
             return formatDemandRules(value);
+        }
+
+        if (lowerField === "categorypricings") {
+            return formatCategoryPricings(value);
         }
 
         if (lowerField === "premiumconfig") {
