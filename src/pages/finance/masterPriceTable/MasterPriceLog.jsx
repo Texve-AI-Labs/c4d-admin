@@ -86,6 +86,8 @@ const MasterPriceLog = ({ id }) => {
         COMFORT: "Comfort",
         PREMIUM: "Premium",
         PREMIUM_XL: "Premium XL",
+        AUTO_SAVER: "Auto Saver",
+        AUTO_PLUS: "Auto Plus",
     };
 
     const carTypeLabels = {
@@ -93,6 +95,7 @@ const MasterPriceLog = ({ id }) => {
         SEDAN: "Sedan",
         SUV: "Suv",
         MUV: "Muv",
+        AUTO: "Auto",
     };
 
     const pricingLabels = {
@@ -100,13 +103,27 @@ const MasterPriceLog = ({ id }) => {
         baseFare: "Base Fare",
         kilometerPrice: "Kilometer Price",
         minCharge: "Min Charge",
+        extraPrice: "Extra Price",
+        extraKmPrice: "Extra Km Price",
         nightCharge: "Night Charge",
+        waitingMins: "Waiting Minutes",
         waitingCharge: "Waiting Charge",
         freeExtraMinutes: "Free Extra Minutes",
         additionalMinCharge: "Additional Min Charge",
         surChargePercentage: "Surcharge Percentage",
         nightHoursFrom: "Night Hours From",
         nightHoursTo: "Night Hours To",
+    };
+
+    const parseMaybeJson = (value, fallback) => {
+        if (Array.isArray(value) || (value && typeof value === "object")) return value;
+        if (typeof value !== "string") return fallback;
+
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return fallback;
+        }
     };
 
     const canonicalField = (field) => {
@@ -189,16 +206,17 @@ const MasterPriceLog = ({ id }) => {
     };
 
     const formatCategoryPricings = (categoryPricingsRaw) => {
-        const categoryPricings = Array.isArray(categoryPricingsRaw) ? categoryPricingsRaw : [];
+        const categoryPricings = parseMaybeJson(categoryPricingsRaw, []);
         if (!categoryPricings.length) return "-";
 
         return categoryPricings
             .map((item) => {
                 const category = categoryLabels[item?.category] || item?.category || "-";
-                const carTypes = Array.isArray(item?.carTypes) && item.carTypes.length
-                    ? item.carTypes.map((carType) => carTypeLabels[carType] || carType).join(", ")
+                const carTypesRaw = parseMaybeJson(item?.carTypes, []);
+                const carTypes = Array.isArray(carTypesRaw) && carTypesRaw.length
+                    ? carTypesRaw.map((carType) => carTypeLabels[carType] || carType).join(", ")
                     : "-";
-                const pricing = item?.pricing || {};
+                const pricing = parseMaybeJson(item?.pricing, {});
                 const pricingDetails = Object.entries(pricingLabels)
                     .map(([key, label]) => {
                         const value = pricing?.[key];
