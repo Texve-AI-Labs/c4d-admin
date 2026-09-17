@@ -50,6 +50,11 @@ const RentalsPriceMasterAdd = () => {
         const selectedZone = zones.find((option) => String(option.value) === String(zoneValue));
         return selectedZone?.label || String(zoneValue || "");
     };
+
+    const toNumber = (value) => {
+        const numberValue = Number(value);
+        return Number.isFinite(numberValue) ? numberValue : 0;
+    };
 useEffect(() => {
     const fetchZones = async () => {
       try {
@@ -160,86 +165,83 @@ useEffect(() => {
 
     const onSubmit = async (values, { setSubmitting }) => {
         try {
+            const isOutstation = values?.type === 'Outstation';
             const reqBody = {
                 // 'carType': values.carType,
                 'zone': resolveZoneLabel(values.zone),
                 'serviceType': 'RENTAL',
                 'type': String(values.type),
                 'period': String(values.period),
-                'baseKm': Number(values.baseKm),
-                'baseFare': Number(values.baseFare),
-                'kilometer': Number(values.kilometer),
-                'kilometerPrice': Number(values.kilometerPrice),
+                'baseKm': toNumber(values.baseKm),
+                'baseFare': toNumber(values.baseFare),
+                'kilometer': toNumber(values.kilometer),
+                'kilometerPrice': toNumber(values.kilometerPrice),
 
-                'kilometerRoundPrice': values?. type === 'Outstation' ? values.kilometerRoundPrice : 0,
-                'kilometerRoundPriceMVP': values?. type === 'Outstation' ? values.kilometerRoundPriceMVP : 0,
-                'kilometerRoundPriceSuv': values?. type === 'Outstation' ? values.kilometerRoundPriceSuv : 0,
-                'kilometerRoundPriceSedan': values?. type === 'Outstation' ? values.kilometerRoundPriceSedan : 0,
+                'kilometerRoundPrice': isOutstation ? toNumber(values.kilometerRoundPrice) : 0,
+                'kilometerRoundPriceMVP': isOutstation ? toNumber(values.kilometerRoundPriceMVP) : 0,
+                'kilometerRoundPriceSuv': isOutstation ? toNumber(values.kilometerRoundPriceSuv) : 0,
+                'kilometerRoundPriceSedan': isOutstation ? toNumber(values.kilometerRoundPriceSedan) : 0,
 
-                'extraKilometerPrice': values?.type === 'Outstation' ? values.extraKilometerPrice : 0,
-                'extraKilometerPriceMVP': values?.type === 'Outstation' ? values.extraKilometerPriceMVP : 0,
-                'extraKilometerPriceSuv': values?.type === 'Outstation' ? values.extraKilometerPriceSuv : 0,
-                'extraKilometerPriceSedan': values?.type === 'Outstation' ? values.extraKilometerPriceSedan : 0,
+                'extraKilometerPrice': isOutstation ? toNumber(values.extraKilometerPrice) : 0,
+                'extraKilometerPriceMVP': isOutstation ? toNumber(values.extraKilometerPriceMVP) : 0,
+                'extraKilometerPriceSuv': isOutstation ? toNumber(values.extraKilometerPriceSuv) : 0,
+                'extraKilometerPriceSedan': isOutstation ? toNumber(values.extraKilometerPriceSedan) : 0,
 
-                'extraKilometerRoundPrice': values?.type === 'Outstation' ? values.extraKilometerRoundPrice : 0,
-                'extraKilometerRoundPriceMVP': values?.type === 'Outstation' ? values.extraKilometerRoundPriceMVP : 0,
-                'extraKilometerRoundPriceSuv': values?.type === 'Outstation' ? values.extraKilometerRoundPriceSuv : 0,
-                'extraKilometerRoundPriceSedan': values?.type === 'Outstation' ? values.extraKilometerRoundPriceSedan : 0,
+                'extraKilometerRoundPrice': isOutstation ? toNumber(values.extraKilometerRoundPrice) : 0,
+                'extraKilometerRoundPriceMVP': isOutstation ? toNumber(values.extraKilometerRoundPriceMVP) : 0,
+                'extraKilometerRoundPriceSuv': isOutstation ? toNumber(values.extraKilometerRoundPriceSuv) : 0,
+                'extraKilometerRoundPriceSedan': isOutstation ? toNumber(values.extraKilometerRoundPriceSedan) : 0,
 
-                'acKilometerRoundPrice': values?.type === 'Outstation' ? values.acKilometerRoundPrice : 0,
-                'acKilometerRoundPriceMVP': values?.type === 'Outstation' ? values.acKilometerRoundPriceMVP : 0,
-                'acKilometerRoundPriceSuv': values?.type === 'Outstation' ? values.acKilometerRoundPriceSuv : 0,
-                'acKilometerRoundPriceSedan': values?.type === 'Outstation' ? values.acKilometerRoundPriceSedan : 0,
+                'acKilometerRoundPrice': isOutstation ? toNumber(values.acKilometerRoundPrice) : 0,
+                'acKilometerRoundPriceMVP': isOutstation ? toNumber(values.acKilometerRoundPriceMVP) : 0,
+                'acKilometerRoundPriceSuv': isOutstation ? toNumber(values.acKilometerRoundPriceSuv) : 0,
+                'acKilometerRoundPriceSedan': isOutstation ? toNumber(values.acKilometerRoundPriceSedan) : 0,
 
-                'acExtraKilometerPrice': values?.type === 'Outstation' ? values.acExtraKilometerPrice : 0,
-                'acExtraKilometerPriceMVP': values?.type === 'Outstation' ? values.acExtraKilometerPriceMVP : 0,
-                'acExtraKilometerPriceSuv': values?.type === 'Outstation' ? values.acExtraKilometerPriceSuv : 0,
-                'acExtraKilometerPriceSedan': values?.type === 'Outstation' ? values.acExtraKilometerPriceSedan : 0,
+                'acExtraKilometerPrice': isOutstation ? toNumber(values.acExtraKilometerPrice) : 0,
+                'acExtraKilometerPriceMVP': isOutstation ? toNumber(values.acExtraKilometerPriceMVP) : 0,
+                'acExtraKilometerPriceSuv': isOutstation ? toNumber(values.acExtraKilometerPriceSuv) : 0,
+                'acExtraKilometerPriceSedan': isOutstation ? toNumber(values.acExtraKilometerPriceSedan) : 0,
 
-                'acExtraKilometerRoundPrice': values?.type === 'Outstation' ? values.acExtraKilometerRoundPrice : 0,
-                'acExtraKilometerRoundPriceMVP': values?.type === 'Outstation' ? values.acExtraKilometerRoundPriceMVP : 0,
-                'acExtraKilometerRoundPriceSuv': values?.type === 'Outstation' ? values.acExtraKilometerRoundPriceSuv : 0,
-                'acExtraKilometerRoundPriceSedan': values?.type === 'Outstation' ? values.acExtraKilometerRoundPriceSedan : 0,
+                'acExtraKilometerRoundPrice': isOutstation ? toNumber(values.acExtraKilometerRoundPrice) : 0,
+                'acExtraKilometerRoundPriceMVP': isOutstation ? toNumber(values.acExtraKilometerRoundPriceMVP) : 0,
+                'acExtraKilometerRoundPriceSuv': isOutstation ? toNumber(values.acExtraKilometerRoundPriceSuv) : 0,
+                'acExtraKilometerRoundPriceSedan': isOutstation ? toNumber(values.acExtraKilometerRoundPriceSedan) : 0,
 
-                'price': values?.type !== 'Outstation' ? values.price : '',
-                'priceMVP':values?.type !== 'Outstation' ? values.priceMVP : '',
-                'priceSuv':values?.type !== 'Outstation' ? values.priceSuv : '',
-                'priceSedan':values?.type !== 'Outstation' ? values.priceSedan : '',
+                'price': !isOutstation ? toNumber(values.price) : 0,
+                'priceMVP': !isOutstation ? toNumber(values.priceMVP) : 0,
+                'priceSuv': !isOutstation ? toNumber(values.priceSuv) : 0,
+                'priceSedan': !isOutstation ? toNumber(values.priceSedan) : 0,
 
-                'additionalMinCharge': Number(values.additionalMinCharge),
-                'freeExtraMinutes': Number(values.freeExtraMinutes),
-                'tollCharge': values?.type === 'Outstation' ? values.tollCharge : 0,
-                'driverCharge': values?.type === 'Outstation' ? values.driverCharge : 0,
-                'nightCharge': Number(values.nightCharge),
+                'additionalMinCharge': toNumber(values.additionalMinCharge),
+                'freeExtraMinutes': toNumber(values.freeExtraMinutes),
+                'tollCharge': isOutstation ? toNumber(values.tollCharge) : 0,
+                'driverCharge': isOutstation ? toNumber(values.driverCharge) : 0,
+                'nightCharge': toNumber(values.nightCharge),
                 'nightHoursFrom': Utils.formatTimeWithSeconds(values.nightHoursFrom),
                 'nightHoursTo': Utils.formatTimeWithSeconds(values.nightHoursTo),
                 'status': values.status === "ACTIVE" ? 1 : 0,
                 "cancelMins": Utils.convertMinutesToTimeFormat(values.cancelMins),
-                "cancelCharge": Number(values.cancelCharge),
+                "cancelCharge": toNumber(values.cancelCharge),
                 "waitingMins": Utils.convertMinutesToTimeFormat(values.waitingMins),
-                "waitingCharge": Number(values.waitingCharge),
-                'extraKmPrice': Number(values.extraKmPrice),
-                "price":Number(values.price),
-                "priceMVP":Number(values.priceMVP),
-                "priceSuv":Number(values.priceSuv),
-                "priceSedan":Number(values.priceSedan),
-                "baseFareMVP":Number(values.baseFareMVP),
-                "baseFareSuv":Number(values.baseFareSuv),
-                "baseFareSedan":Number(values.baseFareSedan),
-                "kilometerPriceMVP":Number(values.kilometerPriceMVP),
-                "kilometerPriceSuv":Number(values.kilometerPriceSuv),
-                "kilometerPriceSedan":Number(values.kilometerPriceSedan),
-                "additionalMinChargeMVP":Number(values.additionalMinChargeMVP),
-                "additionalMinChargeSuv":Number(values.additionalMinChargeSuv),
-                "additionalMinChargeSedan":Number(values.additionalMinChargeSedan),
+                "waitingCharge": toNumber(values.waitingCharge),
+                'extraKmPrice': toNumber(values.extraKmPrice),
+                "baseFareMVP": toNumber(values.baseFareMVP),
+                "baseFareSuv": toNumber(values.baseFareSuv),
+                "baseFareSedan": toNumber(values.baseFareSedan),
+                "kilometerPriceMVP": toNumber(values.kilometerPriceMVP),
+                "kilometerPriceSuv": toNumber(values.kilometerPriceSuv),
+                "kilometerPriceSedan": toNumber(values.kilometerPriceSedan),
+                "additionalMinChargeMVP": toNumber(values.additionalMinChargeMVP),
+                "additionalMinChargeSuv": toNumber(values.additionalMinChargeSuv),
+                "additionalMinChargeSedan": toNumber(values.additionalMinChargeSedan),
 
-                "acKilometerPrice": Number(values.acKilometerPrice),
-                "acKilometerPriceMVP": Number(values.acKilometerPriceMVP),
-                "acKilometerPriceSuv": Number(values.acKilometerPriceSuv),
-                "acKilometerPriceSedan": Number(values.acKilometerPriceSedan),
+                "acKilometerPrice": toNumber(values.acKilometerPrice),
+                "acKilometerPriceMVP": toNumber(values.acKilometerPriceMVP),
+                "acKilometerPriceSuv": toNumber(values.acKilometerPriceSuv),
+                "acKilometerPriceSedan": toNumber(values.acKilometerPriceSedan),
               "driverCancelMins": Utils.convertMinutesToTimeFormat(values.driverCancelMins),
-              "driverFreeCancellationsPerDay": Number(values.driverFreeCancellationsPerDay),
-              "driverCancellationCharge": Number(values.driverCancellationCharge),
+              "driverFreeCancellationsPerDay": toNumber(values.driverFreeCancellationsPerDay),
+              "driverCancellationCharge": toNumber(values.driverCancellationCharge),
             };
             const data = await ApiRequestUtils.post(API_ROUTES.ADD_RENTALS_PRICE_TABLE, reqBody);
             if (data?.success) {
@@ -865,11 +867,11 @@ useEffect(() => {
           <td className="border p-2">
             <Field
               type="number"
-              name="baseFareMUV"
+              name="baseFareMVP"
               className="p-2 w-full rounded-md border-gray-300 shadow-sm"
             />
             <ErrorMessage
-              name="baseFareMUV"
+              name="baseFareMVP"
               component="div"
               className="text-red-500 text-sm"
             />
@@ -877,11 +879,11 @@ useEffect(() => {
           <td className="border p-2">
             <Field
               type="number"
-              name="additionalMinChargeMUV"
+              name="additionalMinChargeMVP"
               className="p-2 w-full rounded-md border-gray-300 shadow-sm"
             />
             <ErrorMessage
-              name="additionalMinChargeMUV"
+              name="additionalMinChargeMVP"
               component="div"
               className="text-red-500 text-sm"
             />
@@ -889,11 +891,11 @@ useEffect(() => {
           <td className="border p-2">
             <Field
               type="number"
-              name="kilometerPriceMUV"
+              name="kilometerPriceMVP"
               className="p-2 w-full rounded-md border-gray-300 shadow-sm"
             />
             <ErrorMessage
-              name="kilometerPriceMUV"
+              name="kilometerPriceMVP"
               component="div"
               className="text-red-500 text-sm"
             />
@@ -902,11 +904,11 @@ useEffect(() => {
             <td className="border p-2">
               <Field
                 type="number"
-                name="priceMUV"
+                name="priceMVP"
                 className="p-2 w-full rounded-md border-gray-300 shadow-sm"
               />
               <ErrorMessage
-                name="priceMUV"
+                name="priceMVP"
                 component="div"
                 className="text-red-500 text-sm"
               />
@@ -917,11 +919,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="extraKilometerPriceMUV"
+                  name="extraKilometerPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="extraKilometerPriceMUV"
+                  name="extraKilometerPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
@@ -929,11 +931,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="acKilometerPriceMUV"
+                  name="acKilometerPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="acKilometerPriceMUV"
+                  name="acKilometerPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
@@ -941,11 +943,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="acExtraKilometerPriceMUV"
+                  name="acExtraKilometerPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="acExtraKilometerPriceMUV"
+                  name="acExtraKilometerPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
@@ -953,11 +955,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="kilometerRoundPriceMUV"
+                  name="kilometerRoundPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="kilometerRoundPriceMUV"
+                  name="kilometerRoundPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
@@ -965,11 +967,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="extraKilometerRoundPriceMUV"
+                  name="extraKilometerRoundPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="extraKilometerRoundPriceMUV"
+                  name="extraKilometerRoundPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
@@ -977,11 +979,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="acKilometerRoundPriceMUV"
+                  name="acKilometerRoundPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="acKilometerRoundPriceMUV"
+                  name="acKilometerRoundPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
@@ -989,11 +991,11 @@ useEffect(() => {
               <td className="border p-2">
                 <Field
                   type="number"
-                  name="acExtraKilometerRoundPriceMUV"
+                  name="acExtraKilometerRoundPriceMVP"
                   className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                 />
                 <ErrorMessage
-                  name="acExtraKilometerRoundPriceMUV"
+                  name="acExtraKilometerRoundPriceMVP"
                   component="div"
                   className="text-red-500 text-sm"
                 />
