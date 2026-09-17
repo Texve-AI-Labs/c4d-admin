@@ -36,11 +36,9 @@ const PRICE_SCHEMA = Yup.object().shape({
     ratePerKmMVP: Yup.number().required('Rate Per Km MUV is required'),
     ratePerKmSuv: Yup.number().required('Rate Per Km Suv is required'),
     ratePerKmSedan: Yup.number().required('Rate Per Km Sedan is required'),
-    // ratePerMin: Yup.number().required('Rate Per Min is required'),
     additionalMin: Yup.number().required('Additional Min is required'),
     rateParameter: Yup.string().required('Rate Parameter is required'),
     surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
-    // nightHours: Yup.number().required('Night Hours is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
     cancellationMins: Yup.number().required('Cancellation Mins is required'),
     cancellationCharge: Yup.number().required('Cancellation Charge is required'),
@@ -80,7 +78,6 @@ const PriceEdit = () => {
                     ratePerKmMVP: data.data.kilometerPriceMVP,
                     ratePerKmSedan: data.data.kilometerPriceSedan,
                     ratePerKmSuv: data.data.kilometerPriceSuv,
-                    // ratePerMin: data.data.minCharge,
                     additionalMin: data.data.additionalMinCharge,
                     rateParameter: data.data.rateParameter,
                     surchargePercentage: data.data.surChargePercentage,
@@ -138,7 +135,6 @@ const PriceEdit = () => {
                 kilometerPriceSedan: Number(values.ratePerKmSedan),
                 kilometerPriceSuv: Number(values.ratePerKmSuv),
                 kilometerPriceMVP: Number(values.ratePerKmMVP),
-                // minCharge: Number(values.ratePerMin),
                 additionalMinCharge: Number(values.additionalMin),
                 freeExtraMinutes: Number(values.freeExtraMinutes),
                 rateParameter: values.rateParameter,
@@ -186,52 +182,7 @@ const PriceEdit = () => {
                                     className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-200"
                                 />
                                 <ErrorMessage name="zone" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Base Fare Mini</label>
-                                <Field type="number" name="baseFare" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFare" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Base Fare Sedan</label>
-                                <Field type="number" name="baseFareSedan" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFareSedan" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                            <label className="text-sm font-medium text-gray-700">Base Fare SUV</label>
-                                <Field type="number" name="baseFareSuv" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFareSuv" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Base Fare MUV</label>
-                                <Field type="number" name="baseFareMVP" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFareMVP" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km Mini</label>
-                                <Field type="number" name="ratePerKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km Sedan</label>
-                                <Field type="number" name="ratePerKmSedan" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKmSedan" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km SUV</label>
-                                <Field type="number" name="ratePerKmSuv" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKmSuv" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km MUV</label>
-                                <Field type="number" name="ratePerKmMVP" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKmMVP" component="div" className="text-red-500 text-sm" />
-                            </div> */}
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Min</label>
-                                <Field type="number" name="ratePerMin" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-sm" />
-                            </div> */}
+                            </div>                            
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
                                 <Select
@@ -243,14 +194,6 @@ const PriceEdit = () => {
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Min</label>
-                                <Field type="number" name="ratePerMin" className="p-2 w-full rounded-md border-gray-300" />
-                            </div> */}
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Additional Min</label>
-                                <Field type="number" name="additionalMin" className="p-2 w-full rounded-md border-gray-300" />
-                            </div> */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
                                 <Field type="number" name="surchargePercentage" className="p-2 w-full rounded-md border-2 border-gray-300" />
@@ -320,7 +263,6 @@ const PriceEdit = () => {
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Car Type</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
                                             <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
                                         </tr>
                                     </thead>
@@ -343,10 +285,6 @@ const PriceEdit = () => {
                                                 />
                                                 <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
                                             <td className="px-6 py-1 border">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -362,10 +300,6 @@ const PriceEdit = () => {
                                                 <Field type="number" name="ratePerKmSedan" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKmSedan" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -381,10 +315,6 @@ const PriceEdit = () => {
                                                 <Field type="number" name="ratePerKmSuv" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKmSuv" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -400,10 +330,6 @@ const PriceEdit = () => {
                                                 <Field type="number" name="ratePerKmMVP" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="ratePerKmMVP" component="div" className="text-red-500 text-xs mt-1" />
                                             </td>
-                                            {/* {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
                                             <td className="px-6 py-1">
                                                 <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
                                                 <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
@@ -451,7 +377,7 @@ const PriceEdit = () => {
                             </tbody>
                         </table>
                     </div>
-                    <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
+                        <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
                         <RidesPeakHourTableEdit initialPriceData={peakHours} onUpdate={(data)=> setPeakHours(data)}/>
                         <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
                         <div className="flex flex-row">
