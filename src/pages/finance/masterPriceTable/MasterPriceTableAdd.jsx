@@ -194,9 +194,9 @@ const PriceAdd = () => {
                     },
                 })),
             };
-            // console.log("RIDES payload",reqBody)
+            console.log("RIDES payload",reqBody)
 
-            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
+            // const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
             }
