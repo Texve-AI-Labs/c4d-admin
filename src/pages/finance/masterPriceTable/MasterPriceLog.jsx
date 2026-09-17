@@ -88,6 +88,7 @@ const MasterPriceLog = ({ id }) => {
         PREMIUM_XL: "Premium XL",
         AUTO_SAVER: "Auto Saver",
         AUTO_PLUS: "Auto Plus",
+        BIKE: "Bike",
     };
 
     const carTypeLabels = {
@@ -96,6 +97,8 @@ const MasterPriceLog = ({ id }) => {
         SUV: "Suv",
         MUV: "Muv",
         AUTO: "Auto",
+        BIKE: "Bike",
+        SCOOTY: "Scooty",
     };
 
     const pricingLabels = {
@@ -205,8 +208,25 @@ const MasterPriceLog = ({ id }) => {
             .join(", ");
     };
 
+    const normalizeCarTypeLabel = (carType) => {
+        const key = String(carType || "").trim();
+        return carTypeLabels[key] || carTypeLabels[key.toUpperCase()] || key || "-";
+    };
+
+    const formatPricingValue = (key, value) => {
+        if (value === null || value === undefined || value === "") return "-";
+        if (key === "waitingMins" && typeof value === "string") {
+            return Utils.convertTimeFormatToMinutes(value);
+        }
+        if (typeof value === "string" && (key.includes("HoursFrom") || key.includes("HoursTo"))) {
+            return value.slice(0, 5);
+        }
+        return value;
+    };
+
     const formatCategoryPricings = (categoryPricingsRaw) => {
-        const categoryPricings = parseMaybeJson(categoryPricingsRaw, []);
+        const parsed = parseMaybeJson(categoryPricingsRaw, []);
+        const categoryPricings = Array.isArray(parsed) ? parsed : [parsed].filter(Boolean);
         if (!categoryPricings.length) return "-";
 
         return categoryPricings
@@ -214,17 +234,12 @@ const MasterPriceLog = ({ id }) => {
                 const category = categoryLabels[item?.category] || item?.category || "-";
                 const carTypesRaw = parseMaybeJson(item?.carTypes, []);
                 const carTypes = Array.isArray(carTypesRaw) && carTypesRaw.length
-                    ? carTypesRaw.map((carType) => carTypeLabels[carType] || carType).join(", ")
+                    ? carTypesRaw.map(normalizeCarTypeLabel).join(", ")
                     : "-";
                 const pricing = parseMaybeJson(item?.pricing, {});
                 const pricingDetails = Object.entries(pricingLabels)
                     .map(([key, label]) => {
-                        const value = pricing?.[key];
-                        const displayValue = typeof value === "string" && (key.includes("HoursFrom") || key.includes("HoursTo"))
-                            ? value.slice(0, 5)
-                            : value;
-
-                        return `${label}: ${displayValue ?? "-"}`;
+                        return `${label}: ${formatPricingValue(key, pricing?.[key])}`;
                     })
                     .join(", ");
                 const peakHours = formatPeakHours(pricing?.peakHours);
