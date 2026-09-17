@@ -200,7 +200,8 @@ const BikeMasterPriceTableAdd = () => {
     const onSubmit = async (values, { setSubmitting }) => {
         try {
             const reqBody = buildBikePackagePayload(values);
-            const data = await ApiRequestUtils.post(API_ROUTES.BIKE_MASTERPRICE_TABLE_ADD, reqBody);
+            console.log("BIKE PAYLOAD:- ",reqBody);
+            // const data = await ApiRequestUtils.post(API_ROUTES.BIKE_MASTERPRICE_TABLE_ADD, reqBody);
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
             }
