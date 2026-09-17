@@ -10,7 +10,7 @@ import {
   getCategoryDriverEligibleList,
   updateCategoryDriverEligible,
 } from "./api";
-import { shouldUseBookingType, shouldUseDriverRules } from "./rules";
+import { shouldUseBookingType, shouldUseDriverRules, shouldUsePackageFields } from "./rules";
 import { categoryDriverEligibleSchema, yupErrorsToObject } from "./validation";
 
 const modeTitle = {
@@ -48,9 +48,10 @@ const buildPayload = (form, id) => {
     status: form.status,
   };
 
+  if (shouldUsePackageFields(form.targetServiceType)) {
   payload.packageType = String(form.packageType || "").toUpperCase();
-
   payload.bookingType = shouldUseBookingType(form.packageType) ? form.bookingType : null;
+  }
 
   if (shouldUseDriverRules(form.catalogServiceType, form.targetServiceType)) {
     payload.driverRules = (form.driverRules || []).map((rule) => ({
@@ -165,7 +166,8 @@ export default function CategoryDriverEligibleForm({ mode }) {
   const identityFieldsDisabled = disabled || isEdit;
   const driverRules = useMemo(() => form.driverRules || [], [form.driverRules]);
   const showDriverRules = shouldUseDriverRules(form.catalogServiceType, form.targetServiceType);
-  const showBookingType = shouldUseBookingType(form.packageType);
+  const showPackageFields = shouldUsePackageFields(form.targetServiceType);
+  const showBookingType = showPackageFields && shouldUseBookingType(form.packageType);
   const targetServiceOptions = useMemo(
     () => getAllowedOptions(TARGET_SERVICE_TYPE_OPTIONS_BY_CATALOG_SERVICE_TYPE, form.catalogServiceType, TARGET_SERVICE_TYPE_OPTIONS),
     [form.catalogServiceType]
@@ -284,6 +286,7 @@ export default function CategoryDriverEligibleForm({ mode }) {
               </select>
               <ErrorText value={errors.category} />
             </div>
+            {showPackageFields ? (
             <div>
               <FieldLabel required>Package Type</FieldLabel>
               <select disabled={disabled} className="w-full rounded-md border border-gray-300 p-2" value={form.packageType} onChange={(e) => setField("packageType", e.target.value)}>
@@ -292,6 +295,7 @@ export default function CategoryDriverEligibleForm({ mode }) {
               </select>
               <ErrorText value={errors.packageType} />
             </div>
+            ) : null}
             {showBookingType ? (
                 <div>
                   <FieldLabel required>Booking Type</FieldLabel>

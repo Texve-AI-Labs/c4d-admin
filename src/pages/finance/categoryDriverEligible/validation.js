@@ -1,5 +1,5 @@
 import * as Yup from "yup";
-import { shouldUseBookingType, shouldUseDriverRules } from "./rules";
+import { shouldUseBookingType, shouldUseDriverRules, shouldUsePackageFields } from "./rules";
 
 const driverRuleSchema = Yup.object({
   carTypes: Yup.array()
@@ -57,9 +57,13 @@ export const categoryDriverEligibleSchema = Yup.object({
   catalogServiceType: Yup.string().required("Catalog service type is required"),
   targetServiceType: Yup.string().required("Target service type is required"),
   category: Yup.string().required("Category is required"),
-  packageType: Yup.string().required("Package type is required"),
-  bookingType: Yup.string().when("packageType", {
-    is: (packageType) => shouldUseBookingType(packageType),
+  packageType: Yup.string().when("targetServiceType", {
+    is: (targetServiceType) => shouldUsePackageFields(targetServiceType),
+    then: (schema) => schema.required("Package type is required"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
+  bookingType: Yup.string().when(["targetServiceType", "packageType"], {
+    is: (targetServiceType, packageType) => shouldUsePackageFields(targetServiceType) && shouldUseBookingType(packageType),
     then: (schema) => schema.required("Booking type is required"),
     otherwise: (schema) => schema.notRequired(),
   }),

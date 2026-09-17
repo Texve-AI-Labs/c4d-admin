@@ -94,7 +94,7 @@ export const DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE = {
   ],
   BIKE: [
     { value: "BIKE", label: "Bike" },
-    { value: "SCOOTY", label: "Scooty" },
+    // { value: "SCOOTY", label: "Scooty" },
   ],
 };
 

@@ -53,14 +53,32 @@ const Badge = ({ label, className }) => (
   </span>
 );
 const tableCellClass = "py-3 px-5 whitespace-nowrap";
+const FILTER_STORAGE_KEY = "categoryDriverEligibleListFilters";
+const getStoredFilters = () => {
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.error("Failed to read category driver eligible filters:", error);
+    return {};
+  }
+};
+const setStoredFilters = (filters) => {
+  try {
+    sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
+  } catch (error) {
+    console.error("Failed to save category driver eligible filters:", error);
+  }
+};
 
 export default function CategoryDriverEligibleList() {
   const navigate = useNavigate();
+  const storedFilters = getStoredFilters();
   const [rows, setRows] = useState([]);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [zoneFilter, setZoneFilter] = useState("");
-  const [catalogServiceType, setCatalogServiceType] = useState("");
+  const [zoneFilter, setZoneFilter] = useState(storedFilters.zoneFilter || "");
+  const [catalogServiceType, setCatalogServiceType] = useState(storedFilters.catalogServiceType || "");
 
   useEffect(() => {
     const loadZones = async () => {
@@ -74,6 +92,10 @@ export default function CategoryDriverEligibleList() {
     };
     loadZones();
   }, []);
+
+  useEffect(() => {
+    setStoredFilters({ zoneFilter, catalogServiceType });
+  }, [zoneFilter, catalogServiceType]);
 
   useEffect(() => {
     const loadList = async () => {
