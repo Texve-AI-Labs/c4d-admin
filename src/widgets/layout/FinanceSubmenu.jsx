@@ -20,6 +20,7 @@ const FINANCE_GROUPS = [
       { label: "Driver Radius & Bonus Configuration", path: "/dashboard/finance/driver-radius-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
+      { label: "Category Driver Eligible", path: "/dashboard/finance/category-driver-eligible", requiredPermission: "Users" },
     ],
   },
   {
@@ -73,6 +74,7 @@ const ROUTE_MATCHERS = {
     "/dashboard/finance/driver-radius-bonus/details",
   ],
   "Master Price Table": ["/finance/master-price"],
+  "Category Driver Eligible": ["/finance/category-driver-eligible"],
   "Instant Reward": ["/finance/instant-reward"],
   "Referral Rules": ["/finance/referral-rules"],
   "Cash Back": ["/finance/cash-back"],

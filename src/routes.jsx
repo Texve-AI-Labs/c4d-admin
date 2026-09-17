@@ -221,6 +221,10 @@ import ActingDriverSlotConfigDetails from "./pages/finance/actingDriverSlotConfi
 import ActingDriverDailySlotsList from "./pages/finance/actingDriverDailySlots/list";
 import ActingDriverDailySlotsAdd from "./pages/finance/actingDriverDailySlots/add";
 import ActingDriverDailySlotsDetails from "./pages/finance/actingDriverDailySlots/details";
+import CategoryDriverEligibleList from "./pages/finance/categoryDriverEligible/list";
+import CategoryDriverEligibleAdd from "./pages/finance/categoryDriverEligible/add";
+import CategoryDriverEligibleEdit from "./pages/finance/categoryDriverEligible/edit";
+import CategoryDriverEligibleDetails from "./pages/finance/categoryDriverEligible/details";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
 import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
@@ -1856,6 +1860,38 @@ export const routes = [
         element: <BikeMasterPriceTableEdit />,
         display: true,
         permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible",
+        path: "/finance/category-driver-eligible",
+        element: <CategoryDriverEligibleList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible Add",
+        path: "/finance/category-driver-eligible/add",
+        element: <CategoryDriverEligibleAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible Edit",
+        path: "/finance/category-driver-eligible/edit/:id",
+        element: <CategoryDriverEligibleEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible Details",
+        path: "/finance/category-driver-eligible/details/:id",
+        element: <CategoryDriverEligibleDetails />,
+        display: false,
+        permission: "Users",
       },
       {
         icon: <UserIcon {...icon} />,

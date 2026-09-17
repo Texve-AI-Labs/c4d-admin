@@ -914,6 +914,7 @@ export const API_ROUTES = {
     'CONFIRM_RENTAL_BOOKING': '/confirm-rental-booking',
     'GEO_MARKINGS': '/geo-markings',
     'GEO_MARKINGS_LIST': '/geo-markings/filter',
+    'SERVICE_CATEGORY_CATALOG': '/service-category-catalog',
     'RENTAL_OUTSTATION_TARIFFS': '/rental/outstation/tariffs',
     'RENTAL_HOURLY_PACKAGE_TARIFFS': '/rental/hourly-package/tariffs',
     'GEO_MARKINGS_DELETE': '/geo-markings',
