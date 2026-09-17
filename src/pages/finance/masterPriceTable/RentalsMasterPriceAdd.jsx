@@ -21,8 +21,8 @@ const PRICE_SCHEMA = Yup.object().shape({
     period: Yup.string().required('Package Type is required'),
     baseKm: Yup.number().required('Base Km is required'),
     baseFare: Yup.number().required('Base Fare is required'),
-    kilometer: Yup.number().required('Kilometer is required'),
-    kilometerPrice: Yup.number().required('Kilometer Rate is required'),
+    // kilometer: Yup.number().required('Kilometer is required'),
+    // kilometerPrice: Yup.number().required('Kilometer Rate is required'),
 
     // kilometerRoundPrice: Yup.number().required('kilometer Round Price  is required'),
     // kilometerRoundPriceMVP: Yup.number().required('kilometer Round Price MVP  is required'),
@@ -265,6 +265,8 @@ useEffect(() => {
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
                 {({ handleSubmit, setFieldValue, isValid, dirty, errors, values }) => (
                     <Form className="space-y-4">
+                      {/* <p>Form Errors (Debug):</p><p>{JSON.stringify(errors, null, 2)}</p>                         
+                      <pre>{JSON.stringify(errors, null, 2)}</pre> */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Zone</label>
