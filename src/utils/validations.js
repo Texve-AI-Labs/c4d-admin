@@ -823,28 +823,6 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
     couponCode: Yup.string().nullable().notRequired(),  
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
-    cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === false &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'PARCEL' &&
-            serviceType !== 'BIKE' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
-    premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === true &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'BIKE' &&
-            serviceType !== 'PARCEL' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
     parcelVehicleType: Yup.string().when(['serviceType'], {
         is: (serviceType) => serviceType === 'PARCEL',
         then: (schema) => schema.oneOf(['BIKE', 'AUTO'], 'Invalid Parcel Vehicle Type').required('Parcel Vehicle Type is required'),
@@ -914,28 +892,6 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
     couponCode: Yup.string().nullable().notRequired(),
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
-    cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === false &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'BIKE' &&
-            serviceType !== 'PARCEL' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
-    premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === true &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'BIKE' &&
-            serviceType !== 'PARCEL' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
     parcelVehicleType: Yup.string().when(['serviceType'], {
         is: (serviceType) => serviceType === 'PARCEL',
         then: (schema) => schema.oneOf(['BIKE', 'AUTO'], 'Invalid Parcel Vehicle Type').required('Parcel Vehicle Type is required'),

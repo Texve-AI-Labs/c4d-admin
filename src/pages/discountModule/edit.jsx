@@ -20,7 +20,6 @@ const DiscountEdit = () => {
   const [loading, setLoading] = useState(true);
   const [imagePreview, setImagePreview] = useState(null);
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null); 
-  const [premiumServicesMap, setPremiumServicesMap] = useState({});
   const [alert, setAlert] = useState(null);
   const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
     DRIVER: [{ value: 'DRIVER', label: 'DRIVER' }],
@@ -35,22 +34,20 @@ const DiscountEdit = () => {
     BIKE: [{ value: 'BIKE', label: 'BIKE' }],
     PARCEL: [{ value: 'PARCEL', label: 'PARCEL' }],
   };
-  const PARCEL_VEHICLE_OPTIONS = ['','BIKE', 'AUTO'];
-  const CAB_TYPE_OPTIONS = ['Mini', 'Sedan', 'SUV', 'MUV'];
+  const CATEGORY_OPTIONS = [
+    { value: "ECONOMY_GO", label: "Economy Go" },
+    { value: "COMFORT", label: "Comfort" },
+    { value: "PREMIUM", label: "Premium" },
+    { value: "PREMIUM_XL", label: "Premium XL" },
+    { value: "AUTO_SAVER", label: "Auto Saver" },
+    { value: "AUTO_PLUS", label: "Auto Plus" },
+    { value: "BIKE", label: "Bike" },
+  ];
+  const PARCEL_VEHICLE_OPTIONS = ['', 'BIKE', 'AUTO'];
 
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
-  };
-  const getCabTypeOptions = (serviceType, currentValue = '') => {
-    const baseOptions =
-      String(serviceType || '').toUpperCase() === 'RIDES'
-        ? ['Mini', 'Sedan']
-        : CAB_TYPE_OPTIONS;
-    if (currentValue && !baseOptions.includes(currentValue)) {
-      return [currentValue, ...baseOptions];
-    }
-    return baseOptions;
   };
   const getEntityFromServiceType = (serviceType) => {
     const normalized = String(serviceType || '').trim().toUpperCase();
@@ -86,9 +83,6 @@ const DiscountEdit = () => {
           }),
         ]);
 
-        if (serviceAreaResponse.premiumServices) {
-          setPremiumServicesMap(serviceAreaResponse.premiumServices);
-        }
         const allServiceAreas = Array.isArray(serviceAreaResponse?.data) ? serviceAreaResponse.data : [];
         const allZones = Array.isArray(zoneResponse?.data) ? zoneResponse.data : [];
         setServiceAreas(allServiceAreas);
@@ -146,10 +140,6 @@ const DiscountEdit = () => {
     setFieldValue('removeDashboardOfferImg', true);
   };
 
-  const getCurrentPremiumOptions = (serviceType) => {
-    return premiumServicesMap[serviceType] || [];
-  };
-
   const getSubZoneOptions = useMemo(() => {
     return (selectedServiceAreas = []) => {
       if (!Array.isArray(selectedServiceAreas) || selectedServiceAreas.length === 0) return zones;
@@ -185,6 +175,7 @@ const DiscountEdit = () => {
             startDate: formatDateOnly(discountFromState.startDate),
             endDate: formatDateOnly(discountFromState.endDate),
             serviceType: discountFromState.serviceType || '',
+            category: discountFromState.category || '',
             title: discountFromState.title || '',
             couponCode: discountFromState.couponCode || '',
             description: discountFromState.description || '',
@@ -194,9 +185,6 @@ const DiscountEdit = () => {
             minCompletedTrips: discountFromState.minCompletedTrips ?? null,
             maxCompletedTrips: discountFromState.maxCompletedTrips ?? null,
             isActive: discountFromState.isActive ? 'true' : 'false',
-            cabType: discountFromState.isPremium ? '' : discountFromState.cabType || '',
-            premiumCabType: discountFromState.isPremium ? discountFromState.cabType || '' : '',
-            isPremium: discountFromState.isPremium || false,
             parcelVehicleType: normalizeParcelVehicleType(discountFromState.parcelVehicleType),
             subZoneId: discountFromState?.subZoneId ? String(discountFromState.subZoneId) : '',
             image: null,
@@ -236,6 +224,7 @@ const DiscountEdit = () => {
             startDate: formatDateOnly(data.startDate),
             endDate: formatDateOnly(data.endDate),
             serviceType: data.serviceType || '',
+            category: data.category || '',
             isActive: data.isActive ? 'true' : 'false',
             title: data.title || '',
             description: data.description || '',
@@ -245,9 +234,6 @@ const DiscountEdit = () => {
             minCompletedTrips: data.minCompletedTrips ?? null,
             maxCompletedTrips: data.maxCompletedTrips ?? null,
             couponCode: data.couponCode || '',
-            cabType: data.isPremium ? '' : data.cabType || '',
-            premiumCabType: data.isPremium ? data.cabType || '' : '',
-            isPremium: data.isPremium || false,
             parcelVehicleType: normalizeParcelVehicleType(data.parcelVehicleType),
             subZoneId: data?.subZoneId ? String(data.subZoneId) : '',
             image: null,
@@ -277,7 +263,7 @@ const DiscountEdit = () => {
     };
 
     fetchDiscount();
-  }, [id, location.state, navigate, premiumServicesMap]);
+  }, [id, location.state, navigate]);
 
   const safeDate = (dateStr) => {
     const date = new Date(dateStr);
@@ -304,10 +290,10 @@ const DiscountEdit = () => {
       }
 
       const formData = new FormData();
-      const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
       formData.append('discountId', Number(values.discountId));
       formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
+      formData.append('category', values.category || '');
       formData.append('offerType', values.offerType);
       formData.append('driverWalletApplicable', String(Boolean(values.driverWalletApplicable)));
       if (values.offerType === 'CUSTOM') {
@@ -358,27 +344,14 @@ const DiscountEdit = () => {
       }
 
       const isParcelService = values.serviceType === 'PARCEL';
-      const isGeneralParcel = values.offerType === 'GENERAL' && isParcelService;
       if (isParcelService) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
-      } else if (values.serviceType === 'DRIVER') {
-        formData.append('cabType', null);
-      } else if (values.serviceType === 'AUTO') {
-        formData.append('isPremium', values.isPremium);
-      }  else if (values.serviceType === 'BIKE') {
-        formData.append('isPremium', values.isPremium);
-      } else {
-      const finalCabType = values.isPremium
-        ? (values.premiumCabType || '')
-        : (values.cabType || '');
-      formData.append('cabType', finalCabType);
-      formData.append('isPremium', values.isPremium);
-      }
-      console.log('Submitting form with values:', values);
+      } 
+      // console.log('Submitting form with values:', values);
     const response = await ApiRequestUtils.updateDocs(API_ROUTES.PUT_DISCOUNT, formData);
 
       if (response?.success) {
@@ -454,9 +427,6 @@ const DiscountEdit = () => {
                     );
                     setFieldValue('parcelVehicleType', '');
                     setFieldValue('subZoneId', '');
-                    setFieldValue('isPremium', false);
-                    setFieldValue('cabType', nextEntity === 'DRIVER' ? null : '');
-                    setFieldValue('premiumCabType', '');
                   }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
@@ -539,13 +509,7 @@ const DiscountEdit = () => {
                     const nextServiceType = e.target.value;
                     setFieldValue('serviceType', nextServiceType);
                     setFieldValue('serviceArea', []);
-                    if (nextServiceType === 'PARCEL') {
-                      setFieldValue('isPremium', false);
-                      setFieldValue('cabType', '');
-                      setFieldValue('premiumCabType', '');
-                    } else if (nextServiceType === 'DRIVER') {
-                      setFieldValue('cabType', null);
-                    } else {
+                    if (nextServiceType !== 'PARCEL') {
                       setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');
                     }
@@ -561,6 +525,25 @@ const DiscountEdit = () => {
                 </Field>
                 <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
               </div>
+          {!['PARCEL', 'DRIVER'].includes(values.serviceType) && (
+            <>
+          {/* Category Field */}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Category</label>
+                  <Field
+                    as="select"
+                    name="category"
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                  >
+                    <option value="">Select Category</option>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Field>
+              </div>
+            </>)}
               {values.serviceType === 'PARCEL' && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Parcel Vehicle Type</label>
@@ -602,6 +585,7 @@ const DiscountEdit = () => {
                   <ErrorMessage name="subZoneId" component="div" className="text-red-500 text-sm" />
                 </div>
               )}
+
               <div>
                 <label htmlFor="image" className="text-sm font-medium text-gray-700">Estimate Summary Image</label>
                 {(imagePreview || values.imageUrl) && (
@@ -629,8 +613,6 @@ const DiscountEdit = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Leave blank to keep current image</p>
               </div>
-
-             
               <div>
                 <label className="text-sm font-medium text-gray-700">Dashboard Offer Image</label>
                 {(dashboardOfferImgPreview || values.dashboardImageUrl) && (
@@ -659,72 +641,6 @@ const DiscountEdit = () => {
                 <p className="text-xs text-gray-500 mt-1">Leave blank to keep current image</p>
                 <ErrorMessage name="dashboardOfferImg" component="div" className="text-red-500 text-sm" />
               </div>
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && (
-              <div className="md:col-span-2">
-                <label className="flex items-center space-x-3 cursor-pointer text-lg font-medium">
-                <Field
-                    type="checkbox"
-                    name="isPremium"
-                    className="w-5 h-5 text-blue-600 rounded"
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setFieldValue('isPremium', checked);
-                      if (checked) setFieldValue('cabType', '');
-                      else setFieldValue('premiumCabType', '');
-                    }}
-                  />
-                  <span>Enable Premium</span>
-                </label>
-                {values.isPremium && (
-                  <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                    <p className="text-lg font-semibold text-blue-900 mb-4">Select Premium Car Type:</p>
-                    {getCurrentPremiumOptions(values.serviceType).length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {getCurrentPremiumOptions(values.serviceType).map((premium) => {
-                          const carType = premium.carType;
-                          return (
-                            <label
-                              key={carType}
-                              className={`flex items-center space-x-3 p-4 bg-white rounded-lg border-2 cursor-pointer transition
-                                ${values.premiumCabType === carType ? 'border-blue-600 bg-blue-50 shadow-md' : 'border-gray-300 hover:border-blue-400'}`}
-                            >
-                              <input
-                                type="radio"
-                                name="premiumCabType"
-                                value={carType}
-                                checked={values.premiumCabType === carType}
-                                onChange={() => setFieldValue('premiumCabType', carType)}
-                                className="w-5 h-5 text-blue-600"
-                              />
-                              <span className="font-medium">{premium.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-gray-600 italic">No premium options for {values.serviceType}</p>
-                    )}
-                    <ErrorMessage name="premiumCabType" component="div" className="text-red-500 text-sm mt-3" />
-                  </div>
-                )}
-              </div>
-              )}
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && !values.isPremium && values.serviceType !== 'AUTO' && values.serviceType !== 'BIKE' && values.serviceType !== 'DRIVER' && (
-              <div>
-                <label className="text-sm font-medium text-gray-700">Car Type</label>
-                <Field
-                  as="select"
-                  name="cabType"
-                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
-                >
-                  <option value="">Select Car Type</option>
-                  {getCabTypeOptions(values.serviceType, values.cabType).map((carType) => (
-                    <option key={carType} value={carType}>{carType}</option>
-                  ))}
-                </Field>
-                <ErrorMessage name="cabType" component="div" className="text-red-500 text-sm" />
-              </div>
-              )}
               <div>
                 <label htmlFor="title" className="text-sm font-medium text-gray-700">Title</label>
                 <Field type="text" name="title" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
@@ -741,6 +657,7 @@ const DiscountEdit = () => {
                 <ErrorMessage name="couponCode" component="div" className="text-red-500 text-sm" />
               </div>
               )}
+
               <div>
                 <label className="text-sm font-medium text-gray-700">Discount Type</label>
                 <select
