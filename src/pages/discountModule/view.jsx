@@ -147,6 +147,7 @@ const DiscountView = () => {
               <thead>
                 <tr>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Service Type</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">categorys</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Offer Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Target Mode</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Title</th>
@@ -207,6 +208,7 @@ const DiscountView = () => {
                           {serviceTypeLabels[item.serviceType] || item.serviceType}
                         </Link>
                       </td>
+                      <td className="whitespace-nowrap px-5 py-3">{item.category || '-'}</td>                      
                       <td className="whitespace-nowrap px-5 py-3">{item.offerType || '-'}</td>
                       <td className="whitespace-nowrap px-5 py-3">{item.targetMode || '-'}</td>
                       <td className="whitespace-nowrap px-5 py-3">{item.title || '-'}</td>
