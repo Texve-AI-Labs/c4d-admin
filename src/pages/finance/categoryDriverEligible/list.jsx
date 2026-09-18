@@ -151,7 +151,7 @@ export default function CategoryDriverEligibleList() {
               <table className="w-full min-w-[1200px] table-auto">
                 <thead>
                   <tr>
-                    {["Zone", "Catalog Service", "Target Service", "Category", "Package Type", "Booking Type", "Order", "Visible", "Status", "Car Types", "Plans", "Action"].map((label) => (
+                    {["Zone", "Catalog Service", "Target Service", "Category", "Category Label", "Package Type", "Booking Type", "Order", "Visible", "Status", "Car Types", "Plans", "Action"].map((label) => (
                       <th key={label} className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap">
                         <Typography variant="small" className="text-[11px] font-bold uppercase text-black">{label}</Typography>
                       </th>
@@ -160,7 +160,7 @@ export default function CategoryDriverEligibleList() {
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
-                    <tr><td colSpan={12} className="py-10 px-5 text-center text-gray-600">No records found</td></tr>
+                    <tr><td colSpan={13} className="py-10 px-5 text-center text-gray-600">No records found</td></tr>
                   ) : rows.map((row, index) => (
                     <tr key={row.id || index} className="border-b">
                       <td className={tableCellClass}>{row.zone || "-"}</td>
@@ -173,6 +173,7 @@ export default function CategoryDriverEligibleList() {
                       <td className={tableCellClass}>
                         <Badge label={categoryLabel(row.category)} className={CATEGORY_BADGE_CLASSES[row.category]} />
                       </td>
+                      <td className={tableCellClass}>{row.label || "-"}</td>
                       <td className={tableCellClass}>{packageTypeLabel(row.packageType)}</td>
                       <td className={tableCellClass}>{bookingTypeLabel(row.bookingType)}</td>
                       <td className={tableCellClass}>{row.displayOrder ?? "-"}</td>

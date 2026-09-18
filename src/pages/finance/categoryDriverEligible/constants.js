@@ -130,6 +130,7 @@ export const emptyCategoryDriverEligible = {
   catalogServiceType: "",
   targetServiceType: "",
   category: "",
+  label:"",
   packageType: "",
   bookingType: "",
   displayOrder: "",

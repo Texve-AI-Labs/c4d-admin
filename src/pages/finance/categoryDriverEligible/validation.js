@@ -57,6 +57,7 @@ export const categoryDriverEligibleSchema = Yup.object({
   catalogServiceType: Yup.string().required("Catalog service type is required"),
   targetServiceType: Yup.string().required("Target service type is required"),
   category: Yup.string().required("Category is required"),
+  label: Yup.string().trim().required("Category label is required"),
   packageType: Yup.string().when("targetServiceType", {
     is: (targetServiceType) => shouldUsePackageFields(targetServiceType),
     then: (schema) => schema.required("Package type is required"),

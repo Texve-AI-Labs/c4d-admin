@@ -43,6 +43,7 @@ const buildPayload = (form, id) => {
     catalogServiceType: form.catalogServiceType,
     targetServiceType: form.targetServiceType,
     category: form.category,
+    label: form.label,
     displayOrder: Number(form.displayOrder),
     isVisible: Boolean(form.isVisible),
     status: form.status,
@@ -285,6 +286,18 @@ export default function CategoryDriverEligibleForm({ mode }) {
                 {categoryOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
               <ErrorText value={errors.category} />
+            </div>
+            <div>
+              <FieldLabel required>Category Label</FieldLabel>
+              <input
+                disabled={disabled}
+                type="text"
+                className="w-full rounded-md border border-gray-300 p-2"
+                value={form.label}
+                onChange={(e) => setField("label", e.target.value)}
+                placeholder="Economy Go"
+              />
+              <ErrorText value={errors.label} />
             </div>
             {showPackageFields ? (
             <div>
