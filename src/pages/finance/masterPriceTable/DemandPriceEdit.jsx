@@ -47,7 +47,7 @@ const formatPricing = (pricingMode, value) => {
 
 
 
-const DemandPriceEdit = ({ demandRules = [], setDemandRules }) => {
+const DemandPriceEdit = ({ demandRules = [], setDemandRules, title = "Edit Demand Price Rules" }) => {
     const [rules, setRules] = useState(demandRules);
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -189,7 +189,7 @@ const DemandPriceEdit = ({ demandRules = [], setDemandRules }) => {
     return (
         <>
             <div className="flex flex-row justify-between px-2 mb-2 mt-8">
-                <h2 className="text-2xl font-bold mb-4">Edit Demand Price Rules</h2>
+                <h2 className="text-2xl font-bold mb-4">{title}</h2>
                 <Button className="text-xs font-semibold text-white bg-black px-4 py-2" onClick={openCreateModal}>
                     Add Rule
                 </Button>

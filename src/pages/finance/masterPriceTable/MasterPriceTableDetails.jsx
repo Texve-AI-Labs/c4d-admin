@@ -3,8 +3,10 @@ import { Button, Typography } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import RidesPeakHourTableDetails from './RidesPeakHourTableDetails';
+import DemandPriceTable from './DemandPrice';
 
 const CATEGORY_LABELS = {
     ECONOMY_GO: 'Economy Go',
@@ -14,8 +16,8 @@ const CATEGORY_LABELS = {
 };
 
 const CAR_TYPE_LABELS = {
-    MINI: 'Mini',
-    SEDAN: 'Sedan',
+    Mini: 'Mini',
+    Sedan: 'Sedan',
     SUV: 'Suv',
     MUV: 'Muv',
 };
@@ -95,6 +97,10 @@ const PriceDetails = () => {
                     zone: priceData.zone || '',
                     rateParameter: priceData.rateParameter || '',
                     status: priceData.status == 1 ? 'ACTIVE' : 'INACTIVE',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) || '',
+                    driverFreeCancellationsPerDay: priceData.driverFreeCancellationsPerDay || '',
+                    driverCancellationCharge: priceData.driverCancellationCharge || '',
+                    demandRules: Array.isArray(priceData.demandRules) ? priceData.demandRules : [],
                     categoryPricings: normalizeCategoryPricings(priceData),
                 });
             }
@@ -114,6 +120,28 @@ const PriceDetails = () => {
                     <ReadOnlyField label="Status" value={priceDetails?.status} />
                     <ReadOnlyField label="Rate Parameter" value={priceDetails?.rateParameter} />
                 </div>
+
+                <div className="overflow-x-auto m-2">
+                    <Typography className="font-semibold">Driver Cancellation</Typography>
+                    <table className="w-full border border-collapse text-sm text-center">
+                        <thead>
+                            <tr className="bg-primary text-white">
+                                <th>Driver Cancel Mins</th>
+                                <th>Driver Free Cancellations Per Day</th>
+                                <th>Driver Cancellation Charge</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr className="bg-gray-100">
+                                <td className="border p-2">{priceDetails?.driverCancelMins || '-'}</td>
+                                <td className="border p-2">{priceDetails?.driverFreeCancellationsPerDay || '-'}</td>
+                                <td className="border p-2">{priceDetails?.driverCancellationCharge || '-'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <DemandPriceTable title="Demand Price Rules" demandRules={priceDetails?.demandRules || []} />
 
                 <div className="space-y-6">
                     <Typography className="text-lg font-semibold">Category Pricings</Typography>

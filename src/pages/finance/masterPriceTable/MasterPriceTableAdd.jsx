@@ -6,7 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
+import DemandPriceEdit from './DemandPriceEdit';
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -30,8 +32,8 @@ const CATEGORY_OPTIONS = [
 ];
 
 const CAR_TYPE_OPTIONS = [
-    { value: 'MINI', label: 'Mini' },
-    { value: 'SEDAN', label: 'Sedan' },
+    { value: 'Mini', label: 'Mini' },
+    { value: 'Sedan', label: 'Sedan' },
     { value: 'SUV', label: 'Suv' },
     { value: 'MUV', label: 'Muv' },
 ];
@@ -160,6 +162,10 @@ const PriceAdd = () => {
         zone: '',
         rateParameter: 'NORMAL_RIDE',
         status: 'ACTIVE',
+        driverCancelMins: '',
+        driverFreeCancellationsPerDay: '',
+        driverCancellationCharge: '',
+        demandRules: [],
         categoryPricings: [cloneCategoryPricing()],
     };
 
@@ -171,6 +177,10 @@ const PriceAdd = () => {
                 zone: values.zone,
                 rateParameter: values.rateParameter,
                 status: values.status === 'ACTIVE' ? 1 : 0,
+                driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                driverFreeCancellationsPerDay: values.driverFreeCancellationsPerDay,
+                driverCancellationCharge: values.driverCancellationCharge,
+                demandRules: values.demandRules,
                 categoryPricings: values.categoryPricings.map((categoryPricing) => ({
                     category: categoryPricing.category,
                     carTypes: categoryPricing.carTypes,
@@ -194,9 +204,9 @@ const PriceAdd = () => {
                     },
                 })),
             };
-            console.log("RIDES payload",reqBody)
+            // console.log("RIDES payload",reqBody)
 
-            // const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
+            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
             }
@@ -257,6 +267,41 @@ const PriceAdd = () => {
                                 <ErrorMessage name="rateParameter" component="div" className="text-red-500 text-sm" />
                             </div>
                         </div>
+
+                        <div className="overflow-x-auto m-2">
+                            <Typography className="font-semibold">Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="bg-gray-100">
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverCancelMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverCancelMins" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverFreeCancellationsPerDay" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverFreeCancellationsPerDay" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverCancellationCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverCancellationCharge" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <DemandPriceEdit
+                            title="Add Demand Price Rules"
+                            demandRules={values.demandRules}
+                            setDemandRules={(data) => setFieldValue('demandRules', data)}
+                        />
 
                         <FieldArray name="categoryPricings">
                             {({ push, remove }) => (
