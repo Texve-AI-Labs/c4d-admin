@@ -47,7 +47,7 @@ const formatPricing = (pricingMode, value) => {
 
 
 
-const DemandPriceEdit = ({ demandRules = [], setDemandRules, title = "Edit Demand Price Rules" }) => {
+const DemandPriceEdit = ({ demandRules = [], setDemandRules, title = "Demand Price Rules" }) => {
     const [rules, setRules] = useState(demandRules);
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
