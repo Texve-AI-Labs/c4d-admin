@@ -9,6 +9,7 @@ import { API_ROUTES } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
+import DemandPriceEdit from './DemandPriceEdit';
 
 const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Active' },
@@ -224,6 +225,10 @@ const buildBikePackagePayload = (values, packageId) => {
         type: values.type,
         zone: values.zone,
         status: values.status === 'ACTIVE' ? 1 : 0,
+        driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+        driverFreeCancellationsPerDay: toNumber(values.driverFreeCancellationsPerDay),
+        driverCancellationCharge: toNumber(values.driverCancellationCharge),
+        demandRules: values.demandRules || [],        
         categoryPricings: buildCategoryPricingsPayload(values.categoryPricings),
     };
 };
@@ -248,6 +253,10 @@ const BikeMasterPriceTableEdit = () => {
                     type: priceData.type || 'Bike',
                     zone: priceData.zone || '',
                     status: priceData.status === 'ACTIVE' || Number(priceData.status) === 1 ? 'ACTIVE' : 'INACTIVE',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) ?? '',
+                    driverFreeCancellationsPerDay: priceData.driverFreeCancellationsPerDay ?? '',
+                    driverCancellationCharge: priceData.driverCancellationCharge ?? '',
+                    demandRules: priceData.demandRules || [],                    
                     categoryPricings: normalizeCategoryPricings(priceData),
                 };
 
@@ -307,6 +316,34 @@ const BikeMasterPriceTableEdit = () => {
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
+                        </div>
+                        <div className="overflow-x-auto m-2">
+                            <Typography className="font-semibold">Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="bg-gray-100">
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverCancelMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverCancelMins" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverFreeCancellationsPerDay" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverFreeCancellationsPerDay" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverCancellationCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverCancellationCharge" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                         <FieldArray name="categoryPricings">
@@ -381,6 +418,10 @@ const BikeMasterPriceTableEdit = () => {
                                 </div>
                             )}
                         </FieldArray>
+                        <DemandPriceEdit
+                            demandRules={values?.demandRules || []}
+                            setDemandRules={(data) => setFieldValue('demandRules', data)}
+                        />                        
 
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
