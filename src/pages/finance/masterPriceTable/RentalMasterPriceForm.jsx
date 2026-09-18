@@ -134,9 +134,6 @@ const RentalMasterPriceForm = ({
     zones = [],
     isEdit = false,
     readOnly = false,
-    onCancel,
-    submitLabel = 'Save',
-    disableSubmit = false,
 }) => {
     const periodOptions = values.type === 'Outstation' ? ['1'] : ['2', '4', '6', '8', '10', '12'];
 
@@ -272,16 +269,35 @@ const RentalMasterPriceForm = ({
                 )}
             </FieldArray>
 
-            {!readOnly ? (
-                <div className="flex flex-row">
-                    <Button fullWidth type="button" onClick={onCancel} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
-                        Cancel
-                    </Button>
-                    <Button fullWidth color="blue" type="submit" disabled={disableSubmit} className="my-6 mx-2">
-                        {submitLabel}
-                    </Button>
-                </div>
-            ) : null}
+            <div className="overflow-x-auto">
+                <Typography className="font-semibold mb-2">Driver Cancellation</Typography>
+                <table className="w-full border border-collapse text-sm text-center">
+                    <thead>
+                        <tr className="bg-primary text-white">
+                            <th className="border p-2">Driver Cancel Mins</th>
+                            <th className="border p-2">Driver Free Cancellations Per Day</th>
+                            <th className="border p-2">Driver Cancellation Charge</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr className="bg-gray-100">
+                            <td className="border p-2 align-top">
+                                <Field type="number" name="driverCancelMins" disabled={readOnly} className="p-2 w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100" />
+                                <ErrorMessage name="driverCancelMins" component="div" className="text-red-500 text-sm" />
+                            </td>
+                            <td className="border p-2 align-top">
+                                <Field type="number" name="driverFreeCancellationsPerDay" disabled={readOnly} className="p-2 w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100" />
+                                <ErrorMessage name="driverFreeCancellationsPerDay" component="div" className="text-red-500 text-sm" />
+                            </td>
+                            <td className="border p-2 align-top">
+                                <Field type="number" name="driverCancellationCharge" disabled={readOnly} className="p-2 w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100" />
+                                <ErrorMessage name="driverCancellationCharge" component="div" className="text-red-500 text-sm" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     );
 };

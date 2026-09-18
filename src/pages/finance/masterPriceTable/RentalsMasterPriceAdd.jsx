@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
-import { Alert } from '@material-tailwind/react';
+import { Alert, Button } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
+import DemandPriceEdit from './DemandPriceEdit';
 import RentalMasterPriceForm, {
     CATEGORY_OPTIONS,
     CAR_TYPE_OPTIONS,
@@ -198,6 +199,7 @@ export { priceSchema, buildCategoryPricingsPayload };
 const RentalsPriceMasterAdd = () => {
     const [alert, setAlert] = useState(false);
     const [zones, setZones] = useState([]);
+    const [demandRules, setDemandRules] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -222,6 +224,9 @@ const RentalsPriceMasterAdd = () => {
         type: '',
         period: '',
         status: 'ACTIVE',
+        driverCancelMins: '',
+        driverFreeCancellationsPerDay: '',
+        driverCancellationCharge: '',
         categoryPricings: [],
     };
 
@@ -234,10 +239,13 @@ const RentalsPriceMasterAdd = () => {
                 period: String(values.period),
                 status: values.status === 'ACTIVE' ? 1 : 0,
                 categoryPricings: buildCategoryPricingsPayload(values),
+                driverCancelMins: minutesToTime(values.driverCancelMins),
+                driverFreeCancellationsPerDay: toNumber(values.driverFreeCancellationsPerDay),
+                driverCancellationCharge: toNumber(values.driverCancellationCharge),
+                demandRules,
             };
-            console.log("RENTAL LOCAL PAYLOAD", reqBody)
 
-            // const data = await ApiRequestUtils.post(API_ROUTES.ADD_RENTALS_PRICE_TABLE, reqBody);
+            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RENTALS_PRICE_TABLE, reqBody);
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
             } else {
@@ -273,10 +281,16 @@ const RentalsPriceMasterAdd = () => {
                             errors={errors}
                             setFieldValue={setFieldValue}
                             zones={zones}
-                            onCancel={() => navigate('/dashboard/finance/master-price')}
-                            submitLabel="Submit"
-                            disableSubmit={!dirty || !isValid}
                         />
+                        <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
+                        <div className="flex flex-row">
+                            <Button fullWidth type="button" onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
+                                Cancel
+                            </Button>
+                            <Button fullWidth color="blue" type="submit" disabled={!dirty || !isValid} className="my-6 mx-2">
+                                Submit
+                            </Button>
+                        </div>
                     </Form>
                 )}
             </Formik>

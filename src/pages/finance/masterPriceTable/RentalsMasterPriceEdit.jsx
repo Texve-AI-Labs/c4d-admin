@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form } from 'formik';
+import { Button } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
-import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
 import DemandPriceEdit from './DemandPriceEdit';
 import RentalMasterPriceForm, { createLocalCategoryPricing, createOutstationCategoryPricing } from './RentalMasterPriceForm';
 import { buildCategoryPricingsPayload, priceSchema } from './RentalsMasterPriceAdd';
@@ -90,9 +90,7 @@ const normalizeCategoryPricings = (priceData) => {
 
 const RentalsMasterPriceEdit = () => {
     const [initialValues, setInitialValues] = useState(null);
-    const [premiumConfig, setPremiumConfig] = useState({});
     const [demandRules, setDemandRules] = useState([]);
-    const initialPremiumRef = useRef({});
     const initialDemandPriceRef = useRef([]);
     const initialValuesRef = useRef(null);
     const { id } = useParams();
@@ -110,12 +108,13 @@ const RentalsMasterPriceEdit = () => {
                         type: priceData.type || '',
                         period: priceData.period || '',
                         status: priceData.status == 1 ? 'ACTIVE' : 'INACTIVE',
+                        driverCancelMins: toMinutes(priceData.driverCancelMins),
+                        driverFreeCancellationsPerDay: priceData.driverFreeCancellationsPerDay ?? '',
+                        driverCancellationCharge: priceData.driverCancellationCharge ?? '',
                         categoryPricings: normalizeCategoryPricings(priceData),
                     };
                     initialValuesRef.current = values;
                     setInitialValues(values);
-                    initialPremiumRef.current = priceData.premiumConfig || {};
-                    setPremiumConfig(priceData.premiumConfig || {});
                     initialDemandPriceRef.current = priceData.demandRules || [];
                     setDemandRules(priceData.demandRules || []);
                 }
@@ -126,7 +125,6 @@ const RentalsMasterPriceEdit = () => {
         fetchPriceDetails();
     }, [id]);
 
-    const hasPremiumConfigChanged = () => JSON.stringify(premiumConfig) !== JSON.stringify(initialPremiumRef.current);
     const hasDemandPriceChanged = () => JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
     const hasFormChanged = (values) => JSON.stringify(values) !== JSON.stringify(initialValuesRef.current);
 
@@ -140,8 +138,10 @@ const RentalsMasterPriceEdit = () => {
                 period: String(values.period),
                 status: values.status === 'ACTIVE' ? 1 : 0,
                 categoryPricings: buildCategoryPricingsPayload(values),
+                driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay || 0),
+                driverCancellationCharge: Number(values.driverCancellationCharge || 0),
                 demandRules,
-                premiumConfig,
             };
 
             const response = await ApiRequestUtils.post(API_ROUTES.RENDAL_PRICE_EDIT, reqBody);
@@ -165,14 +165,16 @@ const RentalsMasterPriceEdit = () => {
                             errors={errors}
                             setFieldValue={setFieldValue}
                             isEdit
-                            onCancel={() => navigate('/dashboard/finance/master-price')}
-                            submitLabel="Save Changes"
-                            disableSubmit={!(hasFormChanged(values) || hasPremiumConfigChanged() || hasDemandPriceChanged()) || !isValid}
                         />
-                        {values?.type === 'Outstation' ? (
-                            <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data) => setPremiumConfig(data)} />
-                        ) : null}
                         <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
+                        <div className="flex flex-row">
+                            <Button fullWidth type="button" onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
+                                Cancel
+                            </Button>
+                            <Button fullWidth color="blue" type="submit" disabled={!(hasFormChanged(values) || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
+                                Save Changes
+                            </Button>
+                        </div>
                     </Form>
                 )}
             </Formik>

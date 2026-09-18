@@ -5,14 +5,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import MasterPriceLog from './MasterPriceLog';
-import PremiumPriceDetails from '@/components/PremiumPriceDetails';
 import DemandPriceTable from './DemandPrice';
 import RentalMasterPriceForm from './RentalMasterPriceForm';
 import { normalizeCategoryPricings } from './RentalsMasterPriceEdit';
+import { Utils } from '@/utils/utils';
 
 const RentalsPriceMasterDetails = () => {
     const [initialValues, setInitialValues] = useState(null);
-    const [premiumConfig, setPremiumConfig] = useState({});
     const [demandRules, setDemandRules] = useState([]);
     const { id } = useParams();
     const navigate = useNavigate();
@@ -29,9 +28,11 @@ const RentalsPriceMasterDetails = () => {
                         type: priceData.type || '',
                         period: priceData.period || '',
                         status: priceData.status == 1 ? 'ACTIVE' : 'INACTIVE',
+                        driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins || 0),
+                        driverFreeCancellationsPerDay: priceData.driverFreeCancellationsPerDay ?? '',
+                        driverCancellationCharge: priceData.driverCancellationCharge ?? '',
                         categoryPricings: normalizeCategoryPricings(priceData),
                     });
-                    setPremiumConfig(priceData.premiumConfig || {});
                     setDemandRules(priceData.demandRules || []);
                 }
             } catch (error) {
@@ -55,9 +56,6 @@ const RentalsPriceMasterDetails = () => {
                             readOnly
                             isEdit
                         />
-                        {values?.type === 'Outstation' ? (
-                            <PremiumPriceDetails premiumData={premiumConfig} />
-                        ) : null}
                         <DemandPriceTable demandRules={demandRules} />
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className={`my-6 mx-2 ${ColorStyles.backButton}`}>
