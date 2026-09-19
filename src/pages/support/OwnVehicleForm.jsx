@@ -78,6 +78,7 @@ function OwnVehicleForm({ mode = "add" }) {
   const { id } = useParams();
   const isDetailsMode = mode === "details";
   const isEditMode = mode === "edit";
+  const fieldLabel = (label) => (isDetailsMode ? label : requiredLabel(label));
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(Boolean(id && !location.state?.row));
   const [submitting, setSubmitting] = useState(false);
@@ -194,20 +195,20 @@ function OwnVehicleForm({ mode = "add" }) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Input type="datetime-local" label={requiredLabel("Trip Start Date Time")} value={form.tripStartDate} onChange={(e) => setField("tripStartDate", e.target.value)} disabled={isDetailsMode} />
-              <Input type="datetime-local" label={requiredLabel("Trip End Date Time")} value={form.tripEndDateTime} onChange={(e) => setField("tripEndDateTime", e.target.value)} disabled={isDetailsMode} />
-              <Input label={requiredLabel("Vehicle Number")} value={form.vehicleNumber} onChange={(e) => setField("vehicleNumber", e.target.value)} disabled={isDetailsMode} />
-              <Input label={requiredLabel("Driver Name")} value={form.driverName} onChange={(e) => setField("driverName", e.target.value)} disabled={isDetailsMode} />
-              <Input type="number" label={requiredLabel("Start KM")} value={form.startKm} onChange={(e) => setField("startKm", e.target.value)} disabled={isDetailsMode} />
-              <Input type="number" label={requiredLabel("End KM")} value={form.endKm} onChange={(e) => setField("endKm", e.target.value)} disabled={isDetailsMode} />
-              <Input type="number" label={requiredLabel("Total Trip Amount")} value={form.totalTripAmount} onChange={(e) => setField("totalTripAmount", e.target.value)} disabled={isDetailsMode} />
-              <Select label={requiredLabel("Fuel Type")} value={form.fuelType} onChange={(value) => setField("fuelType", value)} disabled={isDetailsMode}>
+              <Input type="datetime-local" label={fieldLabel("Trip Start Date Time")} value={form.tripStartDate} onChange={(e) => setField("tripStartDate", e.target.value)} disabled={isDetailsMode} />
+              <Input type="datetime-local" label={fieldLabel("Trip End Date Time")} value={form.tripEndDateTime} onChange={(e) => setField("tripEndDateTime", e.target.value)} disabled={isDetailsMode} />
+              <Input label={fieldLabel("Vehicle Number")} value={form.vehicleNumber} onChange={(e) => setField("vehicleNumber", e.target.value)} disabled={isDetailsMode} />
+              <Input label={fieldLabel("Driver Name")} value={form.driverName} onChange={(e) => setField("driverName", e.target.value)} disabled={isDetailsMode} />
+              <Input type="number" label={fieldLabel("Start KM")} value={form.startKm} onChange={(e) => setField("startKm", e.target.value)} disabled={isDetailsMode} />
+              <Input type="number" label={fieldLabel("End KM")} value={form.endKm} onChange={(e) => setField("endKm", e.target.value)} disabled={isDetailsMode} />
+              <Input type="number" label={fieldLabel("Total Trip Amount")} value={form.totalTripAmount} onChange={(e) => setField("totalTripAmount", e.target.value)} disabled={isDetailsMode} />
+              <Select label={fieldLabel("Fuel Type")} value={form.fuelType} onChange={(value) => setField("fuelType", value)} disabled={isDetailsMode}>
                 {fuelTypeOptions.map((option) => (
                   <Option key={option.value} value={option.value}>{option.label}</Option>
                 ))}
               </Select>
-              <Input type="number" label={requiredLabel("Fuel Amount")} value={form.fuelAmount} onChange={(e) => setField("fuelAmount", e.target.value)} disabled={isDetailsMode} />
-              <Input type="number" label={requiredLabel("Other Expense")} value={form.otherExpense} onChange={(e) => setField("otherExpense", e.target.value)} disabled={isDetailsMode} />
+              <Input type="number" label={fieldLabel("Fuel Amount")} value={form.fuelAmount} onChange={(e) => setField("fuelAmount", e.target.value)} disabled={isDetailsMode} />
+              <Input type="number" label={fieldLabel("Other Expense")} value={form.otherExpense} onChange={(e) => setField("otherExpense", e.target.value)} disabled={isDetailsMode} />
               <Input label="Total KM Preview" value={Number.isFinite(totalKm) ? totalKm : 0} readOnly />
               <Input label="Closing Amount Preview" value={Number.isFinite(closingAmount) ? closingAmount : 0} readOnly />
               <div>
