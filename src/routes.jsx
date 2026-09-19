@@ -276,6 +276,8 @@ import DriverAdsRegistrationDetails from "./pages/support/driverAdsRegistrationD
 import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
+import OwnVehicle from "./pages/support/OwnVehicle";
+import OwnVehicleForm from "./pages/support/OwnVehicleForm";
 import GeoIntelligence from "./pages/geoIntelligence";
 import WhatsAppDriverPage from "./pages/whatsappDriver/WhatsAppDriverPage";
 
@@ -2403,6 +2405,38 @@ export const routes = [
         element: <DriverAdsEdit />,
         display: false,
         permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle",
+        path: "/support/own-vehicle",
+        element: <OwnVehicle />,
+        display: true,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle Add",
+        path: "/support/own-vehicle/add",
+        element: <OwnVehicleForm mode="add" />,
+        display: false,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle Edit",
+        path: "/support/own-vehicle/edit/:id",
+        element: <OwnVehicleForm mode="edit" />,
+        display: false,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle Details",
+        path: "/support/own-vehicle/details/:id",
+        element: <OwnVehicleForm mode="details" />,
+        display: false,
+        permissionsAny: ["Support", "Sales", "Users"]
       },
       {
         icon: <UserIcon {...icon} />,

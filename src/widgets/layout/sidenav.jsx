@@ -38,9 +38,11 @@ const menuItems = [
     name: "Support",
     path: "/dashboard/rental-rate-card",
     permission: "Support",
-    permissionsAny: ["Support"],
+    permissionsAny: ["Support", "Sales", "Users"],
     landingRoutes: [
       { permission: "Support", path: "/dashboard/rental-rate-card" },
+      { permission: "Sales", path: "/dashboard/support/own-vehicle" },
+      { permission: "Users", path: "/dashboard/support/own-vehicle" },
       { permission: "Support", path: "/dashboard/hourly-package-rate-card" },
     ],
   },
@@ -234,6 +236,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
           currentPath.startsWith("/dashboard/rental-rate-card") ||
           currentPath.startsWith("/dashboard/hourly-package-rate-card") ||
           currentPath.startsWith("/dashboard/leads") ||
+          currentPath.startsWith("/dashboard/support/own-vehicle") ||
           (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
             currentPath.startsWith("/dashboard/support/admin-discount-history"))
           // currentPath.startsWith("/dashboard/doc-verification") ||         
