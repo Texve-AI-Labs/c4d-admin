@@ -8,7 +8,7 @@ const ProtectedRoute = ({ element, permission, permissions, permissionsAny = [],
   }
 
   // Frontend safe mode: deny route access if permission metadata is missing.
-  if (requirePermission && !permission) {
+  if (requirePermission && !permission && !permissionsAny?.length) {
     return <Navigate to="/dashboard/unauthorized" replace />;
   }
 
