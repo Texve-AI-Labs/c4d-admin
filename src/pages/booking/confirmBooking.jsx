@@ -36,6 +36,44 @@ const normalizeBoolean = (value) => {
     return false;
 };
 
+const CATEGORY_PRICING_SERVICES = [
+    'RIDES',
+    'AUTO',
+    'BIKE',
+    'RENTAL',
+    'RENTAL_HOURLY_PACKAGE',
+    'RENTAL_DROP_TAXI',
+];
+
+const isCategoryPricingService = (serviceType) =>
+    CATEGORY_PRICING_SERVICES.includes(String(serviceType || '').toUpperCase());
+
+const getCategoryPackageContext = (booking = {}) => {
+    const packageDetails = booking?.expectedPackageDetails || booking?.Package || booking?.value?.expectedPackageDetails || {};
+    const category = booking?.category || booking?.Category?.category || booking?.value?.category || '';
+    const categoryLabel = booking?.categoryLabel || booking?.Category?.label || category;
+    const categoryPricing = packageDetails?.categoryPricings?.find(
+        (item) => String(item?.category || '').toUpperCase() === String(category).toUpperCase() &&
+            String(item?.status || '').toUpperCase() === 'ACTIVE'
+    );
+    const pricing = categoryPricing?.pricing || {};
+    const bookingType = String(booking?.bookingType || '').toUpperCase().replace(/\s+/g, '_');
+    const tripPricing = pricing[bookingType] || {};
+    const acPricing = tripPricing[String(booking?.acType || '').toUpperCase()] || {};
+
+    return {
+        packageId: booking?.packageId || packageDetails?.id,
+        category,
+        categoryLabel,
+        packageDetails,
+        categoryPricing,
+        pricing,
+        commonPricing: pricing.common || pricing,
+        tripPricing,
+        acPricing,
+    };
+};
+
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
     if (!suggestion || typeof suggestion !== 'object') return '';
@@ -313,7 +351,7 @@ const ConfirmBooking = (props) => {
          if (status === 'BOOKING_ACCEPTED') {
                 return 'Driver Accepted';
             }
-        if (assignmentStatus === 'DRIVER_NOT_AVAILABLE') {
+        if (status === 'CONFIRMED' && assignmentStatus === 'DRIVER_NOT_AVAILABLE') {
             return 'Driver Not Available';
         }
 
@@ -738,6 +776,7 @@ const handleSaveDriverEndLocation = async () => {
             closeOrNavigateBack();
         }
     };
+    const categoryPackageContext = getCategoryPackageContext(bookingDetails);
     const baseTripFare = Number(bookingDetails?.paymentDetails?.details?.amountAfterGst || 0);
     const discountBreakdown = bookingDetails?.paymentDetails?.discountBreakdown || {};
     const paymentAdminDiscount = bookingDetails?.paymentDetails?.adminDiscount || {};
@@ -757,6 +796,16 @@ const handleSaveDriverEndLocation = async () => {
     const isAdminDiscountPending = visibleAdminDiscountStatus === ADMIN_PENDING_STATUS;
     const requiresSuperUserApproval = normalizeBoolean(visibleAdminDiscount?.requiresApproval) === true;
     const quoteEstimatedPrice = (() => {
+        if (isCategoryPricingService(bookingDetails?.serviceType)) {
+            return Number(
+                bookingDetails?.value?.fare_after_gst ??
+                bookingDetails?.value?.fare_before_gst ??
+                bookingDetails?.value?.estimatedPrice ??
+                bookingDetails?.value?.fareBreakdown?.total ??
+                bookingDetails?.estimatedFareBreakdown?.total ??
+                0
+            );
+        }
         if (bookingDetails?.packageType === "Local") {
             const carType = String(bookingDetails?.carType || "").toUpperCase();
             if (bookingDetails?.serviceType === "RENTAL") {
@@ -957,13 +1006,14 @@ const handleSaveDriverEndLocation = async () => {
         0
     );
     const explicitPremiumSurcharge = Number(premiumDetailsSource?.surcharge || 0);
-    const isPremiumBooking =
+    const isPremiumBooking = !isCategoryPricingService(bookingDetails?.serviceType) && (
         normalizeBoolean(bookingDetails?.isPremiumService) ||
         normalizeBoolean(bookingDetails?.isPremiumFare) ||
         normalizeBoolean(bookingDetails?.value?.isPremiumService) ||
         normalizeBoolean(bookingDetails?.value?.isPremiumFare) ||
         explicitPremiumSurcharge > 0 ||
-        premiumFareCandidate > 0;
+        premiumFareCandidate > 0
+    );
     const isNearlyEqual = (a, b) => Math.abs(Number(a || 0) - Number(b || 0)) < 0.01;
     const isPeakHour = bookingDetails?.estimatedFareBreakdown?.isPeakHour === true;
     const getSafePremiumEstimatedPrice = (baseValue) => {
@@ -1085,7 +1135,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
             bookingDetails?.serviceType === 'RIDES' ||
             bookingDetails?.serviceType === 'BIKE'
         );
-    const hourlyPackageBaseFare = isHourlyShowingPrice(bookingDetails)
+    const hourlyPackageBaseFare = isHourlyShowingPrice(bookingDetails) && !isCategoryPricingService(bookingDetails?.serviceType)
         // ? Number(bookingDetails?.estimatedFareBreakdown?.distanceFare?.rate || 0)
         ? Number(
             bookingDetails?.carType === "Sedan"
@@ -1097,7 +1147,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                         : bookingDetails?.Package?.baseFare || 0
         )
         : 0;
-    const packagePerKm = Number(
+    const packagePerKm = !isCategoryPricingService(bookingDetails?.serviceType) ? Number(
         bookingDetails?.carType === "Sedan"
             ? bookingDetails?.Package?.kilometerPriceSedan
             : bookingDetails?.carType === "MUV"
@@ -1105,7 +1155,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                 : bookingDetails?.carType === "SUV"
                     ? bookingDetails?.Package?.kilometerPriceSuv
                     : bookingDetails?.Package?.kilometerPrice || 0
-    );
+    ) : 0;
     const estimatedPerKm = Number(bookingDetails?.estimatedFareBreakdown?.distanceFare?.rate || 0);
     const hourlyPackagePerKm = isHourlyShowingPrice(bookingDetails)
         ? (estimatedPerKm || packagePerKm)
@@ -1133,18 +1183,32 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
 
 
                         {bookingDetails?.status && (
-                            <span
+                    <div className="flex items-center gap-2">
+                        <div
                                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                                     bookingDetails?.status === 'BOOKING_ACCEPTED' ||
-                                    (bookingDetails?.status === 'CONFIRMED' && bookingDetails?.assignmentStatus === 'ASSIGNED')
+                                bookingDetails?.status === 'CONFIRMED'
                                         ? "bg-green-600 text-white"
-                                        : bookingDetails?.assignmentStatus
+                                        : "bg-blue-100 text-blue-800"
+                            }`}
+                        >
+                            {formatStatus(bookingDetails.status)}
+                        </div>
+
+                        {bookingDetails?.assignmentStatus && (
+                            <div
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                                    bookingDetails.assignmentStatus === "ASSIGNED"
+                                        ? "bg-green-600 text-white"
+                                        : bookingDetails.assignmentStatus === "DRIVER_NOT_AVAILABLE"
                                         ? "bg-red-600 text-white"
                                         : "bg-blue-100 text-blue-800"
                                 }`}
                             >
-                                {formatStatus(bookingDetails?.status, bookingDetails?.assignmentStatus)}
-                            </span>
+                                {formatStatus(bookingDetails.assignmentStatus)}
+                            </div>
+                        )}
+                    </div>
                         )}
                         {bookingDetails?.serviceType && (
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-rose-100 text-rose-800">
@@ -1927,10 +1991,16 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     <span className="text-gray-900 font-medium">{bookingDetails?.Cab?.carType}</span>
                                 </div>
                             )} */}
-                            {bookingDetails?.serviceType !== 'DRIVER' && bookingDetails?.carType && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && (
+                            {bookingDetails?.serviceType !== 'DRIVER' && !isCategoryPricingService(bookingDetails?.serviceType) && bookingDetails?.carType && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Car Type:</span>
                                     <span className="text-gray-900 font-medium">{bookingDetails?.carType}</span>
+                                </div>
+                            )}
+                            {isCategoryPricingService(bookingDetails?.serviceType) && categoryPackageContext.category && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Category:</span>
+                                    <span className="text-gray-900 font-medium">{categoryPackageContext.categoryLabel}</span>
                                 </div>
                             )}
                             {(bookingDetails?.serviceType != 'RIDES'  && bookingDetails?.serviceType !='AUTO' && bookingDetails?.serviceType != 'BIKE') && bookingDetails.luggage > 0 &&
@@ -2124,7 +2194,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     {/* </div> */}
                             {/* need to add logic for price */}
                     {/* <div className="grid sm:grid-cols-2 gap-4 text-sm">                                         */}
-                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.serviceType !== 'PARCEL' && (                            
+                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && !isCategoryPricingService(bookingDetails?.serviceType) && bookingDetails?.serviceType !== 'PARCEL' && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
@@ -2213,8 +2283,8 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                         let basePrice;
                                                         const discountPercentage = bookingDetails?.discount?.percentage || 0;
 
-                                                        if (bookingDetails?.packageType === 'Local') {
-                                                            if (bookingDetails?.serviceType === 'RENTAL') {
+                                                        if (bookingDetails?.packageType === 'Local' && !isCategoryPricingService(bookingDetails?.serviceType)) {
+                                                            if (bookingDetails?.serviceType === 'RENTAL' && !isCategoryPricingService(bookingDetails?.serviceType)) {
                                                                 const carType = bookingDetails?.carType?.toUpperCase();
                                                                 basePrice = carType === 'MINI' ? bookingDetails?.Package?.price :
                                                                     carType === 'SUV' ? bookingDetails?.Package?.priceSuv :

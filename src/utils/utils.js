@@ -21,14 +21,10 @@ export const Utils = {
                     !!values?.packageTypeSelected &&
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
-                    // !!values?.carType &&
                     !!values?.packageSelected
-                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
-                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.tripType) &&
-                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
                 );
             case 'RIDES':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType;
             case 'AUTO':
                 return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType;
             case 'PARCEL':
@@ -40,19 +36,17 @@ export const Utils = {
                     !!values?.packageTypeSelected &&
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
-                    !!values?.carType &&
-                    // !!values?.packageSelected &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.acType) &&
                     (values?.packageTypeSelected !== 'Outstation' || values?.tripType !== 'Round Trip' || !!values?.toDate) &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
                 );
             case 'RENTAL_HOURLY_PACKAGE':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.sourceType && !!values?.packageSelected && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.sourceType && !!values?.packageSelected;
             case 'RENTAL_DROP_TAXI':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.acType && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.acType;
             case 'CAR_WASH':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.packageTypeSelected && !!values?.pickupLocation && !!values?.sourceType && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.packageTypeSelected && !!values?.pickupLocation && !!values?.sourceType;
             default:
                 return false;
         }

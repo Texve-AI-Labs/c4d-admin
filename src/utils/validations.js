@@ -85,9 +85,14 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         }),
 
     carType: Yup.string().when('serviceType', {
-        is: (val) => ['DRIVER', 'RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
+        is: (val) => ['DRIVER'].includes(val),
         then: () => Yup.string().required('Please select a car type'),
         otherwise: () => Yup.string().nullable(),
+    }),
+    categoryId: Yup.number().when('serviceType', {
+        is: (val) => ['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'AUTO'].includes(val),
+        then: () => Yup.number().typeError('Please select a category').moreThan(0, 'Please select a category').required('Please select a category'),
+        otherwise: () => Yup.number().nullable(),
     }),
     transmissionType: Yup.string().when('serviceType', {
         is: (val) => val === 'DRIVER',
