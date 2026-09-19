@@ -4,6 +4,9 @@ import { Button, Typography } from "@material-tailwind/react";
 import { BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 
 function SupportSubmenu({ permissions = [] }) {
+  const hasAnyPermission = (permissionList = []) =>
+    permissionList.some((permission) => permissions.includes(permission));
+
   const getItemClasses = (isActive) =>
     `${NAV_UI.topnav.buttonBase} ${NAV_UI.spacing.topnavButton} ${NAV_UI.typography.topnavLabel} ${
       isActive
@@ -14,6 +17,7 @@ function SupportSubmenu({ permissions = [] }) {
   const items = [
     { label: "Rate Card", path: "/dashboard/rental-rate-card", requiredPermission: "Support" },
     { label: "Leads", path: "/dashboard/leads", requiredPermission: "Support" },
+    { label: "Own Vehicle", path: "/dashboard/support/own-vehicle", permissionsAny: ["Support", "Sales", "Users"] },
     ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
       ? [{ label: "Admin Discount History", path: "/dashboard/support/admin-discount-history", requiredPermission: "Users" }]
       : []),
@@ -21,7 +25,12 @@ function SupportSubmenu({ permissions = [] }) {
     { label: "Support Review & Reward Management", path: "/dashboard/support/review-reward-management", requiredPermission: "Support" },
     { label: "Customer Cancellation Charge Logs", path: "/dashboard/support/customer-cancellation-charge-logs", requiredPermission: "Users" },
   ];
-  const filteredItems = items.filter(({ requiredPermission }) => permissions.includes(requiredPermission));
+  const filteredItems = items.filter(({ requiredPermission, permissionsAny }) => {
+    if (Array.isArray(permissionsAny) && permissionsAny.length > 0) {
+      return hasAnyPermission(permissionsAny);
+    }
+    return permissions.includes(requiredPermission);
+  });
 
   if (!filteredItems.length) {
     return null;
