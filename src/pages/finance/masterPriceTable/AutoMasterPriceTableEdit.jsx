@@ -116,7 +116,7 @@ const pricingNumberFields = [
     ['Base Km', 'baseKm'],
     ['Base Fare', 'baseFare'],
     ['Kilometer Price', 'kilometerPrice'],
-    ['Min Charge', 'minCharge'],
+    ['Rate Per Min', 'minCharge'],
     ['Cancellation Mins', 'cancellationMins'],
     ['Cancellation Charge', 'cancellationCharge'],
     ['Extra Km Price', 'extraKmPrice'],
