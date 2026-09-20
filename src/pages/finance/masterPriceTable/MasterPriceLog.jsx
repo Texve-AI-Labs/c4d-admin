@@ -231,7 +231,7 @@ const MasterPriceLog = ({ id }) => {
 
     const formatPricingValue = (key, value) => {
         if (value === null || value === undefined || value === "") return "-";
-        if (key === "waitingMins" && typeof value === "string") {
+        if ((key === "waitingMins" || key === "cancelMins") && typeof value === "string") {
             return Utils.convertTimeFormatToMinutes(value);
         }
         if (typeof value === "string" && (key.includes("HoursFrom") || key.includes("HoursTo"))) {

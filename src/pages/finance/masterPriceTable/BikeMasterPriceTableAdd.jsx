@@ -35,7 +35,6 @@ const categoryPricingSchema = Yup.object().shape({
         baseKm: numberField('Base Km'),
         baseFare: numberField('Base Fare'),
         kilometerPrice: numberField('Kilometer Price'),
-        minCharge: numberField('Min Charge'),
         extraPrice: numberField('Extra Price'),
         extraKmPrice: numberField('Extra Km Price'),
         nightCharge: numberField('Night Charge'),
@@ -46,6 +45,8 @@ const categoryPricingSchema = Yup.object().shape({
         freeExtraMinutes: numberField('Free Extra Minutes'),
         additionalMinCharge: numberField('Additional Min Charge'),
         surChargePercentage: numberField('Surcharge Percentage'),
+        cancelMins: numberField('Cancellation Minutes'),
+        cancelCharge: numberField('Cancellation Charge'),
         peakHours: Yup.array().of(
             Yup.object().shape({
                 start: Yup.string().required('Start time is required'),
@@ -94,7 +95,6 @@ const emptyCategoryPricing = {
         baseKm: '',
         baseFare: '',
         kilometerPrice: '',
-        minCharge: '',
         extraPrice: '',
         extraKmPrice: '',
         nightCharge: '',
@@ -105,6 +105,8 @@ const emptyCategoryPricing = {
         freeExtraMinutes: '',
         additionalMinCharge: '',
         surChargePercentage: 0,
+        cancelMins: '',
+        cancelCharge: '',
         peakHours: [],
     },
 };
@@ -113,7 +115,6 @@ const pricingNumberFields = [
     ['Base Km', 'baseKm'],
     ['Base Fare', 'baseFare'],
     ['Kilometer Price', 'kilometerPrice'],
-    ['Min Charge', 'minCharge'],
     ['Extra Price', 'extraPrice'],
     ['Extra Km Price', 'extraKmPrice'],
     ['Night Charge', 'nightCharge'],
@@ -122,6 +123,8 @@ const pricingNumberFields = [
     ['Free Extra Minutes', 'freeExtraMinutes'],
     ['Additional Min Charge', 'additionalMinCharge'],
     ['Surcharge Percentage', 'surChargePercentage'],
+    ['Cancellation Minutes', 'cancelMins'],
+    ['Cancellation Charge', 'cancelCharge'],
 ];
 
 const cloneCategoryPricing = () => JSON.parse(JSON.stringify(emptyCategoryPricing));
@@ -142,7 +145,6 @@ const buildCategoryPricingsPayload = (categoryPricings) => categoryPricings.map(
         baseKm: toNumber(categoryPricing.pricing.baseKm),
         baseFare: toNumber(categoryPricing.pricing.baseFare),
         kilometerPrice: toNumber(categoryPricing.pricing.kilometerPrice),
-        minCharge: toNumber(categoryPricing.pricing.minCharge),
         extraPrice: toNumber(categoryPricing.pricing.extraPrice),
         extraKmPrice: toNumber(categoryPricing.pricing.extraKmPrice),
         nightCharge: toNumber(categoryPricing.pricing.nightCharge),
@@ -153,6 +155,8 @@ const buildCategoryPricingsPayload = (categoryPricings) => categoryPricings.map(
         freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
         additionalMinCharge: toNumber(categoryPricing.pricing.additionalMinCharge),
         surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage),
+        cancelMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.cancelMins),
+        cancelCharge: toNumber(categoryPricing.pricing.cancelCharge),
         peakHours: categoryPricing.pricing.peakHours.map((peakHour) => ({
             start: peakHour.start,
             end: peakHour.end,
