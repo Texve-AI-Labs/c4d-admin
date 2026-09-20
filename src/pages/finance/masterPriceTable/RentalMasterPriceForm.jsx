@@ -53,12 +53,10 @@ const LocalPricingFields = ({ prefix, disabled }) => (
         <NumberInput name={`${prefix}.pricing.baseFare`} label="Base Fare" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.kilometer`} label="Package Km" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.kilometerPrice`} label="Kilometer Price" disabled={disabled} />
-        <NumberInput name={`${prefix}.pricing.minCharge`} label="Min Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.nightCharge`} label="Night Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.driverCharge`} label="Driver Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.freeExtraMinutes`} label="Free Extra Minutes" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.additionalMinCharge`} label="Additional Min Charge" disabled={disabled} />
-        <NumberInput name={`${prefix}.pricing.surChargePercentage`} label="Surcharge Percentage" disabled={disabled} />
         <TimeRangeInput fromName={`${prefix}.pricing.nightHoursFrom`} toName={`${prefix}.pricing.nightHoursTo`} disabled={disabled} />
     </div>
 );
@@ -310,7 +308,6 @@ export const createLocalCategoryPricing = () => ({
         baseFare: '',
         kilometer: '',
         kilometerPrice: '',
-        minCharge: 0,
         peakHours: [],
         nightCharge: '',
         driverCharge: 0,
@@ -318,7 +315,6 @@ export const createLocalCategoryPricing = () => ({
         nightHoursTo: '',
         freeExtraMinutes: '',
         additionalMinCharge: '',
-        surChargePercentage: 0,
     },
 });
 

@@ -40,14 +40,12 @@ const localPricingSchema = Yup.object().shape({
     baseFare: numberField('Base Fare'),
     kilometer: numberField('Package Km'),
     kilometerPrice: numberField('Kilometer Price'),
-    minCharge: numberField('Min Charge'),
     nightCharge: numberField('Night Charge'),
     driverCharge: numberField('Driver Charge'),
     nightHoursFrom: Yup.string().required('Night Hours From is required'),
     nightHoursTo: Yup.string().required('Night Hours To is required'),
     freeExtraMinutes: numberField('Free Extra Minutes'),
     additionalMinCharge: numberField('Additional Min Charge'),
-    surChargePercentage: numberField('Surcharge Percentage'),
 });
 
 const outstationPricingSchema = Yup.object().shape({
@@ -181,7 +179,7 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
             baseFare: toNumber(item.pricing.baseFare),
             kilometer: toNumber(item.pricing.kilometer),
             kilometerPrice: toNumber(item.pricing.kilometerPrice),
-            minCharge: toNumber(item.pricing.minCharge),
+            minCharge: 0,
             peakHours: [],
             nightCharge: toNumber(item.pricing.nightCharge),
             driverCharge: toNumber(item.pricing.driverCharge),
@@ -189,7 +187,7 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
             nightHoursTo: withSeconds(item.pricing.nightHoursTo),
             freeExtraMinutes: toNumber(item.pricing.freeExtraMinutes),
             additionalMinCharge: toNumber(item.pricing.additionalMinCharge),
-            surChargePercentage: toNumber(item.pricing.surChargePercentage),
+            surChargePercentage: 0,
         },
     };
 });

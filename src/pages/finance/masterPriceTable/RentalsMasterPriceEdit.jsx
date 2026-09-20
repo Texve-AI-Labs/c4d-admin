@@ -71,7 +71,6 @@ const normalizeCategoryPricings = (priceData) => {
                     baseFare: pricing.baseFare ?? '',
                     kilometer: pricing.kilometer ?? '',
                     kilometerPrice: pricing.kilometerPrice ?? '',
-                    minCharge: pricing.minCharge ?? 0,
                     peakHours: Array.isArray(pricing.peakHours) ? pricing.peakHours : [],
                     nightCharge: pricing.nightCharge ?? '',
                     driverCharge: pricing.driverCharge ?? 0,
@@ -79,7 +78,6 @@ const normalizeCategoryPricings = (priceData) => {
                     nightHoursTo: toTimeValue(pricing.nightHoursTo),
                     freeExtraMinutes: pricing.freeExtraMinutes ?? '',
                     additionalMinCharge: pricing.additionalMinCharge ?? '',
-                    surChargePercentage: pricing.surChargePercentage ?? 0,
                 },
             };
         });
