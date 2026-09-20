@@ -52,7 +52,7 @@ const categoryPricingSchema = Yup.object().shape({
         .shape({
             baseKm: numberField('Base Km'),
             baseFare: numberField('Base Fare'),
-            minCharge: numberField('Min Charge'),
+            cancellationCharge: numberField('Cancellation Charge'),
             peakHours: Yup.array().of(
                 Yup.object().shape({
                     start: Yup.string().required('Start time is required'),
@@ -65,6 +65,8 @@ const categoryPricingSchema = Yup.object().shape({
             nightHoursFrom: Yup.string().required('Night Hours From is required'),
             nightHoursTo: Yup.string().required('Night Hours To is required'),
             waitingCharge: numberField('Waiting Charge'),
+            waitingMins: numberField('Waiting Mins'),
+            cancellationMins : numberField('Cancellation Mins'),
             freeExtraMinutes: numberField('Free Extra Minutes'),
             additionalMinCharge: numberField('Additional Min Charge'),
             surChargePercentage: numberField('Surcharge Percentage'),
@@ -115,9 +117,11 @@ const emptyCategoryPricing = {
         baseKm: '',
         baseFare: '',
         kilometerPrice: '',
-        minCharge: '',
+        cancellationCharge: '',
         nightCharge: '',
         waitingCharge: '',
+        cancellationMins:'',
+        waitingMins:'',
         freeExtraMinutes: '',
         additionalMinCharge: '',
         surChargePercentage: '',
@@ -143,9 +147,11 @@ const normalizeCategoryPricings = (priceData) => {
                 baseKm: item.pricing?.baseKm ?? '',
                 baseFare: item.pricing?.baseFare ?? '',
                 kilometerPrice: item.pricing?.kilometerPrice ?? '',
-                minCharge: item.pricing?.minCharge ?? '',
+                cancellationCharge: item.pricing?.cancellationCharge ?? '',
                 nightCharge: item.pricing?.nightCharge ?? '',
                 waitingCharge: item.pricing?.waitingCharge ?? '',
+                waitingMins: item.pricing?.waitingMins ?? '',
+                cancellationMins: item.pricing?.cancellationMins ?? '',
                 freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
                 additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
                 surChargePercentage: item.pricing?.surChargePercentage ?? '',
@@ -219,9 +225,11 @@ const PriceEdit = () => {
                         baseKm: toNumber(categoryPricing.pricing.baseKm),
                         baseFare: toNumber(categoryPricing.pricing.baseFare),
                         kilometerPrice: toNumber(categoryPricing.pricing.kilometerPrice),
-                        minCharge: toNumber(categoryPricing.pricing.minCharge),
+                        cancellationCharge: toNumber(categoryPricing.pricing.cancellationCharge),
                         nightCharge: toNumber(categoryPricing.pricing.nightCharge),
                         waitingCharge: toNumber(categoryPricing.pricing.waitingCharge),
+                        waitingMins: toNumber(categoryPricing.pricing.waitingMins),
+                        cancellationMins: toNumber(categoryPricing.pricing.cancellationMins),
                         freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
                         additionalMinCharge: toNumber(categoryPricing.pricing.additionalMinCharge),
                         surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage),
@@ -323,7 +331,7 @@ const PriceEdit = () => {
 
                         <DemandPriceEdit
                             title="Edit Demand Price Rules"
-                            demandRules={values.demandRules}
+                            demandRules={values?.demandRules || []}
                             setDemandRules={(data) => setFieldValue('demandRules', data)}
                         />
 
@@ -342,7 +350,7 @@ const PriceEdit = () => {
                                         <div key={index} className="border border-gray-300 rounded-lg p-4 space-y-4">
                                             <div className="flex items-center justify-between">
                                                 <Typography className="font-semibold">Category Pricing</Typography>
-                                                {values.categoryPricings.length > 1 ? (
+                                                {(values?.categoryPricings?.length || 0) > 1 ? (
                                                     <Button type="button" className="bg-red-500 text-white" onClick={() => remove(index)}>
                                                         Remove
                                                     </Button>
@@ -366,7 +374,7 @@ const PriceEdit = () => {
                                                     <Select
                                                         isMulti
                                                         options={CAR_TYPE_OPTIONS}
-                                                        value={CAR_TYPE_OPTIONS.filter((option) => categoryPricing.carTypes.includes(option.value))}
+                                                        value={CAR_TYPE_OPTIONS.filter((option) => categoryPricing.carTypes?.includes(option.value))}
                                                         onChange={(selectedOptions) => setFieldValue(
                                                             `categoryPricings.${index}.carTypes`,
                                                             selectedOptions ? selectedOptions.map((option) => option.value) : []
@@ -380,8 +388,10 @@ const PriceEdit = () => {
                                                     ['Base Km', 'baseKm'],
                                                     ['Base Fare', 'baseFare'],
                                                     ['Kilometer Price', 'kilometerPrice'],
-                                                    ['Min Charge', 'minCharge'],
+                                                    ['Cancellation Mins', 'cancellationMins'],
+                                                    ['Cancellation Charge', 'cancellationCharge'],
                                                     ['Night Charge', 'nightCharge'],
+                                                    ['Waiting Mins', 'waitingMins'],
                                                     ['Waiting Charge', 'waitingCharge'],
                                                     ['Free Extra Minutes', 'freeExtraMinutes'],
                                                     ['Additional Min Charge', 'additionalMinCharge'],
@@ -419,7 +429,7 @@ const PriceEdit = () => {
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                                 Cancel
                             </Button>
-                            <Button fullWidth color="blue" onClick={handleSubmit} disabled={!hasFormChanged(values) || !isValid} className="my-6 mx-2">
+                            <Button fullWidth color="blue" onClick={handleSubmit} disabled={!values || !hasFormChanged(values) || !isValid} className="my-6 mx-2">
                                 Save Changes
                             </Button>
                         </div>

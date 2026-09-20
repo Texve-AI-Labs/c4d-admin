@@ -29,9 +29,11 @@ const emptyCategoryPricing = {
         baseKm: '',
         baseFare: '',
         kilometerPrice: '',
-        minCharge: '',
+        cancellationCharge: '',
         nightCharge: '',
         waitingCharge: '',
+        waitingMins:'',
+        cancellationMins:'',
         freeExtraMinutes: '',
         additionalMinCharge: '',
         surChargePercentage: '',
@@ -52,9 +54,11 @@ const normalizeCategoryPricings = (priceData) => {
                 baseKm: item.pricing?.baseKm ?? '',
                 baseFare: item.pricing?.baseFare ?? '',
                 kilometerPrice: item.pricing?.kilometerPrice ?? '',
-                minCharge: item.pricing?.minCharge ?? '',
+                cancellationCharge: item.pricing?.cancellationCharge ?? '',
                 nightCharge: item.pricing?.nightCharge ?? '',
                 waitingCharge: item.pricing?.waitingCharge ?? '',
+                waitingMins: item.pricing?.waitingMins ?? '',
+                cancellationMins: item.pricing?.cancellationMins ?? '',                
                 freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
                 additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
                 surChargePercentage: item.pricing?.surChargePercentage ?? '',
@@ -157,8 +161,10 @@ const PriceDetails = () => {
                                 <ReadOnlyField label="Base Km" value={categoryPricing.pricing.baseKm} />
                                 <ReadOnlyField label="Base Fare" value={categoryPricing.pricing.baseFare} />
                                 <ReadOnlyField label="Kilometer Price" value={categoryPricing.pricing.kilometerPrice} />
-                                <ReadOnlyField label="Min Charge" value={categoryPricing.pricing.minCharge} />
+                                <ReadOnlyField label="Cancellation Mins" value={categoryPricing.pricing.cancellationMins} />
+                                <ReadOnlyField label="Cancellation Charge" value={categoryPricing.pricing.cancellationCharge} />
                                 <ReadOnlyField label="Night Charge" value={categoryPricing.pricing.nightCharge} />
+                                <ReadOnlyField label="Waiting Mins" value={categoryPricing.pricing.waitingMins} />
                                 <ReadOnlyField label="Waiting Charge" value={categoryPricing.pricing.waitingCharge} />
                                 <ReadOnlyField label="Free Extra Minutes" value={categoryPricing.pricing.freeExtraMinutes} />
                                 <ReadOnlyField label="Additional Min Charge" value={categoryPricing.pricing.additionalMinCharge} />
