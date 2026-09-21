@@ -184,7 +184,7 @@ function OwnVehicle() {
             <table className="w-full min-w-[1500px] table-auto">
               <thead>
                 <tr className={ColorStyles.bgColor}>
-                  {["Trip Start Date Time", "Trip End Date Time", "Vehicle Number", "Driver Name", "Start KM", "End KM", "Total KM", "Total Trip Amount", "Fuel Type", "Fuel Amount", "Other Expense", "Closing Amount", "Notes", "Created At", "Updated At", "Actions"].map((header) => (
+                  {["Trip Start Date Time", "Trip End Date Time", "Vehicle Number", "Driver Name", "Start KM", "End KM", "Total KM", "Total Trip Amount", "Fuel Type", "Fuel Amount", "Other Expense", "Closing Amount", "Created At", "Updated At", "Actions"].map((header) => (
                     <th key={header} className="border-b border-blue-gray-50 px-3 py-3 text-left whitespace-nowrap">
                       <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
                         {header}
@@ -213,7 +213,7 @@ function OwnVehicle() {
                       <td className="px-3 py-3 whitespace-nowrap">{formatAmount(row?.fuelAmount)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatAmount(row?.otherExpense)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatAmount(row?.closingAmount ?? Number(row?.totalTripAmount || 0) - Number(row?.fuelAmount || 0) - Number(row?.otherExpense || 0))}</td>
-                      <td className="px-3 py-3 max-w-[220px] truncate">{formatValue(row?.notes)}</td>
+                      {/* <td className="px-3 py-3 max-w-[220px] truncate">{formatValue(row?.notes)}</td> */}
                       <td className="px-3 py-3 whitespace-nowrap">{formatDateTime(row?.createdAt || row?.created_at)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatDateTime(row?.updatedAt || row?.updated_at)}</td>
                       <td className="px-3 py-3 whitespace-nowrap min-w-[180px]">
