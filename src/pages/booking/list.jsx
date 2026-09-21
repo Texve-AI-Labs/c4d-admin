@@ -1903,7 +1903,7 @@ if (!statusFilter.includes('All')) {
                                                                     
                                                                 }`}
                                                             />
-                                                            {data?.status === 'QUOTED' ? (
+                                                            {data?.status === 'QUOTED' && data?.userId !== null ? (
                                                             <FaEdit
                                                                 className="text-red-700 text-sm cursor-pointer"
                                                                 title="Edit quote status"
