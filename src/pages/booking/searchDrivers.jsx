@@ -279,6 +279,7 @@ export function SearchDrivers(props) {
                 try {
                     let data = {
                         'bookingId': props.bookingData.id,
+                        'customerId': props.bookingData.CustomerId
                     }
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.GET_RIDES_CAB_DRIVERS, data);
                     updateDriverSearchMeta(requestDriver);
