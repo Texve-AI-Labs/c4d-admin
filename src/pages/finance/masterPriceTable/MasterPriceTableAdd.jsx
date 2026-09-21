@@ -124,7 +124,7 @@ const emptyCategoryPricing = {
         cancelMins: '',
         freeExtraMinutes: '',
         additionalMinCharge: '',
-        surChargePercentage: '',
+        surChargePercentage: 0,
         nightHoursFrom: '',
         nightHoursTo: '',
         peakHours: [],
@@ -407,11 +407,6 @@ const PriceAdd = () => {
                                                     <label className="text-sm font-medium text-gray-700">Additional Min Charge</label>
                                                     <Field type="number" name={`categoryPricings.${index}.pricing.additionalMinCharge`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                                     <ErrorMessage name={`categoryPricings.${index}.pricing.additionalMinCharge`} component="div" className="text-red-500 text-sm" />
-                                                </div>
-                                                <div>
-                                                    <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
-                                                    <Field type="number" name={`categoryPricings.${index}.pricing.surChargePercentage`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.surChargePercentage`} component="div" className="text-red-500 text-sm" />
                                                 </div>
                                                 <div>
                                                     <label className="text-sm font-medium text-gray-700">Night Hours</label>

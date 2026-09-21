@@ -41,7 +41,7 @@ const emptyCategoryPricing = {
         cancelMins: '',
         freeExtraMinutes: '',
         additionalMinCharge: '',
-        surChargePercentage: '',
+        surChargePercentage: 0,
         nightHoursFrom: '',
         nightHoursTo: '',
         peakHours: [],
@@ -66,7 +66,7 @@ const normalizeCategoryPricings = (priceData) => {
                 cancelMins: Utils.convertTimeFormatToMinutes(item.pricing?.cancelMins) ?? '',
                 freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
                 additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
-                surChargePercentage: item.pricing?.surChargePercentage ?? '',
+                surChargePercentage: item.pricing?.surChargePercentage ?? 0,
                 nightHoursFrom: toTimeValue(item.pricing?.nightHoursFrom),
                 nightHoursTo: toTimeValue(item.pricing?.nightHoursTo),
                 peakHours: Array.isArray(item.pricing?.peakHours) ? item.pricing.peakHours : [],
@@ -173,7 +173,6 @@ const PriceDetails = () => {
                                 <ReadOnlyField label="Waiting Charge" value={categoryPricing.pricing.waitingCharge} />
                                 <ReadOnlyField label="Free Extra Minutes" value={categoryPricing.pricing.freeExtraMinutes} />
                                 <ReadOnlyField label="Additional Min Charge" value={categoryPricing.pricing.additionalMinCharge} />
-                                <ReadOnlyField label="Surcharge Percentage" value={categoryPricing.pricing.surChargePercentage} />
                                 <ReadOnlyField
                                     label="Night Hours"
                                     value={`${categoryPricing.pricing.nightHoursFrom || '-'} to ${categoryPricing.pricing.nightHoursTo || '-'}`}

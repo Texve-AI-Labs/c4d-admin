@@ -45,7 +45,6 @@ const categoryPricingSchema = Yup.object().shape({
         waitingCharge: numberField('Waiting Charge'),
         freeExtraMinutes: numberField('Free Extra Minutes'),
         additionalMinCharge: numberField('Additional Min Charge'),
-        surChargePercentage: numberField('Surcharge Percentage'),
         peakHours: Yup.array().of(
             Yup.object().shape({
                 start: Yup.string().required('Start time is required'),
@@ -121,7 +120,6 @@ const pricingNumberFields = [
     ['Waiting Charge', 'waitingCharge'],
     ['Free Extra Minutes', 'freeExtraMinutes'],
     ['Additional Min Charge', 'additionalMinCharge'],
-    ['Surcharge Percentage', 'surChargePercentage'],
 ];
 
 const cloneCategoryPricing = () => JSON.parse(JSON.stringify(emptyCategoryPricing));
@@ -147,7 +145,7 @@ const buildCategoryPricingsPayload = (categoryPricings) => categoryPricings.map(
         waitingCharge: toNumber(categoryPricing.pricing.waitingCharge),
         freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
         additionalMinCharge: toNumber(categoryPricing.pricing.additionalMinCharge),
-        surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage),
+        surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage ?? 0),
         peakHours: categoryPricing.pricing.peakHours.map((peakHour) => ({
             start: peakHour.start,
             end: peakHour.end,

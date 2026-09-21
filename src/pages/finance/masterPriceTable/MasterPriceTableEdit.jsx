@@ -124,7 +124,7 @@ const emptyCategoryPricing = {
         waitingMins:'',
         freeExtraMinutes: '',
         additionalMinCharge: '',
-        surChargePercentage: '',
+        surChargePercentage: 0,
         nightHoursFrom: '',
         nightHoursTo: '',
         peakHours: [],
@@ -154,7 +154,7 @@ const normalizeCategoryPricings = (priceData) => {
                 cancelMins: item.pricing?.cancelMins ?? '',
                 freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
                 additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
-                surChargePercentage: item.pricing?.surChargePercentage ?? '',
+                surChargePercentage: item.pricing?.surChargePercentage ?? 0,
                 nightHoursFrom: toTimeValue(item.pricing?.nightHoursFrom),
                 nightHoursTo: toTimeValue(item.pricing?.nightHoursTo),
                 peakHours: Array.isArray(item.pricing?.peakHours) ? item.pricing.peakHours : [],
@@ -395,7 +395,6 @@ const PriceEdit = () => {
                                                     ['Waiting Charge', 'waitingCharge'],
                                                     ['Free Extra Minutes', 'freeExtraMinutes'],
                                                     ['Additional Min Charge', 'additionalMinCharge'],
-                                                    ['Surcharge Percentage', 'surChargePercentage'],
                                                 ].map(([label, name]) => (
                                                     <div key={name}>
                                                         <label className="text-sm font-medium text-gray-700">{label}</label>

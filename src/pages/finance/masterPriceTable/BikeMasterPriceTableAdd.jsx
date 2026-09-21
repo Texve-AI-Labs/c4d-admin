@@ -122,7 +122,6 @@ const pricingNumberFields = [
     ['Waiting Charge', 'waitingCharge'],
     ['Free Extra Minutes', 'freeExtraMinutes'],
     ['Additional Min Charge', 'additionalMinCharge'],
-    ['Surcharge Percentage', 'surChargePercentage'],
     ['Cancellation Minutes', 'cancelMins'],
     ['Cancellation Charge', 'cancelCharge'],
 ];
