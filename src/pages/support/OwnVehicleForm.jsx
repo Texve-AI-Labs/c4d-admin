@@ -91,7 +91,7 @@ function OwnVehicleForm({ mode = "add" }) {
   const fieldLabel = (label) => (isDetailsMode ? label : requiredLabel(label));
 
   const labelProps = isDetailsMode
-  ? { className: "peer-disabled:text-blue-gray-500" }
+  ? { className: "peer-disabled:text-blue-gray-600" }
   : {};
 
   useEffect(() => {
