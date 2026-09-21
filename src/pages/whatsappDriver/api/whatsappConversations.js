@@ -1,6 +1,6 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { getBaseUrl } from "@/utils/constants";
+import { getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
 
 const BASE = "/whatsapp-conversations";
 
@@ -17,6 +17,24 @@ export const whatsappConversationsApi = {
 
   sendReply: (conversationId, body) => ApiRequestUtils.post(`${BASE}/${conversationId}/reply`, body),
 
+  sendMediaReply: (conversationId, body) => ApiRequestUtils.postDocs(`${BASE}/${conversationId}/reply-media`, body),
+
+  downloadMediaForRetry: async (media) => {
+    const endpoint = media?.id ? `${getBaseUrl()}/whatsapp-media/${media.id}/download` : media?.directUrl;
+    if (!endpoint) throw new Error("Media file is unavailable");
+    const token = localStorage.getItem("token") || localStorage.getItem("rootcabs_access_token") || "";
+    const response = await fetch(endpoint, {
+      headers: media?.id
+        ? {
+            ...getNgrokSkipHeaders(),
+            ...(token ? { token, Authorization: `Bearer ${token}` } : {}),
+          }
+        : undefined,
+    });
+    if (!response.ok) throw new Error("Unable to retrieve the media file for retry");
+    return response.blob();
+  },
+
   getReplyTemplates: (conversationId, limit = 100) =>
     ApiRequestUtils.getWithQueryParam(`${BASE}/${conversationId}/reply-templates`, { limit }),
 
@@ -24,11 +42,14 @@ export const whatsappConversationsApi = {
 
   sendTemplateReply: (conversationId, body) => ApiRequestUtils.post(`${BASE}/${conversationId}/reply-template`, body),
 
+  forwardMessage: (conversationId, body) => ApiRequestUtils.post(`${BASE}/${conversationId}/forward`, body),
+
   subscribeEvents: ({ token, signal, onOpen, onMessage, onClose, onError }) =>
     fetchEventSource(`${getBaseUrl()}${BASE}/events`, {
       method: "GET",
       headers: {
         Accept: "text/event-stream",
+        ...getNgrokSkipHeaders(),
         token,
       },
       signal,

@@ -10,10 +10,7 @@ const formatVehicleTypeValue = (value) => {
 
   if (normalized === "AUTO") return "Auto";
   if (normalized === "BIKE") return "Bike";
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
   return raw
     .toLowerCase()
     .split(/\s+/)
@@ -26,8 +23,7 @@ const normalizeVehicleTypeInput = (value) => {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const normalized = raw.toUpperCase();
-  if (["AUTO", "BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") return normalized;
+  if (["AUTO"].includes(normalized)) return normalized;
   return normalized;
 };
 

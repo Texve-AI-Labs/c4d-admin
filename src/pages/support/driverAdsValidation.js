@@ -9,6 +9,14 @@ export const driverAdsValidationSchema = Yup.object({
   paymentFrequency: Yup.string().required("Payment frequency is required"),
   paymentAmount: Yup.number().typeError("Payment amount must be a number").positive("Payment amount must be greater than 0").required("Payment amount is required"),
   tier: Yup.string().oneOf(["SILVER", "GOLD", "ELITE"], "Tier is required").required("Tier is required"),
+  availableVehicle: Yup.string().oneOf(["CAB", "AUTO", "ALL"]).required("Available vehicle is required"),
+  vehicleImages: Yup.array().of(Yup.object({
+    position: Yup.string().oneOf(["REAR", "LEFT", "RIGHT", "ALL"], "Select a valid position"),
+    url: Yup.string().url("Enter a valid image URL").when("position", {
+      is: (value) => Boolean(value), then: (schema) => schema.required("Image URL is required"),
+    }),
+  })),
+  planBenefits: Yup.array().of(Yup.string().trim()),
   termsAndConditions: Yup.string().trim().required("Terms and conditions are required"),
   imageFile: Yup.mixed().required("Image is required"),
   isActive: Yup.boolean().required(),

@@ -9,6 +9,7 @@ import { SignIn, SignUp } from "@/pages/auth";
 import { DeleteAccount } from "@/pages/public/DeleteAccount";
 import { PriceList } from "@/pages/public/price";
 import { RentalTariffRateCard } from "@/pages/public/rentalRateCard";
+import { HourlyPackageRateCard } from "@/pages/public/hourlyPackageRateCard";
 
 import { CustomerView } from "@/pages/customer";
 import { AccountView } from "@/pages/account";
@@ -48,6 +49,9 @@ import { BOOKING_FEATURES, BOOKING_SERVICE_TYPE } from "./utils/constants";
 import { AllVehicles } from "./pages/vendor";
 import { CabSubscriptionView } from "./pages/finance/subscription/cab-subscription-view";
 import CabSubscriptionAdd from "./pages/finance/subscription/cab-subscription-add";
+import DriverSubscriptionList from "./pages/finance/driverSubscription/list";
+import DriverSubscriptionForm from "./pages/finance/driverSubscription/form";
+import DriverSubscriptionDetails from "./pages/finance/driverSubscription/details";
 import ReassignDriver from "./components/ReassignDriver";
 import PayableView from "./pages/finance/payable/view";
 import PayableDetails from "./pages/finance/payable/details";
@@ -208,6 +212,7 @@ import SlotRuleForm from "./pages/finance/parcelSlotConfig/SlotRuleForm";
 import ParcelSlotConfigEdit from "./pages/finance/parcelSlotConfig/edit";
 import ParcelSlotConfigDetails from "./pages/finance/parcelSlotConfig/details";
 import ParcelDailySlotsList from "./pages/finance/parcelDailySlots/list";
+import ParcelDailySlotsAdd from "./pages/finance/parcelDailySlots/add";
 import ParcelDailySlotsDetails from "./pages/finance/parcelDailySlots/details";
 import ActingDriverSlotConfigList from "./pages/finance/actingDriverSlotConfig/list";
 import ActingDriverSlotRuleForm from "./pages/finance/actingDriverSlotConfig/SlotRuleForm";
@@ -216,6 +221,10 @@ import ActingDriverSlotConfigDetails from "./pages/finance/actingDriverSlotConfi
 import ActingDriverDailySlotsList from "./pages/finance/actingDriverDailySlots/list";
 import ActingDriverDailySlotsAdd from "./pages/finance/actingDriverDailySlots/add";
 import ActingDriverDailySlotsDetails from "./pages/finance/actingDriverDailySlots/details";
+import CategoryDriverEligibleList from "./pages/finance/categoryDriverEligible/list";
+import CategoryDriverEligibleAdd from "./pages/finance/categoryDriverEligible/add";
+import CategoryDriverEligibleEdit from "./pages/finance/categoryDriverEligible/edit";
+import CategoryDriverEligibleDetails from "./pages/finance/categoryDriverEligible/details";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
 import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
@@ -264,12 +273,15 @@ import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
+import ActingDriverCancellationLogs from "./pages/support/ActingDriverCancellationLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
 import DriverAdsRegList from "./pages/support/driverAdsRegList";
 import DriverAdsRegistrationDetails from "./pages/support/driverAdsRegistrationDetails";
 import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
+import OwnVehicle from "./pages/support/OwnVehicle";
+import OwnVehicleForm from "./pages/support/OwnVehicleForm";
 import GeoIntelligence from "./pages/geoIntelligence";
 import WhatsAppDriverPage from "./pages/whatsappDriver/WhatsAppDriverPage";
 
@@ -496,6 +508,7 @@ export const routes = [
         element: <CustomerWhatsappPage />,
         display: true,
         permission: "Marketing",
+        permissionsAny: ["Support", "Marketing"],
       },
       {
         icon: <UserIcon {...icon} />,
@@ -1532,6 +1545,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver Subscription",
+        path: "/finance/driver-subscription-feedback",
+        element: <DriverSubscriptionList />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Add",
+        path: "/finance/driver-subscription-feedback/add",
+        element: <DriverSubscriptionForm />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Details",
+        path: "/finance/driver-subscription-feedback/details/:id",
+        element: <DriverSubscriptionDetails />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Edit",
+        path: "/finance/driver-subscription-feedback/edit/:id",
+        element: <DriverSubscriptionForm />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Add Subscription",
         path: "/finance/cab-subscription/add",
         element: <CabSubscriptionAdd />,
@@ -1820,6 +1865,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible",
+        path: "/finance/category-driver-eligible",
+        element: <CategoryDriverEligibleList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible Add",
+        path: "/finance/category-driver-eligible/add",
+        element: <CategoryDriverEligibleAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible Edit",
+        path: "/finance/category-driver-eligible/edit/:id",
+        element: <CategoryDriverEligibleEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Category Driver Eligible Details",
+        path: "/finance/category-driver-eligible/details/:id",
+        element: <CategoryDriverEligibleDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Assign Driver",
         path: "/vendors/account/allVehicles/assignDriver/:id",
         element: <ReassignDriver />,
@@ -1887,6 +1964,14 @@ export const routes = [
         name: "Parcel Daily Slots",
         path: "/finance/parcel-daily-slots",
         element: <ParcelDailySlotsList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Parcel Daily Slot Add",
+        path: "/finance/parcel-daily-slots/add",
+        element: <ParcelDailySlotsAdd />,
         display: false,
         permission: "Users",
       },
@@ -2359,9 +2444,49 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Own Vehicle",
+        path: "/support/own-vehicle",
+        element: <OwnVehicle />,
+        display: true,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle Add",
+        path: "/support/own-vehicle/add",
+        element: <OwnVehicleForm mode="add" />,
+        display: false,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle Edit",
+        path: "/support/own-vehicle/edit/:id",
+        element: <OwnVehicleForm mode="edit" />,
+        display: false,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Own Vehicle Details",
+        path: "/support/own-vehicle/details/:id",
+        element: <OwnVehicleForm mode="details" />,
+        display: false,
+        permissionsAny: ["Support", "Sales", "Users"]
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Rate Card",
         path: "/rental-rate-card",
         element: <RentalTariffRateCard />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Hourly Package Rate Card",
+        path: "/hourly-package-rate-card",
+        element: <HourlyPackageRateCard />,
         display: true,
         permission: "Support"
       },
@@ -2378,6 +2503,14 @@ export const routes = [
         name: "Customer Cancellation Charge Logs",
         path: "/support/customer-cancellation-charge-logs",
         element: <CustomerCancellationChargeLogs />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Cancellation Logs",
+        path: "/support/acting-driver-cancellation-logs",
+        element: <ActingDriverCancellationLogs />,
         display: true,
         permission: "Users"
       },
@@ -2473,11 +2606,12 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "WhatsApp Driver",
+        name: "Driver WhatsApp",
         path: "/whatsapp-driver",
         element: <WhatsAppDriverPage />,
         display: true,
-        permission: "Driver Engagement",
+        permission: "Marketing",
+        permissionsAny: ["Support", "Marketing"],
       },
        {
         icon: <UserIcon {...icon} />,
@@ -2530,6 +2664,11 @@ export const routes = [
       {
         path: "/rate-card",
         element: <RentalTariffRateCard />,
+        display: false
+      },
+      {
+        path: "/hourly-package-rate-card",
+        element: <HourlyPackageRateCard />,
         display: false
       },
     ],

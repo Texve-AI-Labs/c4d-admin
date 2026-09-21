@@ -427,6 +427,7 @@ const AccountOnboardingDetails = () => {
         street: String(addressForm.street || "").trim(),
         thaluk: String(addressForm.thaluk || "").trim(),
         district: String(addressForm.district || "").trim(),
+        zone: String(addressForm.district || "").trim(),
         state: String(addressForm.state || "").trim(),
         pincode: String(addressForm.pincode || "").trim(),
       };

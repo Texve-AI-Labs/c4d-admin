@@ -24,8 +24,10 @@ import {
   UsersIcon,
   UserIcon,
   GlobeAltIcon,
+  ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/solid';
+import { FaCar } from "react-icons/fa";
 import { API_ROUTES, BOOKING_FEATURES, NAV_UI } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 
@@ -36,20 +38,24 @@ const menuItems = [
     name: "Support",
     path: "/dashboard/rental-rate-card",
     permission: "Support",
-    permissionsAny: ["Support"],
+    permissionsAny: ["Support", "Sales", "Users"],
     landingRoutes: [
       { permission: "Support", path: "/dashboard/rental-rate-card" },
+      { permission: "Sales", path: "/dashboard/support/own-vehicle" },
+      { permission: "Users", path: "/dashboard/support/own-vehicle" },
+      { permission: "Support", path: "/dashboard/hourly-package-rate-card" },
     ],
   },
   { type: "item", name: "Calls", path: "/dashboard/exotel-calls/list", permission: "Calls" },
   { type: "item", name: "All Inquiries", path: "/dashboard/booking/list", permission: "All bookings" },
   { type: "item", name: "Vendors", path: "/dashboard/vendors/account/owner-onboarding-cab", permission: "Vendors" },
+  { type: "item", name: "Driver List", path: "/dashboard/vendors/vehicleList", permission: "Vendors" },
   { type: "item", name: "Customers", path: "/dashboard/customers", permission: "Customers" },
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
   { type: "item", name: "Marketing", path: "/dashboard/vendors/notificationList", permission: "Marketing" },
-  { type: "item", name: "Customer WhatsApp", path: "/dashboard/customer-whatsapp", permission: "Marketing" },
-    { type: "item", name: "WhatsApp Driver", path: "/dashboard/whatsapp-driver", permission: "Driver Engagement" },
+  { type: "item", name: "Customer WhatsApp", path: "/dashboard/customer-whatsapp", permission: "Marketing", permissionsAny: ["Support", "Marketing"] },
+  { type: "item", name: "Driver WhatsApp", path: "/dashboard/whatsapp-driver", permission: "Marketing", permissionsAny: ["Support", "Marketing"] },
   { type: "item", name: "Vendor Management", path: "/dashboard/vendor-management/vendors", permission: "Vendor Management" },
   { type: "item", name: "Reports", path: "/dashboard/driver-ops", permission: "Driver Ops" },
   { type: "item", name: "Geo Int & Ops", path: "/dashboard/geo-intelligence", permission: "Users" },
@@ -88,7 +94,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       return "";
     }
   });
-  const { homeTotalPendings, inquiriesPendingsByType, isLive, isReconnecting } = useRealtimeEvents();
+  const { homeTotalPendings, inquiriesPendingsByType, whatsappUnreadCounts, isLive, isReconnecting } = useRealtimeEvents();
   const getInquiryTypeFromPath = (pathname = "") => {
     const path = String(pathname || "").toLowerCase();
     if (path.startsWith("/dashboard/booking/list/rides")) return "RIDES";
@@ -110,6 +116,8 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
   );
 
   const homeBadgeCount = Number(homeTotalPendings ?? inquiriesPendingsByType?.ALL_CABS ?? 0);
+  const customerWhatsappBadgeCount = Number(whatsappUnreadCounts?.CUSTOMER || 0);
+  const driverWhatsappBadgeCount = Number(whatsappUnreadCounts?.DRIVER || 0);
   const connectionStatus = isLive ? "live" : isReconnecting ? "reconnecting" : "offline";
 
   // useEffect(() => {
@@ -226,7 +234,9 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       case "Support":
         return (
           currentPath.startsWith("/dashboard/rental-rate-card") ||
+          currentPath.startsWith("/dashboard/hourly-package-rate-card") ||
           currentPath.startsWith("/dashboard/leads") ||
+          currentPath.startsWith("/dashboard/support/own-vehicle") ||
           (BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW &&
             currentPath.startsWith("/dashboard/support/admin-discount-history"))
           // currentPath.startsWith("/dashboard/doc-verification") ||         
@@ -236,10 +246,23 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
       case "Vendors":
         return (
           currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-cab") ||
-          currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
+          currentPath.startsWith("/dashboard/vendors/account/drivers") ||
+          currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-auto") ||
+          (currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-bike") &&
+            !currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi")) ||
+          currentPath.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi") ||
           currentPath.startsWith("/dashboard/vendors/onlinevehicleslist") ||
+          currentPath.startsWith("/dashboard/vendors/root-web-reg") ||
           currentPath.startsWith("/dashboard/doc-verification") || 
           currentPath.startsWith("/dashboard/vendors/driver-return-trips")
+        );
+      case "Driver List":
+        return (
+          currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
+          currentPath.startsWith("/dashboard/vendors/account/allvehicles") ||
+          currentPath.startsWith("/dashboard/vendors/account/autolist") ||
+          currentPath.startsWith("/dashboard/vendors/account/parcel") ||
+          currentPath.startsWith("/dashboard/vendors/account/biketaxilist")
         );
       case "Customers":
         return currentPath.startsWith("/dashboard/customers");
@@ -270,7 +293,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
         return currentPath.startsWith("/dashboard/geo-intelligence");
       case "Driver Engagement":
         return currentPath.startsWith("/dashboard/driverengagement");
-      case "WhatsApp Driver":
+      case "Driver WhatsApp":
         return currentPath.startsWith("/dashboard/whatsapp-driver");
       case "Admin":
         return (
@@ -421,6 +444,11 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
+                        {name === "Driver List" ? (
+                          <FaCar
+                            className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
+                          />
+                        ) : null}
                         {name === "Trip Master" ? (
                           <BuildingStorefrontIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
@@ -442,7 +470,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                           />
                         ) : null}
                         {name === "Customer WhatsApp" ? (
-                          <ChatBubbleLeftRightIcon
+                          <ChatBubbleLeftEllipsisIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
@@ -461,7 +489,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
-                        {name === "WhatsApp Driver" ? (
+                        {name === "Driver WhatsApp" ? (
                           <ChatBubbleLeftRightIcon
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
@@ -480,6 +508,16 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                       {name === "All Inquiries" && inquiriesBadgeCount > 0 && (
                         <span className="ml-auto rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white leading-none">
                           {inquiriesBadgeCount}
+                        </span>
+                      )}
+                      {name === "Customer WhatsApp" && customerWhatsappBadgeCount > 0 && (
+                        <span className="ml-auto rounded-full bg-[#25d366] px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          {customerWhatsappBadgeCount > 99 ? "99+" : customerWhatsappBadgeCount}
+                        </span>
+                      )}
+                      {name === "Driver WhatsApp" && driverWhatsappBadgeCount > 0 && (
+                        <span className="ml-auto rounded-full bg-[#25d366] px-2 py-0.5 text-xs font-bold text-white leading-none">
+                          {driverWhatsappBadgeCount > 99 ? "99+" : driverWhatsappBadgeCount}
                         </span>
                       )}
                         </>

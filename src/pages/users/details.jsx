@@ -33,7 +33,7 @@ const UserDetails = () => {
     };
     return (
         <>
-            <div className="p-4 mx-auto">
+            <div className="p-4 mx-auto bg-white rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold mb-4">User Details</h2>
                 <Formik
                     initialValues={initialValues}
@@ -93,7 +93,7 @@ const UserDetails = () => {
                     )}
                 </Formik>
             </div>
-            <div className='flex justify-center w-full'>
+            <div className='flex justify-center w-full gap-2'>
                 <Button
                     onClick={() => { navigate('/dashboard/users'); }}
                     className={`my-6 px-8 ${ColorStyles.backButton}`}

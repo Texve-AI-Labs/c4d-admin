@@ -13,7 +13,6 @@ const DiscountAdd = () => {
   const [zones, setZones] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null);
-  const [premiumServicesMap, setPremiumServicesMap] = useState({});
   const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
     DRIVER: [
       { value: 'DRIVER', label: 'DRIVER' },
@@ -36,14 +35,21 @@ const DiscountAdd = () => {
     ],
   };
 
+    const CATEGORY_OPTIONS = [
+      { value: "ECONOMY_GO", label: "Economy Go" },
+      { value: "COMFORT", label: "Comfort" },
+      { value: "PREMIUM", label: "Premium" },
+      { value: "PREMIUM_XL", label: "Premium XL" },
+      { value: "AUTO_SAVER", label: "Auto Saver" },
+      { value: "AUTO_PLUS", label: "Auto Plus" },
+      { value: "BIKE", label: "Bike" },
+    ];
+
   const PARCEL_VEHICLE_OPTIONS = ['', 'BIKE', 'AUTO'];
-  const CAB_TYPE_OPTIONS = ['Mini', 'Sedan', 'SUV', 'MUV'];
   const normalizeParcelVehicleType = (value) => {
     const parsed = String(value || '').trim().toUpperCase();
     return PARCEL_VEHICLE_OPTIONS.includes(parsed) ? parsed : 'BIKE';
   };
-  const getCabTypeOptions = (serviceType) =>
-    String(serviceType || '').toUpperCase() === 'RIDES' ? ['Mini', 'Sedan'] : CAB_TYPE_OPTIONS;
   const getServiceTypeOptions = (entity) => SERVICE_TYPE_OPTIONS_BY_ENTITY[entity] || [];
 
   const initialValues = {
@@ -66,9 +72,7 @@ const DiscountAdd = () => {
     serviceArea: [],
     image: null,
     dashboardOfferImg: null,
-    cabType: '',
-    premiumCabType: '',
-    isPremium: false,
+    category: '',
     parcelVehicleType: '',
     subZoneId: '',
     removeImage: false,
@@ -86,10 +90,6 @@ const DiscountAdd = () => {
             type: 'Zone',
           }),
         ]);
-
-        if (serviceAreaResponse?.premiumServices) {
-          setPremiumServicesMap(serviceAreaResponse.premiumServices);
-        }
 
         const allServiceAreas = Array.isArray(serviceAreaResponse?.data) ? serviceAreaResponse.data : [];
         const allZones = Array.isArray(zoneResponse?.data) ? zoneResponse.data : [];
@@ -176,7 +176,6 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
       }
 
       const formData = new FormData();
-      const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
       formData.append('entity', values.entity);
       formData.append('serviceType', values.serviceType);
       formData.append('offerType', values.offerType);
@@ -200,6 +199,7 @@ const handleDashboardOfferImgClear = (setFieldValue) => {
       formData.append('title', values.title);
       formData.append('description', values.description);
       formData.append('serviceArea', values.serviceArea.includes('All') ? ['All'] : values.serviceArea);
+      formData.append('category', values.category|| null);
       if (values.image) {
       formData.append('image', values.image, values.image.name);
       formData.append('fileType', values.image?.type || '');
@@ -224,23 +224,12 @@ if (values.removeDashboardOfferImg) {
   formData.append('dashboardImageUrl', '');  
 }
       const isParcelService = values.serviceType === 'PARCEL';
-      const isGeneralParcel = values.offerType === 'GENERAL' && isParcelService;
       if (isParcelService) {
         const parcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
         formData.append('parcelVehicleType', parcelVehicleType);
         if (parcelVehicleType === 'BIKE' && values.subZoneId) {
           formData.append('subZoneId', Number(values.subZoneId));
         }
-      } else if (values.serviceType === 'DRIVER') {
-        formData.append('cabType', null);
-      } else if (values.serviceType === 'AUTO') {
-        formData.append('isPremium', values.isPremium);
-      } else if (values.serviceType === 'BIKE') {
-        formData.append('isPremium', values.isPremium);
-      }  else {
-        const finalCabType = values.isPremium ? values.premiumCabType : values.cabType;
-        formData.append('cabType', finalCabType);
-        formData.append('isPremium', values.isPremium);
       }
       // console.log('Submitting form with values:', values);
       const res = await ApiRequestUtils.postDocs(API_ROUTES.POST_DISCOUNT, formData);
@@ -276,10 +265,6 @@ if (values.removeDashboardOfferImg) {
     } finally {
       setSubmitting(false);
     }
-  };
-
-const getCurrentPremiumOptions = (currentServiceType) => {
-  return premiumServicesMap[currentServiceType] || [];
 };
 
   return (
@@ -291,7 +276,6 @@ const getCurrentPremiumOptions = (currentServiceType) => {
         onSubmit={handleSubmit}
       >
         {({ isSubmitting, setFieldValue, values }) => {
-          const isCustomSegment = values.offerType === 'CUSTOM' && values.targetMode === 'SEGMENT';
           const isGeneralParcel = values.offerType === 'GENERAL' && values.serviceType === 'PARCEL';
           const selectedParcelVehicleType = normalizeParcelVehicleType(values.parcelVehicleType);
           const subZoneOptions = getSubZoneOptions(values.serviceArea);
@@ -312,9 +296,6 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                       setFieldValue('serviceType', ['DRIVER', 'AUTO','BIKE','PARCEL'].includes(nextEntity) ? nextEntity : '');
                       setFieldValue('parcelVehicleType', '');
                       setFieldValue('subZoneId', '');
-                      setFieldValue('isPremium', false);
-                      setFieldValue('cabType', nextEntity === 'DRIVER' ? null : '');
-                      setFieldValue('premiumCabType', '');
                     }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
@@ -334,13 +315,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                   as="select"
                   name="offerType"
                     onChange={(e) => {
-                      const nextOfferType = e.target.value;
-                      setFieldValue('offerType', nextOfferType);
-                      if (nextOfferType === 'GENERAL' && values.serviceType === 'PARCEL') {
-                        setFieldValue('isPremium', false);
-                        setFieldValue('cabType', '');
-                        setFieldValue('premiumCabType', '');
-                      }
+                        setFieldValue('offerType', e.target.value);
                     }}
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                 >
@@ -371,9 +346,6 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                       setFieldValue('targetMode', nextMode);
                       if (nextMode === 'SEGMENT') {
                         setFieldValue('couponCode', '');
-                        setFieldValue('cabType', '');
-                        setFieldValue('premiumCabType', '');
-                        setFieldValue('isPremium', false);
                       }
                     }}
                   >
@@ -415,13 +387,7 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                       const nextServiceType = e.target.value;
                       setFieldValue('serviceType', nextServiceType);
                       setFieldValue('serviceArea', []);
-                      if (nextServiceType === 'PARCEL') {
-                        setFieldValue('isPremium', false);
-                        setFieldValue('cabType', '');
-                        setFieldValue('premiumCabType', '');
-                      } else if (nextServiceType === 'DRIVER') {
-                        setFieldValue('cabType', null);
-                      } else {
+                      if (nextServiceType !== 'PARCEL') {
                         setFieldValue('parcelVehicleType', '');
                         setFieldValue('subZoneId', '');
                       }
@@ -437,6 +403,22 @@ const getCurrentPremiumOptions = (currentServiceType) => {
                 </Field>
                 <ErrorMessage name="serviceType" className="text-red-500 text-sm" component="div" />
               </div>
+              {!['PARCEL', 'DRIVER'].includes(values.serviceType) && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Category</label>
+                  <Field
+                    as="select"
+                    name="category"
+                    className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                  >
+                    <option value="">Select Category</option>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Field>
+              </div>)}
                 {values.serviceType === 'PARCEL' && (
                   <div>
                     <label className="text-sm font-medium text-gray-700">Parcel Vehicle Type</label>
@@ -507,74 +489,6 @@ const getCurrentPremiumOptions = (currentServiceType) => {
   <ErrorMessage name="dashboardOfferImg" component="div" className="text-red-500 text-sm" />
 </div>
 
-                {!isGeneralParcel && values.serviceType !== 'PARCEL' && (
-              <div className="mt-3 flex gap-3">
-                <div className="w-full col-span-2">
-                  <label className="flex items-center space-x-2 cursor-pointer select-none">
-                    <Field
-                      type="checkbox"
-                      name="isPremium"
-                      className="h-5 w-5 text-primary-600 rounded"
-                      onChange={(e) => {
-                        setFieldValue('isPremium', e.target.checked);
-                        if (e.target.checked) {
-                          setFieldValue('cabType', '');
-                        } else {
-                          setFieldValue('premiumCabType', '');
-                        }
-                    }}
-                    />
-                    <span className="text-sm font-medium text-gray-700">
-                      Enable Premium Service
-                    </span>
-                  </label>
-                  {values.isPremium && (
-                    <div className="col-span-2 mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm font-semibold text-blue-900 mb-3">
-                        Select Premium Car Type:
-                      </p>
-                      {getCurrentPremiumOptions(values.serviceType).length > 0 ? (
-                        <div className="w-full  md:grid-cols-4">
-                          {getCurrentPremiumOptions(values.serviceType).map((premium, index) => (
-                            <label key={index} className="flex items-center space-x-2 cursor-pointer">
-                              <Field
-                                type="radio"
-                                name="premiumCabType"
-                                value={premium.carType}
-                                className="h-4 w-4 text-primary-600"
-                              />
-                              <span className="text-gray-800 font-medium">{premium.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-600 italic">
-                          No premium options configured for {values.serviceType}
-                        </p>
-                      )}
-                      <ErrorMessage name="premiumCabType" className="text-red-500 text-sm mt-2 inline-block" component="div" />
-                    </div>
-                  )}
-                </div>
-              </div>
-                )}
-
-              {!isGeneralParcel && values.serviceType !== 'PARCEL' && values.serviceType !== 'AUTO' && values.serviceType !== 'DRIVER' && values.serviceType !== 'BIKE' && values.isPremium === false && (
-              <div>
-                <label className="text-sm font-medium text-gray-700">Car Type</label>
-                <Field
-                  as="select"
-                  name="cabType"
-                  className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
-                >
-                  <option value="">Select Car Type</option>
-                  {getCabTypeOptions(values.serviceType).map((carType) => (
-                    <option key={carType} value={carType}>{carType}</option>
-                  ))}
-                  </Field>
-                <ErrorMessage name="cabType" className="text-red-500 text-sm" component="div" />
-              </div>
-              )}
               <div>
                 <label htmlFor="title" className="text-sm font-medium text-gray-700">Title</label>
                 <Field type="text" name="title" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />

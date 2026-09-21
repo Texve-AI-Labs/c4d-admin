@@ -197,7 +197,7 @@ export function ParcelView({ type, ownerName, id }) {
           <Button
             size="sm"
             variant="ghost"
-            className="flex shrink-0 items-center gap-1 text-white bg-primary p-2 hover:bg-blue-50"
+            className="flex shrink-0 items-center gap-1 text-white bg-primary p-2"
             onClick={handleRefreshFilters}
           >
             <ArrowPathIcon className="h-4 w-4" />

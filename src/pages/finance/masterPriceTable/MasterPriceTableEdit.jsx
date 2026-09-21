@@ -1,15 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form, Field, ErrorMessage, FieldArray } from 'formik';
 import * as Yup from 'yup';
-import { Button } from '@material-tailwind/react';
+import { Button, Typography } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, ColorStyles } from '@/utils/constants';
-import { Utils } from '@/utils/utils';
 import Select from 'react-select';
+import { ApiRequestUtils } from '@/utils/apiRequestUtils';
+import { API_ROUTES } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
-import PremiumPriceDetailsEdit from '@/components/PremiumPriceDetailsEdit';
-import { Typography } from '@material-tailwind/react';
 import DemandPriceEdit from './DemandPriceEdit';
 
 const RATE_PARAMETER_OPTIONS = [
@@ -26,41 +24,152 @@ const STATUS_OPTIONS = [
     { value: 'INACTIVE', label: 'Inactive' },
 ];
 
-const PRICE_SCHEMA = Yup.object().shape({
-    baseFare: Yup.number().required('Base Fare Mini is required'),
-    baseKm: Yup.number().required('Base Km is required'),
-    baseFareMVP: Yup.number().required('Base Fare MUV is required'),
-    baseFareSedan: Yup.number().required('Base Fare Sedan is required'),
-    baseFareSuv: Yup.number().required('Base Fare Suv is required'),
-    ratePerKm: Yup.number().required('Rate Per Km Mini is required'),
-    ratePerKmMVP: Yup.number().required('Rate Per Km MUV is required'),
-    ratePerKmSuv: Yup.number().required('Rate Per Km Suv is required'),
-    ratePerKmSedan: Yup.number().required('Rate Per Km Sedan is required'),
-    // ratePerMin: Yup.number().required('Rate Per Min is required'),
-    additionalMin: Yup.number().required('Additional Min is required'),
-    rateParameter: Yup.string().required('Rate Parameter is required'),
-    surchargePercentage: Yup.number().required('Surcharge Percentage is required'),
-    // nightHours: Yup.number().required('Night Hours is required'),
-    nightCharge: Yup.number().required('Night Charge is required'),
-    cancellationMins: Yup.number().required('Cancellation Mins is required'),
-    cancellationCharge: Yup.number().required('Cancellation Charge is required'),
-    waitingMins: Yup.number().required('Waiting Mins is required'),
-    waitingCharge: Yup.number().required('Waiting Charge is required'),
-    status: Yup.string().required('Status is required'),
-    zone: Yup.string().required('Zone is required'), // Added zone validation
+const CATEGORY_OPTIONS = [
+    { value: 'ECONOMY_GO', label: 'Economy Go' },
+    { value: 'COMFORT', label: 'Comfort' },
+    { value: 'PREMIUM', label: 'Premium' },
+    { value: 'PREMIUM_XL', label: 'Premium XL' },
+];
+
+const CAR_TYPE_OPTIONS = [
+    { value: 'Mini', label: 'Mini' },
+    { value: 'Sedan', label: 'Sedan' },
+    { value: 'SUV', label: 'Suv' },
+    { value: 'MUV', label: 'Muv' },
+];
+
+const numberField = (label) => Yup.number()
+    .required(`${label} is required`)
+    .min(0, `${label} must be greater than or equal to 0`);
+
+const categoryPricingSchema = Yup.object().shape({
+    category: Yup.string().required('Category is required'),
+    carTypes: Yup.array()
+        .of(Yup.string().required('Car Type is required'))
+        .min(1, 'Car Type is required')
+        .required('Car Type is required'),
+    pricing: Yup.object()
+        .shape({
+            baseKm: numberField('Base Km'),
+            baseFare: numberField('Base Fare'),
+            cancelCharge: numberField('Cancellation Charge'),
+            peakHours: Yup.array().of(
+                Yup.object().shape({
+                    start: Yup.string().required('Start time is required'),
+                    end: Yup.string().required('End time is required'),
+                    kilometerPrice: numberField('Kilometer Price'),
+                })
+            ),
+            kilometerPrice: numberField('Kilometer Price'),
+            nightCharge: numberField('Night Charge'),
+            nightHoursFrom: Yup.string().required('Night Hours From is required'),
+            nightHoursTo: Yup.string().required('Night Hours To is required'),
+            waitingCharge: numberField('Waiting Charge'),
+            waitingMins: numberField('Waiting Mins'),
+            cancelMins : numberField('Cancellation Mins'),
+            freeExtraMinutes: numberField('Free Extra Minutes'),
+            additionalMinCharge: numberField('Additional Min Charge'),
+            surChargePercentage: numberField('Surcharge Percentage'),
+        })
+        .required('Pricing is required'),
 });
+
+const getCategoryLabel = (value) => CATEGORY_OPTIONS.find((option) => option.value === value)?.label || value;
+const getCarTypeLabel = (value) => CAR_TYPE_OPTIONS.find((option) => option.value === value)?.label || value;
+
+const PRICE_SCHEMA = Yup.object().shape({
+    serviceType: Yup.string().required('Service Type is required'),
+    type: Yup.string().required('Type is required'),
+    zone: Yup.string().required('Zone is required'),
+    rateParameter: Yup.string().required('Rate Parameter is required'),
+    status: Yup.string().required('Status is required'),
+    categoryPricings: Yup.array()
+        .of(categoryPricingSchema)
+        .min(1, 'At least one category pricing is required')
+        .test('unique-category-car-types', function (items = []) {
+            const seen = new Set();
+
+            for (const item of items) {
+                if (!item?.category || !Array.isArray(item?.carTypes)) continue;
+
+                for (const carType of item.carTypes) {
+                    const key = `${item.category}:${carType}`;
+
+                    if (seen.has(key)) {
+                        return this.createError({
+                            message: `${getCategoryLabel(item.category)} + ${getCarTypeLabel(carType)} already exists`,
+                        });
+                    }
+
+                    seen.add(key);
+                }
+            }
+
+            return true;
+        })
+        .required('Category pricing is required'),
+});
+
+const emptyCategoryPricing = {
+    category: '',
+    carTypes: [],
+    pricing: {
+        baseKm: '',
+        baseFare: '',
+        kilometerPrice: '',
+        cancelCharge: '',
+        nightCharge: '',
+        waitingCharge: '',
+        cancelMins: '',
+        waitingMins:'',
+        freeExtraMinutes: '',
+        additionalMinCharge: '',
+        surChargePercentage: 0,
+        nightHoursFrom: '',
+        nightHoursTo: '',
+        peakHours: [],
+    },
+};
+
+const cloneCategoryPricing = () => JSON.parse(JSON.stringify(emptyCategoryPricing));
+const toNumber = (value) => Number(value || 0);
+const toTimeValue = (timeString) => timeString ? String(timeString).slice(0, 5) : '';
+const FormLevelError = ({ error }) => (
+    typeof error === 'string' ? <div className="text-red-500 text-sm">{error}</div> : null
+);
+
+const normalizeCategoryPricings = (priceData) => {
+    if (Array.isArray(priceData?.categoryPricings) && priceData.categoryPricings.length > 0) {
+        return priceData.categoryPricings.map((item) => ({
+            category: item.category || '',
+            carTypes: Array.isArray(item.carTypes) ? item.carTypes : [],
+            pricing: {
+                baseKm: item.pricing?.baseKm ?? '',
+                baseFare: item.pricing?.baseFare ?? '',
+                kilometerPrice: item.pricing?.kilometerPrice ?? '',
+                cancelCharge: item.pricing?.cancelCharge ?? '',
+                nightCharge: item.pricing?.nightCharge ?? '',
+                waitingCharge: item.pricing?.waitingCharge ?? '',
+                waitingMins: Utils.convertTimeFormatToMinutes(item.pricing?.waitingMins) ?? '',
+                cancelMins: Utils.convertTimeFormatToMinutes(item.pricing?.cancelMins) ?? '',
+                freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
+                additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
+                surChargePercentage: item.pricing?.surChargePercentage ?? 0,
+                nightHoursFrom: toTimeValue(item.pricing?.nightHoursFrom),
+                nightHoursTo: toTimeValue(item.pricing?.nightHoursTo),
+                peakHours: Array.isArray(item.pricing?.peakHours) ? item.pricing.peakHours : [],
+            },
+        }));
+    }
+
+    return [cloneCategoryPricing()];
+};
 
 const PriceEdit = () => {
     const [initialValues, setInitialValues] = useState(null);
-    const [serviceAreas, setServiceAreas] = useState([]);
     const { id } = useParams();
     const navigate = useNavigate();
-    const [peakHours, setPeakHours] = useState([]);
-    const [demandRules, setDemandRules] = useState([]);
-    const [premiumConfig ,setPremiumConfig] = useState({});
-    const initialPeakHoursRef = useRef([]);
-    const initialPremiumRef = useRef({});
-    const initialDemandPriceRef = useRef([]); 
+    const initialValuesRef = useRef(null);
 
     useEffect(() => {
         fetchPriceDetails();
@@ -70,103 +179,77 @@ const PriceEdit = () => {
         try {
             const data = await ApiRequestUtils.get(`${API_ROUTES.RIDES_PRICE_DETAILS}/${id}`);
             if (data?.success) {
-                setInitialValues({
-                    baseFare: data.data.baseFare,
-                    baseKm: data.data.baseKm,
-                    baseFareMVP: data.data.baseFareMVP,
-                    baseFareSedan: data.data.baseFareSedan,
-                    baseFareSuv: data.data.baseFareSuv,
-                    ratePerKm: data.data.kilometerPrice,
-                    ratePerKmMVP: data.data.kilometerPriceMVP,
-                    ratePerKmSedan: data.data.kilometerPriceSedan,
-                    ratePerKmSuv: data.data.kilometerPriceSuv,
-                    // ratePerMin: data.data.minCharge,
-                    additionalMin: data.data.additionalMinCharge,
-                    rateParameter: data.data.rateParameter,
-                    surchargePercentage: data.data.surChargePercentage,
-                    nightHoursFrom: convertToTimeFormat(data?.data?.nightHoursFrom),
-                    nightHoursTo: convertToTimeFormat(data?.data?.nightHoursTo),
-                    nightCharge: data.data.nightCharge,
-                    cancellationMins: Utils.convertTimeFormatToMinutes(data.data.cancelMins),
-                    cancellationCharge: data.data.cancelCharge,
-                    status: data.data.status == 1 ? "ACTIVE": 'IN_ACTIVE',
-                    zone: data.data.zone || '',
-                    freeExtraMinutes: data.data.freeExtraMinutes || '',
-                    driverCancelMins: Utils.convertTimeFormatToMinutes(data.data.driverCancelMins) || '',
-                    driverFreeCancellationsPerDay: data.data.driverFreeCancellationsPerDay || '',
-                    driverCancellationCharge: data.data.driverCancellationCharge || '',
-                    waitingMins: Utils.convertTimeFormatToMinutes(data.data.waitingMins),
-                    waitingCharge: data.data.waitingCharge,
-                });
-                setPeakHours(data.data.peakHours || []);
-                initialPeakHoursRef.current = data.data.peakHours;
-                setDemandRules(data.data.demandRules || []);
-                initialDemandPriceRef.current = data.data.demandRules || [];
-                initialPremiumRef.current = data.data.premiumConfig;
-                setPremiumConfig(data.data.premiumConfig || []);
+                const priceData = data.data || {};
+                const values = {
+                    serviceType: priceData.serviceType || 'RIDES',
+                    type: priceData.type || 'Rides',
+                    zone: priceData.zone || '',
+                    rateParameter: priceData.rateParameter || 'NORMAL_RIDE',
+                    status: priceData.status == 1 ? 'ACTIVE' : 'INACTIVE',
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) || '',
+                    driverFreeCancellationsPerDay: priceData.driverFreeCancellationsPerDay || '',
+                    driverCancellationCharge: priceData.driverCancellationCharge || '',
+                    demandRules: Array.isArray(priceData.demandRules) ? priceData.demandRules : [],
+                    categoryPricings: normalizeCategoryPricings(priceData),
+                };
 
+                initialValuesRef.current = values;
+                setInitialValues(values);
             }
         } catch (error) {
-            console.error("Error fetching price details:", error);
+            console.error('Error fetching price details:', error);
         }
     };
 
-    const convertToTimeFormat = (timeString) => {
-        return timeString ? timeString.slice(0, 5) : "";
+    const hasFormChanged = (values) => {
+        return JSON.stringify(values) !== JSON.stringify(initialValuesRef.current);
     };
-
-    const hasPeakHoursChanged = () => {
-        return JSON.stringify(peakHours) !== JSON.stringify(initialPeakHoursRef.current);
-    };
-    const hasPremiumConfig = () => {
-        return JSON.stringify(premiumConfig) !== JSON.stringify(initialPremiumRef.current);
-    }
-    const hasDemandPriceChanged = () => {
-        return JSON.stringify(demandRules) !== JSON.stringify(initialDemandPriceRef.current);
-    }
 
     const onSubmit = async (values) => {
         try {
             const reqBody = {
-                packageId:Number(id),
-                baseKm: Number(values.baseKm),
-                baseFare: Number(values.baseFare),
-                baseFareMVP: Number(values.baseFareMVP),
-                baseFareSuv: Number(values.baseFareSuv),
-                baseFareSedan: Number(values.baseFareSedan),
-                kilometerPrice: Number(values.ratePerKm),
-                kilometerPriceSedan: Number(values.ratePerKmSedan),
-                kilometerPriceSuv: Number(values.ratePerKmSuv),
-                kilometerPriceMVP: Number(values.ratePerKmMVP),
-                // minCharge: Number(values.ratePerMin),
-                additionalMinCharge: Number(values.additionalMin),
-                freeExtraMinutes: Number(values.freeExtraMinutes),
-                rateParameter: values.rateParameter,
-                surChargePercentage: Number(values.surchargePercentage),
-                nightHoursFrom: Utils.formatTimeWithSeconds(values.nightHoursFrom),
-                nightHoursTo: Utils.formatTimeWithSeconds(values.nightHoursTo),
-                nightCharge: Number(values.nightCharge),
-                cancelMins: Utils.convertMinutesToTimeFormat(values.cancellationMins),
-                cancelCharge: Number(values.cancellationCharge),
-                status: values.status == 'ACTIVE' ? 1 : 0,
-                serviceType:'RIDES',
-                peakHours: peakHours,
-                demandRules: demandRules,
-                premiumConfig:premiumConfig,
+                packageId: Number(id),
+                serviceType: values.serviceType,
+                type: values.type,
                 zone: values.zone,
+                rateParameter: values.rateParameter,
+                status: values.status === 'ACTIVE' ? 1 : 0,
                 driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
-                driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay),
-                driverCancellationCharge: Number(values.driverCancellationCharge),
-                waitingMins: Utils.convertMinutesToTimeFormat(values.waitingMins),
-                waitingCharge: Number(values.waitingCharge),
+                driverFreeCancellationsPerDay: values.driverFreeCancellationsPerDay,
+                driverCancellationCharge: values.driverCancellationCharge,
+                demandRules: values.demandRules,
+                categoryPricings: values.categoryPricings.map((categoryPricing) => ({
+                    category: categoryPricing.category,
+                    carTypes: categoryPricing.carTypes,
+                    pricing: {
+                        baseKm: toNumber(categoryPricing.pricing.baseKm),
+                        baseFare: toNumber(categoryPricing.pricing.baseFare),
+                        kilometerPrice: toNumber(categoryPricing.pricing.kilometerPrice),
+                        cancelCharge: toNumber(categoryPricing.pricing.cancelCharge),
+                        nightCharge: toNumber(categoryPricing.pricing.nightCharge),
+                        waitingCharge: toNumber(categoryPricing.pricing.waitingCharge),
+                        waitingMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.waitingMins),
+                        cancelMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.cancelMins),
+                        freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
+                        additionalMinCharge: toNumber(categoryPricing.pricing.additionalMinCharge),
+                        surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage),
+                        nightHoursFrom: Utils.formatTimeWithSeconds(categoryPricing.pricing.nightHoursFrom),
+                        nightHoursTo: Utils.formatTimeWithSeconds(categoryPricing.pricing.nightHoursTo),
+                        peakHours: categoryPricing.pricing.peakHours.map((peakHour) => ({
+                            start: peakHour.start,
+                            end: peakHour.end,
+                            kilometerPrice: toNumber(peakHour.kilometerPrice),
+                        })),
+                    },
+                })),
             };
-            // console.log("Request Body for Update:", reqBody);
+
             const response = await ApiRequestUtils.update(API_ROUTES.RIDES_PRICE_EDIT, reqBody);
             if (response?.success) {
                 navigate('/dashboard/finance/master-price', { state: { priceUpdated: true } });
             }
         } catch (error) {
-            console.error("Error updating price details:", error);
+            console.error('Error updating price details:', error);
         }
     };
 
@@ -174,291 +257,178 @@ const PriceEdit = () => {
         <div className="p-4 mx-auto bg-white">
             <h2 className="text-2xl font-bold mb-4">Rides Pricing Edit</h2>
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
-                {({ handleSubmit, setFieldValue, isValid, dirty, values }) => (
-                    <Form className="space-y-4">
+                {({ handleSubmit, setFieldValue, isValid, values, errors }) => (
+                    <Form className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
+                                <label className="text-sm font-medium text-gray-700">Service Type</label>
+                                <Field type="text" name="serviceType" disabled className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" />
+                                <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
+                                <label className="text-sm font-medium text-gray-700">Type</label>
+                                <Field type="text" name="type" disabled className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" />
+                                <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
+                            </div>
+                            <div>
                                 <label className="text-sm font-medium text-gray-700">Zone</label>
-                                <Field
-                                    type="text"
-                                    name="zone"
-                                    disabled
-                                    className="p-2 w-full rounded-md border-gray-300 shadow-sm bg-gray-200"
-                                />
+                                <Field type="text" name="zone" disabled className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" />
                                 <ErrorMessage name="zone" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Base Fare Mini</label>
-                                <Field type="number" name="baseFare" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFare" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Base Fare Sedan</label>
-                                <Field type="number" name="baseFareSedan" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFareSedan" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                            <label className="text-sm font-medium text-gray-700">Base Fare SUV</label>
-                                <Field type="number" name="baseFareSuv" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFareSuv" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Base Fare MUV</label>
-                                <Field type="number" name="baseFareMVP" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="baseFareMVP" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km Mini</label>
-                                <Field type="number" name="ratePerKm" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km Sedan</label>
-                                <Field type="number" name="ratePerKmSedan" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKmSedan" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km SUV</label>
-                                <Field type="number" name="ratePerKmSuv" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKmSuv" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Km MUV</label>
-                                <Field type="number" name="ratePerKmMVP" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerKmMVP" component="div" className="text-red-500 text-sm" />
-                            </div> */}
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Min</label>
-                                <Field type="number" name="ratePerMin" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-sm" />
-                            </div> */}
                             <div>
                                 <label className="text-sm font-medium text-gray-700">Status</label>
                                 <Select
                                     options={STATUS_OPTIONS}
-                                    onChange={(selectedOption) => setFieldValue('status', selectedOption.value)}
-                                    value={STATUS_OPTIONS.find(option => option.value === values?.status)}
+                                    value={STATUS_OPTIONS.find((option) => option.value === values?.status) || null}
+                                    onChange={(selectedOption) => setFieldValue('status', selectedOption?.value || '')}
                                     placeholder="Select Status"
                                     className="w-full"
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
                             </div>
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Rate Per Min</label>
-                                <Field type="number" name="ratePerMin" className="p-2 w-full rounded-md border-gray-300" />
-                            </div> */}
-                            {/* <div>
-                                <label className="text-sm font-medium text-gray-700">Additional Min</label>
-                                <Field type="number" name="additionalMin" className="p-2 w-full rounded-md border-gray-300" />
-                            </div> */}
                             <div>
-                                <label className="text-sm font-medium text-gray-700">Surcharge Percentage</label>
-                                <Field type="number" name="surchargePercentage" className="p-2 w-full rounded-md border-2 border-gray-300" />
+                                <label className="text-sm font-medium text-gray-700">Rate Parameter</label>
+                                <Select
+                                    options={RATE_PARAMETER_OPTIONS}
+                                    value={RATE_PARAMETER_OPTIONS.find((option) => option.value === values?.rateParameter) || null}
+                                    onChange={(selectedOption) => setFieldValue('rateParameter', selectedOption?.value || '')}
+                                    placeholder="Select Rate Parameter"
+                                    className="w-full"
+                                    disabled
+                                />
+                                <ErrorMessage name="rateParameter" component="div" className="text-red-500 text-sm" />
                             </div>
-                             <div>
-                                <label className="text-sm font-medium text-gray-700">Base Km</label>
-                                <Field type="number" name="baseKm" className="p-2 w-full rounded-md border-2 border-gray-300" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">freeExtraMinutes</label>
-                                <Field type="number" name="freeExtraMinutes" className="p-2 w-full rounded-md border-2 border-gray-300" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Night Hours (10:00 PM - 06:00 AM)</label>
-                                <div className="flex items-center">
-                                    <Field
-                                        type="time"
-                                        name="nightHoursFrom"
-                                        min="22:00"
-                                        max="23:59"
-                                        className="p-2 w-full rounded-l-md border-2 border-gray-300 shadow-sm"
-                                    />
-                                    <span className="px-3 py-2 bg-gray-100 border-t border-b border-gray-300">to</span>
-                                    <Field
-                                        type="time"
-                                        name="nightHoursTo"
-                                        min="05:00"
-                                        max="08:00"
-                                        className="p-2 w-full rounded-r-md border-2 border-gray-300 shadow-sm"
-                                    />
+                        </div>
+
+                        <div className="overflow-x-auto m-2">
+                            <Typography className="font-semibold">Driver Cancellation</Typography>
+                            <table className="w-full border border-collapse text-sm text-center">
+                                <thead>
+                                    <tr className="bg-primary text-white">
+                                        <th>Driver Cancel Mins</th>
+                                        <th>Driver Free Cancellations Per Day</th>
+                                        <th>Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="bg-gray-100">
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverCancelMins" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverCancelMins" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverFreeCancellationsPerDay" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverFreeCancellationsPerDay" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                        <td className="border p-2">
+                                            <Field type="number" name="driverCancellationCharge" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="driverCancellationCharge" component="div" className="text-red-500 text-sm" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <DemandPriceEdit
+                            title="Edit Demand Price Rules"
+                            demandRules={values?.demandRules || []}
+                            setDemandRules={(data) => setFieldValue('demandRules', data)}
+                        />
+
+                        <FieldArray name="categoryPricings">
+                            {({ push, remove }) => (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <Typography className="text-lg font-semibold">Category Pricings</Typography>
+                                        <Button type="button" className="bg-black text-white" onClick={() => push(cloneCategoryPricing())}>
+                                            Add Category
+                                        </Button>
+                                    </div>
+                                    <FormLevelError error={errors.categoryPricings} />
+
+                                    {values?.categoryPricings?.map((categoryPricing, index) => (
+                                        <div key={index} className="border border-gray-300 rounded-lg p-4 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <Typography className="font-semibold">Category Pricing</Typography>
+                                                {(values?.categoryPricings?.length || 0) > 1 ? (
+                                                    <Button type="button" className="bg-red-500 text-white" onClick={() => remove(index)}>
+                                                        Remove
+                                                    </Button>
+                                                ) : null}
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="text-sm font-medium text-gray-700">Category</label>
+                                                    <Select
+                                                        options={CATEGORY_OPTIONS}
+                                                        value={CATEGORY_OPTIONS.find((option) => option.value === categoryPricing.category) || null}
+                                                        onChange={(selectedOption) => setFieldValue(`categoryPricings.${index}.category`, selectedOption?.value || '')}
+                                                        placeholder="Select Category"
+                                                        className="w-full"
+                                                    />
+                                                    <ErrorMessage name={`categoryPricings.${index}.category`} component="div" className="text-red-500 text-sm" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-sm font-medium text-gray-700">Car Types</label>
+                                                    <Select
+                                                        isMulti
+                                                        options={CAR_TYPE_OPTIONS}
+                                                        value={CAR_TYPE_OPTIONS.filter((option) => categoryPricing.carTypes?.includes(option.value))}
+                                                        onChange={(selectedOptions) => setFieldValue(
+                                                            `categoryPricings.${index}.carTypes`,
+                                                            selectedOptions ? selectedOptions.map((option) => option.value) : []
+                                                        )}
+                                                        placeholder="Select Car Types"
+                                                        className="w-full"
+                                                    />
+                                                    <ErrorMessage name={`categoryPricings.${index}.carTypes`} component="div" className="text-red-500 text-sm" />
+                                                </div>
+                                                {[
+                                                    ['Base Km', 'baseKm'],
+                                                    ['Base Fare', 'baseFare'],
+                                                    ['Kilometer Price', 'kilometerPrice'],
+                                                    ['Cancellation Mins', 'cancelMins'],
+                                                    ['Cancellation Charge', 'cancelCharge'],
+                                                    ['Night Charge', 'nightCharge'],
+                                                    ['Waiting Mins', 'waitingMins'],
+                                                    ['Waiting Charge', 'waitingCharge'],
+                                                    ['Free Extra Minutes', 'freeExtraMinutes'],
+                                                    ['Additional Min Charge', 'additionalMinCharge'],
+                                                ].map(([label, name]) => (
+                                                    <div key={name}>
+                                                        <label className="text-sm font-medium text-gray-700">{label}</label>
+                                                        <Field type="number" name={`categoryPricings.${index}.pricing.${name}`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                                        <ErrorMessage name={`categoryPricings.${index}.pricing.${name}`} component="div" className="text-red-500 text-sm" />
+                                                    </div>
+                                                ))}
+                                                <div>
+                                                    <label className="text-sm font-medium text-gray-700">Night Hours</label>
+                                                    <div className="flex items-center">
+                                                        <Field type="time" name={`categoryPricings.${index}.pricing.nightHoursFrom`} className="p-2 w-full rounded-l-md border-2 border-gray-300 shadow-sm" />
+                                                        <span className="px-3 py-2 bg-gray-100 border-t border-b border-gray-300">to</span>
+                                                        <Field type="time" name={`categoryPricings.${index}.pricing.nightHoursTo`} className="p-2 w-full rounded-r-md border-2 border-gray-300 shadow-sm" />
+                                                    </div>
+                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.nightHoursFrom`} component="div" className="text-red-500 text-sm" />
+                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.nightHoursTo`} component="div" className="text-red-500 text-sm" />
+                                                </div>
+                                            </div>
+
+                                            <RidesPeakHourTableEdit
+                                                initialPriceData={categoryPricing.pricing.peakHours}
+                                                onUpdate={(data) => setFieldValue(`categoryPricings.${index}.pricing.peakHours`, data)}
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
-                                <ErrorMessage name="nightHoursFrom" component="div" className="text-red-500 text-sm" />
-                                <ErrorMessage name="nightHoursTo" component="div" className="text-red-500 text-sm" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Night Charge</label>
-                                <Field type="number" name="nightCharge" className="p-2 w-full rounded-md border-2 border-gray-300" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
-                                <Field type="number" name="cancellationMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
-                                <Field type="number" name="cancellationCharge" className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                <ErrorMessage name="cancellationCharge" component="div" className="text-red-500 text-xs mt-1" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Waiting Mins</label>
-                                <Field type="number" name="waitingMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
-                                <ErrorMessage name="waitingMins" component="div" className="text-red-500 text-xs mt-1" />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Waiting Charges Apply After</label>
-                                <Field type="number" name="waitingCharge" className="mt-1 p-3 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                <ErrorMessage name="waitingCharge" component="div" className="text-red-500 text-xs mt-1" />
-                            </div>
-                           
-                        </div>
+                            )}
+                        </FieldArray>
 
-                        {/* Beautiful Table - Same as Details Page */}
-                        <div className="mt-12">
-                            <div className="overflow-x-auto rounded-lg shadow border border-gray-300">
-                                <table className="min-w-full">
-                                    <thead className="bg-blue-600">
-                                        <tr>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Car Type</th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Base Fare</th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Km</th>
-                                            {/* <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Rate Per Min</th> */}
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-white uppercase tracking-wider">Additional Min Charge</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        <tr className="hover:bg-gray-50">
-                                            <td className="px-6 py-1 font-medium text-gray-800">MINI</td>
-                                            <td className="px-6 py-1">
-                                                <Field
-                                                    type="number"
-                                                    name="baseFare"
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                />
-                                                <ErrorMessage name="baseFare" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            <td className="px-6 py-1">
-                                                <Field
-                                                    type="number"
-                                                    name="ratePerKm"
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                />
-                                                <ErrorMessage name="ratePerKm" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
-                                            <td className="px-6 py-1 border">
-                                                <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                        </tr>
-                                        <tr className="bg-gray-50 hover:bg-gray-100">
-                                            <td className="px-6 py-1 font-medium text-gray-800">SEDAN</td>
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="baseFareSedan" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="baseFareSedan" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerKmSedan" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerKmSedan" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                        </tr>
-                                        <tr className="hover:bg-gray-50">
-                                            <td className="px-6 py-1 font-medium text-gray-800">SUV</td>
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="baseFareSuv" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="baseFareSuv" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerKmSuv" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerKmSuv" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                        </tr>
-                                        <tr className="bg-gray-50 hover:bg-gray-100">
-                                            <td className="px-6 py-1 font-medium text-gray-800">MUV</td>
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="baseFareMVP" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="baseFareMVP" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerKmMVP" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerKmMVP" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                            {/* {/* <td className="px-6 py-1">
-                                                <Field type="number" name="ratePerMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="ratePerMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td> */}
-                                            <td className="px-6 py-1">
-                                                <Field type="number" name="additionalMin" className="w-full p-2 border border-gray-300 rounded-md" />
-                                                <ErrorMessage name="additionalMin" component="div" className="text-red-500 text-xs mt-1" />
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                    <div className='overflow-x-auto m-2'>
-                        <Typography className='font-semibold'>Driver Cancellation</Typography>
-                        <table className="w-full border border-collapse text-sm text-center">
-                            <thead>
-                                <tr className="bg-primary  text-white">
-                                    <th>Driver Cancel Mins</th>
-                                    <th>Driver Free Cancellations Per Day</th>
-                                    <th>Driver Cancellation Charge</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td className="border p-2">
-                                        <Field
-                                            type="number"
-                                            name="driverCancelMins"
-                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
-                                        />
-                                    </td>
-                                    <td className="border p-2">
-                                        <Field
-                                            type="number"
-                                            name="driverFreeCancellationsPerDay"
-                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
-                                        />
-                                    </td>
-                                    <td className="border p-2">
-                                        <Field
-                                            type="number"
-                                            name="driverCancellationCharge"
-                                            className="p-2 w-full rounded-md border-gray-300 shadow-sm"
-                                        />
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <DemandPriceEdit demandRules={demandRules} setDemandRules={setDemandRules} />
-                        <RidesPeakHourTableEdit initialPriceData={peakHours} onUpdate={(data)=> setPeakHours(data)}/>
-                        <PremiumPriceDetailsEdit initialPremiumData={premiumConfig} onUpdate={(data)=> setPremiumConfig(data) } />
                         <div className="flex flex-row">
                             <Button fullWidth onClick={() => navigate('/dashboard/finance/master-price')} className="my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl">
                                 Cancel
                             </Button>
-                            <Button fullWidth color="blue" onClick={handleSubmit} disabled={!(dirty || hasPeakHoursChanged() || hasPremiumConfig() || hasDemandPriceChanged()) || !isValid} className="my-6 mx-2">
+                            <Button fullWidth color="blue" onClick={handleSubmit} disabled={!values || !hasFormChanged(values) || !isValid} className="my-6 mx-2">
                                 Save Changes
                             </Button>
                         </div>

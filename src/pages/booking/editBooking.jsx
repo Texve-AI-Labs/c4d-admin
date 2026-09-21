@@ -12,6 +12,108 @@ import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { buildAdminDiscountPayload, isAdminDiscountEffective, sanitizeAdminDiscountValue } from './utils/adminDiscount';
 import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
 
+const getZoneCategories = (response) => {
+    const rows = Array.isArray(response?.data) ? response.data : [];
+    const nestedCategories = Array.isArray(response?.categories)
+        ? response.categories
+        : Array.isArray(response?.data?.categories)
+            ? response.data.categories
+            : [];
+    const rowCategories = rows.filter((item) => item?.category && item?.packageType !== undefined);
+    return [...nestedCategories, ...rowCategories].filter((item, index, list) =>
+        list.findIndex((candidate) => candidate.id === item.id) === index
+    );
+};
+
+const isRentalService = (serviceType) => ['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(serviceType);
+const isCategoryService = (serviceType) => ['RIDES', 'AUTO'].includes(serviceType) || isRentalService(serviceType);
+const getRentalCategoryContext = (serviceType) => {
+    if (serviceType === 'RENTAL_HOURLY_PACKAGE') return { packageType: 'LOCAL', bookingType: null };
+    if (serviceType === 'RENTAL_DROP_TAXI') return { packageType: 'OUTSTATION', bookingType: 'DROP ONLY' };
+    if (serviceType === 'RENTAL') return { packageType: 'OUTSTATION', bookingType: 'ROUND TRIP' };
+    return null;
+};
+
+const getMatchingCategories = (categories, values) => {
+    if (!isCategoryService(values?.serviceType)) return [];
+    return categories
+        .filter((item) => {
+            if (!item?.isVisible || String(item.status).toUpperCase() !== 'ACTIVE') return false;
+            const rentalContext = getRentalCategoryContext(values.serviceType);
+            if (!rentalContext) return true;
+            if (String(item.packageType || '').toUpperCase() !== rentalContext.packageType) return false;
+            return rentalContext.bookingType === null
+                ? item.bookingType == null
+                : String(item.bookingType || '').toUpperCase() === rentalContext.bookingType;
+        })
+        .sort((a, b) => Number(a.displayOrder || 0) - Number(b.displayOrder || 0));
+};
+
+// Categories are catalog entries; packageId must come from the zone package rows.
+const getServicePackageId = (packages, serviceType, packageType, bookingType, selectedPackageId) => {
+    const normalizedServiceType = String(serviceType || '').toUpperCase();
+    const isRental = ['RENTAL', 'RENTAL_DROP_TAXI', 'RENTAL_HOURLY_PACKAGE'].includes(normalizedServiceType);
+    const packageServiceType = isRental ? 'RENTAL' : normalizedServiceType;
+    const normalizedPackageType = String(packageType || '').toUpperCase();
+    const normalizedBookingType = String(bookingType || '').toUpperCase();
+    const selectedPackageNumber = Number(selectedPackageId);
+    const selectedPackage = (packages || []).find((item) => Number(item?.id) === selectedPackageNumber);
+    const packageTypeMatches = (item) => {
+        const itemServiceType = String(item?.serviceType || '').toUpperCase();
+        const itemType = String(item?.type || '').toUpperCase();
+        const serviceMatches = packageServiceType === 'RENTAL'
+            ? itemServiceType === 'RENTAL' || ['LOCAL', 'OUTSTATION'].includes(itemType)
+            : itemServiceType === packageServiceType || itemType === packageServiceType;
+        if (!serviceMatches || !isRental) return serviceMatches;
+        return itemType === normalizedPackageType;
+    };
+    const packageTypeMatchesWithBooking = (item) => {
+        if (!packageTypeMatches(item)) return false;
+        const itemBookingType = String(item?.bookingType || item?.tripType || '').toUpperCase();
+        return normalizedPackageType === 'LOCAL'
+            ? item.bookingType == null
+            : itemBookingType === normalizedBookingType;
+    };
+    const matchingPackages = (packages || []).filter(packageTypeMatchesWithBooking);
+    const fallbackPackages = (packages || []).filter(packageTypeMatches);
+    const packageId = selectedPackage?.id || (isRental && selectedPackageNumber > 0
+        ? selectedPackageNumber
+        : matchingPackages[0]?.id || fallbackPackages[0]?.id);
+    const numericPackageId = Number(packageId);
+    console.log('[CATEGORY PACKAGE RESOLUTION]', {
+        serviceType,
+        packageType,
+        bookingType,
+        selectedPackageId,
+        packageIds: (packages || []).map((item) => item?.id),
+        matchingPackageIds: matchingPackages.map((item) => item?.id),
+        fallbackPackageIds: fallbackPackages.map((item) => item?.id),
+        packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
+    });
+    return Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined;
+};
+
+// Category services use the active category pricing returned with the quote.
+const getSelectedCategoryPricing = (quoteDetails, values) => {
+    const category = quoteDetails?.category || values?.category;
+    const categoryPricing = quoteDetails?.expectedPackageDetails?.categoryPricings?.find(
+        (item) => String(item?.category || '').toUpperCase() === String(category || '').toUpperCase() &&
+            String(item?.status).toUpperCase() === 'ACTIVE'
+    );
+    const pricing = categoryPricing?.pricing || {};
+    const tripKey = String(values?.tripType || '').trim().toUpperCase().replace(/\s+/g, '_');
+    const trip = pricing[tripKey] || {};
+    return {
+        pricing,
+        common: pricing.common || pricing,
+        trip,
+        ac: trip[String(values?.acType || '').toUpperCase()] || {},
+    };
+};
+
+const isCategoryPricingService = (serviceType) =>
+    ['RIDES', 'AUTO', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(serviceType);
+
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
     if (!suggestion || typeof suggestion !== 'object') return '';
@@ -52,6 +154,7 @@ const EditBooking = (props) => {
     const [loading, setLoading] = useState(true);
     const [bookingData, setBookingData] = useState(null);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
     const [driverPackageNotice, setDriverPackageNotice] = useState(null);
     const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
@@ -60,6 +163,9 @@ const EditBooking = (props) => {
     const [mapZoom, setMapZoom] = useState(10);
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
+    const [rentalRoundTripMinReturnAt, setRentalRoundTripMinReturnAt] = useState('');
+    const [rentalRoundTripEstimatedDurationText, setRentalRoundTripEstimatedDurationText] = useState('');
+    const [rentalRoundTripReturnError, setRentalRoundTripReturnError] = useState('');
     const [pickupPlaceId, setPickupPlaceId] = useState('');
     const [dropPlaceId, setDropPlaceId] = useState('');
     const mapRef = useRef(null);
@@ -79,6 +185,7 @@ const EditBooking = (props) => {
     const [cityLimitExceedModal, setCityLimitExceedModal] = useState(false);
     const [zoneErrorModal, setZoneErrorModal] = useState({ show: false, text: '', title: '' });
     const [dropTaxiDistanceExceedModal, setDropTaxiDistanceExceedModal] = useState(false);
+    const [dropTaxiModalContent, setDropTaxiModalContent] = useState("Booking not available for the selected route. Try outstation service.");
     const [driverPickUpLocation, setDriverPickUpLocation] = useState(null);
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
     const [serviceAreaLoading, setServiceAreaLoading] = useState(false);
@@ -312,6 +419,11 @@ const EditBooking = (props) => {
 
     const EDIT_BOOKING_SCHEMA = Yup.object().shape({
         sourceType: Yup.string().required('Source Type is required'),
+        categoryId: Yup.number().when('serviceType', {
+            is: (val) => ['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'AUTO'].includes(val),
+            then: () => Yup.number().typeError('Please select a category').moreThan(0, 'Please select a category').required('Please select a category'),
+            otherwise: () => Yup.number().nullable(),
+        }),
     });
 
     const addQuotationLog = (values, quoteDetails) => {
@@ -340,7 +452,7 @@ const EditBooking = (props) => {
                 { endDate: moment(`${values?.toDate} ${values?.toTime}`, "YYYY-MM-DD HH:mm:ss").toISOString() || null }
             ),
             serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'DROP TAXI' : values?.serviceType === "RENTAL_HOURLY_PACKAGE" ? "HOURLY PACKAGE" : values?.serviceType === "RENTAL" ? "OUTSTATION" : values?.serviceType || '',
-            cabType: values?.carType || '',
+            ...(!isCategoryPricingService(values?.serviceType) && { cabType: values?.carType || '' }),
         };
         setQuotationLogs((prevLogs) => [...prevLogs, newLog]);
     };
@@ -461,16 +573,18 @@ const EditBooking = (props) => {
             };
             const mappedServiceType = serviceTypeMap[serviceType] || serviceType;
 
-            // AUTO bookings don't use package-based pricing; skip without logging an error
-            if (mappedServiceType === 'AUTO') {
+            // Parcel has no zone-package/category lookup. AUTO still needs categories.
+            if (mappedServiceType === 'PARCEL') {
                 setPackageTypeSelectedData([]);
+                setCategoryOptions([]);
                 setLuggageCapacityMap({});
                 return;
             }
 
-            if (!['DRIVER', 'RENTAL', 'RIDES'].includes(mappedServiceType)) {
+            if (!['DRIVER', 'RENTAL', 'RIDES', 'AUTO'].includes(mappedServiceType)) {
                 console.error('Invalid serviceType:', mappedServiceType);
                 setPackageTypeSelectedData([]);
+                setCategoryOptions([]);
                 setLuggageCapacityMap({});
                 return;
             }
@@ -489,8 +603,6 @@ const EditBooking = (props) => {
                     dropLong,
                     packageType,
                 });
-                setPackageTypeSelectedData([]);
-                setLuggageCapacityMap({});
                 return;
             }
 
@@ -505,9 +617,9 @@ const EditBooking = (props) => {
                 zone: zone || '',
                 source: 'ROOTCABS WEBSITE',
             };
-            // if (isDriverService) {
-            //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
-            // }
+            if (isDriverService) {
+                console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+            }
             const data = isDriverService
                 ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
                 : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
@@ -527,6 +639,7 @@ const EditBooking = (props) => {
 
             if (data?.success && Array.isArray(data?.data)) {
                 setPackageTypeSelectedData(data?.data);
+                setCategoryOptions(getZoneCategories(data));
                 setLuggageCapacityMap(data?.luggageCapacity || {});
             } else {
                 if (isDriverService) {
@@ -537,8 +650,11 @@ const EditBooking = (props) => {
                     });
                 }
                 console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
-                setPackageTypeSelectedData([]);
-                setLuggageCapacityMap({});
+                if (!isDriverService) {
+                    setPackageTypeSelectedData([]);
+                    setCategoryOptions(getZoneCategories(data));
+                    setLuggageCapacityMap({});
+                }
             }
         } catch (error) {
             if (serviceType === 'DRIVER') {
@@ -548,14 +664,97 @@ const EditBooking = (props) => {
                 });
             }
             console.error('Error fetching package list:', error.message || error);
-            setPackageTypeSelectedData([]);
-            setLuggageCapacityMap({});
+            if (serviceType !== 'DRIVER') {
+                setPackageTypeSelectedData([]);
+                setCategoryOptions([]);
+                setLuggageCapacityMap({});
+            }
         } finally {
             setPackagesLoading(false);
         }
     }, [bookingData, currentPackageType, dropLocation, pickupLocation]);
 
-const getQuoteOutstationDetails = async (values) => {
+const estimateRentalRoundTripDates = async (values, setMinimumReturnAt, locationOverrides = {}) => {
+    const estimatePayload = {
+        pickupLat: locationOverrides.pickupLocation?.lat || values?.pickupLocation?.lat || (values?.pickupAddress ? bookingData?.pickupLat : undefined),
+        pickupLong: locationOverrides.pickupLocation?.lng || values?.pickupLocation?.lng || (values?.pickupAddress ? bookingData?.pickupLong : undefined),
+        dropLat: locationOverrides.dropLocation?.lat || values?.dropLocation?.lat || (values?.dropAddress ? bookingData?.dropLat : undefined),
+        dropLong: locationOverrides.dropLocation?.lng || values?.dropLocation?.lng || (values?.dropAddress ? bookingData?.dropLong : undefined),
+    };
+    if (Object.values(estimatePayload).some((value) => value === undefined || value === null)) {
+        return values;
+    }
+
+    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+    const estimate = await ApiRequestUtils.post(
+        API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
+        estimatePayload
+    );
+    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+    setRentalRoundTripEstimatedDurationText(estimate?.data?.estimatedDurationText || '');
+
+    const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
+    if (!estimate?.success || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+        return values;
+    }
+    if (!values?.rideDate || !values?.rideTime) {
+        return values;
+    }
+
+    const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
+    const minimumReturnAt = fromDateTime.clone().add(durationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm');
+    setMinimumReturnAt?.(minimumReturnAt);
+    const existingReturnAt = moment(`${values?.toDate} ${values?.toTime}`, 'YYYY-MM-DD HH:mm');
+    setRentalRoundTripReturnError(
+        existingReturnAt.isValid() && existingReturnAt.isBefore(moment(minimumReturnAt))
+            ? `Return time must be on or after ${moment(minimumReturnAt).format('DD-MM-YYYY HH:mm')}`
+            : ''
+    );
+    return values;
+};
+
+useEffect(() => {
+    const isRentalOutstationRoundTrip = bookingData &&
+        bookingData.serviceType === 'RENTAL' &&
+        String(bookingData.packageType || '').toUpperCase() === 'OUTSTATION' &&
+        String(bookingData.bookingType || '').replace(/_/g, ' ').toUpperCase() === 'ROUND TRIP';
+    if (!isRentalOutstationRoundTrip) {
+        return;
+    }
+
+    const values = {
+        serviceType: bookingData.serviceType,
+        packageTypeSelected: bookingData.packageType,
+        tripType: 'Round Trip',
+        rideDate: bookingData.fromDate ? moment(bookingData.fromDate).format('YYYY-MM-DD') : '',
+        rideTime: bookingData.fromDate ? moment(bookingData.fromDate).format('HH:mm') : '',
+        toDate: bookingData.toDate ? moment(bookingData.toDate).format('YYYY-MM-DD') : '',
+        toTime: bookingData.toDate ? moment(bookingData.toDate).format('HH:mm') : '',
+    };
+
+    estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt, {
+        pickupLocation: { lat: bookingData.pickupLat, lng: bookingData.pickupLong },
+        dropLocation: { lat: bookingData.dropLat, lng: bookingData.dropLong },
+    });
+}, [bookingData]);
+
+const getQuoteOutstationDetails = async (values, setFieldValue) => {
+    const isRentalOutstationRoundTrip =
+        values?.serviceType === 'RENTAL' &&
+        values?.packageTypeSelected === 'Outstation' &&
+        String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
+
+    console.log('[RENTAL ROUND TRIP CHECK]', {
+        serviceType: values?.serviceType,
+        packageType: values?.packageTypeSelected,
+        tripType: values?.tripType,
+        isRentalOutstationRoundTrip,
+    });
+
+    if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
+        await estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt);
+    }
+
     const zoneData = await zoneCheckUpFun(values);
     let actualZone = '';
     if (zoneData.success && zoneData.serviceArea) {
@@ -578,6 +777,7 @@ const getQuoteOutstationDetails = async (values) => {
         ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
         : (values?.tripType ? values.tripType.toUpperCase() : '');
 
+    const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
     const quoteData = {
         serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
         customerId: values?.customerId?.id,
@@ -585,8 +785,19 @@ const getQuoteOutstationDetails = async (values) => {
         fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
         ...(values?.serviceType !== 'DRIVER'
-            ? { carType: values?.carType || '' }
+            ? {}
             : { carType: values?.carType || '', transmissionType: values?.transmissionType || '' }),
+        ...(isCategoryService(values?.serviceType) && {
+            categoryId: selectedCategory?.id || Number(values?.categoryId) || undefined,
+            category: selectedCategory?.category || values?.category || undefined,
+            packageId: getServicePackageId(
+                Array.isArray(zoneData?.data) ? zoneData.data : packageTypeSelectedData,
+                values?.serviceType,
+                values?.packageTypeSelected,
+                values?.tripType,
+                values?.packageSelected
+            ),
+        }),
         pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
         pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
             driverStartLat: values?.driverPickUpLocation?.lat,
@@ -595,7 +806,7 @@ const getQuoteOutstationDetails = async (values) => {
         dropLong: values?.dropLocation?.lng ? values?.dropLocation?.lng : bookingData?.dropLong,
         acType: values?.acType?.toUpperCase(),
         zone: actualZone,
-            isPremiumService : values?.isPremiumService ? true : false
+        ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
     };
     if (values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') {
         quoteData.bookingType = driverBookingType;
@@ -637,8 +848,8 @@ const getQuoteOutstationDetails = async (values) => {
         quoteData.adminDiscount = adminDiscountPayload;
     }
     const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
-        // console.log("QOYTEE DATA", data);
-    if (data.success) {
+    console.log('[GET QUOTE OUTSTATION] response:', data);
+    if (data?.success) {
         setQuoteDetails(data?.data);
         setDiscountDetails(data?.data);
         setQuoteMeta({
@@ -646,6 +857,8 @@ const getQuoteOutstationDetails = async (values) => {
             adminDiscount: data?.data?.adminDiscount || null,
         });
         addQuotationLog(values, data?.data);
+    } else {
+        console.error('[GET QUOTE OUTSTATION] failed:', data?.message || 'Empty response');
     }
 };
     const initialValues = {
@@ -656,6 +869,14 @@ const getQuoteOutstationDetails = async (values) => {
             : (bookingData?.bookingType == "DROP ONLY" ? "Drop Only" : "Round Trip" || ''),
         transmissionType: bookingData?.transmissionType || '',
         packageSelected: bookingData?.packageId ? bookingData?.packageId : '',
+        categoryId: bookingData?.categoryId || bookingData?.category?.id || categoryOptions.find((item) => {
+            const bookingCategory = typeof bookingData?.category === 'string'
+                ? bookingData.category
+                : bookingData?.category?.category;
+            return String(item?.category || '').toUpperCase() === String(bookingCategory || '').toUpperCase()
+                || String(item?.label || '').toUpperCase() === String(bookingCategory || '').toUpperCase();
+        })?.id || '',
+        category: bookingData?.category?.category || bookingData?.category || '',
         customerId: bookingData?.customerId ? bookingData?.customerId?.id : '',
         carType: bookingData?.carType || '',
         pickupAddress: bookingData?.pickupAddress?.name || '',
@@ -752,6 +973,7 @@ const getQuoteOutstationDetails = async (values) => {
                 ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
                 : (values?.tripType ? values.tripType.toUpperCase() : '');
 
+            const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
             const quoteDate = {
                 serviceType: values.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL' : values.serviceType || mappedServiceType,
                 customerId: values?.customerId?.id,
@@ -759,8 +981,19 @@ const getQuoteOutstationDetails = async (values) => {
                 packageType: driverPackageType,
                 fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                 ...(values.serviceType !== 'DRIVER'
-                    ? { carType: values.carType || '' }
+                    ? {}
                     : { carType: values.carType || '', transmissionType: values.transmissionType || '' }),
+                ...(isCategoryService(values?.serviceType) && {
+                    categoryId: selectedCategory?.id || Number(values?.categoryId) || undefined,
+                    category: selectedCategory?.category || values?.category || undefined,
+                    packageId: getServicePackageId(
+                        Array.isArray(zoneData?.data) ? zoneData.data : packageTypeSelectedData,
+                        values?.serviceType,
+                        values?.packageTypeSelected,
+                        values?.tripType,
+                        values?.packageSelected
+                    ),
+                }),
                 period: values.serviceType === 'RENTAL'|| values.serviceType === 'DRIVER' ? packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || '' : '',
                 pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                 pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
@@ -774,7 +1007,7 @@ const getQuoteOutstationDetails = async (values) => {
                 driverStartAddress: {
                     name: values.driverPickUpAddress,
                 },
-            isPremiumService : values?.isPremiumService ? true : false
+            ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
 
             };
             const isHourlyPackageSelection =
@@ -860,24 +1093,36 @@ const getQuoteOutstationDetails = async (values) => {
     };
 
     const calculateDistance = async (values) => {
+        const isDropTaxi = values.serviceType === 'RENTAL_DROP_TAXI';
         const calculateDistance = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DISTANCE_CHECKING, {
             pickupLat: values.pickupLocation?.lat || bookingData?.pickupLat,
             pickupLong: values.pickupLocation?.lng || bookingData?.pickupLong,
             dropLat: values?.dropLocation?.lat || bookingData?.dropLat,
             dropLong: values?.dropLocation?.lng || bookingData?.dropLong,
-            serviceType: values.serviceType === 'RENTAL_DROP_TAXI' ? "RENTAL" : values.serviceType,
+            serviceType: isDropTaxi ? "RENTAL" : values.serviceType,
+            ...(isDropTaxi && { rentalBookingType: "DROP_ONLY" }),
         });
 
         if (calculateDistance?.success) {
+            const distanceData = calculateDistance?.data || {};
+            const shouldShowAlert = distanceData?.showAlert === true;
             if (values.serviceType === "RIDES") {
-                // Backend returns showAlert flag for RIDES
-                return calculateDistance?.data?.showAlert;
+                return !shouldShowAlert;
             } else if (values.serviceType === "AUTO") {
-                // Backend returns kilometer for AUTO; apply 15 km limit
-                return calculateDistance?.data?.showAlert;
-            } else if (values.serviceType === 'RENTAL_DROP_TAXI') {
-                const distance = calculateDistance?.data?.estimatedDistance || 0;
-                return distance <= 300;
+                return !shouldShowAlert;
+            } else if (isDropTaxi) {
+                if (shouldShowAlert) {
+                    if (
+                        distanceData?.suggestedService === "RIDES" ||
+                        distanceData?.reason === "SAME_SERVICE_AREA"
+                    ) {
+                        setDropTaxiModalContent("Try our Local Ride, it s faster and more affordable for short distances!");
+                    } else {
+                        setDropTaxiModalContent("Booking not available for the selected route. Try outstation service.");
+                    }
+                    return false;
+                }
+                return true;
             }
         }
         // For other service types (like RENTAL_HOURLY_PACKAGE), return true to skip distance check
@@ -936,6 +1181,13 @@ const getQuoteOutstationDetails = async (values) => {
                 safeSetFieldValue?.("pickupLocation", location);
                 setPickupLocation(location);
                 setPickupSuggestions([]);
+                if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && (values?.dropLocation || values?.dropAddress)) {
+                    estimateRentalRoundTripDates(
+                        { ...values, pickupLocation: location },
+                        setRentalRoundTripMinReturnAt,
+                        { pickupLocation: location, dropLocation }
+                    );
+                }
 
                 // Automatic service area detection for pickup location
                 if (values && values.serviceType) {
@@ -983,6 +1235,13 @@ const getQuoteOutstationDetails = async (values) => {
                 safeSetFieldValue?.("dropLocation", location);
                 setDropLocation(location);
                 setDropSuggestions([]);
+                if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && (values?.pickupLocation || values?.pickupAddress)) {
+                    estimateRentalRoundTripDates(
+                        { ...values, dropLocation: location },
+                        setRentalRoundTripMinReturnAt,
+                        { pickupLocation, dropLocation: location }
+                    );
+                }
             }
         }
     };
@@ -1036,8 +1295,9 @@ const getQuoteOutstationDetails = async (values) => {
     }
 
     // Luggage and seater capacity logic based on car type
-    const useLuggageAndSeaterLogic = (carType, setFieldValue) => {
+    const useLuggageAndSeaterLogic = (carType, setFieldValue, serviceType = '') => {
         useEffect(() => {
+            if (isCategoryPricingService(serviceType)) return;
             const normalizedCarType = String(carType || '').toLowerCase();
             const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
             const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
@@ -1052,12 +1312,26 @@ const getQuoteOutstationDetails = async (values) => {
                 setFieldValue('luggage', '');
                 setFieldValue('seaterCapacity', '');
             }
-        }, [carType, setFieldValue, luggageCapacityMap]);
+        }, [carType, setFieldValue, luggageCapacityMap, serviceType]);
     };
 
     const editSubmit = async (values) => {
         let data;
         let editBookingData;
+        const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
+        const categoryPayload = isCategoryService(values?.serviceType)
+            ? {
+                categoryId: selectedCategory?.id || (values?.categoryId ? Number(values.categoryId) : undefined),
+                category: selectedCategory?.category || values?.category || undefined,
+                packageId: getServicePackageId(
+                    packageTypeSelectedData,
+                    values?.serviceType,
+                    values?.packageTypeSelected,
+                    values?.tripType,
+                    values?.packageSelected
+                ) || (bookingData?.packageId ? Number(bookingData.packageId) : undefined),
+            }
+            : {};
         const updateQuoteRef = quoteMeta?.quoteRef || quoteDetails?.quoteRef || bookingData?.quoteRef || undefined;
         const updateAdminDiscountPayload = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && shouldSendAdminDiscountRequest
             ? (
@@ -1080,8 +1354,9 @@ const getQuoteOutstationDetails = async (values) => {
                     bookingId: bookingData?.id,
                     adminBooking: true,
                     serviceType: values?.serviceType,
+                    ...categoryPayload,
                     ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
-                    ...(values?.packageSelected && {
+                    ...(!isCategoryService(values?.serviceType) && values?.packageSelected && {
                         packageId: values?.packageSelected === "0" ? 0 : Number(values?.packageSelected),
                     }),
                     ...((!isHourlyPackageSelection && values?.serviceType !== 'AUTO') && {
@@ -1091,7 +1366,7 @@ const getQuoteOutstationDetails = async (values) => {
                     }),
                     ...(isDriverService
                         ? { carType: values?.carType || bookingData?.carType || '', transmissionType: values?.transmissionType || bookingData?.transmissionType || '' }
-                        : { carType: values?.carType ? values?.carType : bookingData?.carType }),
+                        : {}),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
                     pickupLong: values?.pickupLocation?.lng ? values?.pickupLocation?.lng : bookingData?.pickupLong,
@@ -1119,7 +1394,7 @@ const getQuoteOutstationDetails = async (values) => {
                         otherSourceType: values?.otherSourceType?.trim() || null
                     }),
                     zone: values?.zone,
-                isPremiumService : values?.isPremiumService ? true : false
+                ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
                 };
             // console.log("DADADA", values)
                 if (values.serviceType !== 'DRIVER' && values.packageTypeSelected == 'Outstation' && values?.tripType?.toUpperCase() == 'ROUND TRIP') {
@@ -1158,14 +1433,16 @@ const getQuoteOutstationDetails = async (values) => {
                     driverStartLat: values.driverPickUpLocation?.lat,
                     driverStartLong: values.driverPickUpLocation?.lng,
                     driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId || ''),
-                    carType: values?.carType,
+                    categoryId: categoryPayload.categoryId,
+                    category: categoryPayload.category,
+                    packageId: categoryPayload.packageId,
                     sourceType: values?.sourceType,
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {
                         otherSourceType: values?.otherSourceType?.trim() || null
                     }),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     zone: values?.zone,
-                isPremiumService : values?.isPremiumService ? true : false
+                ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
                 }
 
             // console.log("DADADAD", data)
@@ -1200,8 +1477,10 @@ const getQuoteOutstationDetails = async (values) => {
                         values?.dropPlaceId || bookingData?.dropAddress?.placeId || ''
                     ),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-                isPremiumService : values?.isPremiumService ? true : false,
-                    ...(values?.serviceType !== 'DRIVER' ? { car_Type: values?.carType || '' } : {}),
+                ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {}),
+                    categoryId: categoryPayload.categoryId,
+                    category: categoryPayload.category,
+                    packageId: categoryPayload.packageId,
                 sourceType: values?.sourceType|| '',
                     ...((values?.sourceType === "Others" || values?.sourceType === "Offline Ads") && {
                         otherSourceType: values?.otherSourceType?.trim() || null
@@ -1254,7 +1533,12 @@ const getQuoteOutstationDetails = async (values) => {
                                 }
                                 return premiumServicesMap[values?.serviceType] || [];
                             };
-                            useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
+                            const visibleCategories = getMatchingCategories(categoryOptions, values);
+                            const categorySelectionUnavailable =
+                                isCategoryService(values.serviceType) && visibleCategories.length === 0;
+                            const selectedCategoryPricing = getSelectedCategoryPricing(quoteDetails, values);
+                            const categoryCommonPricing = selectedCategoryPricing.common;
+                            useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap, values.serviceType);
                     return(
                                 <> {customerData && (
                                     <div className="p-2 flex mb-4 pointer-events-none">
@@ -1376,6 +1660,36 @@ const getQuoteOutstationDetails = async (values) => {
                                             </div>
                                         )}
                                     </div>
+                                    {isCategoryService(values.serviceType) && (
+                                        <div className="mb-4">
+                                            <Typography variant="h6" className="mb-2">Choose Category</Typography>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {visibleCategories.map((item) => {
+                                                    const selected = Number(values.categoryId) === Number(item.id);
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            key={item.id}
+                                                            onClick={() => {
+                                                                setQuoteDetails(null);
+                                                                setFieldValue('categoryId', item.id);
+                                                                setFieldValue('category', item.category);
+                                                                if (isCategoryService(values.serviceType) && item.metadata) {
+                                                                    setFieldValue('luggage', item.metadata.bags ?? '');
+                                                                    setFieldValue('seaterCapacity', item.metadata.seats ?? '');
+                                                                }
+                                                            }}
+                                                            className={`rounded-xl border-2 p-4 text-left transition ${selected ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-300 bg-white hover:border-blue-300'}`}
+                                                        >
+                                                            <div className="font-semibold text-gray-900">{item.label}</div>                                                            
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            <ErrorMessage name="categoryId" component="div" className="text-red-500 text-sm" />
+                                            {isCategoryService(values.serviceType) && visibleCategories.length === 0 && <div className="text-sm text-red-500">No categories available for this service.</div>}
+                                        </div>
+                                    )}
                                     {bookingData?.serviceType !== "RIDES" && bookingData?.serviceType !== "AUTO" && <>
                                         <div className='space-y-3 my-3'>
                                             <div className={values.serviceType === 'RENTAL' ? 'hidden' : 'grid grid-cols-2 gap-4 mt-2'}>
@@ -1386,6 +1700,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                             setFieldValue('packageTypeSelected', 'Local');
                                                             setCurrentPackageType('Local');
                                                             setFieldValue('packageSelected', '');
+                                                            setFieldValue('categoryId', '');
+                                                            setFieldValue('category', '');
                                                             setFieldValue('fromDate', '');
                                                             setFieldValue('toDate', '');
                                                         }
@@ -1402,6 +1718,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                             setFieldValue('packageTypeSelected', 'Outstation');
                                                             setCurrentPackageType('Outstation');
                                                             setFieldValue('packageSelected', '');
+                                                            setFieldValue('categoryId', '');
+                                                            setFieldValue('category', '');
                                                             setFieldValue('fromDate', '');
                                                             setFieldValue('toDate', '');
                                                         }
@@ -1434,12 +1752,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                 </div>
                                             </div>
                                             <div className='grid grid-cols-1 mt-2 space-x-3'>
-                                                {(
-                                                    values?.isPremiumService ||
-                                                    values?.serviceType === 'RENTAL_DROP_TAXI' ||
-                                            (values?.serviceType === 'RENTAL'  && values.packageTypeSelected === 'Outstation' &&
-                                                        (values?.tripType === 'Round Trip' || values?.tripType === 'Drop Only'))
-                                                ) && (
+                                                {values?.serviceType === 'DRIVER' && (
 
                                                         <div className="w-full">
                                                             <label className="flex items-center space-x-2 cursor-pointer select-none">
@@ -1461,7 +1774,7 @@ const getQuoteOutstationDetails = async (values) => {
 
                                             </div>
                                             <div>
-                                                {values?.isPremiumService && (
+                                                {values?.serviceType === 'DRIVER' && values?.isPremiumService && (
                                                     <div className="w-full mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                                         <p className="text-sm font-semibold text-blue-900 mb-3">
                                                             Premium Options Available:
@@ -1492,8 +1805,8 @@ const getQuoteOutstationDetails = async (values) => {
                                                 )}
                                             </div>
 
-                                            <div>
-                                    {!values?.isPremiumService && ( <>    
+                                            <div className={values?.serviceType === 'DRIVER' ? '' : 'hidden'}>
+                                    {values?.serviceType === 'DRIVER' && !values?.isPremiumService && ( <>    
                                                     <label className="text-sm font-medium text-black-700">Car Type</label>
                                                     <div className="flex gap-4">
                                                         {['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
@@ -1582,6 +1895,16 @@ const getQuoteOutstationDetails = async (values) => {
                                                             setFieldValue('fromDate', '');
                                                             setFieldValue('toDate', '');
                                                         }
+                                                        if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && (values?.pickupLocation || values?.pickupAddress) && (values?.dropLocation || values?.dropAddress)) {
+                                                            estimateRentalRoundTripDates({
+                                                                ...values,
+                                                                rideDate: formattedDate,
+                                                                rideTime: formattedTime,
+                                                            }, setRentalRoundTripMinReturnAt, {
+                                                                pickupLocation,
+                                                                dropLocation,
+                                                            });
+                                                        }
                                                     }}
                                                 />
                                             </div>
@@ -1592,9 +1915,18 @@ const getQuoteOutstationDetails = async (values) => {
                                                     name="toDateTime"
                                                     className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                     value={values.toDate ? `${values.toDate}T${values.toTime}` : ''}
-                                                    min={`${values.rideDate || moment().format('YYYY-MM-DD')}T00:00`}
+                                                    min={rentalRoundTripMinReturnAt || `${values.rideDate || moment().format('YYYY-MM-DD')}T00:00`}
+                                                    onBlur={(e) => {
+                                                        const minimumReturn = rentalRoundTripMinReturnAt ? moment(rentalRoundTripMinReturnAt) : null;
+                                                        setRentalRoundTripReturnError(
+                                                            minimumReturn?.isValid() && e.target.value && moment(e.target.value).isBefore(minimumReturn)
+                                                                ? `Return time must be on or after ${minimumReturn.format('DD-MM-YYYY HH:mm')}`
+                                                                : ''
+                                                        );
+                                                    }}
                                                     onChange={(e) => {
                                                         const selectedDateTime = e.target.value;
+                                                        setRentalRoundTripReturnError('');
                                                         const formattedDate = moment(selectedDateTime).format('YYYY-MM-DD');
                                                         const formattedTime = moment(selectedDateTime).format('HH:mm');
 
@@ -1602,6 +1934,16 @@ const getQuoteOutstationDetails = async (values) => {
                                                         setFieldValue('toTime', formattedTime);
                                                     }}
                                                 />
+                                                {rentalRoundTripReturnError && (
+                                                    <div className="relative z-10 block mt-1 px-1 text-red-500 text-sm leading-5 break-words">
+                                                        {rentalRoundTripReturnError}
+                                                    </div>
+                                                )}
+                                                {rentalRoundTripEstimatedDurationText && (
+                                                    <div className="mt-1 text-sm text-gray-600">
+                                                        Estimated duration: {rentalRoundTripEstimatedDurationText}
+                                                    </div>
+                                                )}
                                             </div>)}
                                         </div>
                                         {values.serviceType !== 'DRIVER' && values.packageTypeSelected == 'Local' && <div className="flex-1 mb-4">
@@ -1976,14 +2318,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                             </Typography>
                                                         </div>
                                                         <>
-                                                        {values.serviceType !== 'DRIVER' && (
-                                                            <div className="flex justify-between">
-                                                                <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                <Typography>
-                                                                    {values.carType || bookingData?.carType || ''}
-                                                                </Typography>
-                                                            </div>
-                                                            )}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Estimated Fare</Typography>
                                                                 <Typography>
@@ -2072,24 +2406,20 @@ const getQuoteOutstationDetails = async (values) => {
                                                     <hr className="my-2 border border-black" />
                                                     <div className="mt-4">
                                                         <>
+                                                            {values?.serviceType === 'DRIVER' && quoteDetails?.amount?.isPremiumFare && (
+                                                                <div className="grid grid-cols-2 justify-between">
+                                                                    <Typography color="gray" variant="h6">Car Service</Typography>
+                                                                    <Typography className="font-semibold">Premium Car Service</Typography>
+                                                                    <Typography color="gray" variant="h6">Premium Car Type</Typography>
+                                                                    <Typography>{quoteDetails.amount?.premiumDetails?.appliedCarType}</Typography>
+                                                                </div>
+                                                            )}
                                                             <div className="grid grid-cols-2 justify-between">
-                                                                {quoteDetails?.amount?.isPremiumFare && (
-                                                                    <>
-                                                                        <Typography color="gray" variant="h6">Car Service</Typography>
-                                                                        <Typography className='font-semibold'> {quoteDetails.amount?.isPremiumFare ? "Premium Car Service" : "Not a Premium Car Services "}</Typography>
-                                                                    </>
-                                                                )}
-                                                                {quoteDetails?.amount?.isPremiumFare && (
-                                                                    <>
-                                                                        <Typography color="gray" variant="h6">Premium Car Type</Typography>
-                                                                        <Typography> {quoteDetails.amount?.premiumDetails?.appliedCarType}</Typography>
-                                                                    </>
-                                                                )}
                                                                 {values?.serviceType !== 'DRIVER' && values?.serviceType !== 'RENTAL_DROP_TAXI' && (
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Per Km Rate</Typography>
                                                                         <Typography>
-                                                                            ₹ {Math.round(quoteDetails.value?.kilometerPriceVal || quoteDetails.amount?.kilometerPriceVal)}
+                                                                            ₹ {Math.round(quoteDetails.value?.kilometerPriceVal || quoteDetails.amount?.kilometerPriceVal || categoryCommonPricing?.kilometerPrice || 0)}
                                                                         </Typography></>)}
                                                                 {values?.serviceType !== 'DRIVER' && (<>
                                                                     <Typography color="gray" variant="h6">Pick up to Drop  Kilometer + Driver Km For Pickup Locationn</Typography>
@@ -2102,18 +2432,10 @@ const getQuoteOutstationDetails = async (values) => {
                                                                     <>
                                                                         <Typography color="gray" variant="h6">Base Fare upto {quoteDetails.value?.baseKm || quoteDetails.amount?.baseKm} Kilometer</Typography>
                                                                         <Typography>
-                                                                            ₹   {Math.round(quoteDetails.amount?.baseFare)}
+                                                                            ₹   {Math.round(quoteDetails.amount?.baseFare || categoryCommonPricing?.baseFare || 0)}
                                                                         </Typography>
                                                                     </>}
 
-                                                                {(quoteDetails.amount?.isPremiumFare !== true) && (values?.serviceType === "RENTAL" || values?.serviceType === "RENTAL_DROP_TAXI" || values?.serviceType === "RENTAL_HOURLY_PACKAGE") && (
-                                                                    <>
-                                                                        <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                        <Typography>
-                                                                            {quoteDetails.amount?.carType || ''}
-                                                                        </Typography>
-                                                                    </>
-                                                                )}
 
                                                                 {quoteDetails.amount?.isPrimeLocation === true && quoteDetails.amount?.rideSurchargeAmount > 0 &&
                                                                     <>
@@ -2268,7 +2590,7 @@ const getQuoteOutstationDetails = async (values) => {
 
 
                                         {values.packageTypeSelected == 'Outstation' && values.serviceType === 'RENTAL' &&
-                                <Button fullWidth className='my-6 mx-2 bg-primary' onClick={() => getQuoteOutstationDetails(values)}>
+                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable || Boolean(rentalRoundTripReturnError)} onClick={() => getQuoteOutstationDetails(values, setFieldValue)}>
                                     Check Estimated Price
                                             </Button>
                                         }
@@ -2280,7 +2602,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             </Button>
                                         }
                                          {(values.serviceType == 'DRIVER' || values?.serviceType =="RENTAL") && values.packageTypeSelected == 'Local' &&
-                    <Button fullWidth className='my-6 mx-2 bg-primary' disabled={Boolean(driverPackageNotice)} onClick={() => getQuoteRides(values)}>
+                    <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable || Boolean(driverPackageNotice)} onClick={() => getQuoteRides(values)}>
                         Check Estimated Price
                                             </Button>
                                         }
@@ -2309,7 +2631,7 @@ const getQuoteOutstationDetails = async (values) => {
                                         <>
                                             <div className="mt-6">
                                                 <div className="mt-3 space-y-5">
-                                                    <div className="flex items-center space-x-3 ml-2">
+                                                    <div className="hidden">
                                                         <Field
                                                             type="checkbox"
                                                             name="isPremiumService"
@@ -2323,7 +2645,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                         />
                                                         <span className="text-sm font-medium text-gray-700">Enable Premium Service</span>
                                                     </div>
-                                                    {values?.isPremiumService && (
+                                                    {values?.serviceType === 'DRIVER' && values?.isPremiumService && (
                                                         <div className="w-full mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                                             <p className="text-sm font-semibold text-blue-900 mb-3">
                                                                 Premium Options Available:
@@ -2352,7 +2674,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                             )}
                                                         </div>
                                                     )}
-                                                    {!values.isPremiumService && (
+                                                    {values?.serviceType === 'DRIVER' && !values.isPremiumService && (
                                                         <>
                                                             <div className='ml-2'>
                                                                 <label className="text-sm font-medium text-black-700">Car Type</label>
@@ -2572,18 +2894,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                         <hr className="my-2 border border-black" />
                                                         <div className="mt-4">
                                                             <div className="grid grid-cols-2 justify-between">
-                                                                {quoteDetails?.amount?.isPremiumFare && (
-                                                                    <>
-                                                                        <Typography color="gray" variant="h6">Car Service</Typography>
-                                                                        <Typography className='font-semibold'> {quoteDetails.amount?.isPremiumFare ? "Premium Car Service" : "Not a Premium Car Services "}</Typography>
-                                                                    </>
-                                                                )}
-                                                                {quoteDetails?.amount?.isPremiumFare && (
-                                                                    <>
-                                                                        <Typography color="gray" variant="h6">Premium Car Type</Typography>
-                                                                        <Typography> {quoteDetails.amount?.premiumDetails?.appliedCarType}</Typography>
-                                                                    </>
-                                                                )}
                                                                 <Typography color="gray" variant="h6">Per Km Rate</Typography>
                                                                 <Typography>
                                                                     ₹ {Math.round(quoteDetails.value?.kilometerPriceVal || quoteDetails.amount?.kilometerPriceVal)}
@@ -2600,13 +2910,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                                         {quoteDetails.amount?.displayTime}
                                                                     </Typography>
                                                                 </>)}
-                                                                {quoteDetails.amount?.isPremiumFare !== true && (
-                                                                    <>
-                                                                        <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                        <Typography>
-                                                                            {quoteDetails.amount?.carType || ''}
-                                                                        </Typography>
-                                                                    </>)}
 
                                                                 <Typography color="gray" variant="h6">Base Fare upto {quoteDetails.amount?.baseKm} Kilometer</Typography>
                                                                 <Typography>
@@ -2729,7 +3032,7 @@ const getQuoteOutstationDetails = async (values) => {
                                             }
 
                                             {bookingData?.serviceType == 'RIDES' &&
-                                                <Button fullWidth className='my-6 mx-2 bg-primary' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                     Check Estimated Price
                                                 </Button>
                                             }
@@ -2794,7 +3097,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center space-x-3 ml-2">
+                                            <div className="hidden">
                                                 <Field
                                                     type="checkbox"
                                                     name="isPremiumService"
@@ -2808,7 +3111,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                 />
                                                 <span className="text-sm font-medium text-gray-700">Enable Premium Service</span>
                                             </div>
-                                            {values?.isPremiumService && (
+                                            {values?.serviceType === 'DRIVER' && values?.isPremiumService && (
                                                 <div className="w-full mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                                     <p className="text-sm font-semibold text-blue-900 mb-3">
                                                         Premium Options Available:
@@ -2957,18 +3260,6 @@ const getQuoteOutstationDetails = async (values) => {
                                                 <hr className="my-2 border border-black" />
                                                 <div className="mt-4">
                                                     <div className="grid grid-cols-2 justify-between">
-                                                        {quoteDetails?.amount?.isPremiumFare && (
-                                                            <>
-                                                                <Typography color="gray" variant="h6">Car Service</Typography>
-                                                                <Typography className='font-semibold'> {quoteDetails.amount?.isPremiumFare ? "Premium Car Service" : "Not a Premium Car Services "}</Typography>
-                                                            </>
-                                                        )}
-                                                        {quoteDetails?.amount?.isPremiumFare && (
-                                                            <>
-                                                                <Typography color="gray" variant="h6">Premium Car Type</Typography>
-                                                                <Typography> {quoteDetails.amount?.premiumDetails?.appliedCarType}</Typography>
-                                                            </>
-                                                        )}
                                                         <Typography color="gray" variant="h6">Per Km Rate</Typography>
                                                         <Typography>
                                                             ₹ {Math.round(quoteDetails.value?.kilometerPriceVal || quoteDetails.amount?.kilometerPriceVal)}
@@ -3095,7 +3386,7 @@ const getQuoteOutstationDetails = async (values) => {
                                         </Card>
                                     }
                                     {bookingData?.serviceType == 'AUTO' &&
-                                                <Button fullWidth className='my-6 mx-2 bg-primary' onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                     Check Estimated Price
                                         </Button>
                                     }
@@ -3124,7 +3415,7 @@ const getQuoteOutstationDetails = async (values) => {
                         }}
                     </Formik>
                 </>)}
-            <DistanceExceedModal isVisible={dropTaxiDistanceExceedModal} onClose={() => { setDropTaxiDistanceExceedModal(false); }} title="Going a bit far?" content="You can choose Outstation within 300km only for the DropTaxi service." />
+            <DistanceExceedModal isVisible={dropTaxiDistanceExceedModal} onClose={() => { setDropTaxiDistanceExceedModal(false); }} title="Going a bit far?" content={dropTaxiModalContent} />
             <DistanceExceedModal isVisible={distanceExceedModal} onClose={() => { setDistanceExceedModal(false); }} title="Going a bit far?" content="Rides above 15 km are allowed only through DropTaxi or Outstation service." />
             <DistanceExceedModal isVisible={cityLimitExceedModal} onClose={() => { setCityLimitExceedModal(false); }} title="Oops!" content="We currently serve only Vellore, Kanchipuram, Tiruvannamalai. Try another pickup location nearby." />
             <DistanceExceedModal isVisible={zoneErrorModal.show} onClose={() => { setZoneErrorModal({ show: false }); }} title={zoneErrorModal.title} content={zoneErrorModal.text} />

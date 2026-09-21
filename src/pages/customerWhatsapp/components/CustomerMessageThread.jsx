@@ -1,11 +1,18 @@
 import React from "react";
 import {
+  ArrowPathIcon,
   ArrowDownIcon,
+  CheckIcon,
   ClipboardDocumentIcon,
+  DocumentIcon,
   MagnifyingGlassIcon,
   PaperAirplaneIcon,
+  PaperClipIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import WhatsAppMediaAttachment from "@/components/whatsapp/WhatsAppMediaAttachment";
+import WhatsAppVoiceRecorder from "@/components/whatsapp/WhatsAppVoiceRecorder";
+import { formatMediaSize } from "@/utils/whatsapp/media";
 
 const formatDateLabel = (value) => {
   const date = value ? new Date(value) : new Date();
@@ -25,16 +32,24 @@ const formatTime = (value) => {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
-const statusLabel = (status) => {
+function StatusTicks({ status }) {
   const normalized = String(status || "").toLowerCase();
-  if (normalized === "sending") return "...";
-  if (normalized === "pending") return "pending";
-  if (normalized === "failed") return "failed";
-  if (normalized === "read") return "✓✓";
-  if (normalized === "delivered") return "✓✓";
-  if (normalized === "sent") return "✓";
-  return normalized;
-};
+  if (normalized === "sending") return <span>sending</span>;
+  if (normalized === "pending") return <span>pending</span>;
+  if (normalized === "failed") return <span className="text-red-600">failed</span>;
+  if (!normalized) return null;
+  const read = normalized === "read" || normalized === "seen";
+  const delivered = read || normalized === "delivered";
+  if (normalized === "sent" || delivered) {
+    return (
+      <span className={`inline-flex items-center ${read ? "text-[#53BDEB]" : ""}`} title={normalized}>
+        <CheckIcon className="h-3.5 w-3.5" />
+        {delivered && <CheckIcon className="-ml-2 h-3.5 w-3.5" />}
+      </span>
+    );
+  }
+  return <span>{normalized}</span>;
+}
 
 const getQuotedText = (quotedMessage) => {
   if (!quotedMessage) return "";
@@ -60,9 +75,13 @@ export function CustomerMessageThread({
   messages,
   loading,
   messageText,
+  mediaUploadError,
+  mediaSending = false,
+  pendingMedia,
   chatSearch,
   replyTo,
   canSendText,
+  hasMoreMessages = false,
   showJumpLatest,
   messagesEndRef,
   messagesContainerRef,
@@ -75,10 +94,16 @@ export function CustomerMessageThread({
   onCancelReply,
   onChangeMessage,
   onSend,
+  onSendMedia,
+  allowedMediaAccept,
+  onCancelPendingMedia,
   onRetry,
   onOpenTemplates,
   onJumpLatest,
+  conversations = [],
+  onForwardMessage,
 }) {
+  const [isRecording, setIsRecording] = React.useState(false);
   if (!conversation) {
     return (
       <section className="grid h-full min-h-[520px] flex-1 place-items-center bg-[#f0f2f5]">
@@ -133,11 +158,13 @@ export function CustomerMessageThread({
           backgroundSize: "34px 34px",
         }}
       >
-        <div className="mb-3 flex justify-center">
-          <button className="rounded-full bg-white/90 px-3 py-1 text-xs text-[#54656f] shadow-sm" onClick={onLoadOlder}>
-            Load older messages
-          </button>
-        </div>
+        {hasMoreMessages && (
+          <div className="mb-3 flex justify-center">
+            <button className="rounded-full bg-white/90 px-3 py-1 text-xs text-[#54656f] shadow-sm" onClick={onLoadOlder}>
+              Load older messages
+            </button>
+          </div>
+        )}
         {loading && messages.length === 0 ? (
           <p className="text-center text-sm text-[#667781]">Loading messages...</p>
         ) : (
@@ -146,6 +173,7 @@ export function CustomerMessageThread({
             const showDate = currentDate && currentDate !== lastDate;
             lastDate = currentDate || lastDate;
             const outbound = message.direction === "outbound";
+            const failed = String(message.providerStatus || "").toLowerCase() === "failed";
             return (
               <React.Fragment key={message.id}>
                 {showDate && (
@@ -166,8 +194,33 @@ export function CustomerMessageThread({
                     {message.templateHeaderMediaUrl && (
                       <img src={message.templateHeaderMediaUrl} alt="" className="mb-2 max-h-44 rounded object-cover" />
                     )}
-                    <p className="whitespace-pre-wrap break-words text-sm leading-5 text-[#111b21]">{message.text || `[${message.type}]`}</p>
-                    {message.errorMessage && <p className="mt-1 text-xs text-red-600">{message.errorMessage}</p>}
+                    <WhatsAppMediaAttachment
+                      media={message.mediaAttachments || []}
+                      message={message}
+                      forwardTargets={conversations}
+                      onForward={onForwardMessage}
+                    />
+                    {(message.text || !(message.mediaAttachments || []).length) && (
+                      <p className="whitespace-pre-wrap break-words text-sm leading-5 text-[#111b21]">
+                        {message.text || `[${message.type}]`}
+                      </p>
+                    )}
+                    {message.errorMessage && (
+                      <div className="mt-2 flex items-center justify-between gap-3 text-xs text-red-600">
+                        <p>{message.errorMessage}</p>
+                        {failed && (
+                          <button
+                            type="button"
+                            onClick={() => onRetry(message)}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-50 px-2 py-1 font-semibold text-red-700 hover:bg-red-100"
+                            title={(message.mediaAttachments || []).length ? "Retry media" : "Retry message"}
+                          >
+                            <ArrowPathIcon className="h-3.5 w-3.5" />
+                            Retry
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="mt-1 flex items-center justify-end gap-2 text-[11px] text-[#667781]">
                       <button type="button" onClick={() => onCopy(message)} title="Copy message">
                         <ClipboardDocumentIcon className="h-3.5 w-3.5" />
@@ -175,13 +228,13 @@ export function CustomerMessageThread({
                       <button type="button" onClick={() => onReply(message)} className="font-semibold text-[#008069]">
                         Reply
                       </button>
-                      {message.providerStatus === "failed" && (
+                      {failed && !message.errorMessage && (
                         <button type="button" onClick={() => onRetry(message)} className="font-semibold text-red-600">
                           Retry
                         </button>
                       )}
                       <span>{formatTime(message.sentAt)}</span>
-                      {outbound && <span className={String(message.providerStatus).toLowerCase() === "read" ? "text-blue-500" : ""}>{statusLabel(message.providerStatus)}</span>}
+                      {outbound && <StatusTicks status={message.providerStatus} />}
                     </div>
                   </div>
                 </div>
@@ -203,7 +256,57 @@ export function CustomerMessageThread({
         </button>
       )}
 
+      {pendingMedia && (
+        <div className="border-t border-[#d9e1dd] bg-white px-4 py-4">
+          <div className="mx-auto max-w-xl">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={onCancelPendingMedia}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#54656f] hover:bg-[#f0f2f5]"
+                title="Remove attachment"
+                aria-label="Remove attachment"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+              <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-[#111b21]">{pendingMedia.fileName}</p>
+              <span className="h-9 w-9 shrink-0" aria-hidden="true" />
+            </div>
+            <div className="grid min-h-[220px] place-items-center rounded-lg bg-[#f0f2f5] p-4">
+              {pendingMedia.kind === "image" ? (
+                <img
+                  src={pendingMedia.previewUrl}
+                  alt={pendingMedia.fileName}
+                  className="max-h-[260px] max-w-full rounded object-contain shadow-sm"
+                />
+              ) : pendingMedia.kind === "video" ? (
+                <video
+                  src={pendingMedia.previewUrl}
+                  controls
+                  className="max-h-[260px] max-w-full rounded bg-black shadow-sm"
+                />
+              ) : pendingMedia.kind === "audio" ? (
+                <audio src={pendingMedia.previewUrl} controls className="w-full max-w-md" />
+              ) : (
+                <div className="text-center text-[#9aa6ad]">
+                  <DocumentIcon className="mx-auto h-24 w-24 text-white drop-shadow-sm" />
+                  <p className="mt-4 text-2xl font-medium">No preview available</p>
+                  <p className="mt-1 text-sm">
+                    {[formatMediaSize(pendingMedia.sizeBytes), pendingMedia.mimeType || pendingMedia.kind].filter(Boolean).join(" - ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="border-t border-[#d9e1dd] bg-[#f0f2f5] px-4 py-3">
+        {mediaUploadError && (
+          <div role="alert" className="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+            {mediaUploadError}
+          </div>
+        )}
         {!canSendText && (
           <div className="mb-2 flex items-center justify-between gap-3 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <span>24-hour session expired. You can only send template messages.</span>
@@ -227,19 +330,40 @@ export function CustomerMessageThread({
           </div>
         )}
         <form onSubmit={onSend} className="flex items-center gap-2">
-          <button type="button" onClick={onOpenTemplates} className="rounded bg-white px-3 py-2 text-sm font-semibold text-[#008069]">
+          <button type="button" onClick={onOpenTemplates} disabled={isRecording} className="rounded bg-white px-3 py-2 text-sm font-semibold text-[#008069] disabled:cursor-not-allowed disabled:opacity-50">
             Use Template
           </button>
+          <label
+            className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-[#54656f] ${
+              canSendText && !mediaSending && !isRecording ? "cursor-pointer hover:bg-[#e7fce3] hover:text-[#008069]" : "cursor-not-allowed opacity-50"
+            }`}
+            title="Attach file"
+            aria-label="Attach file"
+          >
+            <PaperClipIcon className="h-5 w-5" />
+            <input
+              type="file"
+              accept={allowedMediaAccept}
+              className="hidden"
+              disabled={!canSendText || mediaSending || isRecording}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) onSendMedia?.(file);
+              }}
+            />
+          </label>
           <input
             value={messageText}
             onChange={(event) => onChangeMessage(event.target.value)}
-            disabled={!canSendText}
-            placeholder={canSendText ? "Type a message" : "Session expired"}
+            disabled={!canSendText || isRecording}
+            placeholder={canSendText ? (pendingMedia ? "Add a caption" : "Type a message") : "Session expired"}
             className="min-w-0 flex-1 rounded-lg bg-white px-4 py-2 text-sm outline-none disabled:bg-gray-100"
           />
+          <WhatsAppVoiceRecorder disabled={!canSendText} sending={mediaSending} onRecordingChange={setIsRecording} onSendVoice={onSendMedia} />
           <button
             type="submit"
-            disabled={!canSendText || !messageText.trim()}
+            disabled={!canSendText || mediaSending || isRecording || (!messageText.trim() && !pendingMedia)}
             className="grid h-10 w-10 place-items-center rounded-full bg-[#00a884] text-white disabled:opacity-50"
             title="Send"
           >

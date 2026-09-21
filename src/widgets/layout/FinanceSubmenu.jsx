@@ -20,6 +20,7 @@ const FINANCE_GROUPS = [
       { label: "Driver Radius & Bonus Configuration", path: "/dashboard/finance/driver-radius-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
+      { label: "Category Driver Eligible", path: "/dashboard/finance/category-driver-eligible", requiredPermission: "Users" },
     ],
   },
   {
@@ -49,6 +50,7 @@ const FINANCE_GROUPS = [
     title: "Settings",
     items: [
       { label: "Settings", path: "/dashboard/finance/GSTList", requiredPermission: "Users" },
+      { label: "Driver Subscription Feed Back", path: "/dashboard/finance/driver-subscription-feedback" },
     ],
   },
 ];
@@ -72,6 +74,7 @@ const ROUTE_MATCHERS = {
     "/dashboard/finance/driver-radius-bonus/details",
   ],
   "Master Price Table": ["/finance/master-price"],
+  "Category Driver Eligible": ["/finance/category-driver-eligible"],
   "Instant Reward": ["/finance/instant-reward"],
   "Referral Rules": ["/finance/referral-rules"],
   "Cash Back": ["/finance/cash-back"],
@@ -79,6 +82,7 @@ const ROUTE_MATCHERS = {
   "Discount Module": ["/finance/discountmodulelist", "/finance/discountmodule/add", "/finance/discountmodule/edit"],
   "Custom Discount": ["/finance/custom-discount", "/finance/custom-discount/add", "/finance/custom-discount/edit"],
   "Settings": ["/finance/gstlist", "/finance/gst/add", "/finance/gst/edit"],
+  "Driver Subscription Feed Back": ["/finance/driver-subscription-feedback", "/finance/driver-subscription-feedback/add", "/finance/driver-subscription-feedback/edit", "/finance/driver-subscription-feedback/details"],
   "Parcel Commission": ["/finance/parcel-commission"],
   "Parcel Slot Config": ["/finance/parcel-slot-config", "/finance/parcel-slot-config/add", "/finance/parcel-slot-config/edit", "/finance/parcel-slot-config/details"],
   "Parcel Daily Slots": ["/finance/parcel-daily-slots", "/finance/parcel-daily-slots/details"],

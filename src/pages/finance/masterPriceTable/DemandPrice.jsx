@@ -34,14 +34,14 @@ const getPriorityBand = (priority) => {
     return "Out of Range";
 };
 
-const DemandPriceTable = ({ demandRules = [] }) => {
+const DemandPriceTable = ({ demandRules = [], title = "Demand Price Rules" }) => {
     const sortedRules = [...demandRules].sort(
         (a, b) => (a?.priority ?? Number.MAX_SAFE_INTEGER) - (b?.priority ?? Number.MAX_SAFE_INTEGER)
     );
 
     return (
         <>
-            <h2 className="text-2xl font-bold mb-4">Demand Price Rules</h2>
+            <h2 className="text-2xl font-bold mb-4">{title}</h2>
             <Card>
                 {sortedRules.length > 0 ? (
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">

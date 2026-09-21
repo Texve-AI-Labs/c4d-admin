@@ -103,7 +103,7 @@ export function Dashboard() {
               {routes.map(
                 ({ layout, pages }) =>
                   layout === "dashboard" &&
-                  pages.map(({ path, element, permission, superUserOnly }) => (
+                  pages.map(({ path, element, permission, permissionsAny, superUserOnly }) => (
                     <Route
                       key={path}
                       exact
@@ -112,6 +112,7 @@ export function Dashboard() {
                         <ProtectedRoute
                           element={element}
                           permission={permission}
+                          permissionsAny={permissionsAny}
                           permissions={permissions}
                           superUserOnly={superUserOnly}
                           requirePermission={true}

@@ -44,6 +44,8 @@ const VehicleInfoSection = ({
   packageOptions = [],
   getLuggageForCarType,
   isTravels = false,
+  canManageDriver = false,
+  showIndividualDriverDetails = false,
   accountRelatedDrivers = [],
   getVehicleAddressSuggestionsBySection,
   onVehicleAddressSearch,
@@ -66,9 +68,10 @@ const VehicleInfoSection = ({
   const editableLabels = useMemo(() => {
     const labels = ["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
     labels.push("Address", "Insurance Expiry Date");
-    if (isTravels) labels.push("Owner Name", "Assigned To", "With Driver");
+    if (isTravels) labels.push("Owner Name", "Assigned To");
+    if (canManageDriver) labels.push("With Driver");
     return new Set(labels);
-  }, [isTravels]);
+  }, [isTravels, canManageDriver]);
 
   const getInitialDraft = (section) => {
     const map = {};
@@ -95,7 +98,7 @@ const VehicleInfoSection = ({
       : (map["Insurance Expiry Date"] || "");
     map.AddressPlaceId = section?.rawValues?.curAddress?.placeId || section?.rawValues?.curAddress?.place_id || section?.rawValues?.curAddress?.placeID || section?.rawValues?.curAddress?.id || map.AddressPlaceId || "";
     map["Address"] = formatAddressValue(section?.rawValues?.curAddress || map["Address"] || "");
-    if (isTravels) {
+    if (canManageDriver) {
       const rawAssigned = String(section?.rawValues?.assigned || "").trim();
       map["Assigned To"] =
         rawAssigned.toLowerCase() === "individual"
@@ -161,9 +164,22 @@ const VehicleInfoSection = ({
   const leftDisplayOrder = useMemo(() => {
     const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
     return isTravels
-      ? [...base, "Address", "Insurance Expiry Date", "Owner Name", "Assigned To", "With Driver"]
-      : [...base, "Address", "Insurance Expiry Date"];
-  }, [isTravels]);
+      ? [
+          ...base,
+          "Address",
+          "Insurance Expiry Date",
+          "Owner Name",
+          "Assigned To",
+          ...(canManageDriver ? ["With Driver", "Driver Name", "Driver Phone Number", "Driver Address", "Driver License Number"] : []),
+        ]
+      : [
+          ...base,
+          "Address",
+          "Insurance Expiry Date",
+          ...(canManageDriver ? ["With Driver"] : []),
+          ...(showIndividualDriverDetails ? ["Driver Name", "Driver Phone Number", "Driver Address", "Driver License Number"] : []),
+        ];
+  }, [isTravels, canManageDriver, showIndividualDriverDetails]);
 
   const rightDisplayOrder = useMemo(
     () => [
@@ -497,7 +513,7 @@ const VehicleInfoSection = ({
                     })()}
                     {editingSectionId === section.id && (
                       <div className="md:col-span-2 space-y-3">
-                        {isTravels && (draftValues?.["With Driver"] || "") === "Yes" ? (
+                        {canManageDriver && (draftValues?.["With Driver"] || "") === "Yes" ? (
                           <div className="rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-3">
                             <Typography className="text-sm font-semibold text-blue-gray-700 mb-2">Driver Assignment</Typography>
                             <div className="flex items-center gap-4 mb-3">

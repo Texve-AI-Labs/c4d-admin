@@ -17,6 +17,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 
 const DEFAULT_PAGE_SIZE = 20;
 const SERVICE_TYPE_OPTIONS = ["","BIKE","RIDES", "AUTO", "PARCEL", "DRIVER", "RENTAL"];
+const DATE_RANGE_ERROR = "Please select a valid date range. From Date cannot be in the future or later than To Date.";
 
 const normalizeRows = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -102,6 +103,14 @@ const getServiceTypeChipClass = (value) => {
   return "bg-gray-100 text-gray-800";
 };
 
+const isInvalidDateRange = ({ fromDate, toDate }) => {
+  const today = moment().format("YYYY-MM-DD");
+  if (fromDate && fromDate > today) return true;
+  if (toDate && toDate > today) return true;
+  if (fromDate && toDate && fromDate > toDate) return true;
+  return false;
+};
+
 function CustomerCancellationChargeLogs() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -120,6 +129,7 @@ function CustomerCancellationChargeLogs() {
     toDate: "",
   });
   const [draftFilters, setDraftFilters] = useState(filters);
+  const today = moment().format("YYYY-MM-DD");
 
   const fetchLogs = async (page = 1, nextFilters = filters) => {
     setLoading(true);
@@ -171,13 +181,21 @@ function CustomerCancellationChargeLogs() {
   }, [rows, sortOrder]);
 
   const handleApplyFilters = () => {
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
-    setFilters({
+    const nextFilters = {
       bookingId: draftFilters.bookingId.trim(),
       serviceType: draftFilters.serviceType,
       fromDate: draftFilters.fromDate,
       toDate: draftFilters.toDate,
-    });
+    };
+
+    if (isInvalidDateRange(nextFilters)) {
+      setError(DATE_RANGE_ERROR);
+      return;
+    }
+
+    setError("");
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    setFilters(nextFilters);
   };
 
   const handleClearFilters = () => {
@@ -278,12 +296,15 @@ function CustomerCancellationChargeLogs() {
             <Input
               label="From Date"
               type="date"
+              max={today}
               value={draftFilters.fromDate}
               onChange={(e) => setDraftFilters((prev) => ({ ...prev, fromDate: e.target.value }))}
             />
             <Input
               label="To Date"
               type="date"
+              min={draftFilters.fromDate || undefined}
+              max={today}
               value={draftFilters.toDate}
               onChange={(e) => setDraftFilters((prev) => ({ ...prev, toDate: e.target.value }))}
             />
@@ -291,7 +312,7 @@ function CustomerCancellationChargeLogs() {
 
           {error ? (
             <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <Typography variant="small" className="text-gray-700">
+              <Typography variant="small" className="text-red-700">
                 {error}
               </Typography>
             </div>
@@ -318,9 +339,9 @@ function CustomerCancellationChargeLogs() {
                     "Payment Total",
                     "Created At",
                   ].map((label) => (
-                    <th key={label} className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                    <th key={label} className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left">
                       <div className="flex items-center">
-                        <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
+                        <Typography variant="small" className="whitespace-nowrap text-[11px] font-bold uppercase text-black">
                           {label}
                         </Typography>
                         {label === "Created At" && (

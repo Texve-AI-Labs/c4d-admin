@@ -354,7 +354,7 @@ const validationSchema = Yup.object({
                         <div>
                           <label className="text-sm font-medium text-gray-700">Bike Type</label>
                           <div className="space-x-4 mt-1">
-                            {['Petrol','EV'].map((type) => (
+                            {['BIKE','SCOOTY'].map((type) => (
                               <label key={type} className="inline-flex items-center">
                                 <Field type="radio" name="bikeType" value={type} className="mr-2" onChange={handleChange} />
                                 <span>{type}</span>

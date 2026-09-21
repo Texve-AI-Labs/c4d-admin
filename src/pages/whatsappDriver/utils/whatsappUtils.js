@@ -1,6 +1,16 @@
 import moment from "moment";
+import { normalizeMessageMedia } from "@/utils/whatsapp/media";
+import { friendlyWhatsAppError, isWhatsAppMediaTypeError } from "@/utils/whatsapp/errors";
 
 const pickFirst = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
+
+const parseBoolean = (value) => {
+  if (typeof value === "boolean") return value;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (["true", "1", "yes", "open"].includes(normalized)) return true;
+  if (["false", "0", "no", "closed", "expired"].includes(normalized)) return false;
+  return null;
+};
 
 const pickText = (...values) => {
   const value = values.find((item) => item !== undefined && item !== null && item !== "");
@@ -37,14 +47,15 @@ export const getMessageText = (raw = {}) =>
     raw.template?.name ? `[TEMPLATE] ${raw.template.name}` : "",
     raw.templateName ? `[TEMPLATE] ${raw.templateName}` : "",
     raw.template_name ? `[TEMPLATE] ${raw.template_name}` : "",
-    raw.errorMessage ? `Message undeliverable: ${raw.errorMessage}` : "",
-    raw.errors?.[0]?.message ? `Message undeliverable: ${raw.errors[0].message}` : "",
     ""
   );
 
 export const isRenderableMessage = (raw = {}) => {
   if (!raw || typeof raw !== "object") return false;
   if (String(getMessageText(raw) || "").trim()) return true;
+  if (normalizeMessageMedia(raw).length > 0) return true;
+  const type = String(raw.messageType || raw.message_type || raw.type || raw.mediaType || raw.media_type || "").toLowerCase();
+  if (["image", "video", "audio", "voice", "document", "pdf", "sticker"].some((item) => type.includes(item))) return true;
   return Boolean(
     raw.mediaUrl ||
       raw.media?.url ||
@@ -108,8 +119,11 @@ export const getDayKey = (value) => {
 };
 
 export const isSessionOpen = (conversation = {}) => {
-  if (typeof conversation.isSessionWindowOpen === "boolean") return conversation.isSessionWindowOpen;
-  if (typeof conversation.is_session_window_open === "boolean") return conversation.is_session_window_open;
+  const explicitOpen = parseBoolean(pickFirst(conversation.isSessionWindowOpen, conversation.is_session_window_open, conversation.sessionWindowOpen));
+  if (explicitOpen !== null) return explicitOpen;
+
+  const remainingSeconds = pickFirst(conversation.sessionWindowRemainingSeconds, conversation.session_window_remaining_seconds, null);
+  if (remainingSeconds !== null) return Number(remainingSeconds) > 0;
 
   const expiry = pickFirst(
     conversation.sessionWindowExpiresAt,
@@ -125,6 +139,7 @@ export const isSessionOpen = (conversation = {}) => {
     conversation.lastInboundAt,
     conversation.last_inbound_at,
     conversation.lastCustomerMessageAt,
+    conversation.lastDriverMessageAt,
     conversation.lastReceivedAt,
     conversation.lastMessageAt,
     conversation.last_message_time,
@@ -203,14 +218,18 @@ export const normalizeMessage = (raw = {}) => {
       ["outbound", "outgoing", "sent", "admin", "business"].includes(direction)
   );
   const mediaLabel = getMediaLabel(raw);
-  const text = getMessageText(raw) || (mediaLabel ? `[${mediaLabel}]` : "");
-  const failedReason = pickFirst(raw.errorMessage, raw.error_message, raw.errors?.[0]?.message, raw.errors?.[0]?.title, "");
+  const mediaAttachments = normalizeMessageMedia(raw);
+  const rawText = getMessageText(raw);
+  const rawFailedReason = pickFirst(raw.errorMessage, raw.error_message, raw.errors?.[0]?.message, raw.errors?.[0]?.title, "");
+  const text = isWhatsAppMediaTypeError(rawText) ? "" : rawText || (mediaLabel ? `[${mediaLabel}]` : "");
+  const failedReason = rawFailedReason ? friendlyWhatsAppError(rawFailedReason) : "";
 
   return {
     ...raw,
     id,
     text,
     mediaLabel,
+    mediaAttachments,
     mediaUrl: pickFirst(raw.mediaUrl, raw.media?.url, raw.imageUrl, raw.videoUrl, raw.audioUrl, raw.documentUrl, ""),
     failedReason,
     fromAdmin,

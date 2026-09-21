@@ -33,11 +33,20 @@ const renderUser = (user) => {
   return user?.phoneNumber ? `${name} (${user.phoneNumber})` : name;
 };
 
+const normalizeWalletRows = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.rows)) return payload.rows;
+  if (Array.isArray(payload?.transactions)) return payload.transactions;
+  if (Array.isArray(payload?.walletHistory)) return payload.walletHistory;
+  return [];
+};
+
 function DriverAdsRegistrationDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [record, setRecord] = useState(null);
   const [activityLog, setActivityLog] = useState(null);
+  const [walletHistory, setWalletHistory] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [statusRemarks, setStatusRemarks] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
@@ -61,6 +70,8 @@ function DriverAdsRegistrationDetails() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [activityError, setActivityError] = useState("");
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletError, setWalletError] = useState("");
   const [actionError, setActionError] = useState("");
   const isSuperUser = isSuperUserRole();
 
@@ -91,6 +102,21 @@ function DriverAdsRegistrationDetails() {
       setActivityError("Failed to load activity log.");
     } finally {
       setActivityLoading(false);
+    }
+  };
+
+  const fetchWalletHistory = async () => {
+    setWalletLoading(true);
+    setWalletError("");
+    try {
+      const route = API_ROUTES.GET_DRIVER_ADS_REGISTRATION_WALLET_HISTORY.replace(":registrationId", id);
+      const response = await ApiRequestUtils.get(route);
+      setWalletHistory(normalizeWalletRows(response?.data));
+    } catch (err) {
+      console.error("Failed to load driver ad registration wallet history:", err);
+      setWalletError("Failed to load wallet history.");
+    } finally {
+      setWalletLoading(false);
     }
   };
 
@@ -127,6 +153,7 @@ function DriverAdsRegistrationDetails() {
   useEffect(() => {
     if (!isSuperUser || !id) return;
     fetchActivityLog();
+    if (activeTab === "wallet") fetchWalletHistory();
   }, [id, activeTab, showDetails, isSuperUser]);
 
   const latestNote = useMemo(() => {
@@ -332,6 +359,7 @@ function DriverAdsRegistrationDetails() {
   const followUpRows = Array.isArray(activityLog?.followUps) ? activityLog.followUps : [];
   const historyRows = Array.isArray(activityLog?.history) ? activityLog.history : [];
   const timelineRows = Array.isArray(activityLog?.timeline) ? activityLog.timeline : [];
+  const walletRows = Array.isArray(walletHistory) ? walletHistory : [];
 
   if (loading) {
     return (
@@ -478,8 +506,8 @@ function DriverAdsRegistrationDetails() {
               <ActivityTabs
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
-                loading={activityLoading}
-                error={activityError}
+                loading={activityLoading || (activeTab === "wallet" && walletLoading)}
+                error={activeTab === "wallet" ? walletError : activityError}
                 rowsRenderer={(tab) => {
                   if (tab === "notes") {
                     return <ActivityLogTable rows={notesRows} headings={["Note", "Added By", "Created At"]} renderRow={(row) => [row?.note || "-", renderUser(row?.addedByUser), formatValue(row?.created_at)]} />;
@@ -511,6 +539,22 @@ function DriverAdsRegistrationDetails() {
                       row?.remarks || "-",
                       renderUser(row?.performedByUser),
                       formatValue(row?.created_at),
+                    ]}
+                      />
+                    );
+                  }
+                  if (tab === "wallet") {
+                    return (
+                      <ActivityLogTable
+                        rows={walletRows}
+                        headings={["Type", "Amount", "Balance", "Description", "Created At"]}
+                        renderRow={(row) => [
+                          row?.type || row?.transactionType || row?.entryType || row?.transaction_type || "-",
+                          row?.amount ?? row?.creditAmount ?? row?.debitAmount ?? row?.value ?? "-",
+                          row?.balance ?? row?.walletBalance ?? row?.closingBalance ?? "-",
+                          row?.description || row?.remarks || row?.note || row?.reason || "-",
+                          // row?.status || "-",
+                          formatValue(row?.created_at || row?.createdAt || row?.transactionDate || row?.date),
                     ]}
                       />
                     );

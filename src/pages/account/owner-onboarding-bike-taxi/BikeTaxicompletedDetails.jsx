@@ -27,8 +27,8 @@ const toDisplayCase = (value) =>
 
 const formatBikeTaxiVehicleType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
-  if (normalized === "ev") return "EV";
-  if (normalized === "petrol") return "Petrol";
+  if (normalized === "BIKE") return "Bike";
+  if (normalized === "SCOOTY") return "Scooty";
   return toDisplayCase(value);
 };
 
@@ -557,6 +557,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        zone: accountDraft?.district || "",
         accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",

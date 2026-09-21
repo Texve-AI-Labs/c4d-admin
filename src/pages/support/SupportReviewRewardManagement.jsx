@@ -245,6 +245,7 @@ function SupportReviewRewardManagement() {
       rewardAmount,
       rewardReason,
       adminRemarks,
+      disputedAmount: ticket?.disputedAmount,
     });
     setFieldErrors(validation.errors);
     if (!validation.valid) {

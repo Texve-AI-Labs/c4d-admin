@@ -22,6 +22,7 @@ const BikeTaxiAddAccountNew = () => {
                 street: "",
                 thaluk: "",
                 district: "",
+                zone: "",
                 accountDistrict: values?.accountDistrict,
                 state: "",
                 pincode: "",

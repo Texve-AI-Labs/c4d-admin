@@ -287,7 +287,7 @@ export function AccountList() {
       });
 
       // Prevent duplicate concurrent same-parameter hits (common in StrictMode/effect replays).
-      if (requestKey === inFlightRequestKeyRef.current) {
+      if (requestKey === inFlightRequestKeyRef.current || requestKey === lastRequestKeyRef.current) {
         return;
       }
 
@@ -309,6 +309,7 @@ export function AccountList() {
         })
       });
       if (data?.success) {
+        lastRequestKeyRef.current = requestKey;
         setAccounts(data?.data);
         setPagination({
           currentPage: page,
@@ -359,6 +360,8 @@ export function AccountList() {
 
   const handleRefresh = () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
+    lastRequestKeyRef.current = '';
+    inFlightRequestKeyRef.current = '';
     setPagination({
       currentPage: 1,
       totalPages: 1,

@@ -16,6 +16,13 @@ export const constants = {
 export const getBaseUrl = () => {
     return import.meta.env.VITE_URL_UAT + '/api/customer/dev';
 }
+
+export const isNgrokSkipEnabled = () =>
+    String(import.meta.env.VITE_ENABLE_NGROK_SKIP || "false").toLowerCase() === "true";
+
+export const getNgrokSkipHeaders = () =>
+    isNgrokSkipEnabled() ? { "ngrok-skip-browser-warning": "69420" } : {};
+
 export const DISABLE_GLOBAL_AUTOCOMPLETE = true; // true -> off false -> on
 
 export const PLAN_GROUP_CAR_TYPES = ['Mini', 'Sedan', 'SUV', 'MUV'];
@@ -858,6 +865,9 @@ export const API_ROUTES = {
     'GET_SUBCRIPTION_PLAN': '/admin/plan',
     'GET_SUBSCRIPTION_LIST': '/admin/subscription',
     'CREATE_SUBSCRIPTION': '/admin/subscription/create',
+    'GET_DRIVER_SUBSCRIPTIONS_FEEDBACK': '/admin/marketing-feedbacks',
+    'CREATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
+    'UPDATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
     'GET_ACCOUNTS': '/admin/accounts',
     'GET_DRIVERS_FOR_SUBSCRIPTION': '/admin/subscription/drivers',
     'GET_ACCOUNT_CABS': '/account/cabs/',
@@ -875,6 +885,7 @@ export const API_ROUTES = {
     'ADMIN_DISCOUNT_REJECT': '/booking/admin-discount/reject',
     'ADMIN_DISCOUNT_HISTORY': '/booking/admin-discount/history',
     'ADMIN_DISCOUNT_STATUS': '/booking/admin-discount/status',
+    'OWN_VEHICLE_TRIPS': '/own-vehicle-trips',
     'ACTING_DRIVER_ADD_LOCAL_PACKAGE': '/add-package',
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
@@ -904,7 +915,9 @@ export const API_ROUTES = {
     'CONFIRM_RENTAL_BOOKING': '/confirm-rental-booking',
     'GEO_MARKINGS': '/geo-markings',
     'GEO_MARKINGS_LIST': '/geo-markings/filter',
+    'SERVICE_CATEGORY_CATALOG': '/service-category-catalog',
     'RENTAL_OUTSTATION_TARIFFS': '/rental/outstation/tariffs',
+    'RENTAL_HOURLY_PACKAGE_TARIFFS': '/rental/hourly-package/tariffs',
     'GEO_MARKINGS_DELETE': '/geo-markings',
     'GET_CAR_TYPE': '/car-type/',
     'POST_NOTIFICATION_ADD': '/send-notification',
@@ -944,6 +957,7 @@ export const API_ROUTES = {
     'GET_AUTO_LIST':"/admin/autos",
     'ADD_NEW_AUTO_BOOKING':'/add-auto-booking',
     'POST_AUTO_SEARCH':'/search/auto',
+    'POST_PARCEL_SEARCH':'/search/parcel',
     'ADD_NEW_AUTO_DETAILS':'/register/admin/auto',
     'CREATE_PARCEL_ADMIN' :'/register/admin/parcel',
     'GET_ALL_PARCEL': '/admin/parcel',
@@ -1078,6 +1092,7 @@ export const API_ROUTES = {
     'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity',
     'GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID':'/admin/driver-advertisement-registration-cycles/:cycleId',
     'UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS':'/admin/driver-advertisement-registration-cycles/:cycleId/status',
+    'GET_DRIVER_ADS_REGISTRATION_WALLET_HISTORY':'/admin/driver-advertisement-registrations/:registrationId/wallet-history',
     'MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
@@ -1135,6 +1150,9 @@ export const API_ROUTES = {
     'PUT_SERVICE_CONTENT': '/admin/service-contents',
     'DELETE_SERVICE_CONTENT': '/admin/service-contents',
 
+    'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate',
+    'PROCESS_PARCEL_DAILY_SLOTS': '/process-parcel-daily-slots',
+    'GET_ACTING_DRIVER_PENALTIES': '/admin/acting-driver/penalties'
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
