@@ -102,7 +102,7 @@ export const DRIVER_RULE_PLAN_OPTIONS = [
   { value: "REGULAR", label: "Regular" },
   { value: "STANDARD", label: "Standard" },
   { value: "PREMIUM", label: "Premium" },
-  { value: "FREE", label: "Free" },
+  { value: "FREE PLAN", label: "Free" },
   { value: "ALL", label: "All" },
 ];
 
