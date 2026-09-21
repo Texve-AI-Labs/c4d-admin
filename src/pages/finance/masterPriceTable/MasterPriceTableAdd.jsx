@@ -52,7 +52,7 @@ const categoryPricingSchema = Yup.object().shape({
         .shape({
             baseKm: numberField('Base Km'),
             baseFare: numberField('Base Fare'),
-            cancellationCharge: numberField('Cancellation Charge'),
+            cancelCharge: numberField('Cancellation Charge'),
             peakHours: Yup.array().of(
                 Yup.object().shape({
                     start: Yup.string().required('Start time is required'),
@@ -66,7 +66,7 @@ const categoryPricingSchema = Yup.object().shape({
             nightHoursTo: Yup.string().required('Night Hours To is required'),
             waitingCharge: numberField('Waiting Charge'),
             waitingMins: numberField('Waiting Mins'),
-            cancellationMins : numberField('Cancellation Mins'),
+            cancelMins: numberField('Cancellation Mins'),
             freeExtraMinutes: numberField('Free Extra Minutes'),
             additionalMinCharge: numberField('Additional Min Charge'),
             surChargePercentage: numberField('Surcharge Percentage'),
@@ -117,11 +117,11 @@ const emptyCategoryPricing = {
         baseKm: '',
         baseFare: '',
         kilometerPrice: '',
-        cancellationCharge: '',
+        cancelCharge: '',
         nightCharge: '',
         waitingCharge: '',
         waitingMins:'',
-        cancellationMins:'',
+        cancelMins: '',
         freeExtraMinutes: '',
         additionalMinCharge: '',
         surChargePercentage: '',
@@ -192,11 +192,11 @@ const PriceAdd = () => {
                         baseKm: toNumber(categoryPricing.pricing.baseKm),
                         baseFare: toNumber(categoryPricing.pricing.baseFare),
                         kilometerPrice: toNumber(categoryPricing.pricing.kilometerPrice),
-                        cancellationCharge: toNumber(categoryPricing.pricing.cancellationCharge),
+                        cancelCharge: toNumber(categoryPricing.pricing.cancelCharge),
                         nightCharge: toNumber(categoryPricing.pricing.nightCharge),
                         waitingCharge: toNumber(categoryPricing.pricing.waitingCharge),
                         waitingMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.waitingMins),
-                        cancelMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.cancellationMins),
+                        cancelMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.cancelMins),
                         freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
                         additionalMinCharge: toNumber(categoryPricing.pricing.additionalMinCharge),
                         surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage),
@@ -375,13 +375,13 @@ const PriceAdd = () => {
                                                 </div>
                                                 <div>
                                                     <label className="text-sm font-medium text-gray-700">Cancellation Mins</label>
-                                                    <Field type="number" name={`categoryPricings.${index}.pricing.cancellationMins`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.cancellationMins`} component="div" className="text-red-500 text-sm" />
+                                                    <Field type="number" name={`categoryPricings.${index}.pricing.cancelMins`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.cancelMins`} component="div" className="text-red-500 text-sm" />
                                                 </div>
                                                 <div>
                                                     <label className="text-sm font-medium text-gray-700">Cancellation Charge</label>
-                                                    <Field type="number" name={`categoryPricings.${index}.pricing.cancellationCharge`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.cancellationCharge`} component="div" className="text-red-500 text-sm" />
+                                                    <Field type="number" name={`categoryPricings.${index}.pricing.cancelCharge`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                                    <ErrorMessage name={`categoryPricings.${index}.pricing.cancelCharge`} component="div" className="text-red-500 text-sm" />
                                                 </div>
                                                 <div>
                                                     <label className="text-sm font-medium text-gray-700">Night Charge</label>

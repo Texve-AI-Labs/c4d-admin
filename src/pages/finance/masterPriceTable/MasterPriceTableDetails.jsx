@@ -13,6 +13,7 @@ const CATEGORY_LABELS = {
     COMFORT: 'Comfort',
     PREMIUM: 'Premium',
     PREMIUM_XL: 'Premium XL',
+    BIKE: 'Bike',
 };
 
 const CAR_TYPE_LABELS = {
@@ -20,6 +21,10 @@ const CAR_TYPE_LABELS = {
     Sedan: 'Sedan',
     SUV: 'Suv',
     MUV: 'Muv',
+    BIKE: 'Bike',
+    SCOOTY: 'Scooty',
+    Bike: 'Bike',
+    Scooty: 'Scooty',
 };
 
 const emptyCategoryPricing = {
@@ -29,11 +34,11 @@ const emptyCategoryPricing = {
         baseKm: '',
         baseFare: '',
         kilometerPrice: '',
-        cancellationCharge: '',
+        cancelCharge: '',
         nightCharge: '',
         waitingCharge: '',
         waitingMins:'',
-        cancellationMins:'',
+        cancelMins: '',
         freeExtraMinutes: '',
         additionalMinCharge: '',
         surChargePercentage: '',
@@ -54,11 +59,11 @@ const normalizeCategoryPricings = (priceData) => {
                 baseKm: item.pricing?.baseKm ?? '',
                 baseFare: item.pricing?.baseFare ?? '',
                 kilometerPrice: item.pricing?.kilometerPrice ?? '',
-                cancellationCharge: item.pricing?.cancellationCharge ?? '',
+                cancelCharge: item.pricing?.cancelCharge ?? '',
                 nightCharge: item.pricing?.nightCharge ?? '',
                 waitingCharge: item.pricing?.waitingCharge ?? '',
                 waitingMins: item.pricing?.waitingMins ?? '',
-                cancellationMins: item.pricing?.cancellationMins ?? '',                
+                cancelMins: Utils.convertTimeFormatToMinutes(item.pricing?.cancelMins) ?? '',
                 freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
                 additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
                 surChargePercentage: item.pricing?.surChargePercentage ?? '',
@@ -161,8 +166,8 @@ const PriceDetails = () => {
                                 <ReadOnlyField label="Base Km" value={categoryPricing.pricing.baseKm} />
                                 <ReadOnlyField label="Base Fare" value={categoryPricing.pricing.baseFare} />
                                 <ReadOnlyField label="Kilometer Price" value={categoryPricing.pricing.kilometerPrice} />
-                                <ReadOnlyField label="Cancellation Mins" value={categoryPricing.pricing.cancellationMins} />
-                                <ReadOnlyField label="Cancellation Charge" value={categoryPricing.pricing.cancellationCharge} />
+                                <ReadOnlyField label="Cancellation Mins" value={categoryPricing.pricing.cancelMins} />
+                                <ReadOnlyField label="Cancellation Charge" value={categoryPricing.pricing.cancelCharge} />
                                 <ReadOnlyField label="Night Charge" value={categoryPricing.pricing.nightCharge} />
                                 <ReadOnlyField label="Waiting Mins" value={categoryPricing.pricing.waitingMins} />
                                 <ReadOnlyField label="Waiting Charge" value={categoryPricing.pricing.waitingCharge} />
