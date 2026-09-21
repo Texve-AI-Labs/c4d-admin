@@ -119,10 +119,7 @@ const formatVehicleTypeValue = (value) => {
   const raw = String(value).trim();
   if (!raw) return "-";
   const normalized = raw.toUpperCase();
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
   return raw
     .toLowerCase()
     .split(/\s+/)
