@@ -3,13 +3,14 @@ import { Button, Card, CardBody, CardHeader, Spinner, Switch, Typography } from 
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
-import {CATALOG_SERVICE_TYPE_OPTIONS,CATEGORY_OPTIONS,CATEGORY_OPTIONS_BY_SERVICE_TYPE,DRIVER_RULE_CAR_TYPE_OPTIONS,DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE,DRIVER_RULE_PLAN_OPTIONS,BOOKING_TYPE_OPTIONS,PACKAGE_TYPE_OPTIONS,STATUS_OPTIONS,TARGET_SERVICE_TYPE_OPTIONS,TARGET_SERVICE_TYPE_OPTIONS_BY_CATALOG_SERVICE_TYPE,emptyCategoryDriverEligible,emptyDriverRule,} from "./constants";
+import {CATALOG_SERVICE_TYPE_OPTIONS,CATEGORY_OPTIONS,CATEGORY_OPTIONS_BY_SERVICE_TYPE,DRIVER_RULE_CAR_TYPE_OPTIONS,DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE,DRIVER_RULE_PLAN_OPTIONS,BOOKING_TYPE_OPTIONS,PACKAGE_TYPE_OPTIONS,TARGET_SERVICE_TYPE_OPTIONS,TARGET_SERVICE_TYPE_OPTIONS_BY_CATALOG_SERVICE_TYPE,emptyCategoryDriverEligible,emptyDriverRule,} from "./constants";
 import {
   createCategoryDriverEligible,
   getCategoryDriverEligibleById,
   getCategoryDriverEligibleList,
   updateCategoryDriverEligible,
 } from "./api";
+import ApiErrorModal from "./ApiErrorModal";
 import { shouldUseBookingType, shouldUseDriverRules, shouldUsePackageFields } from "./rules";
 import { categoryDriverEligibleSchema, yupErrorsToObject } from "./validation";
 
@@ -18,6 +19,13 @@ const modeTitle = {
   edit: "Edit Category Driver Eligible",
   details: "Category Driver Eligible Details",
 };
+
+const getApiErrorMessage = (errorOrResponse, fallback = "Unable to save category driver eligible.") =>
+  errorOrResponse?.response?.data?.message ||
+  errorOrResponse?.response?.data?.error ||
+  errorOrResponse?.message ||
+  errorOrResponse?.error ||
+  fallback;
 
 const normalizeRecord = (record = {}) => ({
   ...emptyCategoryDriverEligible,
@@ -123,6 +131,7 @@ export default function CategoryDriverEligibleForm({ mode }) {
   const [zones, setZones] = useState([]);
   const [form, setForm] = useState(() => normalizeRecord(state?.item || {}));
   const [errors, setErrors] = useState({});
+  const [apiErrorMessage, setApiErrorMessage] = useState("");
   const [loading, setLoading] = useState(Boolean(id));
   const [saving, setSaving] = useState(false);
 
@@ -237,9 +246,14 @@ export default function CategoryDriverEligibleForm({ mode }) {
       const response = isEdit
         ? await updateCategoryDriverEligible(buildPayload(form, form.id || id))
         : await createCategoryDriverEligible(buildPayload(form));
-      if (response?.success !== false) navigate("/dashboard/finance/category-driver-eligible");
+      if (response?.success === false) {
+        setApiErrorMessage(getApiErrorMessage(response));
+        return;
+      }
+      navigate("/dashboard/finance/category-driver-eligible");
     } catch (error) {
       console.error("Failed to save category driver eligible:", error);
+      setApiErrorMessage(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -249,6 +263,11 @@ export default function CategoryDriverEligibleForm({ mode }) {
 
   return (
     <div className="mb-8 mt-8">
+      <ApiErrorModal
+        open={Boolean(apiErrorMessage)}
+        message={apiErrorMessage}
+        onClose={() => setApiErrorMessage("")}
+      />
       <Card>
         <CardHeader variant="gradient" className={`mb-4 rounded-xl p-6 ${ColorStyles.bgColor}`}>
           <Typography variant="h6" color="white">{modeTitle[mode]}</Typography>
@@ -323,13 +342,6 @@ export default function CategoryDriverEligibleForm({ mode }) {
               <FieldLabel required>Display Order</FieldLabel>
               <input disabled={disabled} type="number" className="w-full rounded-md border border-gray-300 p-2" value={form.displayOrder} onChange={(e) => setField("displayOrder", e.target.value)} />
               <ErrorText value={errors.displayOrder} />
-            </div>
-            <div>
-              <FieldLabel required>Status</FieldLabel>
-              <select disabled={disabled} className="w-full rounded-md border border-gray-300 p-2" value={form.status} onChange={(e) => setField("status", e.target.value)}>
-                {STATUS_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-              <ErrorText value={errors.status} />
             </div>
             <div className="md:col-span-2">
               <Switch disabled={disabled} checked={Boolean(form.isVisible)} label="Visible" onChange={(e) => setField("isVisible", e.target.checked)} />
