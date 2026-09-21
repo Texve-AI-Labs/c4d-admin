@@ -27,8 +27,8 @@ const toDisplayCase = (value) =>
 
 const formatBikeTaxiVehicleType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
-  if (normalized === "ev") return "EV";
-  if (normalized === "petrol") return "Petrol";
+  if (normalized === "BIKE") return "Bike";
+  if (normalized === "SCOOTY") return "Scooty";
   return toDisplayCase(value);
 };
 

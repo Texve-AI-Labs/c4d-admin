@@ -177,8 +177,8 @@ const BikeTaxiVehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              <option value="Petrol">Petrol</option>
-                              <option value="EV">EV</option>
+                              <option value="BIKE">Bike</option>
+                              <option value="SCOOTY">Scooty</option>
                             </select>
                           ) : row.label === "Address" ? (
                             <div className="relative w-full max-w-[220px]">
