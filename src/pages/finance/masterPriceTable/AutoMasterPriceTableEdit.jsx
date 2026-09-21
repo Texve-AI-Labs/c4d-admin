@@ -126,6 +126,17 @@ const pricingNumberFields = [
 const cloneCategoryPricing = () => JSON.parse(JSON.stringify(emptyCategoryPricing));
 const toNumber = (value) => Number(value || 0);
 const toTimeValue = (timeString) => timeString ? String(timeString).slice(0, 5) : '';
+const toMinuteValue = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+    if (typeof value === 'number') return value;
+
+    const stringValue = String(value);
+    if (stringValue.includes(':')) {
+        return Utils.convertTimeFormatToMinutes(stringValue) ?? '';
+    }
+
+    return Number(stringValue);
+};
 const FormLevelError = ({ error }) => (
     typeof error === 'string' ? <div className="text-red-500 text-sm">{error}</div> : null
 );
@@ -145,13 +156,13 @@ const normalizePricing = (pricing = {}) => ({
     baseKm: pricing.baseKm ?? '',
     baseFare: pricing.baseFare ?? '',
     kilometerPrice: pricing.kilometerPrice ?? '',
-    cancelMins: Utils.convertTimeFormatToMinutes(pricing.cancelMins) ?? '',
+    cancelMins: toMinuteValue(pricing.cancelMins ?? pricing.cancellationMins),
     cancelCharge: pricing.cancelCharge ?? '',
     extraKmPrice: pricing.extraKmPrice ?? '',
     nightCharge: pricing.nightCharge ?? '',
     nightHoursFrom: toTimeValue(pricing.nightHoursFrom),
     nightHoursTo: toTimeValue(pricing.nightHoursTo),
-    waitingMins: Utils.convertTimeFormatToMinutes(pricing.waitingMins) ?? '',
+    waitingMins: toMinuteValue(pricing.waitingMins),
     waitingCharge: pricing.waitingCharge ?? '',
     freeExtraMinutes: pricing.freeExtraMinutes ?? '',
     additionalMinCharge: pricing.additionalMinCharge ?? '',
@@ -240,7 +251,7 @@ const AutoMasterPriceEdit = () => {
                     type: priceData.type || 'Auto',
                     zone: priceData.zone || '',
                     status: priceData.status === 'ACTIVE' || Number(priceData.status) === 1 ? 'ACTIVE' : 'INACTIVE',
-                    driverCancelMins: Utils.convertTimeFormatToMinutes(priceData.driverCancelMins) ?? '',
+                    driverCancelMins: toMinuteValue(priceData.driverCancelMins),
                     driverFreeCancellationsPerDay: priceData.driverFreeCancellationsPerDay ?? '',
                     driverCancellationCharge: priceData.driverCancellationCharge ?? '',
                     demandRules: priceData.demandRules || [],

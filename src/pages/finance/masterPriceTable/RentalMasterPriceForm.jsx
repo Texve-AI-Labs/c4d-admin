@@ -16,8 +16,8 @@ export const CATEGORY_OPTIONS = [
 ];
 
 export const CAR_TYPE_OPTIONS = [
-    { value: 'MINI', label: 'Mini' },
-    { value: 'SEDAN', label: 'Sedan' },
+    { value: 'Mini', label: 'Mini' },
+    { value: 'Sedan', label: 'Sedan' },
     { value: 'SUV', label: 'Suv' },
     { value: 'MUV', label: 'Muv' },
 ];
