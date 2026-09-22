@@ -282,6 +282,7 @@ import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
 import OwnVehicle from "./pages/support/OwnVehicle";
 import OwnVehicleForm from "./pages/support/OwnVehicleForm";
+import OwnVehicleDetails from "./pages/support/OwnVehicleDetails";
 import GeoIntelligence from "./pages/geoIntelligence";
 import WhatsAppDriverPage from "./pages/whatsappDriver/WhatsAppDriverPage";
 
@@ -2470,7 +2471,7 @@ export const routes = [
         icon: <UserIcon {...icon} />,
         name: "Own Vehicle Details",
         path: "/support/own-vehicle/details/:id",
-        element: <OwnVehicleForm mode="details" />,
+        element: <OwnVehicleDetails />,
         display: false,
         permissionsAny: ["Support", "Sales", "Users"]
       },
