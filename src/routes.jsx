@@ -272,6 +272,8 @@ import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscript
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
+import SubscriptionExtendList from "./pages/support/subscriptionExtend/list";
+import SubscriptionExtendEdit from "./pages/support/subscriptionExtend/edit";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
 import ActingDriverCancellationLogs from "./pages/support/ActingDriverCancellationLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
@@ -2530,6 +2532,22 @@ export const routes = [
         element: <PaymentFailedRecords />,
         display: true,
         permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Subscription Extend",
+        path: "/support/subscription-extend",
+        element: <SubscriptionExtendList />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Extend Subscription",
+        path: "/support/subscription-extend/edit/:id",
+        element: <SubscriptionExtendEdit />,
+        display: false,
+        permission: "Users"
       },
       ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
         ? [{

@@ -19,6 +19,7 @@ function SupportSubmenu({ permissions = [] }) {
     { label: "Hourly Package Rate Card", path: "/dashboard/hourly-package-rate-card", requiredPermission: "Support" },
     { label: "Leads", path: "/dashboard/leads", requiredPermission: "Support" },
     { label: "Payment Failed Records", path: "/dashboard/support/payment-failed-records", requiredPermission: "Support" },
+    { label: "Subscription Extend", path: "/dashboard/support/subscription-extend", requiredPermission: "Users" },
     { label: "Own Vehicle", path: "/dashboard/support/own-vehicle", permissionsAny: ["Support", "Sales", "Users"] },
     ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
       ? [{ label: "Admin Discount History", path: "/dashboard/support/admin-discount-history", requiredPermission: "Users" }]
