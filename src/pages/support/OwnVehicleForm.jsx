@@ -76,7 +76,6 @@ function OwnVehicleForm({ mode = "add" }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
-  const isDetailsMode = mode === "details";
   const isEditMode = mode === "edit";
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(Boolean(id && !location.state?.row));
@@ -88,12 +87,6 @@ function OwnVehicleForm({ mode = "add" }) {
     () => Number(form.totalTripAmount || 0) - Number(form.fuelAmount || 0) - Number(form.otherExpense || 0),
     [form.totalTripAmount, form.fuelAmount, form.otherExpense]
   );
-  const fieldLabel = (label) => (isDetailsMode ? label : requiredLabel(label));
-
-  const labelProps = isDetailsMode
-  ? { className: "peer-disabled:text-blue-gray-600" }
-  : {};
-
   useEffect(() => {
     if (location.state?.row) {
       setForm(rowToForm(location.state.row));
@@ -177,7 +170,7 @@ function OwnVehicleForm({ mode = "add" }) {
     }
   };
 
-  const title = mode === "add" ? "Add Own Vehicle Trip" : isEditMode ? "Edit Own Vehicle Trip" : "Own Vehicle Trip Details";
+  const title = mode === "add" ? "Add Own Vehicle Trip" : "Edit Own Vehicle Trip";
 
   return (
     <div className="mb-8 mt-8 flex flex-col gap-6">
@@ -193,31 +186,29 @@ function OwnVehicleForm({ mode = "add" }) {
             <div className="flex justify-center py-10"><Spinner className="h-7 w-7" /></div>
           ) : (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Input type="datetime-local" label={fieldLabel("Trip Start Date Time")} value={form.tripStartDate} onChange={(e) => setField("tripStartDate", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input type="datetime-local" label={fieldLabel("Trip End Date Time")} value={form.tripEndDateTime} onChange={(e) => setField("tripEndDateTime", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input label={fieldLabel("Vehicle Number")} value={form.vehicleNumber} onChange={(e) => setField("vehicleNumber", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input label={fieldLabel("Driver Name")} value={form.driverName} onChange={(e) => setField("driverName", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input type="number" label={fieldLabel("Start KM")} value={form.startKm} onChange={(e) => setField("startKm", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input type="number" label={fieldLabel("End KM")} value={form.endKm} onChange={(e) => setField("endKm", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input type="number" label={fieldLabel("Total Trip Amount")} value={form.totalTripAmount} onChange={(e) => setField("totalTripAmount", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Select label={fieldLabel("Fuel Type")} value={form.fuelType} onChange={(value) => setField("fuelType", value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}>
+              <Input type="datetime-local" label={requiredLabel("Trip Start Date Time")} value={form.tripStartDate} onChange={(e) => setField("tripStartDate", e.target.value)} />
+              <Input type="datetime-local" label={requiredLabel("Trip End Date Time")} value={form.tripEndDateTime} onChange={(e) => setField("tripEndDateTime", e.target.value)} />
+              <Input label={requiredLabel("Vehicle Number")} value={form.vehicleNumber} onChange={(e) => setField("vehicleNumber", e.target.value)} />
+              <Input label={requiredLabel("Driver Name")} value={form.driverName} onChange={(e) => setField("driverName", e.target.value)} />
+              <Input type="number" label={requiredLabel("Start KM")} value={form.startKm} onChange={(e) => setField("startKm", e.target.value)} />
+              <Input type="number" label={requiredLabel("End KM")} value={form.endKm} onChange={(e) => setField("endKm", e.target.value)} />
+              <Input type="number" label={requiredLabel("Total Trip Amount")} value={form.totalTripAmount} onChange={(e) => setField("totalTripAmount", e.target.value)} />
+              <Select label={requiredLabel("Fuel Type")} value={form.fuelType} onChange={(value) => setField("fuelType", value)}>
                 {fuelTypeOptions.map((option) => (
                   <Option key={option.value} value={option.value}>{option.label}</Option>
                 ))}
               </Select>
-              <Input type="number" label={fieldLabel("Fuel Amount")} value={form.fuelAmount} onChange={(e) => setField("fuelAmount", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
-              <Input type="number" label={fieldLabel("Other Expense")} value={form.otherExpense} onChange={(e) => setField("otherExpense", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
+              <Input type="number" label={requiredLabel("Fuel Amount")} value={form.fuelAmount} onChange={(e) => setField("fuelAmount", e.target.value)} />
+              <Input type="number" label={requiredLabel("Other Expense")} value={form.otherExpense} onChange={(e) => setField("otherExpense", e.target.value)} />
               <Input label="Total KM Preview" value={Number.isFinite(totalKm) ? totalKm : 0} readOnly />
               <Input label="Closing Amount Preview" value={Number.isFinite(closingAmount) ? closingAmount : 0} readOnly />
               <div>
-                <Textarea label="Notes" value={form.notes} onChange={(e) => setField("notes", e.target.value)} disabled={isDetailsMode} labelProps={labelProps} className={isDetailsMode ? "disabled:bg-gray-50" : ""}/>
+                <Textarea label="Notes" value={form.notes} onChange={(e) => setField("notes", e.target.value)} />
               </div>
               <div className="flex justify-center gap-3 md:col-span-2">
-                {!isDetailsMode && (
                   <Button type="submit" className={`${ColorStyles.bgColor} text-white`} disabled={submitting}>
                     {submitting ? "Saving..." : isEditMode ? "Update" : "Add"}
                   </Button>
-                )}
                 <Button type="button" variant="outlined" onClick={() => navigate("/dashboard/support/own-vehicle")} disabled={submitting}>Back</Button>
               </div>
             </form>
