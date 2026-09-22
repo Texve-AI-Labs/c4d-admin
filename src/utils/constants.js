@@ -865,6 +865,8 @@ export const API_ROUTES = {
     'GET_SUBCRIPTION_PLAN': '/admin/plan',
     'GET_SUBSCRIPTION_LIST': '/admin/subscription',
     'CREATE_SUBSCRIPTION': '/admin/subscription/create',
+    'EXPIRED_SUBSCRIPTIONS': '/admin/subscription/expired',
+    'ADMIN_SUBSCRIPTION': '/admin/subscription',
     'GET_DRIVER_SUBSCRIPTIONS_FEEDBACK': '/admin/marketing-feedbacks',
     'CREATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
     'UPDATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',

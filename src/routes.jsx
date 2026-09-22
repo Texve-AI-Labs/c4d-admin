@@ -272,6 +272,8 @@ import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscript
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
 import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
+import SubscriptionExtendList from "./pages/support/subscriptionExtend/list";
+import SubscriptionExtendEdit from "./pages/support/subscriptionExtend/edit";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
 import ActingDriverCancellationLogs from "./pages/support/ActingDriverCancellationLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
@@ -1866,7 +1868,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible",
+        name: "Driver Estimation & Request control",
         path: "/finance/category-driver-eligible",
         element: <CategoryDriverEligibleList />,
         display: false,
@@ -1874,7 +1876,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible Add",
+        name: "Driver Estimation & Request control Add",
         path: "/finance/category-driver-eligible/add",
         element: <CategoryDriverEligibleAdd />,
         display: false,
@@ -1882,7 +1884,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible Edit",
+        name: "Driver Estimation & Request control Edit",
         path: "/finance/category-driver-eligible/edit/:id",
         element: <CategoryDriverEligibleEdit />,
         display: false,
@@ -1890,7 +1892,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible Details",
+        name: "Driver Estimation & Request control Details",
         path: "/finance/category-driver-eligible/details/:id",
         element: <CategoryDriverEligibleDetails />,
         display: false,
@@ -2530,6 +2532,22 @@ export const routes = [
         element: <PaymentFailedRecords />,
         display: true,
         permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Subscription Extend",
+        path: "/support/subscription-extend",
+        element: <SubscriptionExtendList />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Extend Subscription",
+        path: "/support/subscription-extend/edit/:id",
+        element: <SubscriptionExtendEdit />,
+        display: false,
+        permission: "Users"
       },
       ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
         ? [{
