@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import CabDriverWalletLog from '@/components/CabDriverWallet';
+import { safeText } from "@/utils/text";
 
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;
@@ -493,13 +494,13 @@ const VehicleInfoSection = ({
                             />
                           )
                         ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
-                          <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                          <Chip value={safeText(row.value)} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
                         ) : row.label === "Address" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
                             {formatAddressValue(row.value)}
                           </Typography>
                         ) : (
-                          <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">{safeText(row.value)}</Typography>
                         )}
                       </div>
                       );
