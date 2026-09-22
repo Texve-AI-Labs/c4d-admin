@@ -1868,7 +1868,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible",
+        name: "Driver Estimation & Request control",
         path: "/finance/category-driver-eligible",
         element: <CategoryDriverEligibleList />,
         display: false,
@@ -1876,7 +1876,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible Add",
+        name: "Driver Estimation & Request control Add",
         path: "/finance/category-driver-eligible/add",
         element: <CategoryDriverEligibleAdd />,
         display: false,
@@ -1884,7 +1884,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible Edit",
+        name: "Driver Estimation & Request control Edit",
         path: "/finance/category-driver-eligible/edit/:id",
         element: <CategoryDriverEligibleEdit />,
         display: false,
@@ -1892,7 +1892,7 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
-        name: "Category Driver Eligible Details",
+        name: "Driver Estimation & Request control Details",
         path: "/finance/category-driver-eligible/details/:id",
         element: <CategoryDriverEligibleDetails />,
         display: false,

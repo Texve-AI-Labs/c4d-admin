@@ -15,12 +15,12 @@ import { shouldUseBookingType, shouldUseDriverRules, shouldUsePackageFields } fr
 import { categoryDriverEligibleSchema, yupErrorsToObject } from "./validation";
 
 const modeTitle = {
-  add: "Add Category Driver Eligible",
-  edit: "Edit Category Driver Eligible",
-  details: "Category Driver Eligible Details",
+  add: "Add Driver Estimation & Request control",
+  edit: "Edit Driver Estimation & Request control",
+  details: "Driver Estimation & Request control Details",
 };
 
-const getApiErrorMessage = (errorOrResponse, fallback = "Unable to save category driver eligible.") =>
+const getApiErrorMessage = (errorOrResponse, fallback = "Unable to save Driver Estimation & Request control.") =>
   errorOrResponse?.response?.data?.message ||
   errorOrResponse?.response?.data?.error ||
   errorOrResponse?.message ||
@@ -164,7 +164,7 @@ export default function CategoryDriverEligibleForm({ mode }) {
         }
         setForm(normalizeRecord(record || {}));
       } catch (error) {
-        console.error("Failed to load category driver eligible:", error);
+        console.error("Failed to load Driver Estimation & Request control:", error);
       } finally {
         setLoading(false);
       }
@@ -252,7 +252,7 @@ export default function CategoryDriverEligibleForm({ mode }) {
       }
       navigate("/dashboard/finance/category-driver-eligible");
     } catch (error) {
-      console.error("Failed to save category driver eligible:", error);
+      console.error("Failed to save Driver Estimation & Request control:", error);
       setApiErrorMessage(getApiErrorMessage(error));
     } finally {
       setSaving(false);

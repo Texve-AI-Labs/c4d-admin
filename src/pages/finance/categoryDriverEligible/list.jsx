@@ -59,7 +59,7 @@ const getStoredFilters = () => {
     const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch (error) {
-    console.error("Failed to read category driver eligible filters:", error);
+    console.error("Failed to read Driver Estimation & Request control filters:", error);
     return {};
   }
 };
@@ -67,7 +67,7 @@ const setStoredFilters = (filters) => {
   try {
     sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
   } catch (error) {
-    console.error("Failed to save category driver eligible filters:", error);
+    console.error("Failed to save Driver Estimation & Request control filters:", error);
   }
 };
 
@@ -107,7 +107,7 @@ export default function CategoryDriverEligibleList() {
         const response = await getCategoryDriverEligibleList(params);
         setRows(Array.isArray(response?.data) ? response.data : []);
       } catch (error) {
-        console.error("Failed to load category driver eligible list:", error);
+        console.error("Failed to load Driver Estimation & Request control list:", error);
         setRows([]);
       } finally {
         setLoading(false);
@@ -141,7 +141,7 @@ export default function CategoryDriverEligibleList() {
       </div>
       <Card>
         <CardHeader variant="gradient" className={`m-4 p-6 rounded-xl ${ColorStyles.bgColor}`}>
-          <Typography variant="h6" color="white">Category Driver Eligible List</Typography>
+          <Typography variant="h6" color="white">Driver Estimation & Request control</Typography>
         </CardHeader>
         <CardBody className="px-0 pt-0">
           {loading ? (
