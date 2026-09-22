@@ -216,6 +216,7 @@ import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
 import OwnVehicle from "./pages/support/OwnVehicle";
 import OwnVehicleForm from "./pages/support/OwnVehicleForm";
+import OwnVehicleDetails from "./pages/support/OwnVehicleDetails";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -1873,7 +1874,7 @@ export const routes = [
         icon: <UserIcon {...icon} />,
         name: "Own Vehicle Details",
         path: "/support/own-vehicle/details/:id",
-        element: <OwnVehicleForm mode="details" />,
+        element: <OwnVehicleDetails />,
         display: false,
         permissionsAny: ["Support", "Sales", "Users"]
       },
