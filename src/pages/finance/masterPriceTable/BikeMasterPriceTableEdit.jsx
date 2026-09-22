@@ -21,8 +21,8 @@ const CATEGORY_OPTIONS = [
 ];
 
 const CAR_TYPE_OPTIONS = [
-    { value: 'BIKE', label: 'Bike' },
-    { value: 'SCOOTY', label: 'Scooty' },
+    { value: 'Bike', label: 'Bike' },
+    { value: 'Scooty', label: 'Scooty' },
 ];
 
 const numberField = (label) => Yup.number()
