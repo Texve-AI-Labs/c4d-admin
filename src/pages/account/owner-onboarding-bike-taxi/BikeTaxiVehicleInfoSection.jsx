@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import CabDriverWalletLog from '@/components/CabDriverWallet';
+import { safeText } from "@/utils/text";
 
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;
@@ -26,6 +27,15 @@ const makeAddressPayload = (name, placeId) => ({
   name,
   ...(placeId ? { placeId } : {}),
 });
+
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
 
 const BikeTaxiVehicleInfoSection = ({
   vehicleSections = [],
@@ -56,7 +66,13 @@ const BikeTaxiVehicleInfoSection = ({
   const getInitialDraft = (section) => {
     const map = {};
     (section?.vehicleDetailsRows || []).forEach((row) => {
-      if (editableLabels.has(row.label)) map[row.label] = row.value === "-" ? "" : row.value;
+      if (!editableLabels.has(row.label)) return;
+      if (row.label === "Address" && row.value && typeof row.value === "object") {
+        map[row.label] = formatAddressValue(row.value);
+        map.AddressPlaceId = row.value.placeId || row.value.place_id || row.value.placeID || row.value.id || "";
+        return;
+      }
+      map[row.label] = row.value === "-" ? "" : safeText(row.value, "");
     });
     return map;
   };
@@ -247,9 +263,13 @@ const BikeTaxiVehicleInfoSection = ({
                             />
                           )
                         ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
-                          <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                          <Chip value={safeText(row.value)} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                        ) : row.label === "Address" ? (
+                          <Typography className="text-blue-gray-900 font-medium break-words">
+                            {formatAddressValue(row.value)}
+                          </Typography>
                         ) : (
-                          <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">{safeText(row.value)}</Typography>
                         )}
                       </div>
                       );
