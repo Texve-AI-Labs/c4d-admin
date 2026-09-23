@@ -1154,7 +1154,12 @@ export const API_ROUTES = {
 
     'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate',
     'PROCESS_PARCEL_DAILY_SLOTS': '/process-parcel-daily-slots',
-    'GET_ACTING_DRIVER_PENALTIES': '/admin/acting-driver/penalties'
+    'GET_ACTING_DRIVER_PENALTIES': '/admin/acting-driver/penalties',
+    'COMPLIANCE-ESCALATIONS':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATIONS_LIST':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATIONS_ACTIVE_COUNT':'/admin/compliance-escalations/active-count',
+    'COMPLIANCE_ESCALATIONS_STATUS':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATION_DETAILS':'/admin/compliance-escalations',
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [

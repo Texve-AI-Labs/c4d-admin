@@ -27,6 +27,7 @@ function SupportSubmenu({ permissions = [] }) {
     { label: "Driver Ads", path: "/dashboard/support/driver-ads", requiredPermission: "Support" },
     { label: "Driver Ads Reg", path: "/dashboard/support/driver-ads-reg", requiredPermission: "Support" },    
     { label: "Support Review & Reward Management", path: "/dashboard/support/review-reward-management", requiredPermission: "Support" },
+    { label: "Compliance Management", path: "/dashboard/support/compliance-management", requiredPermission: "Users" },
     { label: "Customer Cancellation Charge Logs", path: "/dashboard/support/customer-cancellation-charge-logs", requiredPermission: "Users" },
     { label: "Acting Driver Cancellation Logs", path: "/dashboard/support/acting-driver-cancellation-logs", requiredPermission: "Users" },
   ];
