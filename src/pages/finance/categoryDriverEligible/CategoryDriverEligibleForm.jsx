@@ -75,6 +75,13 @@ const buildPayload = (form, id) => {
 const getAllowedOptions = (optionsByServiceType, serviceType, fallbackOptions) =>
   optionsByServiceType[serviceType] || fallbackOptions;
 
+const getDriverRuleCarTypeOptions = (targetServiceType, category) =>
+  getAllowedOptions(
+    DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE,
+    category === "SCOOTY" ? "SCOOTY" : targetServiceType,
+    DRIVER_RULE_CAR_TYPE_OPTIONS
+  );
+
 const filterRuleCarTypes = (rules, allowedCarTypeOptions) => {
   const allowedValues = new Set(allowedCarTypeOptions.map((item) => item.value));
   return (rules || []).map((rule) => ({
@@ -187,8 +194,8 @@ export default function CategoryDriverEligibleForm({ mode }) {
     [form.targetServiceType]
   );
   const carTypeOptions = useMemo(
-    () => getAllowedOptions(DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE, form.targetServiceType, DRIVER_RULE_CAR_TYPE_OPTIONS),
-    [form.targetServiceType]
+    () => getDriverRuleCarTypeOptions(form.targetServiceType, form.category),
+    [form.targetServiceType, form.category]
   );
   const setField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const handleCatalogServiceTypeChange = (value) => {
@@ -196,25 +203,45 @@ export default function CategoryDriverEligibleForm({ mode }) {
     const nextTargetServiceType = nextTargetOptions.some((item) => item.value === value)
       ? value
       : nextTargetOptions[0]?.value || "";
-    const nextCategoryOptions = getAllowedOptions(CATEGORY_OPTIONS_BY_SERVICE_TYPE, nextTargetServiceType, CATEGORY_OPTIONS);
-    const nextCarTypeOptions = getAllowedOptions(DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE, nextTargetServiceType, DRIVER_RULE_CAR_TYPE_OPTIONS);
 
     setForm((prev) => ({
       ...prev,
       catalogServiceType: value,
       targetServiceType: nextTargetServiceType,
-      category: nextCategoryOptions.some((item) => item.value === prev.category) ? prev.category : "",
-      driverRules: filterRuleCarTypes(prev.driverRules, nextCarTypeOptions),
+      ...(() => {
+        const nextCategoryOptions = getAllowedOptions(CATEGORY_OPTIONS_BY_SERVICE_TYPE, nextTargetServiceType, CATEGORY_OPTIONS);
+        const nextCategory = nextCategoryOptions.some((item) => item.value === prev.category) ? prev.category : "";
+        const nextCarTypeOptions = getDriverRuleCarTypeOptions(nextTargetServiceType, nextCategory);
+
+        return {
+          category: nextCategory,
+          driverRules: filterRuleCarTypes(prev.driverRules, nextCarTypeOptions),
+        };
+      })(),
     }));
   };
   const handleTargetServiceTypeChange = (value) => {
-    const nextCategoryOptions = getAllowedOptions(CATEGORY_OPTIONS_BY_SERVICE_TYPE, value, CATEGORY_OPTIONS);
-    const nextCarTypeOptions = getAllowedOptions(DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE, value, DRIVER_RULE_CAR_TYPE_OPTIONS);
-
     setForm((prev) => ({
       ...prev,
       targetServiceType: value,
-      category: nextCategoryOptions.some((item) => item.value === prev.category) ? prev.category : "",
+      ...(() => {
+        const nextCategoryOptions = getAllowedOptions(CATEGORY_OPTIONS_BY_SERVICE_TYPE, value, CATEGORY_OPTIONS);
+        const nextCategory = nextCategoryOptions.some((item) => item.value === prev.category) ? prev.category : "";
+        const nextCarTypeOptions = getDriverRuleCarTypeOptions(value, nextCategory);
+
+        return {
+          category: nextCategory,
+          driverRules: filterRuleCarTypes(prev.driverRules, nextCarTypeOptions),
+        };
+      })(),
+    }));
+  };
+  const handleCategoryChange = (value) => {
+    const nextCarTypeOptions = getDriverRuleCarTypeOptions(form.targetServiceType, value);
+
+    setForm((prev) => ({
+      ...prev,
+      category: value,
       driverRules: filterRuleCarTypes(prev.driverRules, nextCarTypeOptions),
     }));
   };
@@ -300,7 +327,7 @@ export default function CategoryDriverEligibleForm({ mode }) {
             </div>
             <div>
               <FieldLabel required>Category</FieldLabel>
-              <select disabled={identityFieldsDisabled} className="w-full rounded-md border border-gray-300 p-2" value={form.category} onChange={(e) => setField("category", e.target.value)}>
+              <select disabled={identityFieldsDisabled} className="w-full rounded-md border border-gray-300 p-2" value={form.category} onChange={(e) => handleCategoryChange(e.target.value)}>
                 <option value="">Select Category</option>
                 {categoryOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>

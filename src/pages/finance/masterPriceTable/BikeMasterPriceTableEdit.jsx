@@ -18,6 +18,7 @@ const STATUS_OPTIONS = [
 
 const CATEGORY_OPTIONS = [
     { value: 'BIKE', label: 'Bike' },
+    { value: 'SCOOTY', label: 'Scooty' },
 ];
 
 const CAR_TYPE_OPTIONS = [
@@ -152,7 +153,8 @@ const parseMaybeJson = (value, fallback) => {
 
 const normalizeCarType = (value) => {
     const normalized = String(value || '').trim().toUpperCase();
-    if (normalized === 'BIKE' || normalized === 'SCOOTY') return normalized;
+    if (normalized === 'BIKE') return 'Bike';
+    if (normalized === 'SCOOTY') return 'Scooty';
     return value;
 };
 

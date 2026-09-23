@@ -17,6 +17,7 @@ const STATUS_OPTIONS = [
 
 const CATEGORY_OPTIONS = [
     { value: 'BIKE', label: 'Bike' },
+    { value: 'SCOOTY', label: 'Scooty' },
 ];
 
 const CAR_TYPE_OPTIONS = [

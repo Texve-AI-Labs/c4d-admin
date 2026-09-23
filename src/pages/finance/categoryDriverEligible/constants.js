@@ -94,8 +94,10 @@ export const DRIVER_RULE_CAR_TYPE_OPTIONS_BY_SERVICE_TYPE = {
   ],
   BIKE: [
     { value: "BIKE", label: "Bike" },
-    // { value: "SCOOTY", label: "Scooty" },
   ],
+  SCOOTY: [
+    { value: "SCOOTY", label: "Scooty" },
+  ]
 };
 
 export const DRIVER_RULE_PLAN_OPTIONS = [
@@ -103,7 +105,6 @@ export const DRIVER_RULE_PLAN_OPTIONS = [
   { value: "STANDARD", label: "Standard" },
   { value: "PREMIUM", label: "Premium" },
   { value: "FREE PLAN", label: "Free" },
-  { value: "ALL", label: "All" },
 ];
 
 export const PACKAGE_TYPE_OPTIONS = [
