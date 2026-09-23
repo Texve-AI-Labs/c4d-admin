@@ -888,6 +888,7 @@ export const API_ROUTES = {
     'ADMIN_DISCOUNT_HISTORY': '/booking/admin-discount/history',
     'ADMIN_DISCOUNT_STATUS': '/booking/admin-discount/status',
     'OWN_VEHICLE_TRIPS': '/own-vehicle-trips',
+    'OWN_VEHICLE_TRIP_LOGS': '/own-vehicle-trips/:id/logs',
     'ACTING_DRIVER_ADD_LOCAL_PACKAGE': '/add-package',
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',

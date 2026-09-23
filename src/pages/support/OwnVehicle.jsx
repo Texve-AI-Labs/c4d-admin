@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, CardBody, Input, Option, Select, Spinner, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, Dialog, DialogBody, DialogHeader, Input, Option, Select, Spinner, Typography } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
+import { isSuperUserRole } from "@/utils/roleUtils";
 
 const PAGE_LIMIT = 20;
 const fuelFilterOptions = [
@@ -48,12 +49,33 @@ const formatDateTime = (value) => {
 
 const formatValue = (value) => (value === undefined || value === null || value === "" ? "-" : value);
 const formatAmount = (value) => (value === undefined || value === null || value === "" ? "-" : `₹ ${Number(value).toLocaleString("en-IN")}`);
+const formatHistoryValue = (value) => {
+  if (value === undefined || value === null || value === "") return "-";
+  if (typeof value === "object") return JSON.stringify(value);
+  if (String(value).match(/^\d{4}-\d{2}-\d{2}T/)) return formatDateTime(value);
+  return String(value);
+};
+const formatFieldLabel = (value) =>
+  String(value || "")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (char) => char.toUpperCase());
+const buildRoute = (route, id) => route.replace(":id", encodeURIComponent(String(id)));
+const actionButtonClass = "min-w-[82px] px-3 text-white shadow-sm";
+const detailsButtonClass = `${actionButtonClass} bg-blue-gray-700 hover:bg-blue-gray-800`;
+const editButtonClass = `${actionButtonClass} bg-blue-600 hover:bg-blue-700`;
+const historyButtonClass = `${actionButtonClass} bg-amber-600 hover:bg-amber-700`;
 
 function OwnVehicle() {
   const navigate = useNavigate();
+  const canViewHistory = isSuperUserRole();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [historyRows, setHistoryRows] = useState([]);
+  const [historyTrip, setHistoryTrip] = useState(null);
   const [filters, setFilters] = useState(emptyFilters);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -150,6 +172,42 @@ function OwnVehicle() {
     navigate(`/dashboard/support/own-vehicle/${suffix}`, { state: { row } });
   };
 
+  const openHistory = async (row) => {
+    if (!row?.id) return;
+    setHistoryTrip(row);
+    setHistoryRows([]);
+    setHistoryError("");
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+
+    try {
+      const response = await ApiRequestUtils.get(buildRoute(API_ROUTES.OWN_VEHICLE_TRIP_LOGS, row.id));
+      if (response?.success === false) {
+        setHistoryError(response?.message || "Failed to load own vehicle history.");
+        return;
+      }
+      setHistoryRows(normalizeRows(response));
+    } catch (err) {
+      console.error("Error fetching own vehicle history:", err);
+      setHistoryError("Failed to load own vehicle history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const closeHistory = () => {
+    setHistoryOpen(false);
+    setHistoryTrip(null);
+    setHistoryRows([]);
+    setHistoryError("");
+  };
+
+  const getHistoryFields = (log) => (
+    Array.isArray(log?.changedFields) && log.changedFields.length > 0
+      ? log.changedFields
+      : Array.from(new Set([...Object.keys(log?.oldData || {}), ...Object.keys(log?.newData || {})]))
+  );
+
   return (
     <div className="mb-8 mt-8 flex flex-col gap-6">
       <Card>
@@ -214,10 +272,13 @@ function OwnVehicle() {
                       {/* <td className="px-3 py-3 max-w-[220px] truncate">{formatValue(row?.notes)}</td> */}
                       <td className="px-3 py-3 whitespace-nowrap">{formatDateTime(row?.createdAt || row?.created_at)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatDateTime(row?.updatedAt || row?.updated_at)}</td>
-                      <td className="px-3 py-3 whitespace-nowrap min-w-[180px]">
-                        <div className="flex flex-row items-center gap-2">
-                          <Button size="sm" variant="outlined" onClick={() => goToMode("details", row)}>Details</Button>
-                          <Button size="sm" className={`${ColorStyles.bgColor} text-white`} onClick={() => goToMode("edit", row)}>Edit</Button>
+                      <td className="px-3 py-3 whitespace-nowrap min-w-[310px]">
+                        <div className="flex flex-row flex-nowrap items-center gap-2">
+                          <Button size="sm" className={detailsButtonClass} onClick={() => goToMode("details", row)}>Details</Button>
+                          <Button size="sm" className={editButtonClass} onClick={() => goToMode("edit", row)}>Edit</Button>
+                          {canViewHistory && (
+                            <Button size="sm" className={historyButtonClass} onClick={() => openHistory(row)}>History</Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -240,9 +301,12 @@ function OwnVehicle() {
                       <Typography variant="small" className="font-semibold text-blue-gray-900 break-words">{formatValue(row?.vehicleNumber)}</Typography>
                       <Typography variant="small" className="text-blue-gray-600 break-words">{formatValue(row?.driverName)}</Typography>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outlined" onClick={() => goToMode("details", row)}>Details</Button>
-                      <Button size="sm" className={`${ColorStyles.bgColor} text-white`} onClick={() => goToMode("edit", row)}>Edit</Button>
+                    <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+                      <Button size="sm" className={detailsButtonClass} onClick={() => goToMode("details", row)}>Details</Button>
+                      <Button size="sm" className={editButtonClass} onClick={() => goToMode("edit", row)}>Edit</Button>
+                      {canViewHistory && (
+                        <Button size="sm" className={historyButtonClass} onClick={() => openHistory(row)}>History</Button>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -286,6 +350,84 @@ function OwnVehicle() {
           </div>
         </CardBody>
       </Card>
+      <Dialog open={historyOpen} handler={closeHistory} size="xl" className="max-w-6xl w-[95vw]">
+        <DialogHeader className="flex items-center justify-between gap-4">
+          <div>
+            <Typography variant="h6" color="black">Own Vehicle History</Typography>
+            <Typography variant="small" className="text-blue-gray-500">
+              {historyTrip?.vehicleNumber ? `Vehicle: ${historyTrip.vehicleNumber}` : ""}
+            </Typography>
+          </div>
+          <Button variant="outlined" size="sm" onClick={closeHistory}>Close</Button>
+        </DialogHeader>
+        <DialogBody className="max-h-[75vh] overflow-y-auto">
+          {historyError && <div className="mb-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{historyError}</div>}
+
+          {historyLoading ? (
+            <div className="flex justify-center py-10">
+              <Spinner className="h-7 w-7" />
+            </div>
+          ) : historyRows.length === 0 ? (
+            <div className="py-8 text-center text-sm text-blue-gray-500">No history found.</div>
+          ) : (
+            <div className="space-y-4">
+              {historyRows.map((log, logIndex) => {
+                const fields = getHistoryFields(log);
+
+                return (
+                  <div key={log?.id || logIndex} className="rounded-lg border border-blue-gray-100 bg-white shadow-sm">
+                    <div className="grid grid-cols-1 gap-3 border-b border-blue-gray-50 bg-blue-gray-50 px-4 py-3 text-sm md:grid-cols-4">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase text-blue-gray-500">Action Type</div>
+                        <div className="font-semibold text-blue-gray-900">{formatValue(log?.actionType)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase text-blue-gray-500">Changed By</div>
+                        <div className="break-words text-blue-gray-800">{formatValue(log?.changedBy?.name)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase text-blue-gray-500">Role</div>
+                        <div className="break-words text-blue-gray-800">{formatValue(log?.changedBy?.role)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase text-blue-gray-500">Date Time</div>
+                        <div className="break-words text-blue-gray-800">{formatDateTime(log?.createdAt)}</div>
+                      </div>
+                    </div>
+
+                    {fields.length === 0 ? (
+                      <div className="px-4 py-5 text-center text-sm text-blue-gray-500">No field changes found.</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[620px] table-auto">
+                          <thead>
+                            <tr className={ColorStyles.bgColor}>
+                              {["Field", "Old Data", "New Data"].map((header) => (
+                                <th key={header} className="border-b border-blue-gray-50 px-3 py-3 text-left whitespace-nowrap">
+                                  <Typography variant="small" className="text-[11px] font-bold uppercase text-white">{header}</Typography>
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fields.map((field) => (
+                              <tr key={`${log?.id || logIndex}-${field}`} className="border-b border-blue-gray-50 text-sm last:border-b-0">
+                                <td className="px-3 py-3 font-medium text-blue-gray-800 whitespace-nowrap">{formatFieldLabel(field)}</td>
+                                <td className="px-3 py-3 max-w-[300px] break-words text-blue-gray-700">{formatHistoryValue(log?.oldData?.[field])}</td>
+                                <td className="px-3 py-3 max-w-[300px] break-words text-blue-gray-700">{formatHistoryValue(log?.newData?.[field])}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogBody>
+      </Dialog>
     </div>
   );
 }
