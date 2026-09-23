@@ -271,6 +271,7 @@ import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/
 import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
+import ComplianceManagement from "./pages/support/ComplianceManagement";
 import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
 import SubscriptionExtendList from "./pages/support/subscriptionExtend/list";
 import SubscriptionExtendEdit from "./pages/support/subscriptionExtend/edit";
@@ -2500,6 +2501,14 @@ export const routes = [
         element: <SupportReviewRewardManagement />,
         display: true,
         permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Compliance Management",
+        path: "/support/compliance-management",
+        element: <ComplianceManagement />,
+        display: true,
+        permission: "Users"
       },
       {
         icon: <UserIcon {...icon} />,
