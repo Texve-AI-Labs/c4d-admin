@@ -321,7 +321,7 @@ const CompletedOnboardingDetails = () => {
           serviceType: "RIDES",
           zone,
         });
-        if (data?.success) {
+        if (data?.success || data?.luggageCapacity) {
           setLuggageCapacityMap(data?.luggageCapacity || {});
           setLuggageCapacityError("");
         } else {

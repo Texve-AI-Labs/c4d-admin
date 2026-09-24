@@ -303,7 +303,7 @@ const CabAddNew = () => {
                 serviceType: "RIDES",
                 zone,
             });
-            if (data?.success) {
+            if (data?.luggageCapacity) {
                 setLuggageCapacityMap(data?.luggageCapacity || {});
                 setLuggageCapacityError("");
             } else {
