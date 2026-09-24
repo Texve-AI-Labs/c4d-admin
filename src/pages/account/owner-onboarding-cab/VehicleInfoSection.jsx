@@ -89,7 +89,7 @@ const VehicleInfoSection = ({
     if (["MINI", "SUV", "MUV", "SEDAN"].includes(rawCarType)) {
       map["Car Type"] =
         rawCarType === "MINI"
-          ? "Mini"
+          ? "MINI"
           : rawCarType === "SEDAN"
             ? "Sedan"
             : rawCarType;
@@ -345,7 +345,7 @@ const VehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              <option value="Mini">Mini</option>
+                              <option value="MINI">Mini</option>
                               <option value="SUV">SUV</option>
                               <option value="MUV">MUV</option>
                               <option value="Sedan">Sedan</option>

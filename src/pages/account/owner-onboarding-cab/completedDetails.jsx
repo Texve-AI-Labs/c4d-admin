@@ -537,7 +537,7 @@ const CompletedOnboardingDetails = () => {
               { label: "Driver Name", value: cabResult?.Drivers?.[0]?.firstName || "-" },
               { label: "Driver Phone Number", value: cabResult?.Drivers?.[0]?.phoneNumber || "-" },
               { label: "Driver Address", value: cabResult?.Drivers?.[0]?.curAddress || "-" },
-              { label: "Driver License Number", value: cabResult?.Drivers?.[0]?.license || "-" },
+              { label: "Driver License Number", value: cabResult?.driverLicense || cabResult?.Drivers?.[0]?.license || "-" },
             ]
           : []),
       ].filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
@@ -822,10 +822,12 @@ const CompletedOnboardingDetails = () => {
         status: nextVehicleStatus,
         blockedReason: nextVehicleStatus === "BLOCKED" ? nextBlockedReason : "",
       };
+      console.log('cabDetails log:',cabDetails)
 
       const prices = Array.isArray(cabPayload?.price)
         ? cabPayload.price.filter((el) => (cabResult?.packages || []).includes(el.packageId))
         : [];
+      console.log("Prices Log :",prices)
 
       const res = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, {
         cabDetails: JSON.stringify(cabDetails),
@@ -858,7 +860,7 @@ const CompletedOnboardingDetails = () => {
       const isIndividualAccount = accountType === "individual";
       const canManageDriver = ["company", "individual"].includes(accountType);
       const rawCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").trim().toUpperCase();
-      const mappedCarType = rawCarType === "MINI" ? "Mini" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
+      const mappedCarType = rawCarType === "MINI" ? "MINI" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
       const mappedAssignedTo = String(draftValues?.["Assigned To"] || "").trim();
       const mappedWithDriver = String(draftValues?.["With Driver"] || cabResult?.withDriver || "");
       const assignOrAddDriver = String(draftValues?.["Assign or Add Driver"] || "Assign");
@@ -902,11 +904,11 @@ const CompletedOnboardingDetails = () => {
         packages: Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []),
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         driverId:
-          canManageDriver && mappedWithDriver === "Yes"
-            ? (assignOrAddDriver === "Add"
+          mappedWithDriver !== "Yes"
+            ? null
+            : assignOrAddDriver === "Add"
               ? ""
-              : (draftValues?.["Driver ID"] || cabResult?.Drivers?.[0]?.id || ""))
-            : (cabResult?.Drivers?.[0]?.id || ""),
+              : (draftValues?.["Driver ID"] || cabResult?.Drivers?.[0]?.id || null),
         cabId: cabResult?.id,
         status: normalizeVehicleStatus(cabResult?.status),
         blockedReason: cabResult?.blockedReason || "",
@@ -916,10 +918,16 @@ const CompletedOnboardingDetails = () => {
       const prices = Array.isArray(cabPayload?.price)
         ? cabPayload.price.filter((el) => selectedPackages.map(String).includes(String(el.packageId)))
         : [];
+      const normalizedPrices = prices.map((price) => ({
+        ...price,
+        driverId: cabDetails.driverId || null,
+      }));
 
+      console.log('Cab Details :- ', cabDetails);
+      console.log("Prices Log :", normalizedPrices);
       const res = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, {
         cabDetails: JSON.stringify(cabDetails),
-        prices: JSON.stringify(prices),
+        prices: JSON.stringify(normalizedPrices),
       });
 
       if (res?.success) {
