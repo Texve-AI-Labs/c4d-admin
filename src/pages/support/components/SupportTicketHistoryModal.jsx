@@ -128,7 +128,7 @@ function SupportTicketHistoryModal({ open, onClose, ticketId, fallbackTicket, on
                       <td className="whitespace-nowrap p-3 text-sm text-black">{row?.newDisputedAmount != null ? `₹ ${Number(row.newDisputedAmount).toFixed(2)}` : "-"}</td>
                       <td className="max-w-[180px] p-3 text-sm text-black"><span className="block truncate" title={row?.remarks || "-"}>{row?.remarks || "-"}</span></td>
                       <td className="whitespace-nowrap p-3 text-sm text-black">{row?.changedByType || "-"}</td>
-                      <td className="whitespace-nowrap p-3 text-sm text-black">{row?.changedByUser?.name || row?.changedByActorId || "-"}</td>
+                      <td className="whitespace-nowrap p-3 text-sm text-black">{row?.changedByUser?.name || row?.changedByCustomer?.firstName || "-"}</td>
                       <td className="whitespace-nowrap p-3 text-sm text-black">{formatDateTime(row?.created_at || row?.updated_at || row?.createdAt || row?.updatedAt)}</td>
                     </tr>
                   ))
