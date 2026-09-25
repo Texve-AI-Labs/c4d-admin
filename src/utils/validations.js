@@ -966,6 +966,31 @@ export const GST_EDIT_SCHEMA = Yup.object().shape({
       gstNo: Yup.string().required('GST No is required'),
       isActive: Yup.boolean().required('Status is required'),
     });
+
+export const DISTANCE_RULE_SCHEMA = Yup.object({
+  serviceType: Yup.string().required('Service type is required'),
+  config: Yup.object({
+    reason: Yup.string().required('Default reason is required'),
+    thresholdKm: Yup.number()
+      .typeError('Default threshold must be a number')
+      .positive('Default threshold must be greater than 0')
+      .required('Default threshold is required'),
+    serviceAreaRules: Yup.array()
+      .of(
+        Yup.object({
+          serviceAreaName: Yup.string().required('Service area name is required'),
+          reason: Yup.string().required('Reason is required'),
+          thresholdKm: Yup.number()
+            .typeError('Threshold must be a number')
+            .positive('Threshold must be greater than 0')
+            .required('Threshold is required'),
+        })
+      )
+      .min(1, 'At least one service area rule is required'),
+  }),
+  isActive: Yup.boolean().required('Status is required'),
+});
+
 export const DriverOfferSchema = Yup.object({
   title: Yup.string().required("Title is required"),
 //   serviceType: Yup.string().required("Service type is required"),
