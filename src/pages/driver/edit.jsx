@@ -881,7 +881,7 @@ const [blockedReason, setBlockedReason] = useState('');
                            
                             <div>
                                 <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
-                                <Field type="tel" name="phoneNumber" className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
+                                <Field type="tel" name="phoneNumber" disabled className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 cursor-not-allowed" maxLength={10} />
                                 <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                             </div>
 
