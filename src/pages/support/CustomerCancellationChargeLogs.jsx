@@ -4,6 +4,10 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
   Input,
   Option,
   Select,
@@ -115,6 +119,7 @@ function CustomerCancellationChargeLogs() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [apiErrorMessage, setApiErrorMessage] = useState("");
   const [sortOrder, setSortOrder] = useState("desc");
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -139,15 +144,38 @@ function CustomerCancellationChargeLogs() {
         page,
         limit: pagination.itemsPerPage,
       };
-      if (nextFilters.bookingId) query.bookingId = Number(nextFilters.bookingId);
+      if (nextFilters.bookingId) query.bookingId = nextFilters.bookingId;
       if (nextFilters.serviceType) query.serviceType = nextFilters.serviceType;
       if (nextFilters.fromDate) query.fromDate = nextFilters.fromDate;
       if (nextFilters.toDate) query.toDate = nextFilters.toDate;
 
-      const response = await ApiRequestUtils.getWithQueryParam(
-        API_ROUTES.CUSTOMER_CANCELLATION_CHARGE_LOGS,
-        query
-      );
+      let apiAlertMessage = "";
+      const originalAlert = window.alert;
+      window.alert = (title, message) => {
+        apiAlertMessage = message || title || "";
+      };
+
+      let response;
+      try {
+        response = await ApiRequestUtils.getWithQueryParam(
+          API_ROUTES.CUSTOMER_CANCELLATION_CHARGE_LOGS,
+          query
+        );
+      } finally {
+        window.alert = originalAlert;
+      }
+
+      if (!response && apiAlertMessage) {
+        setRows([]);
+        setApiErrorMessage(apiAlertMessage);
+        return;
+      }
+
+      if (response?.code === 400 || response?.success === false) {
+        setRows([]);
+        setApiErrorMessage(response?.message || "Failed to fetch customer cancellation charge logs.");
+        return;
+      }
 
       const payload = response?.data ?? response?.result ?? response;
       const nextRows = normalizeRows(payload);
@@ -159,7 +187,7 @@ function CustomerCancellationChargeLogs() {
     } catch (err) {
       console.error("Failed to fetch customer cancellation charge logs:", err);
       setRows([]);
-      setError("Failed to fetch customer cancellation charge logs.");
+      setApiErrorMessage(err?.response?.data?.message || err?.message || "Failed to fetch customer cancellation charge logs.");
     } finally {
       setLoading(false);
     }
@@ -276,12 +304,17 @@ function CustomerCancellationChargeLogs() {
 
         <CardBody className="pt-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input
-              label="Booking ID"
-              type="number"
-              value={draftFilters.bookingId}
-              onChange={(e) => setDraftFilters((prev) => ({ ...prev, bookingId: e.target.value }))}
-            />
+            <div>
+              <Typography variant="small" className="mb-1 font-medium text-gray-700">
+                Booking ID / Booking Number
+              </Typography>
+              <Input
+                type="text"
+                placeholder="8503 or C4D00008503"
+                value={draftFilters.bookingId}
+                onChange={(e) => setDraftFilters((prev) => ({ ...prev, bookingId: e.target.value }))}
+              />
+            </div>
             <Select
               label="Service Type"
               value={draftFilters.serviceType}
@@ -508,6 +541,19 @@ function CustomerCancellationChargeLogs() {
           </div>
         </CardBody>
       </Card>
+      <Dialog open={Boolean(apiErrorMessage)} handler={() => setApiErrorMessage("")} size="sm">
+        <DialogHeader className="text-red-700">Request Failed</DialogHeader>
+        <DialogBody divider>
+          <Typography className="text-sm font-medium text-gray-800">
+            {apiErrorMessage}
+          </Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button className="bg-red-600" onClick={() => setApiErrorMessage("")}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }
