@@ -3,13 +3,34 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
-import { Alert, Button } from '@material-tailwind/react';
+import { Alert, Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography } from '@material-tailwind/react';
 import { useNavigate, useParams } from "react-router-dom";
+
+const getCustomerApiErrorMessage = (errorOrResponse, fallback = "Unable to register customer.") => errorOrResponse?.message || fallback;
+
+const isCustomerApiFailure = (response) => !response || response?.success === false || response?.success === "false" || Number(response?.code) === 409;
+
+const ApiErrorModal = ({ open, message, onClose }) => (
+    <Dialog open={open} handler={onClose} size="sm">
+        <DialogHeader className="text-red-700">Alert !</DialogHeader>
+        <DialogBody divider>
+            <Typography className="text-sm font-medium text-gray-800">
+                {message || "Something went wrong. Please try again."}
+            </Typography>
+        </DialogBody>
+        <DialogFooter>
+            <Button className="bg-red-600" onClick={onClose}>
+                Close
+            </Button>
+        </DialogFooter>
+    </Dialog>
+);
 
 const CustomerAdd = (props) => {
     const [customerVal, setCustomerVal] = useState({});
     const [zones, setZones] = useState([]);
     const [alert, setAlert] = useState(false);
+    const [apiErrorMessage, setApiErrorMessage] = useState("");
     const { id } = useParams();
     const isEditMode = !!id;
     const navigate = useNavigate();
@@ -95,10 +116,8 @@ const CustomerAdd = (props) => {
                 // customerData['sourceType'] = values.sourceType; // Ensure sourceType is included for new customers
                 data = await ApiRequestUtils.post(API_ROUTES.REGISTER_CUSTOMER, customerData);
 
-                if (!data?.success && data?.code === 203) {
-                    setAlert({ message: 'Customer already exists!', color: 'red' });
-                    setTimeout(() => setAlert(null), 5000);
-                    resetForm();
+                if (isCustomerApiFailure(data)) {
+                    setApiErrorMessage(getCustomerApiErrorMessage(data));
                 } else {
                     // setAlert({ show: true, message: isEditMode ? 'User updated successfully!' : 'User added successfully!', color: 'green' });
                     // setTimeout(() => {
@@ -121,7 +140,7 @@ const CustomerAdd = (props) => {
             }
         } catch (error) {
             console.error('Error creating user and car:', error);
-            // Handle error (e.g., show an error message)
+            setApiErrorMessage(getCustomerApiErrorMessage(error));
         }
         setSubmitting(false);
     };
@@ -142,6 +161,7 @@ const CustomerAdd = (props) => {
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
+            <ApiErrorModal open={Boolean(apiErrorMessage)} message={apiErrorMessage} onClose={() => setApiErrorMessage("")} />
             {alert && (
                 <div className='mb-2'>
                     <Alert
