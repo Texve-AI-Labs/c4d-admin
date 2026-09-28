@@ -114,6 +114,7 @@ const AddBanner = () => {
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isBannerTargetedMode = (type, mode) => type === 'BANNER' && mode === 'TARGETED';
+  const isBannerNewCustomerMode = (type, mode) => type === 'BANNER' && mode === 'NEW_CUSTOMER';
   const TARGETED_SERVICE_OPTIONS = ['RIDES', 'AUTO', 'BIKE', 'PARCEL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'RENTAL_OUTSTATION'];
   const getTargetedServiceLabel = (service) => {
     switch (service) {
@@ -278,7 +279,10 @@ const AddBanner = () => {
           formData.append('packageType', mappedServiceDetails.packageType);
         }
       }
-      if (isBannerTargetedMode(values.type, values.mode)) {
+      if (isBannerNewCustomerMode(values.type, values.mode)) {
+        formData.append('eligibilityConfig', JSON.stringify({ audience: 'NEW_CUSTOMER' }));       
+      } 
+      else if (isBannerTargetedMode(values.type, values.mode)) {
         const eligibilityConfig = TARGETED_SERVICE_OPTIONS.reduce((acc, service) => {
           const count = Number(values.eligibilityConfig?.[service] || 0);
           if (!count) return acc;
@@ -300,6 +304,7 @@ const AddBanner = () => {
       }
 
       const response = await ApiRequestUtils.postDocs(API_ROUTES.POST_BANNER, formData);
+      console.log('LOG',response)
       if (response?.success === false) {
         setModalMessage(response?.error || response?.message || 'Unable to save banner.');
       return;
@@ -419,6 +424,7 @@ const AddBanner = () => {
                   >
                     <option value="GENERAL">General</option>
                     <option value="TARGETED">Targeted</option>
+                    <option value="NEW_CUSTOMER">New Customer</option>
                   </Field>
                 </div>
               )}
