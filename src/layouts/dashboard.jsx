@@ -14,26 +14,53 @@ import { useMaterialTailwindController, setOpenConfigurator, setOpenSidenav, set
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import ProtectedRoute from "../../src/pages/auth/ProtectedRoute";
+import { clearCachedPermissions, getCachedPermissions, getLoggedInUserId,saveCachedPermissions } from "./dashboard/permissionCache";
 
 export function Dashboard() {
   const [controller, dispatch] = useMaterialTailwindController();
   const { sidenavType, sidenavColor, openSidenav, miniSidenav } = controller;
   const location = useLocation();
-  const [permissions, setPermissions] = useState([]);
+  const [permissions, setPermissions] = useState(() => getCachedPermissions());
   const [isLoading, setIsLoading] = useState(true);
+  const [permissionLoadError, setPermissionLoadError] = useState("");
 
   const getPermissions = async () => {
     try{
-      const user = localStorage.getItem('loggedInUser');
-      const userId = JSON.parse(user)?.id;
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setPermissions([]);
+        return;
+      }
+
+      const userId = getLoggedInUserId();
+      if (!userId) {
+        setPermissions([]);
+        setPermissionLoadError("Unable to identify the logged-in user. Please sign in again.");
+        return;
+      }
+
       const perm = await ApiRequestUtils.get(API_ROUTES.GET_USER_BY_ID + userId);
       if(perm?.success){
-        setPermissions(perm?.data?.permission || []);
+        const nextPermissions = perm?.data?.permission || [];
+        setPermissions(nextPermissions);
+        saveCachedPermissions(nextPermissions);
+        setPermissionLoadError("");
       } else {
         console.error("Failed to fetch permissions:", perm?.message);
+        const responseCode = Number(perm?.code);
+        if (responseCode && responseCode < 500) {
+          clearCachedPermissions();
+          setPermissions([]);
+          setPermissionLoadError("");
+        } else if (permissions.length === 0) {
+          setPermissionLoadError("Unable to load permissions. Please check your connection and retry.");
+        }
       }
     }catch(err){
       console.log("ERROR IN GET PERMISIIONS", err);
+      if (permissions.length === 0) {
+        setPermissionLoadError("Unable to load permissions. Please check your connection and retry.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -48,12 +75,24 @@ export function Dashboard() {
     setOpenSidenav(dispatch, false);
   }, [location.pathname]);
 
+  if (!localStorage.getItem("token")) {
+    return <Navigate to="/auth/sign-in" replace />;
+  }
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!localStorage.getItem("token")) {
-    return <Navigate to="/auth/sign-in" replace />;
+  if (permissionLoadError && permissions.length === 0) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 px-4 text-center">
+        <h1 className="text-xl font-semibold text-gray-900">Unable to load permissions</h1>
+        <p className="max-w-md text-sm text-gray-700">{permissionLoadError}</p>
+        <Button className="bg-red-600" onClick={getPermissions}>
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -135,7 +174,16 @@ export function Dashboard() {
 }
 
 function UnauthorizedPage() {
-  return <h1>403 - Unauthorized: You do not have permission to access this page.</h1>;
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-lg border border-red-100 bg-white p-6 text-center shadow-lg">
+        <h1 className="text-xl font-semibold text-red-700">403 Unauthorized</h1>
+        <p className="mt-3 text-sm text-gray-700">
+          You do not have permission to access this page.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default Dashboard;

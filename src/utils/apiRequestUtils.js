@@ -1,11 +1,14 @@
 import axios from 'axios';
 import { ASYNC_STORAGE_KEYS, getBaseUrl, getNgrokSkipHeaders, KYC_PROCESS } from "./constants";
+import { attachNetworkErrorInterceptor, notifyAndThrowNetworkError } from "./networkError";
 
 const showDefaultFailureAlert = (message) => {
     if (typeof window !== "undefined" && typeof window.alert === "function") {
         window.alert(message || "Failure");
     }
 };
+
+attachNetworkErrorInterceptor();
 
 export const ApiRequestUtils = {
     post: async (apiRoute, body, custID = 0, options = {}) => {
@@ -18,9 +21,15 @@ export const ApiRequestUtils = {
         if (custID != 0) {
             headers['custID'] = custID;
         }
-const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
+let data;
+        try {
+            const response = await axios.post(getBaseUrl() + apiRoute, body, {
             headers
         });
+            data = response.data;
+        } catch (error) {
+            notifyAndThrowNetworkError(error);
+        }
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             if (options?.suppressAlert) return data;
             showDefaultFailureAlert(data?.message);
@@ -40,9 +49,15 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         if (custID != 0) {
             headers['custID'] = custID;
         }
-        const { data } = await axios.get(getBaseUrl() + apiRoute, {
+        let data;
+        try {
+        const response = await axios.get(getBaseUrl() + apiRoute, {
             headers
         });
+            data = response.data;
+        } catch (error) {
+            notifyAndThrowNetworkError(error);
+        }
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             alert('Failure', data.message, [{
                 style: 'default', onPress: () => {
@@ -57,7 +72,9 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
 
     getWithQueryParam: async (apiRoute, params) => {
         const token = localStorage.getItem('token');
-        const { data } = await axios.get(getBaseUrl() + apiRoute, {
+        let data;
+        try {
+        const response = await axios.get(getBaseUrl() + apiRoute, {
             headers: {
                 'Content-Type': 'application/json',
                 'token': token,
@@ -66,6 +83,10 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
             },
             params: params
         });
+            data = response.data;
+        } catch (error) {
+            notifyAndThrowNetworkError(error);
+        }
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             alert('Failure', data.message, [{
                 style: 'default', onPress: () => {
