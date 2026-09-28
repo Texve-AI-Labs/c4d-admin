@@ -14,7 +14,12 @@ import { useMaterialTailwindController, setOpenConfigurator, setOpenSidenav, set
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import ProtectedRoute from "../../src/pages/auth/ProtectedRoute";
-import { clearCachedPermissions, getCachedPermissions, getLoggedInUserId,saveCachedPermissions } from "./dashboard/permissionCache";
+import {
+  clearCachedPermissions,
+  getCachedPermissions,
+  getLoggedInUserId,
+  saveCachedPermissions,
+} from "./dashboard/permissionCache";
 
 export function Dashboard() {
   const [controller, dispatch] = useMaterialTailwindController();
