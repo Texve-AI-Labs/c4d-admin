@@ -33,6 +33,7 @@ const toStorageScope = (pathname = '') => {
 
 const getBookingFiltersKey = (pathname) => `bookingFilters_${toStorageScope(pathname)}`;
 const getBookingSearchKey = (pathname) => `bookingSearchId_${toStorageScope(pathname)}`;
+const getBookingSearchContextKey = (pathname) => `bookingSearchContext_${toStorageScope(pathname)}`;
 const LEGACY_BOOKING_FILTERS_KEY = 'bookingListFilters';
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 const getDateFilterFromTab = (tab) =>
@@ -155,6 +156,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const hasFeature = (feature) => bookingFeatures.includes(feature);
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
+    const bookingSearchContextKey = getBookingSearchContextKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
     const [selectedBookingId, setSelectedBookingId] = useState(null);
     const [activeTab, setActiveTab] = useState(() => getInitialActiveTab(bookingFiltersKey));
@@ -1003,6 +1005,7 @@ if (!statusFilter.includes('All')) {
         setEffectiveSearchId('');
         sessionStorage.removeItem(bookingSearchKey);
         sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+        sessionStorage.removeItem(bookingSearchContextKey);
         const today = moment().format('YYYY-MM-DD');
         const startDate = refreshedTab === 'TODAY' ? today : '';
         const endDate = refreshedTab === 'TODAY' ? today : '';

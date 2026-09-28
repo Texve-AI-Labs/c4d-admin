@@ -197,6 +197,7 @@ const toStorageScope = (pathname = '') => {
     return scope || 'dashboard_booking';
 };
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
+const BOOKING_SEARCH_CONTEXT_PREFIX = 'bookingSearchContext_';
 
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -249,6 +250,7 @@ const Booking = (props) => {
     const [searchBookingId, setSearchBookingId] = useState('');
     const [searchText, setSearchText] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [searchContextRestored, setSearchContextRestored] = useState(false);
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [driverSuggestions, setDriverSuggestions] = useState([]);
@@ -337,6 +339,7 @@ const Booking = (props) => {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingSearchKey = `bookingSearchId_${toStorageScope(location.pathname)}`;
+    const bookingSearchContextKey = `${BOOKING_SEARCH_CONTEXT_PREFIX}${toStorageScope(location.pathname)}`;
 
 
 
@@ -369,6 +372,21 @@ const Booking = (props) => {
   }, [isOpen]);
 
   useEffect(() => {
+    let storedContext = null;
+    try {
+      storedContext = JSON.parse(sessionStorage.getItem(bookingSearchContextKey) || 'null');
+    } catch (error) {
+      console.error('Error restoring booking search context:', error);
+    }
+
+    if (storedContext && typeof storedContext === 'object') {
+      setSelectedCustomer(Number(storedContext.customerId) || 0);
+      setSearchBookingId(storedContext.bookingNumber || '');
+      setSearchText(storedContext.searchText || storedContext.bookingNumber || '');
+      setSearchContextRestored(true);
+      return;
+    }
+
     const storedSearchId = sessionStorage.getItem(bookingSearchKey) || sessionStorage.getItem(LEGACY_BOOKING_SEARCH_KEY) || '';
     if (storedSearchId) {
       sessionStorage.setItem(bookingSearchKey, storedSearchId);
@@ -377,7 +395,22 @@ const Booking = (props) => {
       setSearchBookingId((prev) => prev || storedSearchId);
       setSearchText((prev) => prev || storedSearchId);
     }
-  }, [bookingSearchKey]);
+    setSearchContextRestored(true);
+  }, [bookingSearchContextKey, bookingSearchKey]);
+
+  useEffect(() => {
+    if (!searchContextRestored) return;
+
+    try {
+      sessionStorage.setItem(bookingSearchContextKey, JSON.stringify({
+        searchText,
+        bookingNumber: searchBookingId,
+        customerId: Number(selectedCustomer) || 0,
+      }));
+    } catch (error) {
+      console.error('Error saving booking search context:', error);
+    }
+  }, [searchContextRestored, bookingSearchContextKey, searchText, searchBookingId, selectedCustomer]);
 
   useEffect(() => {
     if (selectedAreaId) {
@@ -2245,6 +2278,7 @@ const priceDetailsCardClass = isPeakHour
                                     const value = e.target.value;
                                     setSearchText(value);
                                     setSearchBookingId('');
+                                    setSelectedCustomer(0);
                                     searchBookings(value);
                                 }}
                             />
@@ -2264,6 +2298,7 @@ const priceDetailsCardClass = isPeakHour
                                                     
                                                     sessionStorage.removeItem(bookingSearchKey);
                                                     sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+                                                    sessionStorage.removeItem(bookingSearchContextKey);
                                                    if (refreshFn) refreshFn();
                                                    
                                                 }}
@@ -2290,7 +2325,7 @@ const priceDetailsCardClass = isPeakHour
                                                     setSearchBookingId('');
                                                 }
                                                 setSearchResults([]);
-                                                if (refreshFn) refreshFn();
+                                                // if (refreshFn) refreshFn();
                                             }}
                                         >
                                             {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
