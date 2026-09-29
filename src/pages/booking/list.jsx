@@ -1386,6 +1386,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'CONFIRMED', label: 'Booking Confirmed' },
                                                                 { value: 'REQUEST_DRIVER', label: 'Request Driver' },
                                                                 { value: 'STARTED', label: 'Started' },
+                                                                { value: 'TRIP_ENDED', label: 'Trip Ended' },
                                                                 { value: 'END_OTP', label: 'End OTP' },
                                                                 { value: 'ENDED', label: 'Ended' },
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
