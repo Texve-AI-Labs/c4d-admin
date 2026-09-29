@@ -250,6 +250,9 @@ const Booking = (props) => {
     const [searchBookingId, setSearchBookingId] = useState('');
     const [searchText, setSearchText] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [selectedSearchResult, setSelectedSearchResult] = useState(null);
+    const [selectedSearchEntityType, setSelectedSearchEntityType] = useState('');
+    const [searchValidationError, setSearchValidationError] = useState('');
     const [searchContextRestored, setSearchContextRestored] = useState(false);
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
@@ -417,10 +420,62 @@ const Booking = (props) => {
     setSearchBookingId('');
     setSelectedCustomer(0);
     setSearchResults([]);
+    setSelectedSearchResult(null);
+    setSelectedSearchEntityType('');
+    setSearchValidationError('');
     sessionStorage.removeItem(bookingSearchKey);
     sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
     sessionStorage.removeItem(bookingSearchContextKey);
   }, [bookingSearchKey, bookingSearchContextKey]);
+
+  const getSearchResultLabel = (result = {}) => {
+    if (String(result?.type || '').toLowerCase() === 'booking') {
+      return result?.bookingNumber || '';
+    }
+    return [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
+  };
+
+  const getSearchResultCustomerId = (result = {}) =>
+    Number(result?.customerId || result?.Customer?.id || (String(result?.type || '').toLowerCase() === 'customer' ? result?.id : 0)) || 0;
+
+  const applySelectedSearch = () => {
+    if (!selectedSearchResult) {
+      setSearchValidationError('Please select a search result.');
+      return;
+    }
+
+    if (!selectedSearchEntityType) {
+      setSearchValidationError('Please select search type.');
+      return;
+    }
+
+    const resultType = selectedSearchEntityType === 'all'
+      ? String(selectedSearchResult?.type || '').toLowerCase()
+      : selectedSearchEntityType;
+
+    if (resultType === 'booking') {
+      const bookingNumber = selectedSearchResult?.bookingNumber || searchText;
+      if (!bookingNumber) {
+        setSearchValidationError('Selected result does not have a booking number.');
+        return;
+      }
+      setSelectedCustomer(0);
+      setSearchBookingId(bookingNumber);
+      setSearchText(bookingNumber);
+    } else if (resultType === 'customer') {
+      const selectedCustomerId = getSearchResultCustomerId(selectedSearchResult);
+      if (!selectedCustomerId) {
+        setSearchValidationError('Selected result does not have a customer id.');
+        return;
+      }
+      setSearchBookingId('');
+      setSelectedCustomer(selectedCustomerId);
+      setSearchText(getSearchResultLabel(selectedSearchResult).trim());
+    }
+
+    setSearchResults([]);
+    setSearchValidationError('');
+  };
 
   useEffect(() => {
     if (selectedAreaId) {
@@ -2284,14 +2339,17 @@ const priceDetailsCardClass = isPeakHour
                                 className="relative w-full py-2 px-8 border  rounded-xl text-sm bg-gray-100 pr-10"
                                 placeholder="Search by booking ID or customer"
                                 value={searchText}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchText(value);
-                                    setSearchBookingId('');
-                                    setSelectedCustomer(0);
-                                    searchBookings(value);
-                                }}
-                            />
+	                                onChange={(e) => {
+	                                    const value = e.target.value;
+	                                    setSearchText(value);
+	                                    setSearchBookingId('');
+	                                    setSelectedCustomer(0);
+                                        setSelectedSearchResult(null);
+                                        setSelectedSearchEntityType('');
+                                        setSearchValidationError('');
+	                                    searchBookings(value);
+	                                }}
+	                            />
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-600" />
                             </div>
@@ -2317,24 +2375,55 @@ const priceDetailsCardClass = isPeakHour
                                             key={result?.bookingNumber || result?.id || [result?.firstName, result?.phoneNumber].filter(Boolean).join('-') || index}
                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                             onClick={() => {
-                                                if (result?.type == 'booking') {
-                                                    setSelectedCustomer(0);
-                                                    setSearchBookingId(result?.bookingNumber);
-                                                    setSearchText(result?.bookingNumber);
-                                                } else {
-                                                    const label = [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
-                                                    setSearchText(label.trim());
-                                                    setSelectedCustomer(result?.id);
-                                                    setSearchBookingId('');
-                                                }
+                                                    setSelectedSearchResult(result);
+                                                    setSelectedSearchEntityType('');
+                                                    setSearchValidationError('');
+                                                    setSearchText(getSearchResultLabel(result).trim());
                                                 setSearchResults([]);
                                                 // if (refreshFn) refreshFn();
                                             }}
                                         >
-                                            {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
+                                            {getSearchResultLabel(result)}
                                         </li>
                                     ))}
                                 </ul>
+	                            )}
+	                                {selectedSearchResult && (
+	                                    <div className="flex items-center gap-2 mt-2">
+	                                        {[
+	                                            { value: 'all', label: 'All', activeClass: 'bg-slate-700 text-white', inactiveClass: 'bg-slate-100 text-slate-700' },
+	                                            { value: 'booking', label: 'Booking', activeClass: 'bg-orange-600 text-white', inactiveClass: 'bg-orange-50 text-orange-700' },
+	                                            { value: 'customer', label: 'Customer', activeClass: 'bg-green-600 text-white', inactiveClass: 'bg-green-50 text-green-700' },
+	                                        ].map((option) => (
+	                                            <button
+	                                                key={option.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedSearchEntityType(option.value);
+                                                    setSearchValidationError('');
+                                                }}
+	                                                className={`px-3 py-1 rounded-md text-xs font-semibold border ${
+	                                                    selectedSearchEntityType === option.value
+	                                                        ? option.activeClass
+	                                                        : option.inactiveClass
+	                                                }`}
+	                                            >
+                                                {option.label}
+                                            </button>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={applySelectedSearch}
+                                            className="px-4 py-1 rounded-md text-xs font-semibold bg-blue-500 text-white"
+                                        >
+                                            Search
+                                        </button>
+                                    </div>
+                                )}
+                                {searchValidationError && (
+                                    <Typography className="text-xs text-red-600 mt-1">
+                                        {searchValidationError}
+                                    </Typography>
                             )}
                         </div>
                     )}
