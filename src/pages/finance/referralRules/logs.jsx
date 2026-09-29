@@ -7,6 +7,9 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { useNavigate } from "react-router-dom";
 
 const DEFAULT_PAGE_SIZE = 20;
+const FUTURE_TO_DATE_ERROR = "Future dates cannot be selected.";
+const FUTURE_FROM_DATE_ERROR = "From Date cannot be a future date.";
+const DATE_RANGE_ERROR = "From Date cannot be later than To Date.";
 
 const ACCOUNT_TYPE_OPTIONS = ["DRIVER", "CUSTOMER", "CAB", "AUTO", "BIKE", "PARCEL"];
 const REFERRAL_TYPE_OPTIONS = ["DRIVER_TO_DRIVER", "DRIVER_TO_CUSTOMER", "CUSTOMER_TO_CUSTOMER"];
@@ -159,6 +162,7 @@ const ReferralCreditLogsList = () => {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterError, setFilterError] = useState("");
   const [filters, setFilters] = useState({
     fromDate: "",
     toDate: "",
@@ -172,6 +176,7 @@ const ReferralCreditLogsList = () => {
     totalItems: 0,
     itemsPerPage: DEFAULT_PAGE_SIZE,
   });
+  const today = moment().format("YYYY-MM-DD");
 
   const fetchLogs = async (page = 1, nextFilters = appliedFilters) => {
     try {
@@ -221,7 +226,47 @@ const ReferralCreditLogsList = () => {
     return buttons;
   }, [pagination.currentPage, pagination.totalPages, loading]);
 
+  const handleFromDateChange = (value) => {
+    if (value && value > today) {
+      setFilters((prev) => ({ ...prev, fromDate: "" }));
+      setFilterError(FUTURE_FROM_DATE_ERROR);
+      return;
+    }
+
+    setFilters((prev) => ({ ...prev, fromDate: value }));
+    setFilterError("");
+  };
+
+  const handleToDateChange = (value) => {
+    if (value && value > today) {
+      setFilters((prev) => ({ ...prev, toDate: "" }));
+      setFilterError(FUTURE_TO_DATE_ERROR);
+      return;
+    }
+
+    setFilters((prev) => ({ ...prev, toDate: value }));
+    setFilterError("");
+  };
+
   const handleApplyFilters = () => {
+    if (filters.fromDate && filters.fromDate > today) {
+      setFilters((prev) => ({ ...prev, fromDate: "" }));
+      setFilterError(FUTURE_FROM_DATE_ERROR);
+      return;
+    }
+
+    if (filters.toDate && filters.toDate > today) {
+      setFilters((prev) => ({ ...prev, toDate: "" }));
+      setFilterError(FUTURE_TO_DATE_ERROR);
+      return;
+    }
+
+    if (filters.fromDate && filters.toDate && filters.fromDate > filters.toDate) {
+      setFilterError(DATE_RANGE_ERROR);
+      return;
+    }
+
+    setFilterError("");
     setAppliedFilters(filters);
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
     fetchLogs(1, filters);
@@ -229,6 +274,7 @@ const ReferralCreditLogsList = () => {
 
   const handleReset = () => {
     const reset = { fromDate: "", toDate: "", accountType: "ALL", referralType: "ALL" };
+    setFilterError("");
     setFilters(reset);
     setAppliedFilters(reset);
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -291,16 +337,19 @@ const ReferralCreditLogsList = () => {
                 <Input
                   type="date"
                   label="From Date"
+                  max={today}
                   value={filters.fromDate}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, fromDate: e.target.value }))}
+                  onChange={(e) => handleFromDateChange(e.target.value)}
                 />
               </div>
               <div className="w-full xl:w-[190px]">
                 <Input
                   type="date"
                   label="To Date"
+                  min={filters.fromDate || undefined}
+                  max={today}
                   value={filters.toDate}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, toDate: e.target.value }))}
+                  onChange={(e) => handleToDateChange(e.target.value)}
                 />
               </div>
               <div className="w-full xl:w-[230px]">
@@ -336,6 +385,7 @@ const ReferralCreditLogsList = () => {
                 </Button>
               </div>
             </div>
+            {filterError ? <p className="mt-3 text-sm text-red-600">{filterError}</p> : null}
           </div>
 
           {loading ? (
