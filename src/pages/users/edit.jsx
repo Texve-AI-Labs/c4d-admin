@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, USER_ROLE, ROLE_PERMISSIONS, PERMISSION_OPTIONS,STATUS_OPTIONS, expandPermissionsByGroup, applyPermissionSelection } from '@/utils/constants';
-import { Alert, Button } from '@material-tailwind/react';
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import Select from 'react-select';
@@ -10,7 +10,7 @@ import { EDIT_USER_SCHEMA } from '@/utils/validations';
 
 const UserEdit = () => {
     const [userVal, setUserVal] = useState({});
-    const [alert, setAlert] = useState(false);
+    const [duplicateModalMessage, setDuplicateModalMessage] = useState('');
     const [role, setRole] = useState('');
     const { id } = useParams();
     const navigate = useNavigate();
@@ -51,8 +51,6 @@ const UserEdit = () => {
             setUserVal({ ...data.data, permission: permissionIds });
         } catch (error) {
             console.error('Error fetching user:', error);
-            setAlert({ message: 'Failed to fetch user data!', color: 'red' });
-            setTimeout(() => setAlert(null), 5000);
         }
     };
 
@@ -85,9 +83,9 @@ const UserEdit = () => {
             const data = await ApiRequestUtils.update(API_ROUTES.UPDATE_USER, userData);
             
             if (!data?.success && data?.code === 203) {
-                setAlert({ message: 'User Update Failed!', color: 'red' });
-                setTimeout(() => setAlert(null), 5000);
-                resetForm();
+                setDuplicateModalMessage(data?.message || 'check the User already exists or not');
+                setSubmitting(false);
+                return;
             } else {
                 // setAlert({ show: true, message: isEditMode ? 'User updated successfully!' : 'User added successfully!', color: 'green' });
                 // setTimeout(() => {
@@ -110,16 +108,17 @@ const UserEdit = () => {
 
     return (
         <div className="p-4 mx-auto bg-white rounded-xl shadow-md w-full">
-            {alert && (
-                <div className='mb-2'>
-                    <Alert
-                        color={alert.color}
-                        className='py-3 px-6 rounded-xl'
-                    >
-                        {alert.message}
-                    </Alert>
-                </div>
-            )}
+            <Dialog open={Boolean(duplicateModalMessage)} handler={() => setDuplicateModalMessage('')} size="xs">
+                <DialogHeader>Alert !</DialogHeader>
+                <DialogBody divider>
+                    <p className="text-sm text-gray-700">{duplicateModalMessage}</p>
+                </DialogBody>
+                <DialogFooter>
+                    <Button color="blue" onClick={() => setDuplicateModalMessage('')}>
+                        OK
+                    </Button>
+                </DialogFooter>
+            </Dialog>
             <h2 className="text-2xl font-bold mb-4">Edit User</h2>
             <Formik
                 initialValues={initialValues}
