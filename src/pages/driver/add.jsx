@@ -8,6 +8,7 @@ import Multiselect from 'multiselect-react-dropdown';
 import { DRIVER_ADD_SCHEMA } from '@/utils/validations';
 import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
+import { handleDriverRegisterApiError } from './registerApiErrorHandler';
 
 const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
 const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -121,6 +122,7 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
 const DriverAdd = () => {
     const [driverVal, setDriverVal] = useState({});
     const [alert, setAlert] = useState(null);
+    const [registrationError, setRegistrationError] = useState("");
     const [packageDetails, setPackageDetails] = useState([]);
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [districtSearchText, setDistrictSearchText] = useState("");
@@ -281,13 +283,15 @@ const DriverAdd = () => {
             const data = await ApiRequestUtils.post(API_ROUTES.REGISTER_DRIVER, driverData);
             //console.log('Driver operation:', data.data);
             if (!data?.success && data?.code === 203) {
-                console.error('Driver already exists');
-                setAlert({
-                    color: 'red',
-                    message: 'Driver already exists'
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(handleDriverRegisterApiError(data));
                 resetForm();
+                setSubmitting(false);
+                return;
+            }
+            if (!data?.success || !data?.data?.id) {
+                setRegistrationError(handleDriverRegisterApiError(data));
+                setSubmitting(false);
+                return;
             } else {
                 console.log('ELSE IN SUBMIT :');
                 setDriverAdded({
@@ -297,7 +301,7 @@ const DriverAdd = () => {
                 setIsEditable(false);
             }
         } catch (error) {
-            console.error('Error creating driver:', error);
+            setRegistrationError(handleDriverRegisterApiError(error));
         }
         setSubmitting(false);
     };
@@ -602,6 +606,23 @@ const DriverAdd = () => {
 
     return (
         <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-7xl">
+            {registrationError ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                        <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
+                        <p className="mt-3 text-sm text-gray-700">{registrationError}</p>
+                        <div className="mt-6 flex justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setRegistrationError("")}
+                                className="bg-blue-600"
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             {alert && (
                 <div className='mb-2'>
                     <Alert
@@ -615,7 +636,7 @@ const DriverAdd = () => {
             <h2 className="text-2xl font-bold mb-4">Add New Driver</h2>
             <Formik
                 initialValues={initialValues}
-                validationSchema={DRIVER_ADD_SCHEMA}
+                // validationSchema={DRIVER_ADD_SCHEMA}
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
