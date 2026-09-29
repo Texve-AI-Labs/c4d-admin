@@ -160,7 +160,7 @@ export function AccountList() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [alert, setAlert] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const location = useLocation();
 
@@ -176,6 +176,7 @@ export function AccountList() {
   const prevSearchRef = useRef('');
   const lastRequestKeyRef = useRef('');
   const inFlightRequestKeyRef = useRef('');
+  const requestSequenceRef = useRef(0);
 
   const [pagination, setPagination] = useState(() => {
     const stored = getItemSafe(ACCOUNT_VIEW_FILTERS_KEY);
@@ -258,7 +259,7 @@ export function AccountList() {
 
   const fetchAccounts = async (page = 1, searchQuery = '', showLoader = true) => {
     const normalizedSearchQuery = (searchQuery ?? '').trim();
-    if (showLoader) setLoading(true);
+    let requestSequence = 0;
     try {
       const zoneValue = Array.isArray(zoneFilter)
         ? (zoneFilter.includes('All') ? undefined : zoneFilter)
@@ -284,6 +285,8 @@ export function AccountList() {
       if (requestKey === inFlightRequestKeyRef.current || requestKey === lastRequestKeyRef.current) {
         return;
       }
+      requestSequence = ++requestSequenceRef.current;
+      setLoading(true);
 
       inFlightRequestKeyRef.current = requestKey;
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
@@ -320,7 +323,7 @@ export function AccountList() {
       setKycStatusCounts(EMPTY_KYC_STATUS_COUNTS);
     } finally {
       inFlightRequestKeyRef.current = '';
-      setLoading(false);
+      if (requestSequence === requestSequenceRef.current) setLoading(false);
     }
   };
 
