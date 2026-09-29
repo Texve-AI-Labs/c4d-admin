@@ -16,10 +16,12 @@ const UserAdd = () => {
     const navigate = useNavigate();
     
     // Handle role selection
-    const handleRoleChange = (selectedOption, setFieldValue) => {
+    const handleRoleChange = (selectedOption, setFieldValue, setFieldTouched) => {
         const selectedRole = selectedOption?.value || '';
         setFieldValue('role', selectedRole);
         setFieldValue('permission', expandPermissionsByGroup(ROLE_PERMISSIONS[selectedRole] || []));
+        setFieldTouched('role', true);
+        setFieldTouched('permission', true);
         setRole(selectedRole);
     };
     const initialValues = {
@@ -27,7 +29,7 @@ const UserAdd = () => {
         phoneNumber: "",
         email: "",
         password: "",
-        permission: null,
+        permission: [],
         role: "",
         status:"",
     };
@@ -95,48 +97,50 @@ const UserAdd = () => {
                 enableReinitialize={true}
 
             >
-                {({ handleSubmit, values, dirty, isValid, setFieldValue, errors }) => (
+                {({ handleSubmit, values, isSubmitting, setFieldValue, setFieldTouched, errors }) => (
                     <Form className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
 
                             <div>
-                                <label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</label>
+                                <label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name <span className="text-red-600">*</span></label>
                                 <Field type="text" name="name" className="p-2 w-full rounded-md border-gray-300 shadow-sm border-2" />
                                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                             </div>
 
                             <div>
-                                <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number <span className="text-red-600">*</span></label>
                                 <Field type="tel" name="phoneNumber" className="border-2 p-2 w-full rounded-md border-gray-300" maxLength={10} />
                                 <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                             </div>
 
                             <div>
-                                <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
+                                <label htmlFor="email" className="text-sm font-medium text-gray-700">Email <span className="text-red-600">*</span></label>
                                 <Field type="text" name="email" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                                <Field type="text" name="password" className="border-2 p-2 w-full rounded-md border-gray-300" />
+                                <label htmlFor="password" className="text-sm font-medium text-gray-700">Password <span className="text-red-600">*</span></label>
+                                <Field type="password" name="password" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="role" className="text-sm font-medium text-gray-700">Role</label>
+                                <label htmlFor="role" className="text-sm font-medium text-gray-700">Role <span className="text-red-600">*</span></label>
                                 <Select
                                     id="role"
                                     options={USER_ROLE.map((user) => ({
                                         value: user.id,
                                         label: user.role,
                                     }))}
-                                    onChange={(val) => handleRoleChange(val,setFieldValue)}
+                                    onChange={(val) => handleRoleChange(val,setFieldValue,setFieldTouched)}
+                                    onBlur={() => setFieldTouched('role', true)}
                                     placeholder="Select Role"
                                     className="w-full"
                                     classNamePrefix="react-select"
                                 />
+                                <ErrorMessage name="role" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="permission" className="text-sm font-medium text-gray-700 mt-4">Permission</label>
+                                <label htmlFor="permission" className="text-sm font-medium text-gray-700 mt-4">Permission <span className="text-red-600">*</span></label>
                                 <Multiselect
                                     options={PERMISSION_OPTIONS}
                                     displayValue="name"
@@ -153,6 +157,7 @@ const UserAdd = () => {
                                         },
                                     }}
                                     onSelect={(selectedList, selectedItem) => {
+                                        setFieldTouched('permission', true);
                                         setFieldValue('permission',applyPermissionSelection(
                                                 selectedList.map((item) => item.id),
                                                 selectedItem?.id,
@@ -161,6 +166,7 @@ const UserAdd = () => {
                                         );
                                     }}
                                     onRemove={(selectedList, removedItem) => {
+                                        setFieldTouched('permission', true);
                                         setFieldValue(
                                             'permission',
                                             applyPermissionSelection(
@@ -171,13 +177,18 @@ const UserAdd = () => {
                                         );
                                     }}
                                 />
+                                <ErrorMessage name="permission" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="status" className="text-sm font-medium text-gray-700">Status</label>
+                                <label htmlFor="status" className="text-sm font-medium text-gray-700">Status <span className="text-red-600">*</span></label>
                                 <Select
                                     id="status"
                                     options={STATUS_OPTIONS}
-                                    onChange={(selectedOption) => setFieldValue('status', selectedOption.value)}
+                                    onChange={(selectedOption) => {
+                                        setFieldValue('status', selectedOption.value);
+                                        setFieldTouched('status', true);
+                                    }}
+                                    onBlur={() => setFieldTouched('status', true)}
                                     placeholder="Select Status"
                                     className="w-full"
                                     classNamePrefix="react-select"
@@ -187,6 +198,7 @@ const UserAdd = () => {
                         </div>
                         <div className='flex flex-row'>
                             <Button
+                                type="button"
                                 fullWidth
                                 onClick={() => { navigate('/dashboard/users'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
@@ -194,10 +206,10 @@ const UserAdd = () => {
                                 Cancel
                             </Button>
                             <Button
+                                type="submit"
                                 fullWidth
                                 color="black"
-                                onClick={handleSubmit}
-                                disabled={!dirty || !isValid}
+                                disabled={isSubmitting}
                                 className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                             >
                                 Continue
