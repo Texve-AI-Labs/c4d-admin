@@ -68,6 +68,22 @@ const setItemSafe = (key, value) => {
     }
 };
 
+const parseStoredJsonSafe = (key) => {
+    const raw = getItemSafe(key);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (error) {
+        console.error(`Error parsing sessionStorage key "${key}":`, error);
+        return null;
+    }
+};
+
+const toPositiveNumber = (value) => {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0;
+};
+
 const getLocalItemSafe = (key) => {
     if (!isBrowser()) return null;
     try {
@@ -136,7 +152,7 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
             }
         };
 
-export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange }) {
+export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange, onClearSearch }) {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingFeatures = useMemo(() => {
@@ -217,6 +233,27 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     });
     const previousCustomerIdRef = useRef(customerId);
     const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
+
+    const getResetPagination = (page = 1) => ({
+        currentPage: page,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: pagination.itemsPerPage,
+    });
+
+    const getResolvedCustomerId = (bookingNumber = effectiveSearchId) => {
+        if (String(bookingNumber || '').trim()) {
+            return 0;
+        }
+
+        const propCustomerId = toPositiveNumber(customerId);
+        if (propCustomerId) {
+            return propCustomerId;
+        }
+
+        const storedContext = parseStoredJsonSafe(bookingSearchContextKey);
+        return toPositiveNumber(storedContext?.customerId);
+    };
 
     const getInquiryTypeFromPath = (pathname = "") => {
         const path = String(pathname || "").toLowerCase();
@@ -601,7 +638,7 @@ if (!statusFilter.includes('All')) {
         }
         
         const queryParams = {
-            "customerId": customerId,
+            "customerId": getResolvedCustomerId(effectiveSearchId),
             'type': type ? type : '',
             'page': page,
             'limit': pagination.itemsPerPage,
@@ -637,17 +674,20 @@ if (!statusFilter.includes('All')) {
             else {
                 setBookingsList([]);
                 setOnlineDrivers([]);
+                setPagination(getResetPagination(page));
             }
         } 
         else {
             console.error('API request failed:', data?.message);
             setBookingsList([]);
             setOnlineDrivers([]);
+            setPagination(getResetPagination(page));
         }
     } catch (error) {
         console.error('Error fetching bookings:', error);
         setBookingsList([]);
         setOnlineDrivers([]);
+        setPagination(getResetPagination(page));
     } finally {
         if (currentRequestId !== latestRequestRef.current) {
             return;
@@ -987,6 +1027,7 @@ if (!statusFilter.includes('All')) {
     const handleRefresh = () => {
         // Set manual filter flag to prevent useEffect conflicts
         setIsManualDateFilter(true);
+        onClearSearch?.();
         const refreshedTab = isCompactFeatureList ? 'TODAY' : 'ALL_BOOKINGS';
         
         // Reset all filters to their default state
@@ -1019,7 +1060,8 @@ if (!statusFilter.includes('All')) {
             ['All'],
             ['All'],
             '',
-            refreshedTab
+            refreshedTab,
+            0
         );
     };
 
@@ -1042,7 +1084,7 @@ if (!statusFilter.includes('All')) {
 // };
 
     // Function to trigger API call with specific dates (bypasses state timing issues)
-   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab) => {
+   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab, customerIdOverride = null) => {
         const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
         
@@ -1068,7 +1110,7 @@ if (!statusFilter.includes('All')) {
             }
             
             const queryParams = {
-                "customerId": customerId,
+                "customerId": customerIdOverride ?? getResolvedCustomerId(effectiveSearchIdParam),
                 'type': type ? type : '',
                 'page': page,
                 'limit': pagination.itemsPerPage,
@@ -1102,14 +1144,17 @@ if (!statusFilter.includes('All')) {
                     setSelectedBookingId(null);
                 } else {
                     setBookingsList([]);
+                    setPagination(getResetPagination(page));
                 }
             } else {
                 console.error('API request failed:', data?.message);
                 setBookingsList([]);
+                setPagination(getResetPagination(page));
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
             setBookingsList([]);
+            setPagination(getResetPagination(page));
         } finally {
             if (currentRequestId !== latestRequestRef.current) {
                 return;

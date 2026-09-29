@@ -412,6 +412,16 @@ const Booking = (props) => {
     }
   }, [searchContextRestored, bookingSearchContextKey, searchText, searchBookingId, selectedCustomer]);
 
+  const clearBookingSearchState = useCallback(() => {
+    setSearchText('');
+    setSearchBookingId('');
+    setSelectedCustomer(0);
+    setSearchResults([]);
+    sessionStorage.removeItem(bookingSearchKey);
+    sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+    sessionStorage.removeItem(bookingSearchContextKey);
+  }, [bookingSearchKey, bookingSearchContextKey]);
+
   useEffect(() => {
     if (selectedAreaId) {
       const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
@@ -2286,24 +2296,17 @@ const priceDetailsCardClass = isPeakHour
                                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-600" />
                             </div>
                             {(searchText || searchBookingId) && (
-                                <button
-                                    type="button"
-                                    // className="bg-white text-gray-500 hover:text-gray-700"
-                                    aria-label="Clear search"
-                                    onClick={() => { setSearchText(''); 
+	                                <button
+	                                    type="button"
+	                                    // className="bg-white text-gray-500 hover:text-gray-700"
+	                                    aria-label="Clear search"
+	                                    onClick={() => {
+                                                    clearBookingSearchState();
                                                     searchBookings('');
-                                                    setSearchBookingId(''); 
-                                                    setSelectedCustomer(0);
-                                                    setSearchResults([]); 
-                                                    
-                                                    sessionStorage.removeItem(bookingSearchKey);
-                                                    sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
-                                                    sessionStorage.removeItem(bookingSearchContextKey);
-                                                   if (refreshFn) refreshFn();
-                                                   
+                                                    if (refreshFn) refreshFn();
                                                 }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
+	                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+	                                >
                                     X
                                 </button>
                             )}
@@ -2350,7 +2353,7 @@ const priceDetailsCardClass = isPeakHour
                     
 
                 </div>
-                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} />
+	                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearBookingSearchState} />
             </div>
             <div>
                 {isOpen && (
