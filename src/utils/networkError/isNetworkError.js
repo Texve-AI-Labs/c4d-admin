@@ -7,6 +7,22 @@ export const isNetworkError = (error) => {
   return axios.isAxiosError(error) && !error.response;
 };
 
+const getNetworkErrorMessage = () => {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "Network connection lost. Please check your internet connection.";
+  }
+
+  return "Unable to reach the server. Please check the API server or CORS configuration.";
+};
+
+const getNetworkErrorStatus = () => {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return "offline";
+  }
+
+  return "server-unreachable";
+};
+
 export const dispatchNetworkError = (error) => {
   if (typeof window === "undefined") return;
   if (error?.__c4dNetworkErrorDispatched) return;
@@ -16,7 +32,8 @@ export const dispatchNetworkError = (error) => {
   }
 
   const detail = {
-    message: "Network connection lost. Please check your internet connection.",
+    message: getNetworkErrorMessage(),
+    status: getNetworkErrorStatus(),
     originalMessage: error?.message,
   };
 

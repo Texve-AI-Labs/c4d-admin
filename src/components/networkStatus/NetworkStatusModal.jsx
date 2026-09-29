@@ -4,32 +4,53 @@ import { NETWORK_ERROR_BROADCAST_KEY, NETWORK_ERROR_EVENT } from "@/utils/networ
 
 const NETWORK_REFRESH_PENDING_KEY = "networkReconnectRefreshPending";
 const NETWORK_REFRESH_DONE_KEY = "networkReconnectRefreshDone";
+const RECONNECT_REFRESH_DELAY_MS = 1200;
 
 const getIsOnline = () => {
   if (typeof navigator === "undefined") return true;
   return navigator.onLine;
 };
 
+const getStatusMessage = (status, message) => {
+  if (message) return message;
+  if (status === "restored") return "Connection restored. Refreshing the page...";
+  if (status === "server-unreachable") return "Unable to reach the server. Please check the API server or CORS configuration.";
+  return "Network connection lost. Please check your internet connection.";
+};
+
 export default function NetworkStatusModal() {
   const [modalState, setModalState] = useState({
     open: false,
-    isOnline: getIsOnline(),
+    status: "idle",
+    refreshPending: false,
     message: "",
   });
 
   useEffect(() => {
-    const showNetworkErrorModal = (message) => {
-      sessionStorage.setItem(NETWORK_REFRESH_PENDING_KEY, "true");
+    const showNetworkErrorModal = ({ message, status } = {}) => {
+      const nextStatus = status || (getIsOnline() ? "server-unreachable" : "offline");
+      const refreshPending = nextStatus === "offline";
+
+      if (refreshPending) {
+        sessionStorage.setItem(NETWORK_REFRESH_PENDING_KEY, "true");
+      } else {
+        sessionStorage.removeItem(NETWORK_REFRESH_PENDING_KEY);
+      }
+
       sessionStorage.removeItem(NETWORK_REFRESH_DONE_KEY);
       setModalState({
         open: true,
-        isOnline: getIsOnline(),
-        message: message || "Network connection lost. Please check your internet connection.",
+        status: nextStatus,
+        refreshPending,
+        message: getStatusMessage(nextStatus, message),
       });
     };
 
     const handleNetworkError = (event) => {
-      showNetworkErrorModal(event.detail?.message);
+      showNetworkErrorModal({
+        message: event.detail?.message,
+        status: event.detail?.status,
+      });
     };
 
     const handleNetworkBroadcast = (event) => {
@@ -37,7 +58,10 @@ export default function NetworkStatusModal() {
 
       try {
         const payload = JSON.parse(event.newValue);
-        showNetworkErrorModal(payload?.message);
+        showNetworkErrorModal({
+          message: payload?.message,
+          status: payload?.status,
+        });
       } catch {
         showNetworkErrorModal();
       }
@@ -48,19 +72,22 @@ export default function NetworkStatusModal() {
 
       setModalState((current) => ({
         ...current,
-        isOnline: true,
-        message: current.open ? "Connection restored. Refreshing the page..." : current.message,
+        status: refreshPending ? "restored" : current.status,
+        refreshPending,
+        message: refreshPending && current.open ? getStatusMessage("restored") : current.message,
       }));
 
       if (refreshPending) {
         sessionStorage.removeItem(NETWORK_REFRESH_PENDING_KEY);
         sessionStorage.setItem(NETWORK_REFRESH_DONE_KEY, "true");
-        window.location.reload();
+        window.setTimeout(() => {
+          window.location.reload();
+        }, RECONNECT_REFRESH_DELAY_MS);
       }
     };
 
     const handleOffline = () => {
-      showNetworkErrorModal("Network connection lost. Please check your internet connection.");
+      showNetworkErrorModal({ status: "offline" });
     };
 
     window.addEventListener(NETWORK_ERROR_EVENT, handleNetworkError);
@@ -98,16 +125,14 @@ export default function NetworkStatusModal() {
       <DialogHeader className="text-red-700">Connection Issue</DialogHeader>
       <DialogBody divider>
         <Typography className="text-sm font-medium text-gray-800">
-          {modalState.isOnline
-            ? modalState.message || "Connection restored. You can refresh the page."
-            : modalState.message || "Network connection lost. Please check your internet connection."}
+          {modalState.message}
         </Typography>
       </DialogBody>
       <DialogFooter className="gap-2">
         <Button variant="text" color="blue-gray" onClick={handleClose}>
           Close
         </Button>
-        <Button className="bg-red-600" disabled={!modalState.isOnline} onClick={handleRefresh}>
+        <Button className="bg-red-600" disabled={modalState.status === "offline"} onClick={handleRefresh}>
           Refresh Page
         </Button>
       </DialogFooter>
