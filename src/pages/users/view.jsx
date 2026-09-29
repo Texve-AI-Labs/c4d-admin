@@ -12,7 +12,7 @@ import {
   Alert
 } from "@material-tailwind/react";
 import { authorsTableData } from "@/data";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/24/outline";
 import UserSearch from "@/components/UserSearch";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -23,19 +23,22 @@ export function UserView() {
   const [users, setUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [alert, setAlert] = useState(false);
+  const [sortOrder, setSortOrder] = useState("ASC");
   const navigate = useNavigate();
   const location = useLocation();
  
   useEffect(() => {
     const fetchUsers = async () => {
-      const data = await ApiRequestUtils.get(API_ROUTES.GET_ALL_USERS);
+      const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ALL_USERS, { sortOrder });
       if (data?.success) {
         setUsers(data?.data);
         setAllUsers(data?.data); // Store all users for local filtering
       }
     }; 
     fetchUsers();
+  }, [sortOrder]);
 
+  useEffect(() => {
     if (location.state?.userAdded || location.state?.userUpdated) {
       const action = location.state.userAdded ? 'added' : 'updated';
       setAlert({
@@ -59,6 +62,10 @@ export function UserView() {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location]);
+
+  const handleNameSort = () => {
+    setSortOrder((currentOrder) => currentOrder === "ASC" ? "DESC" : "ASC");
+  };
 
   const getUsers = async (searchQuery) => {
     //console.log("searchQuery",searchQuery);
@@ -126,7 +133,21 @@ export function UserView() {
               <table className="w-full min-w-[640px] table-auto">
                 <thead>
                   <tr>
-                    {["Name", "Phone Number", "Email", "Status", ""].map((el) => (
+                    <th className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                      <button
+                        type="button"
+                        onClick={handleNameSort}
+                        className="flex items-center gap-1 text-[11px] font-bold uppercase text-blue-gray-900"
+                      >
+                        Name
+                        {sortOrder === "ASC" ? (
+                          <ArrowUpIcon className="h-3.5 w-3.5" />
+                        ) : (
+                          <ArrowDownIcon className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </th>
+                    {["Phone Number", "Email", "Status", ""].map((el) => (
                       <th
                         key={el}
                         className="border-b border-blue-gray-50 py-3 px-5 text-left"
