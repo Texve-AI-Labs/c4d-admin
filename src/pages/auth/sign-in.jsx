@@ -56,6 +56,9 @@ export function SignIn() {
         } else if (response.error === "Invalid credentials") {
           setErrors(prev => ({ ...prev, password: "Invalid credentials" }));
         }
+       else if (response.error === "User account is inactive.") {
+        setErrors(prev => ({...prev, email: "User account is inactive.", password: ""}));
+      }
         return;
       }
 

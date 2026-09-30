@@ -2,28 +2,30 @@ import React, { useEffect, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, USER_ROLE, ROLE_PERMISSIONS, PERMISSION_OPTIONS,STATUS_OPTIONS, expandPermissionsByGroup, applyPermissionSelection } from '@/utils/constants';
-import { Alert, Button } from '@material-tailwind/react';
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import Select from 'react-select';
-import { ADD_USER_SCHEMA, EDIT_USER_SCHEMA } from '@/utils/validations';
+import { EDIT_USER_SCHEMA } from '@/utils/validations';
 
 const UserEdit = () => {
     const [userVal, setUserVal] = useState({});
-    const [alert, setAlert] = useState(false);
+    const [duplicateModalMessage, setDuplicateModalMessage] = useState('');
     const [role, setRole] = useState('');
     const { id } = useParams();
     const navigate = useNavigate();
     
     // const initialRoleValue = USER_ROLE.find(user => user.id === role);
 
-    const handleRoleChange = (selectedOption, setFieldValue) => {
+    const handleRoleChange = (selectedOption, setFieldValue, setFieldTouched) => {
         const selectedRole = selectedOption?.value || '';
         setRole(selectedRole);
         setFieldValue('role', selectedRole);
+        setFieldTouched('role', true);
 
        
         setFieldValue('permission', expandPermissionsByGroup(ROLE_PERMISSIONS[selectedRole] || []));
+        setFieldTouched('permission', true);
     };
 
     useEffect(() => {
@@ -49,8 +51,6 @@ const UserEdit = () => {
             setUserVal({ ...data.data, permission: permissionIds });
         } catch (error) {
             console.error('Error fetching user:', error);
-            setAlert({ message: 'Failed to fetch user data!', color: 'red' });
-            setTimeout(() => setAlert(null), 5000);
         }
     };
 
@@ -83,9 +83,9 @@ const UserEdit = () => {
             const data = await ApiRequestUtils.update(API_ROUTES.UPDATE_USER, userData);
             
             if (!data?.success && data?.code === 203) {
-                setAlert({ message: 'User Update Failed!', color: 'red' });
-                setTimeout(() => setAlert(null), 5000);
-                resetForm();
+                setDuplicateModalMessage(data?.message || 'check the User already exists or not');
+                setSubmitting(false);
+                return;
             } else {
                 // setAlert({ show: true, message: isEditMode ? 'User updated successfully!' : 'User added successfully!', color: 'green' });
                 // setTimeout(() => {
@@ -108,16 +108,17 @@ const UserEdit = () => {
 
     return (
         <div className="p-4 mx-auto bg-white rounded-xl shadow-md w-full">
-            {alert && (
-                <div className='mb-2'>
-                    <Alert
-                        color={alert.color}
-                        className='py-3 px-6 rounded-xl'
-                    >
-                        {alert.message}
-                    </Alert>
-                </div>
-            )}
+            <Dialog open={Boolean(duplicateModalMessage)} handler={() => setDuplicateModalMessage('')} size="xs">
+                <DialogHeader>Alert !</DialogHeader>
+                <DialogBody divider>
+                    <p className="text-sm text-gray-700">{duplicateModalMessage}</p>
+                </DialogBody>
+                <DialogFooter>
+                    <Button color="blue" onClick={() => setDuplicateModalMessage('')}>
+                        OK
+                    </Button>
+                </DialogFooter>
+            </Dialog>
             <h2 className="text-2xl font-bold mb-4">Edit User</h2>
             <Formik
                 initialValues={initialValues}
@@ -125,34 +126,35 @@ const UserEdit = () => {
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
-                {({ handleSubmit, values, dirty, isValid, setFieldValue, errors }) => (
+                {({ handleSubmit, values, isSubmitting, setFieldValue, setFieldTouched, errors }) => (
                     <Form className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
 
                             <div>
-                                <label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name</label>
+                                <label htmlFor="name" className="text-sm font-medium text-gray-700">Full Name <span className="text-red-600">*</span></label>
                                 <Field type="text" name="name" className="border-2 p-2 w-full rounded-md border-gray-300 shadow-sm" />
                                 <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                             </div>
 
                             <div>
-                                <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number <span className="text-red-600">*</span></label>
                                 <Field type="tel" name="phoneNumber" className="border-2 p-2 w-full rounded-md border-gray-300" maxLength={10} />
                                 <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                             </div>
 
                             <div>
-                                <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
+                                <label htmlFor="email" className="text-sm font-medium text-gray-700">Email <span className="text-red-600">*</span></label>
                                 <Field type="text" name="email" className="border-2 p-2 w-full rounded-md border-gray-300" />
                                 <ErrorMessage name="email" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                                <Field type="text" name="password" placeholder="******" className="border-2 p-2 w-full rounded-md border-gray-300" />
+                                <Field type="password" name="password" placeholder="Leave blank to keep existing password" className="border-2 p-2 w-full rounded-md border-gray-300" />
+                                <p className="text-xs text-gray-500 mt-1">Leave blank to keep existing password.</p>
                                 <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="role" className="text-sm font-medium text-gray-700">Role</label>
+                                <label htmlFor="role" className="text-sm font-medium text-gray-700">Role <span className="text-red-600">*</span></label>
                                 <Select
                                     id="role"
                                     options={USER_ROLE.map((user) => ({
@@ -162,14 +164,16 @@ const UserEdit = () => {
                                     value={USER_ROLE.find(user => user.id === role) 
                                         ? { value: role, label: USER_ROLE.find(user => user.id === role).role } 
                                         : null}
-                                    onChange={(val) => handleRoleChange(val,setFieldValue)}
+                                    onChange={(val) => handleRoleChange(val,setFieldValue,setFieldTouched)}
+                                    onBlur={() => setFieldTouched('role', true)}
                                     placeholder="Select Role"
                                     className="w-full"
                                     classNamePrefix="react-select"
                                 />
+                                <ErrorMessage name="role" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="permission" className="text-sm font-medium mt-4">Permission</label>
+                                <label htmlFor="permission" className="text-sm font-medium mt-4">Permission <span className="text-red-600">*</span></label>
                                 <Multiselect
                                     options={PERMISSION_OPTIONS}
                                     displayValue="name"
@@ -178,6 +182,7 @@ const UserEdit = () => {
                                     className="w-full rounded-md border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition duration-200"
                                     showCheckbox={true}
                                     onSelect={(selectedList, selectedItem) => {
+                                        setFieldTouched('permission', true);
                                         setFieldValue(
                                             'permission',
                                             applyPermissionSelection(
@@ -188,6 +193,7 @@ const UserEdit = () => {
                                         );
                                     }}
                                     onRemove={(selectedList, removedItem) => {
+                                        setFieldTouched('permission', true);
                                         setFieldValue(
                                             'permission',
                                             applyPermissionSelection(
@@ -230,14 +236,19 @@ const UserEdit = () => {
                                         },
                                     }}
                                 />
+                                <ErrorMessage name="permission" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
-                                <label htmlFor="status" className="text-sm font-medium text-gray-700">Status</label>
+                                <label htmlFor="status" className="text-sm font-medium text-gray-700">Status <span className="text-red-600">*</span></label>
                                 <Select
                                     id="status"
                                     options={STATUS_OPTIONS}
                                     value={STATUS_OPTIONS.find(option => option.value === values.status) || null}
-                                    onChange={(selectedOption) => setFieldValue('status', selectedOption.value)}
+                                    onChange={(selectedOption) => {
+                                        setFieldValue('status', selectedOption.value);
+                                        setFieldTouched('status', true);
+                                    }}
+                                    onBlur={() => setFieldTouched('status', true)}
                                     placeholder="Select Status"
                                     className="w-full"
                                     classNamePrefix="react-select"
@@ -247,6 +258,7 @@ const UserEdit = () => {
                         </div>
                         <div className='flex flex-row'>
                             <Button
+                                type="button"
                                 fullWidth
                                 onClick={() => { navigate('/dashboard/users'); }}
                                 className='my-6 mx-2 text-black border-2 border-gray-400 bg-white rounded-xl'
@@ -254,10 +266,10 @@ const UserEdit = () => {
                                 Cancel
                             </Button>
                             <Button
+                                type="submit"
                                 fullWidth
                                 color="blue"
-                                onClick={handleSubmit}
-                                disabled={!isValid}
+                                disabled={isSubmitting}
                                 className='my-6 mx-2'
                             >
                                 Update

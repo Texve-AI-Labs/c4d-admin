@@ -978,8 +978,8 @@ const BikeTaxiCompletedOnboardingDetails = () => {
                             }
                             setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                           }}
-                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                          disabled={key === "type"}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                          disabled={key === "type" || key === "phoneNumber"}
                           maxLength={key === "phoneNumber" ? 10 : undefined}
                         />
                       )}

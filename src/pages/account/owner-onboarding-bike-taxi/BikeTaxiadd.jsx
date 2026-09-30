@@ -6,9 +6,15 @@ import { ACCOUNT_ADD_SCHEMA } from '@/utils/validations';
 import { Button } from '@material-tailwind/react';
 import { useNavigate } from "react-router-dom";
 import BikeTaxiAccountCreationTabs from './BikeTaxiAccountCreationTabs';
+import { handleBikeTaxiRegisterApiError } from './registerApiErrorHandler';
 
 const BikeTaxiAddAccountNew = () => {
     const navigate = useNavigate();
+    const [registrationError, setRegistrationError] = React.useState("");
+
+    const showRegistrationError = (errorOrResponse) => {
+        setRegistrationError(handleBikeTaxiRegisterApiError(errorOrResponse));
+    };
 
     const onSubmit = async (values, { setSubmitting }) => {
         // console.log('Form submission started with values:', values);
@@ -31,6 +37,7 @@ const BikeTaxiAddAccountNew = () => {
             let data;
             data = await ApiRequestUtils.post(API_ROUTES.CREATE_ACCOUNT, reqBody);
             if (!data?.success && data?.code === 203) {
+                showRegistrationError(data);
                 setSubmitting(false);
                 return;
             }
@@ -39,8 +46,9 @@ const BikeTaxiAddAccountNew = () => {
                 navigate(`/dashboard/vendors/account/owner-onboarding-bike-taxi/documents/${accountId}`);
                 return;
             }
+            showRegistrationError(data);
         } catch (error) {
-            console.error('Error submitting form:', error);
+            showRegistrationError(error);
         }
         setSubmitting(false);
     };
@@ -55,6 +63,19 @@ const BikeTaxiAddAccountNew = () => {
 
     return (
         <div className="p-4 bg-white rounded-lg shadow-md">
+            {registrationError ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                        <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
+                        <p className="mt-3 text-sm text-gray-700">{registrationError}</p>
+                        <div className="mt-6 flex justify-end">
+                            <Button type="button" onClick={() => setRegistrationError("")} className="bg-blue-600">
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             <BikeTaxiAccountCreationTabs activeStage={1} />
             <div className="mb-4">
             </div>

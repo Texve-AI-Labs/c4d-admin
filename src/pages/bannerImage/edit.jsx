@@ -5,6 +5,7 @@ import { Button, Dialog, DialogBody, DialogHeader, DialogFooter, Typography, Swi
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
+import { safeText } from '@/utils/text';
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -77,6 +78,36 @@ const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER' || type
 const isDriverAdsDemoVideo = (type) => type === 'DRIVER_ADS_DEMO_VIDEO';
 const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
 const isBannerTargetedMode = (type, mode) => type === 'BANNER' && mode === 'TARGETED';
+const isBannerNewCustomerMode = (type, mode) => type === 'BANNER' && mode === 'NEW_CUSTOMER';
+const TARGETED_SERVICE_OPTIONS = ['RIDES', 'AUTO', 'BIKE', 'PARCEL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'RENTAL_OUTSTATION'];
+const parseEligibilityConfig = (config) => {
+  if (!config) return {};
+  if (typeof config === 'string') {
+    try {
+      return JSON.parse(config);
+    } catch {
+      return {};
+    }
+  }
+  return config;
+};
+const formatEligibilityLabel = (value) => String(value || '')
+  .toLowerCase()
+  .replaceAll('_', ' ')
+  .replace(/\b\w/g, (char) => char.toUpperCase());
+const formatEligibilityConfig = (config) => {
+  const normalizedConfig = parseEligibilityConfig(config);
+  const audience = normalizedConfig?.audience || normalizedConfig?.AUDIENCE;
+
+  if (audience) return `Audience: ${formatEligibilityLabel(audience)}`;
+  if (normalizedConfig && typeof normalizedConfig === 'object') {
+    return Object.entries(normalizedConfig)
+      .map(([key, value]) => `${formatEligibilityLabel(key)}: ${safeText(value)}`)
+      .join(', ') || '-';
+  }
+
+  return '-';
+};
 const isIntroType = (type) => type === 'INTRO_SLIDES' || type === 'INTRO_SLIDES_DRIVER' || type === 'FUTURE_BOOKING_INTRO_DRIVER' || type === 'RETURN_TRIP_INTRO_DRIVER';
 const isQrPageImageType = (type) => type === 'QR_DRIVER_TO_DRIVER' || type === 'QR_DRIVER_TO_CUSTOMER' || type === 'QR_CUSTOMER_TO_CUSTOMER';
 const isStandardBannerType = (type) => Boolean(type) && type !== 'NEW_CUSTOMER' && !isIntroType(type) && !isTrainingVideoDriver(type);
@@ -90,11 +121,20 @@ const EditBanner = () => {
   const [imagePreview, setImagePreview] = useState(banner?.imageUrl || banner?.image || null);
   const [dropSuggestions, setDropSuggestions] = useState([]);
 
-  const initialValues = useMemo(() => ({
+  const initialValues = useMemo(() => {
+    const eligibilityConfig = parseEligibilityConfig(banner?.eligibilityConfig);
+    const audience = eligibilityConfig?.audience || eligibilityConfig?.AUDIENCE;
+    const inferredMode = String(audience || '').toUpperCase() === 'NEW_CUSTOMER'
+      ? 'NEW_CUSTOMER'
+      : Object.keys(eligibilityConfig).length > 0
+        ? 'TARGETED'
+        : 'GENERAL';
+
+    return {
     bannerId: banner?.id || id || '',
     status: banner?.status ?? false,
     type: normalizeBannerType(banner?.type || ''),
-    mode: banner?.mode || 'GENERAL',
+    mode: banner?.mode || inferredMode,
     fromDate: toDateInputValue(banner?.fromDate),
     toDate: toDateInputValue(banner?.toDate),
     startTime: banner?.startTime || '',
@@ -112,8 +152,9 @@ const EditBanner = () => {
     ),
     navigateTo: banner?.navigateTo || '',
     image: null,
-    eligibilityConfig: banner?.eligibilityConfig || {},
-  }), [banner, id]);
+    eligibilityConfig,
+  };
+  }, [banner, id]);
 
   const schema = Yup.object().shape({
     bannerId: Yup.string().required(),
@@ -222,7 +263,9 @@ const EditBanner = () => {
         formData.append('extImage', values.image?.name?.split('.').pop()?.toLowerCase() || '');
       }
 
-      if (values.type === 'BANNER' && values.mode === 'TARGETED') {
+      if (isBannerNewCustomerMode(values.type, values.mode)) {
+        formData.append('eligibilityConfig', JSON.stringify({ audience: 'NEW_CUSTOMER' }));
+      } else if (values.type === 'BANNER' && values.mode === 'TARGETED') {
         formData.append('eligibilityConfig', JSON.stringify(values.eligibilityConfig || {}));
       }
 
@@ -347,6 +390,7 @@ const EditBanner = () => {
         {({ isSubmitting, values, setFieldValue }) => {
           const showModeField = values.type === 'BANNER';
           const showTargetedBannerFields = isBannerTargetedMode(values.type, values.mode);
+          const eligibilityConfigText = formatEligibilityConfig(values.eligibilityConfig);
           const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType(values.type) || isTrainingVideoDriver(values.type) || isDriverAdsDemoVideo(values.type);
           const showImageField = !isTrainingVideoDriver(values.type);
           const showDropAndNavigate = isStandardBannerType(values.type) && !isServiceIntroImage(values.type) && !isQrPageImageType(values.type);
@@ -368,13 +412,37 @@ const EditBanner = () => {
               {showModeField && (
                 <div>
                   <label className="text-sm font-medium text-gray-700">Mode</label>
-                  <Field as="select" name="mode" className={inputClass}>
+                    <Field
+                      as="select"
+                      name="mode"
+                      className={inputClass}
+                      onChange={(e) => {
+                        const nextMode = e.target.value;
+                        setFieldValue('mode', nextMode);
+                        setFieldValue(
+                          'eligibilityConfig',
+                          nextMode === 'NEW_CUSTOMER' ? { audience: 'NEW_CUSTOMER' } : {}
+                        );
+                      }}
+                    >
                     <option value="GENERAL">General</option>
                     <option value="TARGETED">Targeted</option>
+                    <option value="NEW_CUSTOMER">New Customer</option>
                   </Field>
                 </div>
               )}
-              {(!hideStandardFields || isDriverAdsDemoVideo(values.type)) && (
+              {showModeField && values.mode === 'NEW_CUSTOMER' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Eligibility Config</label>
+                  <input
+                    type="text"
+                    value={eligibilityConfigText}
+                    readOnly
+                    className={inputClass}
+                  />
+                </div>
+              )}
+              {!hideStandardFields && (
                 <>
                   <div>
                     <label className="text-sm font-medium text-gray-700">From Date</label>
@@ -467,16 +535,44 @@ const EditBanner = () => {
               {showTargetedBannerFields && (
                 <div className="col-span-2">
                   <label className="text-sm font-medium text-gray-700">Targeted Services</label>
-                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-md border border-gray-300 p-3 bg-gray-100">
-                    {Object.keys(values.eligibilityConfig || {}).length === 0 ? (
-                      <span className="text-sm text-gray-500">No targeted services selected</span>
-                    ) : (
-                      Object.entries(values.eligibilityConfig || {}).map(([service, count]) => (
-                        <span key={service} className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                          {getTargetedServiceLabel(service)}: {count}
-                        </span>
-                      ))
-                    )}
+                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-md border border-gray-300 p-3">
+                    {TARGETED_SERVICE_OPTIONS.map((service) => {
+                      const serviceCount = values.eligibilityConfig?.[service] ?? '';
+                      const checked = Boolean(serviceCount);
+
+                      return (
+                        <label key={service} className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2">
+                          <span className="text-sm text-gray-800">{getTargetedServiceLabel(service)}</span>
+                          <span className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                const nextConfig = { ...(values.eligibilityConfig || {}) };
+                                if (e.target.checked) {
+                                  nextConfig[service] = Number(serviceCount) > 0 ? Number(serviceCount) : 1;
+                                } else {
+                                  delete nextConfig[service];
+                                }
+                                setFieldValue('eligibilityConfig', nextConfig);
+                              }}
+                            />
+                            {checked && (
+                              <input
+                                type="number"
+                                min="1"
+                                value={serviceCount}
+                                onChange={(e) => setFieldValue('eligibilityConfig', {
+                                  ...(values.eligibilityConfig || {}),
+                                  [service]: e.target.value,
+                                })}
+                                className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                              />
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -81,7 +81,7 @@ const ROUTE_MATCHERS = {
   "Driver KM Bonus": ["/finance/driver-bonus"],
   "Discount Module": ["/finance/discountmodulelist", "/finance/discountmodule/add", "/finance/discountmodule/edit"],
   "Custom Discount": ["/finance/custom-discount", "/finance/custom-discount/add", "/finance/custom-discount/edit"],
-  "Settings": ["/finance/gstlist", "/finance/gst/add", "/finance/gst/edit"],
+  "Settings": ["/finance/gstlist", "/finance/gst/add", "/finance/gst/edit", "/finance/distance-rule/add", "/finance/distance-rule/edit"],
   "Driver Subscription Feed Back": ["/finance/driver-subscription-feedback", "/finance/driver-subscription-feedback/add", "/finance/driver-subscription-feedback/edit", "/finance/driver-subscription-feedback/details"],
   "Parcel Commission": ["/finance/parcel-commission"],
   "Parcel Slot Config": ["/finance/parcel-slot-config", "/finance/parcel-slot-config/add", "/finance/parcel-slot-config/edit", "/finance/parcel-slot-config/details"],

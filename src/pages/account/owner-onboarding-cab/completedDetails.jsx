@@ -321,7 +321,7 @@ const CompletedOnboardingDetails = () => {
           serviceType: "RIDES",
           zone,
         });
-        if (data?.success) {
+        if (data?.success || data?.luggageCapacity) {
           setLuggageCapacityMap(data?.luggageCapacity || {});
           setLuggageCapacityError("");
         } else {
@@ -862,7 +862,7 @@ const CompletedOnboardingDetails = () => {
       const rawCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").trim().toUpperCase();
       const mappedCarType = rawCarType === "MINI" ? "MINI" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
       const mappedAssignedTo = String(draftValues?.["Assigned To"] || "").trim();
-      const mappedWithDriver = String(draftValues?.["With Driver"] || cabResult?.withDriver || "");
+      const mappedWithDriver = String(draftValues?.["With Driver"] || cabResult?.withDriver || "Yes");
       const assignOrAddDriver = String(draftValues?.["Assign or Add Driver"] || "Assign");
       const cabDetails = {
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
@@ -914,20 +914,11 @@ const CompletedOnboardingDetails = () => {
         blockedReason: cabResult?.blockedReason || "",
       };
 
-      const selectedPackages = Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []);
-      const prices = Array.isArray(cabPayload?.price)
-        ? cabPayload.price.filter((el) => selectedPackages.map(String).includes(String(el.packageId)))
-        : [];
-      const normalizedPrices = prices.map((price) => ({
-        ...price,
-        driverId: cabDetails.driverId || null,
-      }));
-
       console.log('Cab Details :- ', cabDetails);
-      console.log("Prices Log :", normalizedPrices);
+      // Package and price updates are intentionally disabled for Vehicle Details edits.
       const res = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, {
         cabDetails: JSON.stringify(cabDetails),
-        prices: JSON.stringify(normalizedPrices),
+        // prices: JSON.stringify(prices),
       });
 
       if (res?.success) {
@@ -1193,8 +1184,8 @@ const CompletedOnboardingDetails = () => {
                             }
                             setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                           }}
-                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                          disabled={key === "type"}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                          disabled={key === "type" || key === "phoneNumber"}
                           maxLength={key === "phoneNumber" ? 10 : undefined}
                         />
                       )}

@@ -33,6 +33,7 @@ const toStorageScope = (pathname = '') => {
 
 const getBookingFiltersKey = (pathname) => `bookingFilters_${toStorageScope(pathname)}`;
 const getBookingSearchKey = (pathname) => `bookingSearchId_${toStorageScope(pathname)}`;
+const getBookingSearchContextKey = (pathname) => `bookingSearchContext_${toStorageScope(pathname)}`;
 const LEGACY_BOOKING_FILTERS_KEY = 'bookingListFilters';
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 const getDateFilterFromTab = (tab) =>
@@ -65,6 +66,22 @@ const setItemSafe = (key, value) => {
     } catch (error) {
         console.error(`Error setting sessionStorage key "${key}":`, error);
     }
+};
+
+const parseStoredJsonSafe = (key) => {
+    const raw = getItemSafe(key);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (error) {
+        console.error(`Error parsing sessionStorage key "${key}":`, error);
+        return null;
+    }
+};
+
+const toPositiveNumber = (value) => {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0;
 };
 
 const getLocalItemSafe = (key) => {
@@ -135,7 +152,7 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
             }
         };
 
-export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange }) {
+export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange, onClearSearch }) {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingFeatures = useMemo(() => {
@@ -155,6 +172,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const hasFeature = (feature) => bookingFeatures.includes(feature);
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
+    const bookingSearchContextKey = getBookingSearchContextKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
     const [selectedBookingId, setSelectedBookingId] = useState(null);
     const [activeTab, setActiveTab] = useState(() => getInitialActiveTab(bookingFiltersKey));
@@ -215,6 +233,27 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     });
     const previousCustomerIdRef = useRef(customerId);
     const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
+
+    const getResetPagination = (page = 1) => ({
+        currentPage: page,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: pagination.itemsPerPage,
+    });
+
+    const getResolvedCustomerId = (bookingNumber = effectiveSearchId) => {
+        if (String(bookingNumber || '').trim()) {
+            return 0;
+        }
+
+        const propCustomerId = toPositiveNumber(customerId);
+        if (propCustomerId) {
+            return propCustomerId;
+        }
+
+        const storedContext = parseStoredJsonSafe(bookingSearchContextKey);
+        return toPositiveNumber(storedContext?.customerId);
+    };
 
     const getInquiryTypeFromPath = (pathname = "") => {
         const path = String(pathname || "").toLowerCase();
@@ -599,7 +638,7 @@ if (!statusFilter.includes('All')) {
         }
         
         const queryParams = {
-            "customerId": customerId,
+            "customerId": getResolvedCustomerId(effectiveSearchId),
             'type': type ? type : '',
             'page': page,
             'limit': pagination.itemsPerPage,
@@ -635,17 +674,20 @@ if (!statusFilter.includes('All')) {
             else {
                 setBookingsList([]);
                 setOnlineDrivers([]);
+                setPagination(getResetPagination(page));
             }
         } 
         else {
             console.error('API request failed:', data?.message);
             setBookingsList([]);
             setOnlineDrivers([]);
+            setPagination(getResetPagination(page));
         }
     } catch (error) {
         console.error('Error fetching bookings:', error);
         setBookingsList([]);
         setOnlineDrivers([]);
+        setPagination(getResetPagination(page));
     } finally {
         if (currentRequestId !== latestRequestRef.current) {
             return;
@@ -985,6 +1027,7 @@ if (!statusFilter.includes('All')) {
     const handleRefresh = () => {
         // Set manual filter flag to prevent useEffect conflicts
         setIsManualDateFilter(true);
+        onClearSearch?.();
         const refreshedTab = isCompactFeatureList ? 'TODAY' : 'ALL_BOOKINGS';
         
         // Reset all filters to their default state
@@ -1003,6 +1046,7 @@ if (!statusFilter.includes('All')) {
         setEffectiveSearchId('');
         sessionStorage.removeItem(bookingSearchKey);
         sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+        sessionStorage.removeItem(bookingSearchContextKey);
         const today = moment().format('YYYY-MM-DD');
         const startDate = refreshedTab === 'TODAY' ? today : '';
         const endDate = refreshedTab === 'TODAY' ? today : '';
@@ -1016,7 +1060,8 @@ if (!statusFilter.includes('All')) {
             ['All'],
             ['All'],
             '',
-            refreshedTab
+            refreshedTab,
+            0
         );
     };
 
@@ -1039,7 +1084,7 @@ if (!statusFilter.includes('All')) {
 // };
 
     // Function to trigger API call with specific dates (bypasses state timing issues)
-   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab) => {
+   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab, customerIdOverride = null) => {
         const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
         
@@ -1065,7 +1110,7 @@ if (!statusFilter.includes('All')) {
             }
             
             const queryParams = {
-                "customerId": customerId,
+                "customerId": customerIdOverride ?? getResolvedCustomerId(effectiveSearchIdParam),
                 'type': type ? type : '',
                 'page': page,
                 'limit': pagination.itemsPerPage,
@@ -1099,14 +1144,17 @@ if (!statusFilter.includes('All')) {
                     setSelectedBookingId(null);
                 } else {
                     setBookingsList([]);
+                    setPagination(getResetPagination(page));
                 }
             } else {
                 console.error('API request failed:', data?.message);
                 setBookingsList([]);
+                setPagination(getResetPagination(page));
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
             setBookingsList([]);
+            setPagination(getResetPagination(page));
         } finally {
             if (currentRequestId !== latestRequestRef.current) {
                 return;
@@ -1716,6 +1764,7 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    const isBikeService = String(data?.serviceType || '').toUpperCase() === 'BIKE';
                                                     const displayBookingStatus = data?.status === "CONFIRMED" && data?.assignmentStatus === "ASSIGNED"
                                                         ? "DRIVER_ACCEPTED"
                                                         : data?.status === "CONFIRMED"
@@ -2038,7 +2087,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                                {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                                {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}
@@ -2052,7 +2101,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
+                                                            {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => {
@@ -2089,7 +2138,7 @@ if (!statusFilter.includes('All')) {
                                                                     ReAssign {data?.parcelVehicleType === "AUTO" ? "Auto" : "Bike"}
                                                                 </Button>
                                                             }
-                                                            {data?.status === 'ASSIGNED_TO_SUPPORT' && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                            {data?.status === 'ASSIGNED_TO_SUPPORT' && !isBikeService && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}

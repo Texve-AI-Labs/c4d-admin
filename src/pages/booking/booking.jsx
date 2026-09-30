@@ -197,6 +197,7 @@ const toStorageScope = (pathname = '') => {
     return scope || 'dashboard_booking';
 };
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
+const BOOKING_SEARCH_CONTEXT_PREFIX = 'bookingSearchContext_';
 
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -249,6 +250,10 @@ const Booking = (props) => {
     const [searchBookingId, setSearchBookingId] = useState('');
     const [searchText, setSearchText] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [selectedSearchResult, setSelectedSearchResult] = useState(null);
+    const [selectedSearchEntityType, setSelectedSearchEntityType] = useState('');
+    const [searchValidationError, setSearchValidationError] = useState('');
+    const [searchContextRestored, setSearchContextRestored] = useState(false);
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [driverSuggestions, setDriverSuggestions] = useState([]);
@@ -337,6 +342,7 @@ const Booking = (props) => {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingSearchKey = `bookingSearchId_${toStorageScope(location.pathname)}`;
+    const bookingSearchContextKey = `${BOOKING_SEARCH_CONTEXT_PREFIX}${toStorageScope(location.pathname)}`;
 
 
 
@@ -369,6 +375,21 @@ const Booking = (props) => {
   }, [isOpen]);
 
   useEffect(() => {
+    let storedContext = null;
+    try {
+      storedContext = JSON.parse(sessionStorage.getItem(bookingSearchContextKey) || 'null');
+    } catch (error) {
+      console.error('Error restoring booking search context:', error);
+    }
+
+    if (storedContext && typeof storedContext === 'object') {
+      setSelectedCustomer(Number(storedContext.customerId) || 0);
+      setSearchBookingId(storedContext.bookingNumber || '');
+      setSearchText(storedContext.searchText || storedContext.bookingNumber || '');
+      setSearchContextRestored(true);
+      return;
+    }
+
     const storedSearchId = sessionStorage.getItem(bookingSearchKey) || sessionStorage.getItem(LEGACY_BOOKING_SEARCH_KEY) || '';
     if (storedSearchId) {
       sessionStorage.setItem(bookingSearchKey, storedSearchId);
@@ -377,7 +398,84 @@ const Booking = (props) => {
       setSearchBookingId((prev) => prev || storedSearchId);
       setSearchText((prev) => prev || storedSearchId);
     }
-  }, [bookingSearchKey]);
+    setSearchContextRestored(true);
+  }, [bookingSearchContextKey, bookingSearchKey]);
+
+  useEffect(() => {
+    if (!searchContextRestored) return;
+
+    try {
+      sessionStorage.setItem(bookingSearchContextKey, JSON.stringify({
+        searchText,
+        bookingNumber: searchBookingId,
+        customerId: Number(selectedCustomer) || 0,
+      }));
+    } catch (error) {
+      console.error('Error saving booking search context:', error);
+    }
+  }, [searchContextRestored, bookingSearchContextKey, searchText, searchBookingId, selectedCustomer]);
+
+  const clearBookingSearchState = useCallback(() => {
+    setSearchText('');
+    setSearchBookingId('');
+    setSelectedCustomer(0);
+    setSearchResults([]);
+    setSelectedSearchResult(null);
+    setSelectedSearchEntityType('');
+    setSearchValidationError('');
+    sessionStorage.removeItem(bookingSearchKey);
+    sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+    sessionStorage.removeItem(bookingSearchContextKey);
+  }, [bookingSearchKey, bookingSearchContextKey]);
+
+  const getSearchResultLabel = (result = {}) => {
+    if (String(result?.type || '').toLowerCase() === 'booking') {
+      return result?.bookingNumber || '';
+    }
+    return [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
+  };
+
+  const getSearchResultCustomerId = (result = {}) =>
+    Number(result?.customerId || result?.Customer?.id || (String(result?.type || '').toLowerCase() === 'customer' ? result?.id : 0)) || 0;
+
+  const applySelectedSearch = () => {
+    if (!selectedSearchResult) {
+      setSearchValidationError('Please select a search result.');
+      return;
+    }
+
+    if (!selectedSearchEntityType) {
+      setSearchValidationError('Please select search type.');
+      return;
+    }
+
+    const resultType = selectedSearchEntityType === 'all'
+      ? String(selectedSearchResult?.type || '').toLowerCase()
+      : selectedSearchEntityType;
+
+    if (resultType === 'booking') {
+      const bookingNumber = selectedSearchResult?.bookingNumber || searchText;
+      if (!bookingNumber) {
+        setSearchValidationError('Selected result does not have a booking number.');
+        return;
+      }
+      setSelectedCustomer(0);
+      setSearchBookingId(bookingNumber);
+      setSearchText(bookingNumber);
+    } else if (resultType === 'customer') {
+      const selectedCustomerId = getSearchResultCustomerId(selectedSearchResult);
+      if (!selectedCustomerId) {
+        setSearchValidationError('Selected result does not have a customer id.');
+        return;
+      }
+      setSearchBookingId('');
+      setSelectedCustomer(selectedCustomerId);
+      setSearchText(getSearchResultLabel(selectedSearchResult).trim());
+    }
+
+    setSearchResults([]);
+    setSearchValidationError('');
+  };
 
   useEffect(() => {
     if (selectedAreaId) {
@@ -2236,42 +2334,42 @@ const priceDetailsCardClass = isPeakHour
                 <div className='py-2  rounded-xl flex justify-between bg-white mb-2'>
                     {customerData && (
                         <div className="p-2 flex w-[40%] flex-col relative">
+                            <div className="relative w-full">
                             <input
                                 type="text"
-                                className="relative w-full py-2 px-8 border  rounded-xl text-sm bg-gray-100 pr-10"
+                                className="w-full py-2 pl-9 pr-9 border rounded-xl text-sm bg-gray-100"
                                 placeholder="Search by booking ID or customer"
                                 value={searchText}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchText(value);
-                                    setSearchBookingId('');
-                                    searchBookings(value);
-                                }}
-                            />
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setSearchText(value);
+                                        setSearchBookingId('');
+                                        setSelectedCustomer(0);
+                                        setSelectedSearchResult(null);
+                                        setSelectedSearchEntityType('');
+                                        setSearchValidationError('');
+                                        searchBookings(value);
+                                    }}
+                                    />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-600" />
                             </div>
-                            {(searchText || searchBookingId) && (
-                                <button
+                                {(searchText || searchBookingId) && (
+                                        <button
                                     type="button"
                                     // className="bg-white text-gray-500 hover:text-gray-700"
                                     aria-label="Clear search"
-                                    onClick={() => { setSearchText(''); 
+                                    onClick={() => {
+                                                    clearBookingSearchState();
                                                     searchBookings('');
-                                                    setSearchBookingId(''); 
-                                                    setSelectedCustomer(0);
-                                                    setSearchResults([]); 
-                                                    
-                                                    sessionStorage.removeItem(bookingSearchKey);
-                                                    sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
-                                                   if (refreshFn) refreshFn();
-                                                   
+                                                    if (refreshFn) refreshFn();
                                                 }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 leading-none"
                                 >
                                     X
                                 </button>
                             )}
+                            </div>
                             {searchResults.length > 0 && (
                                 <ul className="absolute top-full left-0 w-full border rounded-lg bg-white mt-2 max-h-60 overflow-y-auto z-10">
                                     {searchResults.map((result, index) => (
@@ -2279,24 +2377,55 @@ const priceDetailsCardClass = isPeakHour
                                             key={result?.bookingNumber || result?.id || [result?.firstName, result?.phoneNumber].filter(Boolean).join('-') || index}
                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                             onClick={() => {
-                                                if (result?.type == 'booking') {
-                                                    setSelectedCustomer(0);
-                                                    setSearchBookingId(result?.bookingNumber);
-                                                    setSearchText(result?.bookingNumber);
-                                                } else {
-                                                    const label = [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
-                                                    setSearchText(label.trim());
-                                                    setSelectedCustomer(result?.id);
-                                                    setSearchBookingId('');
-                                                }
+                                                    setSelectedSearchResult(result);
+                                                    setSelectedSearchEntityType('');
+                                                    setSearchValidationError('');
+                                                    setSearchText(getSearchResultLabel(result).trim());
                                                 setSearchResults([]);
-                                                if (refreshFn) refreshFn();
+                                                // if (refreshFn) refreshFn();
                                             }}
                                         >
-                                            {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
+                                            {getSearchResultLabel(result)}
                                         </li>
                                     ))}
                                 </ul>
+	                            )}
+	                                {selectedSearchResult && (
+	                                    <div className="flex items-center gap-2 mt-2">
+	                                        {[
+	                                            { value: 'all', label: 'All', activeClass: 'bg-slate-700 text-white', inactiveClass: 'bg-slate-100 text-slate-700' },
+	                                            { value: 'booking', label: 'Booking', activeClass: 'bg-orange-600 text-white', inactiveClass: 'bg-orange-50 text-orange-700' },
+	                                            { value: 'customer', label: 'Customer', activeClass: 'bg-green-600 text-white', inactiveClass: 'bg-green-50 text-green-700' },
+	                                        ].map((option) => (
+	                                            <button
+	                                                key={option.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedSearchEntityType(option.value);
+                                                    setSearchValidationError('');
+                                                }}
+	                                                className={`px-3 py-1 rounded-md text-xs font-semibold border ${
+	                                                    selectedSearchEntityType === option.value
+	                                                        ? option.activeClass
+	                                                        : option.inactiveClass
+	                                                }`}
+	                                            >
+                                                {option.label}
+                                            </button>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={applySelectedSearch}
+                                            className="px-4 py-1 rounded-md text-xs font-semibold bg-blue-500 text-white"
+                                        >
+                                            Search
+                                        </button>
+                                    </div>
+                                )}
+                                {searchValidationError && (
+                                    <Typography className="text-xs text-red-600 mt-1">
+                                        {searchValidationError}
+                                    </Typography>
                             )}
                         </div>
                     )}
@@ -2315,7 +2444,7 @@ const priceDetailsCardClass = isPeakHour
                     
 
                 </div>
-                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} />
+	                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearBookingSearchState} />
             </div>
             <div>
                 {isOpen && (

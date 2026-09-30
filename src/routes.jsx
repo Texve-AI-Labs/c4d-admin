@@ -151,6 +151,8 @@ import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
 import DriverFeedbackEdit from "./pages/GST/driverFeedbackEdit";
 import LuggagePolicyAdd from "./pages/GST/luggagePolicyAdd";
 import LuggagePolicyEdit from "./pages/GST/luggagePolicyEdit";
+import DistanceRuleAdd from "./pages/GST/distanceRuleAdd";
+import DistanceRuleEdit from "./pages/GST/distanceRuleEdit";
 import BannerView from "./pages/bannerImage/view ";
 import AddBanner from "./pages/bannerImage/add";
 import TestimoinalView from "./pages/testimoinal/view";
@@ -738,6 +740,22 @@ export const routes = [
         name: "Luggage policy edit",
         path: "/finance/luggage-policy/edit/:id",
         element: <LuggagePolicyEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Distance rule add",
+        path: "/finance/distance-rule/add",
+        element: <DistanceRuleAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Distance rule edit",
+        path: "/finance/distance-rule/edit/:id",
+        element: <DistanceRuleEdit />,
         display: true,
         permission: "Users",
       },

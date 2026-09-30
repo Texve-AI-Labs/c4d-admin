@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import Swal from "sweetalert2";
 
-const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcelsList, serviceType }) => {
+const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcelsList, serviceType, onStatusUpdated }) => {
     const [documentData, setdocumentData] = useState([]);
     const [modalData, setModalData] = useState(null);
     const navigate = useNavigate();
@@ -94,7 +94,10 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                 showConfirmButton: false,
                 timer: 1500
             });
-            fetchData();
+            await fetchData();
+            if (typeof onStatusUpdated === "function") {
+                onStatusUpdated({ documentId: docId, status, comments: reason });
+            }
             // const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_DOCUMENT_DETAILS, {
             //     "id": id,
             //     "user": type
