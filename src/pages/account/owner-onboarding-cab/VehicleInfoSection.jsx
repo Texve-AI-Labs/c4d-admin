@@ -105,7 +105,7 @@ const VehicleInfoSection = ({
         rawAssigned.toLowerCase() === "individual"
           ? "Owner"
           : rawAssigned || map["Assigned To"] || "";
-      map["With Driver"] = section?.rawValues?.withDriver || map["With Driver"] || "";
+      map["With Driver"] = section?.rawValues?.withDriver || map["With Driver"] || "Yes";
       map["Assign or Add Driver"] = "Assign";
       map["Driver ID"] = section?.rawValues?.Drivers?.[0]?.id || "";
       map["Driver Name"] = section?.rawValues?.driverName || "";

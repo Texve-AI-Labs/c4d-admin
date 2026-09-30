@@ -421,8 +421,9 @@ const getPackageListDetails = async () => {
                 status: values?.status || '',
                  ...(values.status === 'BLOCKED' && { blockedReason: blockedReason }),
             }
-            const prices = values.prices;
-            let res = { cabDetails: JSON.stringify(cabDetails), prices: JSON.stringify(prices) };
+            // const prices = values.prices;
+            let res = { cabDetails: JSON.stringify(cabDetails) };
+            // prices: JSON.stringify(prices),
             //console.log("RESSSSS", res);
             const resp = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, res);
             console.log('CAB DATA :', resp);
