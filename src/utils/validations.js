@@ -1,5 +1,27 @@
 import * as Yup from 'yup'
 
+const FULL_NAME_REGEX = /^[A-Za-z ]+$/;
+const PASSWORD_RULES_SCHEMA = Yup.string()
+    .min(8, 'Password must be at least 8 characters.')
+    .max(64, 'Password cannot exceed 64 characters.')
+    .test('no-leading-trailing-spaces', 'Password cannot start or end with spaces.', (value) => !value || value === value.trim())
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter.')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter.')
+    .matches(/[0-9]/, 'Password must contain at least one number.')
+    .matches(/[^A-Za-z0-9\s]/, 'Password must contain at least one special character.');
+
+export const FULL_NAME_SCHEMA = Yup.string()
+    .transform((value) => (typeof value === 'string' ? value.trim() : value))
+    .required('Name is required')
+    .min(2, 'Full Name must be at least 2 characters.')
+    .max(100, 'Full Name cannot exceed 100 characters.')
+    .matches(FULL_NAME_REGEX, 'Please enter a valid name');
+
+export const PASSWORD_SCHEMA = PASSWORD_RULES_SCHEMA.required('Password is required');
+export const OPTIONAL_PASSWORD_SCHEMA = Yup.lazy((value) =>
+    !value ? Yup.string().notRequired() : PASSWORD_RULES_SCHEMA
+);
+
 export const PERSONALINFO_SCHEMA = Yup.object().shape({
     salutation: Yup.string().required('Salutation is required'),
     firstName: Yup.string().required('Your Name is required'),
@@ -33,13 +55,11 @@ export const VEHICLEINFO_SCHEMA = Yup.object().shape({
 });
 
 export const ADD_USER_SCHEMA = Yup.object({
-    name: Yup.string()
-        .required('Name is required')
-        .test('valid-name', 'Please enter a valid name.', (value) => !value || !/^\d+$/.test(value.trim())),
+    name: FULL_NAME_SCHEMA,
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
     email: Yup.string().email('Invalid email address').matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,4}$/, 'Invalid email address').required('Email address is required'),
     role: Yup.string().required('Role is required'),
-    password: Yup.string().required('Password is required'),
+    password: PASSWORD_SCHEMA,
     permission: Yup.array()
         .of(Yup.string().required('Each permission must be selected'))
         .required('At least one permission must be selected')
@@ -48,9 +68,7 @@ export const ADD_USER_SCHEMA = Yup.object({
 });
 
 export const EDIT_USER_SCHEMA = Yup.object({
-    name: Yup.string()
-        .required('Name is required')
-        .test('valid-name', 'Please enter a valid name.', (value) => !value || !/^\d+$/.test(value.trim())),
+    name: FULL_NAME_SCHEMA,
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
     email: Yup.string().email('Invalid email address').matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,4}$/, 'Invalid email address').required('Email address is required'),
     role: Yup.string().required('Role is required'),
@@ -58,10 +76,7 @@ export const EDIT_USER_SCHEMA = Yup.object({
         .of(Yup.string().required('Each permission must be selected'))
         .required('At least one permission must be selected')
         .min(1, 'At least one permission must be selected'),
-    password: Yup.lazy((value) =>
-        !value
-            ? Yup.string().notRequired()
-            : Yup.string().min(3, 'Password must be at least 3 characters')),
+    password: OPTIONAL_PASSWORD_SCHEMA,
     status: Yup.string().required('Status is required')
 });
 

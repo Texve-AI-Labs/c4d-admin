@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import Select from 'react-select';
 import { EDIT_USER_SCHEMA } from '@/utils/validations';
+import PasswordStrengthMessage from '@/components/PasswordStrengthMessage';
 
 const UserEdit = () => {
     const [userVal, setUserVal] = useState({});
@@ -67,7 +68,7 @@ const UserEdit = () => {
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
             const userData = {
-                name: values.name,
+                name: values.name.trim(),
                 phoneNumber: values.phoneNumber,
                 email: values.email,
                 permission: values.permission, // permisions need to be updated 
@@ -94,7 +95,7 @@ const UserEdit = () => {
                     state: {
                         userAdded: false,
                         userUpdated: true,
-                        userName: values.name
+                        userName: values.name.trim()
                     }
                 });
             }
@@ -149,8 +150,18 @@ const UserEdit = () => {
                             </div>
                             <div>
                                 <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
-                                <Field type="password" name="password" placeholder="Leave blank to keep existing password" className="border-2 p-2 w-full rounded-md border-gray-300" />
+                                <Field
+                                    type="password"
+                                    name="password"
+                                    placeholder="Leave blank to keep existing password"
+                                    className="border-2 p-2 w-full rounded-md border-gray-300"
+                                    onChange={(event) => {
+                                        setFieldTouched('password', true, false);
+                                        setFieldValue('password', event.target.value);
+                                    }}
+                                />
                                 <p className="text-xs text-gray-500 mt-1">Leave blank to keep existing password.</p>
+                                <PasswordStrengthMessage password={values.password} />
                                 <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
