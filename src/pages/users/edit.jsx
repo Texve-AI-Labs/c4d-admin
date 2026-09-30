@@ -67,7 +67,7 @@ const UserEdit = () => {
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
             const userData = {
-                name: values.name,
+                name: values.name.trim(),
                 phoneNumber: values.phoneNumber,
                 email: values.email,
                 permission: values.permission, // permisions need to be updated 
@@ -94,7 +94,7 @@ const UserEdit = () => {
                     state: {
                         userAdded: false,
                         userUpdated: true,
-                        userName: values.name
+                        userName: values.name.trim()
                     }
                 });
             }

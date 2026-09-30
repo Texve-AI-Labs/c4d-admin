@@ -37,7 +37,7 @@ const UserAdd = () => {
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
             const userData = {
-                name: values.name,
+                name: values.name.trim(),
                 phoneNumber: values.phoneNumber,
                 email: values.email,
                 permission: values.permission,
@@ -60,7 +60,7 @@ const UserAdd = () => {
                     state: {
                         userAdded: true,
                         userUpdated: false,
-                        userName: values.name
+                        userName: values.name.trim()
                     }
                 });
             }

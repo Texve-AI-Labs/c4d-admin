@@ -1,5 +1,14 @@
 import * as Yup from 'yup'
 
+const FULL_NAME_REGEX = /^[A-Za-z ]+$/;
+
+export const FULL_NAME_SCHEMA = Yup.string()
+    .transform((value) => (typeof value === 'string' ? value.trim() : value))
+    .required('Name is required')
+    .min(2, 'Full Name must be at least 2 characters.')
+    .max(100, 'Full Name cannot exceed the maximum allowed characters.')
+    .matches(FULL_NAME_REGEX, 'Please enter a valid name');
+
 export const PERSONALINFO_SCHEMA = Yup.object().shape({
     salutation: Yup.string().required('Salutation is required'),
     firstName: Yup.string().required('Your Name is required'),
@@ -33,9 +42,7 @@ export const VEHICLEINFO_SCHEMA = Yup.object().shape({
 });
 
 export const ADD_USER_SCHEMA = Yup.object({
-    name: Yup.string()
-        .required('Name is required')
-        .test('valid-name', 'Please enter a valid name.', (value) => !value || !/^\d+$/.test(value.trim())),
+    name: FULL_NAME_SCHEMA,
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
     email: Yup.string().email('Invalid email address').matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,4}$/, 'Invalid email address').required('Email address is required'),
     role: Yup.string().required('Role is required'),
@@ -48,9 +55,7 @@ export const ADD_USER_SCHEMA = Yup.object({
 });
 
 export const EDIT_USER_SCHEMA = Yup.object({
-    name: Yup.string()
-        .required('Name is required')
-        .test('valid-name', 'Please enter a valid name.', (value) => !value || !/^\d+$/.test(value.trim())),
+    name: FULL_NAME_SCHEMA,
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
     email: Yup.string().email('Invalid email address').matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,4}$/, 'Invalid email address').required('Email address is required'),
     role: Yup.string().required('Role is required'),
