@@ -7,6 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import Select from 'react-select';
 import { ADD_USER_SCHEMA } from '@/utils/validations';
+import PasswordStrengthMessage from '@/components/PasswordStrengthMessage';
 
 const UserAdd = () => {
     const [userVal, setUserVal] = useState({});
@@ -116,7 +117,16 @@ const UserAdd = () => {
                             </div>
                             <div>
                                 <label htmlFor="password" className="text-sm font-medium text-gray-700">Password <span className="text-red-600">*</span></label>
-                                <Field type="password" name="password" className="border-2 p-2 w-full rounded-md border-gray-300" />
+                                <Field
+                                    type="password"
+                                    name="password"
+                                    className="border-2 p-2 w-full rounded-md border-gray-300"
+                                    onChange={(event) => {
+                                        setFieldTouched('password', true, false);
+                                        setFieldValue('password', event.target.value);
+                                    }}
+                                />
+                                <PasswordStrengthMessage password={values.password} />
                                 <ErrorMessage name="password" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
