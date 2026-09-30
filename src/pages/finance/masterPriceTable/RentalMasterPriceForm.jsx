@@ -49,6 +49,7 @@ const TimeRangeInput = ({ fromName, toName, disabled = false }) => (
 
 const LocalPricingFields = ({ prefix, disabled }) => (
     <div className="grid grid-cols-2 gap-4">
+        <NumberInput name={`${prefix}.pricing.price`} label="Price" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.baseKm`} label="Base Km" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.baseFare`} label="Base Fare" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.kilometer`} label="Package Km" disabled={disabled} />
@@ -304,6 +305,7 @@ export const createLocalCategoryPricing = () => ({
     category: '',
     carTypes: [],
     pricing: {
+        price: '',
         baseKm: '',
         baseFare: '',
         kilometer: '',

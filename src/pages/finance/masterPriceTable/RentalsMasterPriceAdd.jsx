@@ -36,6 +36,7 @@ const commonOutstationSchema = Yup.object().shape({
 });
 
 const localPricingSchema = Yup.object().shape({
+    price: numberField('Price'),
     baseKm: numberField('Base Km'),
     baseFare: numberField('Base Fare'),
     kilometer: numberField('Package Km'),
@@ -175,6 +176,7 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
         category: item.category,
         carTypes: item.carTypes,
         pricing: {
+            price: toNumber(item.pricing.price),
             baseKm: toNumber(item.pricing.baseKm),
             baseFare: toNumber(item.pricing.baseFare),
             kilometer: toNumber(item.pricing.kilometer),

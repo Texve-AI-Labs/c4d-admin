@@ -67,6 +67,7 @@ const normalizeCategoryPricings = (priceData) => {
                 category: item.category || '',
                 carTypes: Array.isArray(item.carTypes) ? item.carTypes : [],
                 pricing: {
+                    price: pricing.price ?? '',
                     baseKm: pricing.baseKm ?? '',
                     baseFare: pricing.baseFare ?? '',
                     kilometer: pricing.kilometer ?? '',
