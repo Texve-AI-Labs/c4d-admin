@@ -2334,40 +2334,42 @@ const priceDetailsCardClass = isPeakHour
                 <div className='py-2  rounded-xl flex justify-between bg-white mb-2'>
                     {customerData && (
                         <div className="p-2 flex w-[40%] flex-col relative">
+                            <div className="relative w-full">
                             <input
                                 type="text"
-                                className="relative w-full py-2 px-8 border  rounded-xl text-sm bg-gray-100 pr-10"
+                                className="w-full py-2 pl-9 pr-9 border rounded-xl text-sm bg-gray-100"
                                 placeholder="Search by booking ID or customer"
                                 value={searchText}
-	                                onChange={(e) => {
-	                                    const value = e.target.value;
-	                                    setSearchText(value);
-	                                    setSearchBookingId('');
-	                                    setSelectedCustomer(0);
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setSearchText(value);
+                                        setSearchBookingId('');
+                                        setSelectedCustomer(0);
                                         setSelectedSearchResult(null);
                                         setSelectedSearchEntityType('');
                                         setSearchValidationError('');
-	                                    searchBookings(value);
-	                                }}
-	                            />
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        searchBookings(value);
+                                    }}
+                                    />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-600" />
                             </div>
-                            {(searchText || searchBookingId) && (
-	                                <button
-	                                    type="button"
-	                                    // className="bg-white text-gray-500 hover:text-gray-700"
-	                                    aria-label="Clear search"
-	                                    onClick={() => {
+                                {(searchText || searchBookingId) && (
+                                        <button
+                                    type="button"
+                                    // className="bg-white text-gray-500 hover:text-gray-700"
+                                    aria-label="Clear search"
+                                    onClick={() => {
                                                     clearBookingSearchState();
                                                     searchBookings('');
                                                     if (refreshFn) refreshFn();
                                                 }}
-	                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-	                                >
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 leading-none"
+                                >
                                     X
                                 </button>
                             )}
+                            </div>
                             {searchResults.length > 0 && (
                                 <ul className="absolute top-full left-0 w-full border rounded-lg bg-white mt-2 max-h-60 overflow-y-auto z-10">
                                     {searchResults.map((result, index) => (

@@ -1764,6 +1764,7 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    const isBikeService = String(data?.serviceType || '').toUpperCase() === 'BIKE';
                                                     const displayBookingStatus = data?.status === "CONFIRMED" && data?.assignmentStatus === "ASSIGNED"
                                                         ? "DRIVER_ACCEPTED"
                                                         : data?.status === "CONFIRMED"
@@ -2088,7 +2089,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                                {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                                {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}
@@ -2102,7 +2103,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
+                                                            {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => {
@@ -2139,7 +2140,7 @@ if (!statusFilter.includes('All')) {
                                                                     ReAssign {data?.parcelVehicleType === "AUTO" ? "Auto" : "Bike"}
                                                                 </Button>
                                                             }
-                                                            {data?.status === 'ASSIGNED_TO_SUPPORT' && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                            {data?.status === 'ASSIGNED_TO_SUPPORT' && !isBikeService && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}
