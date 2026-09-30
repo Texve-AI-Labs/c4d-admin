@@ -6,7 +6,7 @@ export const FULL_NAME_SCHEMA = Yup.string()
     .transform((value) => (typeof value === 'string' ? value.trim() : value))
     .required('Name is required')
     .min(2, 'Full Name must be at least 2 characters.')
-    .max(100, 'Full Name cannot exceed the maximum allowed characters.')
+    .max(100, 'Full Name cannot exceed 100 characters.')
     .matches(FULL_NAME_REGEX, 'Please enter a valid name');
 
 export const PERSONALINFO_SCHEMA = Yup.object().shape({
