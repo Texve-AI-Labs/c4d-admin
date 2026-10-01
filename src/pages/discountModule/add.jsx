@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Field, ErrorMessage, Form } from 'formik';
-import { Button } from '@material-tailwind/react';
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography } from '@material-tailwind/react';
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ const DiscountAdd = () => {
   const [zones, setZones] = useState([]);
   const [imagePreview, setImagePreview] = useState(null);
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null);
+  const [apiErrorMessage, setApiErrorMessage] = useState('');
   const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
     DRIVER: [
       { value: 'DRIVER', label: 'DRIVER' },
@@ -235,6 +236,7 @@ if (values.removeDashboardOfferImg) {
       const res = await ApiRequestUtils.postDocs(API_ROUTES.POST_DISCOUNT, formData);
       if (!res?.success) {
         const message = res?.error || res?.message || 'Coupon code already exists';
+        setApiErrorMessage(message);
         setFieldError('couponCode', message);
         return;
       }
@@ -260,7 +262,9 @@ if (values.removeDashboardOfferImg) {
       const apiMessage =
         err?.response?.data?.error ||
         err?.response?.data?.message ||
-        err.message;
+        err.message ||
+        'Failed to create discount';
+      setApiErrorMessage(apiMessage);
       setFieldError('couponCode', apiMessage || 'Failed to create discount');
     } finally {
       setSubmitting(false);
@@ -677,6 +681,17 @@ if (values.removeDashboardOfferImg) {
           );
         }}
       </Formik>
+      <Dialog open={Boolean(apiErrorMessage)} handler={() => setApiErrorMessage('')} size="sm">
+        <DialogHeader className="text-red-700">Alert !</DialogHeader>
+        <DialogBody divider>
+          <Typography color="blue-gray">{apiErrorMessage}</Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" color="red" onClick={() => setApiErrorMessage('')}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
-import { Button, Alert, Spinner } from '@material-tailwind/react';
+import { Button, Alert, Dialog, DialogBody, DialogFooter, DialogHeader, Spinner, Typography } from '@material-tailwind/react';
 import * as Yup from 'yup';
 import { ColorStyles, API_ROUTES } from '@/utils/constants';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
@@ -21,6 +21,7 @@ const DiscountEdit = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [dashboardOfferImgPreview, setDashboardOfferImgPreview] = useState(null); 
   const [alert, setAlert] = useState(null);
+  const [apiErrorMessage, setApiErrorMessage] = useState('');
   const SERVICE_TYPE_OPTIONS_BY_ENTITY = {
     DRIVER: [{ value: 'DRIVER', label: 'DRIVER' }],
     CAB: [
@@ -360,12 +361,20 @@ const DiscountEdit = () => {
           state: { updatedDiscount: response.data },
         });
       } else {
-        setAlert({ color: 'red', message: 'Failed to update discount' });
+        const message = response?.error || response?.message || 'Failed to update discount';
+        setApiErrorMessage(message);
+        setAlert({ color: 'red', message });
         setTimeout(() => setAlert(null), 3000);
       }
     } catch (error) {
       console.error('Update failed:', error);
-      setAlert({ color: 'red', message: 'Update failed!' });
+      const message =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to update discount';
+      setApiErrorMessage(message);
+      setAlert({ color: 'red', message });
       setTimeout(() => setAlert(null), 3000);
     } finally {
       setSubmitting(false);
@@ -842,6 +851,17 @@ const DiscountEdit = () => {
           </Form>
         )}
       </Formik>
+      <Dialog open={Boolean(apiErrorMessage)} handler={() => setApiErrorMessage('')} size="sm">
+        <DialogHeader className="text-red-700">Alert !</DialogHeader>
+        <DialogBody divider>
+          <Typography color="blue-gray">{apiErrorMessage}</Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" color="red" onClick={() => setApiErrorMessage('')}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 };
