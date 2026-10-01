@@ -45,7 +45,7 @@ const schema = Yup.object({
   }),
 });
 
-const ReferralRuleForm = ({ title, submitLabel, initialValues, onSubmit, loading = false }) => {
+const ReferralRuleForm = ({ title, submitLabel, initialValues, onSubmit, loading = false, showStatus = true }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-10">
@@ -94,15 +94,17 @@ const ReferralRuleForm = ({ title, submitLabel, initialValues, onSubmit, loading
                 <Field type="number" name="config.referredAmount" min="0" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                 <ErrorMessage name="config.referredAmount" component="div" className="text-red-500 text-sm" />
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Status</label>
-                <Field as="select" name="isActive" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" value={String(values.isActive)}
-                  onChange={(e) => setFieldValue("isActive", e.target.value === "true")}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </Field>
-              </div>
+              {showStatus ? (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Status</label>
+                  <Field as="select" name="isActive" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" value={String(values.isActive)}
+                    onChange={(e) => setFieldValue("isActive", e.target.value === "true")}
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </Field>
+                </div>
+              ) : null}
               <Field type="hidden" name="config.triggerEvent" />
               <Field type="hidden" name="config.referrerType" />
               <Field type="hidden" name="config.referredType" />

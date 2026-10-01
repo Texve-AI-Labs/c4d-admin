@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography } from "@material-tailwind/react";
 import { API_ROUTES } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import ReferralRuleForm, { REFERRAL_RULE_DESCRIPTIONS } from "./ReferralRuleForm";
+
+const getApiErrorMessage = (error, fallback = "Something went wrong. Please try again.") =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
+  error?.data?.error ||
+  error?.data?.message ||
+  error?.error ||
+  error?.message ||
+  fallback;
 
 const normalizeRecord = (record = {}) => ({
   id: record?.settingId || record?.id || record?._id || null,
@@ -32,6 +42,7 @@ const ReferralRuleEdit = () => {
   const [loading, setLoading] = useState(true);
   const [recordId, setRecordId] = useState(settingId || null);
   const [initialValues, setInitialValues] = useState(normalizeRecord());
+  const [apiError, setApiError] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,7 +75,7 @@ const ReferralRuleEdit = () => {
         setRecordId(normalized.id || settingId);
       } catch (error) {
         console.error("Failed to load referral rule:", error);
-        navigate("/dashboard/finance/referral-rules/list");
+        setApiError(getApiErrorMessage(error, "Unable to load referral rule."));
       } finally {
         setLoading(false);
       }
@@ -102,22 +113,39 @@ const ReferralRuleEdit = () => {
       const response = await ApiRequestUtils.update(updateRoute, payload);
       if (response?.success) {
         navigate("/dashboard/finance/referral-rules/list");
+      } else {
+        setApiError(getApiErrorMessage(response, "Unable to update referral rule."));
       }
     } catch (error) {
       console.error("Failed to update referral rule:", error);
+      setApiError(getApiErrorMessage(error, "Unable to update referral rule."));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
+    <>
     <ReferralRuleForm
       title="Edit Referral Rule"
       submitLabel="Update"
-      initialValues={initialValues}
-      onSubmit={handleSubmit}
-      loading={loading}
-    />
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        loading={loading}
+        showStatus={false}
+      />
+      <Dialog open={Boolean(apiError)} handler={() => setApiError("")} size="sm">
+        <DialogHeader className="text-red-700">Alert !</DialogHeader>
+        <DialogBody divider>
+          <Typography className="text-sm font-medium text-gray-800">{apiError}</Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button className="bg-red-600" onClick={() => setApiError("")}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
   );
 };
 
