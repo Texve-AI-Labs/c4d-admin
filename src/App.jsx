@@ -3,6 +3,7 @@ import { Dashboard, Auth, Public } from "@/layouts";
 import { AuthProvider } from "./context/auth";
 import { RealtimeEventsProvider } from "./context/realtimeEvents";
 import FcmToast from "./components/FcmToast";
+import { NetworkStatusModal } from "./components/networkStatus";
 
 function App() {
 
@@ -10,13 +11,11 @@ function App() {
     <AuthProvider>
       <RealtimeEventsProvider>
       <FcmToast />
+      <NetworkStatusModal />
       <Routes>
         <Route path="/dashboard/*" element={
           <Dashboard />
         } />
-        {/* unwanted routes */}
-        {/* <Route path="/customer-whatsapp" element={<Navigate to="/dashboard/customer-whatsapp" replace />} />
-        <Route path="/whatsapp-conversation" element={<Navigate to="/dashboard/whatsapp-conversation" replace />} /> */}
         <Route path="/auth/*" element={<Auth />} />
         <Route path="/public/*" element={<Public />} />
         <Route path="*" element={<Navigate to="/dashboard/booking" replace />} />

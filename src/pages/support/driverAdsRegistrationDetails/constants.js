@@ -30,4 +30,5 @@ export const ACTIVITY_TABS = [
   { key: "followUps", label: "Follow Ups" },
   { key: "history", label: "History" },
   { key: "timeline", label: "Timeline" },
+  { key: "wallet", label: "Wallet History" },
 ];

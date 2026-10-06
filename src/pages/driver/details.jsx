@@ -385,7 +385,7 @@ const DriverDetails = ({ btnShow = false, noApprove = false }) => {
             <ActingDriverBookingNotes driverId={id} />
             <DriverWalletLog driverId={id} />
             {driver && driver?.creditLog && <SubscriptionLog subscriptionlog={driver?.creditLog} />}
-            {driver && driver?.result?.id && <DocumentsList id={driver?.result?.id} type={'driver'} noApprove={noApprove} />}
+            {driver && driver?.result?.id && (<DocumentsList id={driver?.result?.id} type={'driver'} noApprove={noApprove}onStatusUpdated={() => fetchItem(id)} /> )}
             {driver && driver?.documentLog && <DocumentLogs documentlogs={driver?.documentLog} />}
             {!btnShow && <div className='flex w-full'>
                 <Button

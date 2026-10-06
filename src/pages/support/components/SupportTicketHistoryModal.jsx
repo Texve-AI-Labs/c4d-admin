@@ -83,15 +83,15 @@ function SupportTicketHistoryModal({ open, onClose, ticketId, fallbackTicket, on
               <thead className="bg-primary text-white">
                 <tr>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Action Type</th>
-                  <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Ticket Index</th>
+                  {/* <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Ticket Index</th> */}
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Old Status</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">New Status</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Old Category</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">New Category</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Old Description</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">New Description</th>
-                  <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Old Disputed Amount</th>
-                  <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">New Disputed Amount</th>
+                  <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Old Reward Amount</th>
+                  <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">New Reward Amount</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Remarks</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Changed By Type</th>
                   <th className="whitespace-nowrap p-3 text-left text-xs font-semibold uppercase tracking-wide">Changed By Actor</th>
@@ -109,7 +109,7 @@ function SupportTicketHistoryModal({ open, onClose, ticketId, fallbackTicket, on
                   sortedHistoryRows.map((row, index) => (
                     <tr key={`${row?.id || index}`} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="whitespace-nowrap p-3 text-sm font-medium text-black">{row?.actionType || "-"}</td>
-                      <td className="whitespace-nowrap p-3 text-sm text-black">{row?.ticketIndex ?? "-"}</td>
+                      {/* <td className="whitespace-nowrap p-3 text-sm text-black">{row?.ticketIndex ?? "-"}</td> */}
                       <td className="whitespace-nowrap p-3 text-sm">
                         <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold shadow-sm ${getStatusTone(row?.oldStatus)}`}>
                           {formatBadgeText(row?.oldStatus || "-")}
@@ -128,7 +128,7 @@ function SupportTicketHistoryModal({ open, onClose, ticketId, fallbackTicket, on
                       <td className="whitespace-nowrap p-3 text-sm text-black">{row?.newDisputedAmount != null ? `₹ ${Number(row.newDisputedAmount).toFixed(2)}` : "-"}</td>
                       <td className="max-w-[180px] p-3 text-sm text-black"><span className="block truncate" title={row?.remarks || "-"}>{row?.remarks || "-"}</span></td>
                       <td className="whitespace-nowrap p-3 text-sm text-black">{row?.changedByType || "-"}</td>
-                      <td className="whitespace-nowrap p-3 text-sm text-black">{row?.changedByUser?.name || row?.changedByActorId || "-"}</td>
+                      <td className="whitespace-nowrap p-3 text-sm text-black">{row?.changedByUser?.name || row?.changedByCustomer?.firstName || "-"}</td>
                       <td className="whitespace-nowrap p-3 text-sm text-black">{formatDateTime(row?.created_at || row?.updated_at || row?.createdAt || row?.updatedAt)}</td>
                     </tr>
                   ))

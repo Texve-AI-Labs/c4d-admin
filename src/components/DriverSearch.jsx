@@ -15,7 +15,7 @@ const DriverSearch = ({ onSearch, initialValue = '', hideAddNewButton=false }) =
     const trimmed = searchQuery.trim();
     const debounceTimer = setTimeout(() => {
       onSearch(trimmed);
-    }, 600);
+    }, 2000);
 
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, onSearch]);

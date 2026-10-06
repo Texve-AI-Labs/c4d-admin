@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import CabDriverWalletLog from '@/components/CabDriverWallet';
+import { safeText } from "@/utils/text";
 
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;
@@ -44,6 +45,8 @@ const VehicleInfoSection = ({
   packageOptions = [],
   getLuggageForCarType,
   isTravels = false,
+  canManageDriver = false,
+  showIndividualDriverDetails = false,
   accountRelatedDrivers = [],
   getVehicleAddressSuggestionsBySection,
   onVehicleAddressSearch,
@@ -66,9 +69,10 @@ const VehicleInfoSection = ({
   const editableLabels = useMemo(() => {
     const labels = ["Vehicle Number", "Vehicle Name", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
     labels.push("Address", "Insurance Expiry Date");
-    if (isTravels) labels.push("Owner Name", "Assigned To", "With Driver");
+    if (isTravels) labels.push("Owner Name", "Assigned To");
+    if (canManageDriver) labels.push("With Driver");
     return new Set(labels);
-  }, [isTravels]);
+  }, [isTravels, canManageDriver]);
 
   const getInitialDraft = (section) => {
     const map = {};
@@ -85,7 +89,7 @@ const VehicleInfoSection = ({
     if (["MINI", "SUV", "MUV", "SEDAN"].includes(rawCarType)) {
       map["Car Type"] =
         rawCarType === "MINI"
-          ? "Mini"
+          ? "MINI"
           : rawCarType === "SEDAN"
             ? "Sedan"
             : rawCarType;
@@ -95,13 +99,13 @@ const VehicleInfoSection = ({
       : (map["Insurance Expiry Date"] || "");
     map.AddressPlaceId = section?.rawValues?.curAddress?.placeId || section?.rawValues?.curAddress?.place_id || section?.rawValues?.curAddress?.placeID || section?.rawValues?.curAddress?.id || map.AddressPlaceId || "";
     map["Address"] = formatAddressValue(section?.rawValues?.curAddress || map["Address"] || "");
-    if (isTravels) {
+    if (canManageDriver) {
       const rawAssigned = String(section?.rawValues?.assigned || "").trim();
       map["Assigned To"] =
         rawAssigned.toLowerCase() === "individual"
           ? "Owner"
           : rawAssigned || map["Assigned To"] || "";
-      map["With Driver"] = section?.rawValues?.withDriver || map["With Driver"] || "";
+      map["With Driver"] = section?.rawValues?.withDriver || map["With Driver"] || "Yes";
       map["Assign or Add Driver"] = "Assign";
       map["Driver ID"] = section?.rawValues?.Drivers?.[0]?.id || "";
       map["Driver Name"] = section?.rawValues?.driverName || "";
@@ -161,9 +165,22 @@ const VehicleInfoSection = ({
   const leftDisplayOrder = useMemo(() => {
     const base = ["Vehicle Name", "Vehicle Number", "Car Type", "Vehicle Type", "Model Year", "Seater", "Luggage", "Packages"];
     return isTravels
-      ? [...base, "Address", "Insurance Expiry Date", "Owner Name", "Assigned To", "With Driver"]
-      : [...base, "Address", "Insurance Expiry Date"];
-  }, [isTravels]);
+      ? [
+          ...base,
+          "Address",
+          "Insurance Expiry Date",
+          "Owner Name",
+          "Assigned To",
+          ...(canManageDriver ? ["With Driver", "Driver Name", "Driver Phone Number", "Driver Address", "Driver License Number"] : []),
+        ]
+      : [
+          ...base,
+          "Address",
+          "Insurance Expiry Date",
+          ...(canManageDriver ? ["With Driver"] : []),
+          ...(showIndividualDriverDetails ? ["Driver Name", "Driver Phone Number", "Driver Address", "Driver License Number"] : []),
+        ];
+  }, [isTravels, canManageDriver, showIndividualDriverDetails]);
 
   const rightDisplayOrder = useMemo(
     () => [
@@ -328,7 +345,7 @@ const VehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              <option value="Mini">Mini</option>
+                              <option value="MINI">Mini</option>
                               <option value="SUV">SUV</option>
                               <option value="MUV">MUV</option>
                               <option value="Sedan">Sedan</option>
@@ -477,13 +494,13 @@ const VehicleInfoSection = ({
                             />
                           )
                         ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
-                          <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                          <Chip value={safeText(row.value)} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
                         ) : row.label === "Address" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
                             {formatAddressValue(row.value)}
                           </Typography>
                         ) : (
-                          <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">{safeText(row.value)}</Typography>
                         )}
                       </div>
                       );
@@ -497,7 +514,7 @@ const VehicleInfoSection = ({
                     })()}
                     {editingSectionId === section.id && (
                       <div className="md:col-span-2 space-y-3">
-                        {isTravels && (draftValues?.["With Driver"] || "") === "Yes" ? (
+                        {canManageDriver && (draftValues?.["With Driver"] || "") === "Yes" ? (
                           <div className="rounded-lg border border-blue-gray-100 bg-blue-gray-50/40 p-3">
                             <Typography className="text-sm font-semibold text-blue-gray-700 mb-2">Driver Assignment</Typography>
                             <div className="flex items-center gap-4 mb-3">

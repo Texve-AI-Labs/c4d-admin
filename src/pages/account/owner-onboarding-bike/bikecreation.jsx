@@ -142,7 +142,9 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect, type }) =
           {suggestions.map((suggestion, index) => (
             <ListItem
               key={index}
-              onClick={() => {
+              onMouseDown={(event) => {
+                // Select before the input blur hides the suggestion list.
+                event.preventDefault();
                 form.setFieldValue(field.name, getSuggestionText(suggestion));
                 if (onSelect) onSelect(suggestion);
                 setIsFocused(false);

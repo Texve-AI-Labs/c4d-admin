@@ -219,7 +219,7 @@ const validationSchema = Yup.object({
           autoNumber: '',
           address: '',
           insurance: '',
-          autoType: '',
+          autoType: 'AUTO',
           seater: '3',
           modelYear: '',
         }}
@@ -354,9 +354,9 @@ const validationSchema = Yup.object({
                         <div>
                           <label className="text-sm font-medium text-gray-700">Auto Type</label>
                           <div className="space-x-4 mt-1">
-                            {['CNG', 'LPG', 'Diesel'].map((type) => (
+                            {['AUTO'].map((type) => (
                               <label key={type} className="inline-flex items-center">
-                                <Field type="radio" name="autoType" value={type} className="mr-2" onChange={handleChange} />
+                                <Field type="radio" name="autoType" value={type} className="mr-2" onChange={handleChange} disabled/>
                                 <span>{type}</span>
                               </label>
                             ))}

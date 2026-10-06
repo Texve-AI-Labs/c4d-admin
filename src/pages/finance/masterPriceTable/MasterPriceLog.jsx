@@ -77,6 +77,72 @@ const MasterPriceLog = ({ id }) => {
         "premium_config": "Premium Config",
         "demandRules": "Demand Rules",
         "demand_rules": "Demand Rules",
+        "categoryPricings": "Category Pricings",
+        "category_pricings": "Category Pricings",
+    };
+
+    const categoryLabels = {
+        ECONOMY_GO: "Economy Go",
+        COMFORT: "Comfort",
+        PREMIUM: "Premium",
+        PREMIUM_XL: "Premium XL",
+        AUTO_SAVER: "Auto Saver",
+        AUTO_PLUS: "Auto Plus",
+        BIKE: "Bike",
+    };
+
+    const carTypeLabels = {
+        MINI: "Mini",
+        SEDAN: "Sedan",
+        SUV: "Suv",
+        MUV: "Muv",
+        AUTO: "Auto",
+        BIKE: "Bike",
+        SCOOTY: "Scooty",
+    };
+
+    const pricingLabels = {
+        baseKm: "Base Km",
+        baseFare: "Base Fare",
+        kilometerPrice: "Kilometer Price",
+        minCharge: "Min Charge",
+        extraPrice: "Extra Price",
+        extraKmPrice: "Extra Km Price",
+        nightCharge: "Night Charge",
+        waitingMins: "Waiting Minutes",
+        waitingCharge: "Waiting Charge",
+        freeExtraMinutes: "Free Extra Minutes",
+        additionalMinCharge: "Additional Min Charge",
+        surChargePercentage: "Surcharge Percentage",
+        nightHoursFrom: "Night Hours From",
+        nightHoursTo: "Night Hours To",
+        common: "Common",
+        DROP_ONLY: "Drop Only",
+        ROUND_TRIP: "Round Trip",
+        AC: "AC",
+        NON_AC: "Non AC",
+        kilometer: "Kilometer",
+        cancelMins: "Cancellation Minutes",
+        cancelCharge: "Cancellation Charge",
+        driverCharge: "Driver Charge",
+        kilometerRoundPrice: "Kilometer Round Price",
+        extraKilometerPrice: "Extra Kilometer Price",
+        extraKilometerRoundPrice: "Extra Kilometer Round Price",
+        acKilometerPrice: "AC Kilometer Price",
+        acExtraKilometerPrice: "AC Extra Kilometer Price",
+        acKilometerRoundPrice: "AC Kilometer Round Price",
+        acExtraKilometerRoundPrice: "AC Extra Kilometer Round Price",
+    };
+
+    const parseMaybeJson = (value, fallback) => {
+        if (Array.isArray(value) || (value && typeof value === "object")) return value;
+        if (typeof value !== "string") return fallback;
+
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            return fallback;
+        }
     };
 
     const canonicalField = (field) => {
@@ -111,6 +177,8 @@ const MasterPriceLog = ({ id }) => {
             premiumconfig: "premiumConfig",
             demand_rules: "demandRules",
             demandrules: "demandRules",
+            category_pricings: "categoryPricings",
+            categorypricings: "categoryPricings",
         };
         return aliasMap[lower] || key;
     };
@@ -142,7 +210,7 @@ const MasterPriceLog = ({ id }) => {
 
     const formatPeakHours = (peakHours) => {
         let hoursArray = Array.isArray(peakHours) ? peakHours : [];
-                if (hoursArray.length > 0 && Array.isArray(hoursArray[0])) {
+        if (hoursArray.length > 0 && Array.isArray(hoursArray[0])) {
             hoursArray = hoursArray[0];
         }
         if (!hoursArray || hoursArray.length === 0) {
@@ -150,10 +218,67 @@ const MasterPriceLog = ({ id }) => {
         }
         return hoursArray
             .map((hour) => {
-                const { start, end, kilometerPrice, kilometerPriceMVP, kilometerPriceSuv, kilometerPriceSedan } = hour;
-                return `${start}-${end} (Mini: ${kilometerPrice || "-"}, MUV: ${kilometerPriceMVP || "-"}, SUV: ${kilometerPriceSuv || "-"}, Sedan: ${kilometerPriceSedan || "-"})`;
+                const { start, end, kilometerPrice } = hour;
+                return `${start || "-"}-${end || "-"} (Km Price: ${kilometerPrice ?? "-"})`;
             })
             .join(", ");
+    };
+
+    const normalizeCarTypeLabel = (carType) => {
+        const key = String(carType || "").trim();
+        return carTypeLabels[key] || carTypeLabels[key.toUpperCase()] || key || "-";
+    };
+
+    const formatPricingValue = (key, value) => {
+        if (value === null || value === undefined || value === "") return "-";
+        if ((key === "waitingMins" || key === "cancelMins") && typeof value === "string") {
+            return Utils.convertTimeFormatToMinutes(value);
+        }
+        if (typeof value === "string" && (key.includes("HoursFrom") || key.includes("HoursTo"))) {
+            return value.slice(0, 5);
+        }
+        return value;
+    };
+
+    const formatPricingObject = (pricing, parentLabel = "") => {
+        if (!pricing || typeof pricing !== "object") return "-";
+
+        return Object.entries(pricing)
+            .flatMap(([key, value]) => {
+                const label = pricingLabels[key] || prettyFieldLabel(key);
+                const scopedLabel = parentLabel ? `${parentLabel} ${label}` : label;
+
+                if (Array.isArray(value) && key === "peakHours") {
+                    return [`${scopedLabel}: ${formatPeakHours(value)}`];
+                }
+
+                if (value && typeof value === "object" && !Array.isArray(value)) {
+                    return formatPricingObject(value, scopedLabel);
+                }
+
+                return [`${scopedLabel}: ${formatPricingValue(key, value)}`];
+            })
+            .join(", ");
+    };
+
+    const formatCategoryPricings = (categoryPricingsRaw) => {
+        const parsed = parseMaybeJson(categoryPricingsRaw, []);
+        const categoryPricings = Array.isArray(parsed) ? parsed : [parsed].filter(Boolean);
+        if (!categoryPricings.length) return "-";
+
+        return categoryPricings
+            .map((item) => {
+                const category = categoryLabels[item?.category] || item?.category || "-";
+                const carTypesRaw = parseMaybeJson(item?.carTypes, []);
+                const carTypes = Array.isArray(carTypesRaw) && carTypesRaw.length
+                    ? carTypesRaw.map(normalizeCarTypeLabel).join(", ")
+                    : "-";
+                const pricing = parseMaybeJson(item?.pricing, {});
+                const pricingDetails = formatPricingObject(pricing);
+
+                return `${category} [${carTypes}] - ${pricingDetails}`;
+            })
+            .join(" | ");
     };
 
     const formatDemandRules = (rulesRaw) => {
@@ -186,6 +311,10 @@ const MasterPriceLog = ({ id }) => {
 
         if (lowerField === "demandrules") {
             return formatDemandRules(value);
+        }
+
+        if (lowerField === "categorypricings") {
+            return formatCategoryPricings(value);
         }
 
         if (lowerField === "premiumconfig") {

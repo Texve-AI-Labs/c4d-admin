@@ -1,5 +1,5 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useState, useEffect } from "react";
+import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useRef } from "react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import {
@@ -23,35 +23,45 @@ export function InvoiceList() {
     const [searchQuery, setSearchQuery] = useState('');
     const [invoiceList, setInvoiceList] = useState([]);
     const [allAccounts, setAllAccounts] = useState([]);
-    const [invoiceTypeFilter, setInvoiceTypeFilter] = useState(['All']);
-    const [paymentStatusFilter, setPaymentStatusFilter] = useState(['All']);
+    const [invoiceTypeFilter, setInvoiceTypeFilter] = useState(
+        () => sessionStorage.getItem('invoiceTypeFilter') || 'ALL'
+    );
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState(
+        () => sessionStorage.getItem('paymentStatusFilter') || 'ALL'
+    );
     const [loading, setLoading] = useState(false);
+    const inFlightRequestRef = useRef(null);
 
     const [pagination, setPagination] = useState({
-        currentPage: 1,
+        currentPage: Number(sessionStorage.getItem('invoiceCurrentPage')) || 1,
         totalPages: 1,
         totalItems: 0,
-        itemsPerPage: 15,
+        itemsPerPage: 20,
          search: searchQuery.trim(),
         //   forSearch:false
     });
 
-    const debounce = (func, delay) => {
-        let timeoutId;
-        return (...args) => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => func(...args), delay);
-        };
-    };
+    const fetchInvoices = async (page = 1, showLoader = false, invoiceType = invoiceTypeFilter) => {
+        const requestKey = JSON.stringify({
+            page,
+            limit: pagination.itemsPerPage,
+            search: searchQuery.trim(),
+            invoiceType,
+            paymentStatus: paymentStatusFilter,
+        });
 
-    const fetchInvoices = async (page = 1, showLoader = false) => {
+        if (inFlightRequestRef.current === requestKey) return;
+        inFlightRequestRef.current = requestKey;
         if (showLoader) setLoading(true);
         try {
-            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_INVOICE_LIST, {
+            const params = {
                 page: page,
                 limit: pagination.itemsPerPage,
-                search: searchQuery.trim()
-            });
+                search: searchQuery.trim(),
+                ...(invoiceType !== 'ALL' && { invoiceType }),
+                ...(paymentStatusFilter !== 'ALL' && { status: paymentStatusFilter }),
+            };
+            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_INVOICE_LIST, params);
 
             if (data) {
                 setInvoiceList(data?.data || []);
@@ -68,28 +78,36 @@ export function InvoiceList() {
         } catch (error) {
             console.error("Error fetching invoice data:", error);
         } finally {
+            if (inFlightRequestRef.current === requestKey) {
+                inFlightRequestRef.current = null;
+            }
             setLoading(false);
         }
     };
 
-    const getInvoices = debounce(() => {
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
-        fetchInvoices(1, true);
-    }, 1000);
+    useEffect(() => {
+        sessionStorage.setItem('invoiceTypeFilter', invoiceTypeFilter);
+    }, [invoiceTypeFilter]);
 
     useEffect(() => {
-        fetchInvoices(pagination.currentPage,pagination.search, true);
+        sessionStorage.setItem('paymentStatusFilter', paymentStatusFilter);
+    }, [paymentStatusFilter]);
+
+    useEffect(() => {
+        sessionStorage.setItem('invoiceCurrentPage', String(pagination.currentPage));
     }, [pagination.currentPage]);
     
-
     useEffect(() => {
-        getInvoices();
-    }, [searchQuery]);
+        const requestTimer = setTimeout(() => {
+            fetchInvoices(pagination.currentPage, true);
+        }, searchQuery.trim() ? 500 : 0);
+
+        return () => clearTimeout(requestTimer);
+    }, [pagination.currentPage, invoiceTypeFilter, paymentStatusFilter, searchQuery]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= pagination.totalPages) {
             setPagination((prev) => ({ ...prev, currentPage: page }));
-            fetchInvoices(page, pagination.search, true)
         }
     };
 
@@ -121,19 +139,23 @@ export function InvoiceList() {
     };
 
     const handleFilterChange = (filterType, value) => {
-        const updateFilter = (prev) => {
-            if (value === 'All') return ['All'];
-            const updated = prev.includes(value)
-                ? prev.filter(item => item !== value)
-                : [...prev.filter(item => item !== 'All'), value];
-            return updated.length === 0 ? ['All'] : updated;
-        };
-
         if (filterType === 'status') {
-            setPaymentStatusFilter(updateFilter);
+            setPaymentStatusFilter(value);
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
         } else if (filterType === 'Subscription') {
-            setInvoiceTypeFilter(updateFilter);
+            setInvoiceTypeFilter(value);
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
         }
+    };
+
+    const handleRefresh = () => {
+        sessionStorage.removeItem('invoiceTypeFilter');
+        sessionStorage.removeItem('paymentStatusFilter');
+        sessionStorage.removeItem('invoiceCurrentPage');
+        setSearchQuery('');
+        setInvoiceTypeFilter('ALL');
+        setPaymentStatusFilter('ALL');
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
     };
 
     const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
@@ -174,7 +196,10 @@ export function InvoiceList() {
                             type="text"
                             className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                             placeholder="Search Invoice Number"
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setPagination((prev) => ({ ...prev, currentPage: 1 }));
+                            }}
                         />
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
@@ -184,42 +209,50 @@ export function InvoiceList() {
             </div>
 
             <Card>
-                {invoiceList.length > 0 ? (
                     <>
-                        <CardHeader variant="gradient" className={`mb-8 p-6 flex-1 justify-between items-center ${ColorStyles.bgColor}`}>
+                        <CardHeader variant="gradient" className={`mb-8 p-6 flex justify-between items-center ${ColorStyles.bgColor}`}>
                             <Typography variant="h6" color="white">
                                 Invoice List
                             </Typography>
+                            <button
+                                type="button"
+                                onClick={handleRefresh}
+                                aria-label="Refresh invoices and clear filters"
+                                title="Refresh invoices and clear filters"
+                                className="text-white hover:text-gray-200"
+                            >
+                                <ArrowPathIcon className="h-5 w-5" />
+                            </button>
                         </CardHeader>
                         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
                             <table className="w-full min-w-[640px] table-auto">
                                 <thead>
                                     <tr>
-                                        {["Invoice Number", "Created Date", "Invoice Type", "Amount", "Status"].map((el) => (
+                                        {["Invoice Number", "Created Date", "Invoice Type", "Amount (₹)",, "Status"].map((el) => (
                                             <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                                                 {el === "Status" ? (
                                                     <FilterPopover
                                                         title={el}
                                                         options={[
-                                                            { value: "All", label: "All" },
-                                                            { value: "PAYMENT_COMPLETED", label: "Payment Completed" },
+                                                            { value: "ALL", label: "ALL" },
                                                             { value: "PAYMENT_PENDING", label: "Payment Pending" },
+                                                            { value: "PAYMENT_COMPLETED", label: "Payment Completed" },
                                                             { value: "PAYMENT_CANCELLED", label: "Payment Cancelled" }
                                                         ]}
-                                                        selectedFilters={paymentStatusFilter}
+                                                        selectedFilters={[paymentStatusFilter]}
                                                         onFilterChange={(value) => handleFilterChange("status", value)}
                                                     />
                                                 ) : el === "Invoice Type" ? (
                                                     <FilterPopover
                                                         title={el}
                                                         options={[
-                                                            { value: "All", label: "All" },
+                                                            { value: "ALL", label: "ALL" },
                                                             { value: "Free Plan", label: "Free Plan" },
-                                                            { value: "Basic Plan", label: "Basic Plan" },
-                                                            { value: "Standard Plan", label: "Standard Plan" },
-                                                            { value: "Premium Plan", label: "Premium Plan" }
+                                                            { value: "Premium", label: "Premium" },
+                                                            { value: "Standard", label: "Standard" },
+                                                            { value: "Regular", label: "Regular" }
                                                         ]}
-                                                        selectedFilters={invoiceTypeFilter}
+                                                        selectedFilters={[invoiceTypeFilter]}
                                                         onFilterChange={(value) => handleFilterChange("Subscription", value)}
                                                     />
                                                 ) : (
@@ -241,12 +274,7 @@ export function InvoiceList() {
                                                                  </td>
                                         </tr>
                                     ) : (
-                                        invoiceList
-                                            .filter((invoice) =>
-                                                (paymentStatusFilter.includes('All') || paymentStatusFilter.includes(invoice.status)) &&
-                                                (invoiceTypeFilter.includes('All') || invoiceTypeFilter.includes(invoice?.Subscription?.Plan?.name))
-                                            )
-                                            .map((invoice, index) => (
+                                        invoiceList.length > 0 ? invoiceList.map((invoice, index) => (
                                                 <tr key={index} className="text-sm">
                                                     <td className='border-b border-blue-gray-50 py-3 px-5'>
                                                         <Link
@@ -258,10 +286,16 @@ export function InvoiceList() {
                                                     </td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{moment(invoice?.created_at).format('DD-MM-YYYY')}</td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.Subscription?.Plan?.name}</td>
-                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.amount}</td>
+                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">₹ {invoice?.amount}</td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.status}</td>
                                                 </tr>
-                                            ))
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan={5} className="py-6 text-center text-gray-500">
+                                                        No Invoices
+                                                    </td>
+                                                </tr>
+                                            )
                                     )}
                                 </tbody>
                             </table>
@@ -290,13 +324,6 @@ export function InvoiceList() {
                             </div>
                         </CardBody>
                     </>
-                ) : (
-                    <CardHeader variant="gradient" className={`mb-8 p-6 ${ColorStyles.bgColor}`}>
-                        <Typography variant="h6" color="white">
-                            No Invoices
-                        </Typography>
-                    </CardHeader>
-                )}
             </Card>
         </div>
     );

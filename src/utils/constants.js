@@ -14,7 +14,7 @@ export const constants = {
 };
 
 export const getBaseUrl = () => {
-    return import.meta.env.VITE_URL_SIT + '/api/customer/dev';
+    return import.meta.env.VITE_URL_SIT+ '/api/customer/dev';
 }
 
 export const isNgrokSkipEnabled = () =>
@@ -79,6 +79,8 @@ export const DISTRICT_LIST = [
     { label: 'Thanjavur', value: 'Thanjavur' },
     { label: 'Theni', value: 'Theni' },
     { label: 'Thiruvallur', value: 'Thiruvallur' },
+    { label: 'Thanjavur', value: 'Thanjavur' },
+    { label: 'kumbakkonam', value: 'kumbakkonam'},
     { label: 'Thiruvarur', value: 'Thiruvarur' },
     { label: 'Thoothukudi', value: 'Thoothukudi' },
     { label: 'Tiruchirappalli', value: 'Tiruchirappalli' },
@@ -509,6 +511,7 @@ export const THALUK_LIST = [
     { label: 'Karur', value: 'Karur' },
     { label: 'Katpadi', value: 'Katpadi' },
     { label: 'Kattumannarkoil', value: 'Kattumannarkoil' },
+    { label: 'kumbakkonam', value: 'kumbakkonam'},
     { label: 'Kilpennathur', value: 'Kilpennathur' },
     { label: 'Kilvelur', value: 'Kilvelur' },
     { label: 'Kinathukadavu', value: 'Kinathukadavu' },
@@ -859,12 +862,15 @@ export const API_ROUTES = {
     'GET_DRIVERS_ADMIN': '/admin/driver/',
     'GET_DOCUMENT_DETAILS_LIST': '/admin/documents',
     'GET_DOCUMENT_DETAILS': '/admin/user/documents',
+    'DOCUMENT_DOWNLOAD': '/documents',
     'GET_ONLINE_REGISTER_DETAILS': '/online-register',
     'GET_CREATE_DRIVER': '/register/driver/',
     'GET_CREATE_OWNER': '/register/account',
     'GET_SUBCRIPTION_PLAN': '/admin/plan',
     'GET_SUBSCRIPTION_LIST': '/admin/subscription',
     'CREATE_SUBSCRIPTION': '/admin/subscription/create',
+    'EXPIRED_SUBSCRIPTIONS': '/admin/subscription/expired',
+    'ADMIN_SUBSCRIPTION': '/admin/subscription',
     'GET_DRIVER_SUBSCRIPTIONS_FEEDBACK': '/admin/marketing-feedbacks',
     'CREATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
     'UPDATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
@@ -885,6 +891,8 @@ export const API_ROUTES = {
     'ADMIN_DISCOUNT_REJECT': '/booking/admin-discount/reject',
     'ADMIN_DISCOUNT_HISTORY': '/booking/admin-discount/history',
     'ADMIN_DISCOUNT_STATUS': '/booking/admin-discount/status',
+    'OWN_VEHICLE_TRIPS': '/own-vehicle-trips',
+    'OWN_VEHICLE_TRIP_LOGS': '/own-vehicle-trips/:id/logs',
     'ACTING_DRIVER_ADD_LOCAL_PACKAGE': '/add-package',
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
@@ -914,7 +922,9 @@ export const API_ROUTES = {
     'CONFIRM_RENTAL_BOOKING': '/confirm-rental-booking',
     'GEO_MARKINGS': '/geo-markings',
     'GEO_MARKINGS_LIST': '/geo-markings/filter',
+    'SERVICE_CATEGORY_CATALOG': '/service-category-catalog',
     'RENTAL_OUTSTATION_TARIFFS': '/rental/outstation/tariffs',
+    'RENTAL_HOURLY_PACKAGE_TARIFFS': '/rental/hourly-package/tariffs',
     'GEO_MARKINGS_DELETE': '/geo-markings',
     'GET_CAR_TYPE': '/car-type/',
     'POST_NOTIFICATION_ADD': '/send-notification',
@@ -954,6 +964,7 @@ export const API_ROUTES = {
     'GET_AUTO_LIST':"/admin/autos",
     'ADD_NEW_AUTO_BOOKING':'/add-auto-booking',
     'POST_AUTO_SEARCH':'/search/auto',
+    'POST_PARCEL_SEARCH':'/search/parcel',
     'ADD_NEW_AUTO_DETAILS':'/register/admin/auto',
     'CREATE_PARCEL_ADMIN' :'/register/admin/parcel',
     'GET_ALL_PARCEL': '/admin/parcel',
@@ -1089,6 +1100,7 @@ export const API_ROUTES = {
     'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity',
     'GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID':'/admin/driver-advertisement-registration-cycles/:cycleId',
     'UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS':'/admin/driver-advertisement-registration-cycles/:cycleId/status',
+    'GET_DRIVER_ADS_REGISTRATION_WALLET_HISTORY':'/admin/driver-advertisement-registrations/:registrationId/wallet-history',
     'MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
     'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
@@ -1146,6 +1158,14 @@ export const API_ROUTES = {
     'PUT_SERVICE_CONTENT': '/admin/service-contents',
     'DELETE_SERVICE_CONTENT': '/admin/service-contents',
 
+    'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate',
+    'PROCESS_PARCEL_DAILY_SLOTS': '/process-parcel-daily-slots',
+    'GET_ACTING_DRIVER_PENALTIES': '/admin/acting-driver/penalties',
+    'COMPLIANCE-ESCALATIONS':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATIONS_LIST':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATIONS_ACTIVE_COUNT':'/admin/compliance-escalations/active-count',
+    'COMPLIANCE_ESCALATIONS_STATUS':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATION_DETAILS':'/admin/compliance-escalations',
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [

@@ -303,7 +303,7 @@ const CabAddNew = () => {
                 serviceType: "RIDES",
                 zone,
             });
-            if (data?.success) {
+            if (data?.luggageCapacity) {
                 setLuggageCapacityMap(data?.luggageCapacity || {});
                 setLuggageCapacityError("");
             } else {
@@ -571,8 +571,9 @@ const CabAddNew = () => {
                 driverId: values.driverId,
             }
             // console.log('CAB DETAILS :', cabDetails);
-            const prices = values.prices;
-            let res = { cabDetails: JSON.stringify(cabDetails), prices: JSON.stringify(prices) };
+            // const prices = values.prices;
+            let res = { cabDetails: JSON.stringify(cabDetails) };
+            // prices: JSON.stringify(prices),
             const resp = await ApiRequestUtils.post(API_ROUTES.REGISTER_CAB, res);
             // console.log('CAB DATA :', resp);
             if (!resp?.success && resp?.code === 203) {

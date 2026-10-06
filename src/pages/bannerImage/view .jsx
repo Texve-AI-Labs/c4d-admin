@@ -14,6 +14,7 @@ import moment from 'moment';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
 import { fetchZoneOptions } from '@/pages/marketing/DriverIncentive/zoneOptions';
+import { safeText } from '@/utils/text';
 
 const BannerView = () => {
   const navigate = useNavigate();
@@ -104,7 +105,35 @@ const BannerView = () => {
 
   const getPrimaryBannerImage = (item) => {
     if (!item) return '';
-    return item.imageUrl || '';
+    return typeof item.imageUrl === 'string' && item.imageUrl
+      ? item.imageUrl
+      : typeof item.image === 'string'
+        ? item.image
+        : '';
+  };
+
+  const formatEligibilityConfig = (config) => {
+    let normalizedConfig = config;
+
+    if (typeof config === 'string') {
+      try {
+        normalizedConfig = JSON.parse(config);
+      } catch {
+        return safeText(config);
+      }
+    }
+
+    if (normalizedConfig?.audience || normalizedConfig?.AUDIENCE) {
+      return formatTypeText(normalizedConfig.audience || normalizedConfig.AUDIENCE);
+    }
+
+    if (normalizedConfig && typeof normalizedConfig === 'object' && !Array.isArray(normalizedConfig)) {
+      return Object.entries(normalizedConfig)
+        .map(([key, value]) => `${formatTypeText(key)}: ${safeText(value)}`)
+        .join(', ') || '-';
+    }
+
+    return safeText(normalizedConfig);
   };
 
   const handleEditBanner = (item) => {
@@ -235,6 +264,7 @@ const BannerView = () => {
   { value: 'FUTURE_BOOKING_INTRO_DRIVER', label: 'Future Booking Intro (Driver)' },
   { value: 'RETURN_TRIP_INTRO_DRIVER', label: 'Return Trip Intro (Driver)' },
   { value: 'TRAINING_VIDEO_DRIVER', label: 'Training Video (Driver)' },
+  { value: 'DRIVER_ADS_DEMO_VIDEO', label: 'Driver Ads Demo Video' },
   // { value: 'QR_DRIVER_TO_DRIVER', label: 'QR Driver To Driver' },
   // { value: 'QR_DRIVER_TO_CUSTOMER', label: 'QR Driver To Customer' },
   // { value: 'QR_CUSTOMER_TO_CUSTOMER', label: 'QR Customer To Customer' }
@@ -330,6 +360,7 @@ const BannerView = () => {
                 <tr className="text-black">
                   <th className="py-3 px-5 text-left text-gray-700">Image</th>
                   <th className="py-3 px-5 text-left text-gray-700">Type</th>
+                  <th className="py-3 px-5 text-left text-gray-700">Eligibility Config</th>
                   <th className="py-3 px-5 text-left text-gray-700">Status</th>
                   <th className="py-3 px-5 text-left  text-gray-700">From Date</th>
                   <th className="py-3 px-5 text-left  text-gray-700">To Date</th>
@@ -346,7 +377,7 @@ const BannerView = () => {
               <tbody>
                 {filteredBannerList.length === 0 ? (
                   <tr>
-                  <td colSpan="12" className="text-center py-4">
+                  <td colSpan="14" className="text-center py-4">
                       No Banner Records Found
                     </td>
                   </tr>
@@ -365,6 +396,9 @@ const BannerView = () => {
                         )}
                       </td>
                       <td className="py-3 px-5">{getTypeLabel(item.type)}</td>
+                      <td className="max-w-xs break-words py-3 px-5">
+                        {formatEligibilityConfig(item.eligibilityConfig)}
+                      </td>
                       <td className="py-3 px-5">
                         <Switch
                           color="blue"

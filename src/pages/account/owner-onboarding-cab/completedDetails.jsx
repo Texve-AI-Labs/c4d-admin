@@ -321,7 +321,7 @@ const CompletedOnboardingDetails = () => {
           serviceType: "RIDES",
           zone,
         });
-        if (data?.success) {
+        if (data?.success || data?.luggageCapacity) {
           setLuggageCapacityMap(data?.luggageCapacity || {});
           setLuggageCapacityError("");
         } else {
@@ -524,6 +524,20 @@ const CompletedOnboardingDetails = () => {
               },
               { label: "Assigned To", value: cabResult?.assigned || "-" },
               { label: "With Driver", value: cabResult?.withDriver || "-" },
+              { label: "Driver Name", value: cabResult?.Drivers?.[0]?.firstName || cabResult?.driverName || "-" },
+              { label: "Driver Phone Number", value: cabResult?.Drivers?.[0]?.phoneNumber || cabResult?.phoneNumber || "-" },
+              { label: "Driver Address", value: cabResult?.Drivers?.[0]?.curAddress || cabResult?.driverAddress || "-" },
+              { label: "Driver License Number", value: cabResult?.Drivers?.[0]?.license || cabResult?.driverLicense || "-" },
+            ]
+          : String(account?.type || "").toLowerCase() === "individual"
+            ? [{ label: "With Driver", value: cabResult?.withDriver || "-" }]
+            : []),
+        ...(String(account?.type || "").toLowerCase() === "individual"
+          ? [
+              { label: "Driver Name", value: cabResult?.Drivers?.[0]?.firstName || "-" },
+              { label: "Driver Phone Number", value: cabResult?.Drivers?.[0]?.phoneNumber || "-" },
+              { label: "Driver Address", value: cabResult?.Drivers?.[0]?.curAddress || "-" },
+              { label: "Driver License Number", value: cabResult?.driverLicense || cabResult?.Drivers?.[0]?.license || "-" },
             ]
           : []),
       ].filter((row) => row.value !== null && row.value !== undefined && row.value !== "");
@@ -676,6 +690,7 @@ const CompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        zone: accountDraft?.district || "",
         accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
@@ -759,7 +774,7 @@ const CompletedOnboardingDetails = () => {
   };
 
   useEffect(() => {
-    if (String(account?.type || "").toLowerCase() === "company" && account?.id) {
+    if (["company", "individual"].includes(String(account?.type || "").toLowerCase()) && account?.id) {
       getAccountRelatedDrivers(account.id);
     } else {
       setAccountRelatedDrivers([]);
@@ -807,10 +822,12 @@ const CompletedOnboardingDetails = () => {
         status: nextVehicleStatus,
         blockedReason: nextVehicleStatus === "BLOCKED" ? nextBlockedReason : "",
       };
+      console.log('cabDetails log:',cabDetails)
 
       const prices = Array.isArray(cabPayload?.price)
         ? cabPayload.price.filter((el) => (cabResult?.packages || []).includes(el.packageId))
         : [];
+      console.log("Prices Log :",prices)
 
       const res = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, {
         cabDetails: JSON.stringify(cabDetails),
@@ -838,11 +855,14 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
-      const isTravelsAccount = String(account?.type || "").toLowerCase() === "company";
+      const accountType = String(account?.type || "").toLowerCase();
+      const isTravelsAccount = accountType === "company";
+      const isIndividualAccount = accountType === "individual";
+      const canManageDriver = ["company", "individual"].includes(accountType);
       const rawCarType = String(draftValues?.["Car Type"] || cabResult?.carType || "").trim().toUpperCase();
-      const mappedCarType = rawCarType === "MINI" ? "Mini" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
+      const mappedCarType = rawCarType === "MINI" ? "MINI" : rawCarType === "SEDAN" ? "Sedan" : rawCarType === "SUV" ? "SUV" : rawCarType === "MUV" ? "MUV" : "";
       const mappedAssignedTo = String(draftValues?.["Assigned To"] || "").trim();
-      const mappedWithDriver = String(draftValues?.["With Driver"] || cabResult?.withDriver || "");
+      const mappedWithDriver = String(draftValues?.["With Driver"] || cabResult?.withDriver || "Yes");
       const assignOrAddDriver = String(draftValues?.["Assign or Add Driver"] || "Assign");
       const cabDetails = {
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
@@ -861,44 +881,44 @@ const CompletedOnboardingDetails = () => {
         assigned: isTravelsAccount
           ? (mappedAssignedTo.toLowerCase() === "owner" ? "Individual" : mappedAssignedTo || cabResult?.assigned || "")
           : (cabResult?.assigned || ""),
-        withDriver: isTravelsAccount ? mappedWithDriver : (cabResult?.withDriver || ""),
+        withDriver: canManageDriver ? mappedWithDriver : (cabResult?.withDriver || ""),
         driverName:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver Name"] || "")
             : (cabResult?.driverName || ""),
         phoneNumber:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver Phone Number"] || "")
             : (cabResult?.phoneNumber || ""),
         driverAddress:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver Address"] || "")
             : (cabResult?.driverAddress || ""),
         driverLicense:
-          isTravelsAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          canManageDriver && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
             ? (draftValues?.["Driver License Number"] || "")
             : (cabResult?.driverLicense || ""),
+        ...(isIndividualAccount && mappedWithDriver === "Yes" && assignOrAddDriver === "Add"
+          ? { isVerified: true }
+          : {}),
         packages: Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []),
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         driverId:
-          isTravelsAccount && mappedWithDriver === "Yes"
-            ? (assignOrAddDriver === "Add"
+          mappedWithDriver !== "Yes"
+            ? null
+            : assignOrAddDriver === "Add"
               ? ""
-              : (draftValues?.["Driver ID"] || cabResult?.Drivers?.[0]?.id || ""))
-            : (cabResult?.Drivers?.[0]?.id || ""),
+              : (draftValues?.["Driver ID"] || cabResult?.Drivers?.[0]?.id || null),
         cabId: cabResult?.id,
         status: normalizeVehicleStatus(cabResult?.status),
         blockedReason: cabResult?.blockedReason || "",
       };
 
-      const selectedPackages = Array.isArray(draftValues?.Packages) ? draftValues.Packages : (cabResult?.packages || []);
-      const prices = Array.isArray(cabPayload?.price)
-        ? cabPayload.price.filter((el) => selectedPackages.map(String).includes(String(el.packageId)))
-        : [];
-
+      console.log('Cab Details :- ', cabDetails);
+      // Package and price updates are intentionally disabled for Vehicle Details edits.
       const res = await ApiRequestUtils.update(API_ROUTES.UPDATE_CAB, {
         cabDetails: JSON.stringify(cabDetails),
-        prices: JSON.stringify(prices),
+        // prices: JSON.stringify(prices),
       });
 
       if (res?.success) {
@@ -1164,8 +1184,8 @@ const CompletedOnboardingDetails = () => {
                             }
                             setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                           }}
-                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                          disabled={key === "type"}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                          disabled={key === "type" || key === "phoneNumber"}
                           maxLength={key === "phoneNumber" ? 10 : undefined}
                         />
                       )}
@@ -1284,6 +1304,8 @@ const CompletedOnboardingDetails = () => {
             packageOptions={packageOptions}
             getLuggageForCarType={getLuggageForCarType}
             isTravels={String(account?.type || "").toLowerCase() === "company"}
+            canManageDriver={["company", "individual"].includes(String(account?.type || "").toLowerCase())}
+            showIndividualDriverDetails={String(account?.type || "").toLowerCase() === "individual"}
             accountRelatedDrivers={accountRelatedDrivers}
             getVehicleAddressSuggestionsBySection={(sectionId) =>
               vehicleAddressSuggestionsById[String(sectionId)] || []

@@ -23,31 +23,16 @@ function VendorsSubmenu({ miniSidenav }) {
         return pathname === "/dashboard/vendors/account/owner-onboarding-cab";
       case "All Acting Driver":
         return pathname.startsWith("/dashboard/vendors/account/drivers");
-      case "All Cab List":
-        // Treat vehicles list + allVehicles (+ details/edit) as Vehicles tab
-        return (
-          pathname.startsWith("/dashboard/vendors/vehiclelist") ||
-          pathname.startsWith("/dashboard/vendors/account/allvehicles")
-        );
       case "Online Vehicles List":
         return pathname.startsWith("/dashboard/vendors/onlinevehicleslist");
       case "All Auto Owner":
         return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-auto");
-      case "All Auto List":
-        return pathname.startsWith("/dashboard/vendors/account/autolist");
       case "All Parcel-Bike Owner":
         return (pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike") &&
           !pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi")
         );
-      case "All Parcel-Bike List":
-        return (
-          pathname.startsWith("/dashboard/vendors/account/parcel") &&
-          !pathname.startsWith("/dashboard/vendors/account/parcel/list")
-        );
       case "All Bike-Taxi Owner":
         return pathname.startsWith("/dashboard/vendors/account/owner-onboarding-bike-taxi");
-      case "All Bike-Taxi List":
-        return pathname.startsWith("/dashboard/vendors/account/biketaxilist");
       case "Root Web Reg":
         return pathname.startsWith("/dashboard/vendors/root-web-reg");
       case "All Document Verification":
@@ -67,10 +52,6 @@ function VendorsSubmenu({ miniSidenav }) {
     { label: "All Parcel-Bike Owner", path: "/dashboard/vendors/account/owner-onboarding-bike", icon: "/img/parcel_list.png" },
     { label: "All Bike-Taxi Owner", path: "/dashboard/vendors/account/owner-onboarding-bike-taxi", icon: "/img/parcel_list.png" },
     { label: "Online Vehicles List", path: "/dashboard/vendors/onlineVehiclesList", icon: "/img/vehicleslist.png" },
-    { label: "All Cab List", path: "/dashboard/vendors/vehicleList", icon: "/img/vehicles.png" },
-    { label: "All Auto List", path: "/dashboard/vendors/account/autoList", icon: "/img/auto.png" },
-    { label: "All Bike List", path: "/dashboard/vendors/account/parcel", icon: "/img/Parcel_driver.png" },
-    { label: "All Bike-Taxi List", path: "/dashboard/vendors/account/bikeTaxiList", icon: "/img/Parcel_driver.png" },
     { label: "Root Web Reg", path: "/dashboard/vendors/root-web-reg", icon: "/img/all.png" },
     ...(FUTURE_FLAG.DOCUMENT_DETAILS_LIST
       ? [{ label: "All Document Verification", path: "/dashboard/doc-verification", icon: "/img/all.png" }]

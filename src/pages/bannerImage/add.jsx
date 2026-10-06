@@ -108,11 +108,13 @@ const AddBanner = () => {
     })),
   ];
 
-  const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER';
-  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER','FUTURE_BOOKING_INTRO_DRIVER','RETURN_TRIP_INTRO_DRIVER'];
+  const isTrainingVideoDriver = (type) => type === 'TRAINING_VIDEO_DRIVER' || type === 'DRIVER_ADS_DEMO_VIDEO';
+  const isDriverAdsDemoVideo = (type) => type === 'DRIVER_ADS_DEMO_VIDEO';
+  const skipStandardFieldTypes = ['NEW_CUSTOMER', 'INTRO_SLIDES', 'INTRO_SLIDES_DRIVER', 'TRAINING_VIDEO_DRIVER', 'DRIVER_ADS_DEMO_VIDEO', 'FUTURE_BOOKING_INTRO_DRIVER','RETURN_TRIP_INTRO_DRIVER'];
   const requiresStandardFields = (type) => Boolean(type) && !skipStandardFieldTypes.includes(type);
   const isServiceIntroImage = (type) => type === 'SERVICE_INTRO_IMAGE';
   const isBannerTargetedMode = (type, mode) => type === 'BANNER' && mode === 'TARGETED';
+  const isBannerNewCustomerMode = (type, mode) => type === 'BANNER' && mode === 'NEW_CUSTOMER';
   const TARGETED_SERVICE_OPTIONS = ['RIDES', 'AUTO', 'BIKE', 'PARCEL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'RENTAL_OUTSTATION'];
   const getTargetedServiceLabel = (service) => {
     switch (service) {
@@ -150,7 +152,7 @@ const AddBanner = () => {
       otherwise: (schema) => schema.notRequired(),
     }),
     zone: Yup.string().when('type', {
-      is: requiresStandardFields,
+      is: (type) => isDriverAdsDemoVideo(type) || requiresStandardFields(type),
       then: (schema) => schema.required('Zone is required'),
       otherwise: (schema) => schema.notRequired(),
     }),
@@ -240,7 +242,7 @@ const AddBanner = () => {
     try {
       const formData = new FormData();
       const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'FUTURE_BOOKING_INTRO_DRIVER' || values.type === 'RETURN_TRIP_INTRO_DRIVER';
-      const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
+      const isTrainingVideo = isTrainingVideoDriver(values.type) || isDriverAdsDemoVideo(values.type);
       const isQrPageImageType = values.type === 'QR_DRIVER_TO_DRIVER' || values.type === 'QR_DRIVER_TO_CUSTOMER' || values.type === 'QR_CUSTOMER_TO_CUSTOMER';
       const isNewCustomer = values.type === "NEW_CUSTOMER";
       const isServiceIntro = values.type === "SERVICE_INTRO_IMAGE";
@@ -277,7 +279,10 @@ const AddBanner = () => {
           formData.append('packageType', mappedServiceDetails.packageType);
         }
       }
-      if (isBannerTargetedMode(values.type, values.mode)) {
+      if (isBannerNewCustomerMode(values.type, values.mode)) {
+        formData.append('eligibilityConfig', JSON.stringify({ audience: 'NEW_CUSTOMER' }));       
+      } 
+      else if (isBannerTargetedMode(values.type, values.mode)) {
         const eligibilityConfig = TARGETED_SERVICE_OPTIONS.reduce((acc, service) => {
           const count = Number(values.eligibilityConfig?.[service] || 0);
           if (!count) return acc;
@@ -291,7 +296,7 @@ const AddBanner = () => {
       }
       formData.append('status', values.status === 'true' || values.status === true);
       formData.append('type', values.type.trim());
-      formData.append('zone', isNewCustomer || isIntroType || isTrainingVideo || isQrPageImageType ? 'All' : values.zone);
+      formData.append('zone', isNewCustomer || isIntroType || values.type === 'TRAINING_VIDEO_DRIVER' || isQrPageImageType ? 'All' : values.zone);
       if (!isTrainingVideo && values.image) {
         formData.append('image', values.image, values.image.name);
         formData.append('fileTypeImage', values.image?.type || '');
@@ -299,6 +304,7 @@ const AddBanner = () => {
       }
 
       const response = await ApiRequestUtils.postDocs(API_ROUTES.POST_BANNER, formData);
+      console.log('LOG',response)
       if (response?.success === false) {
         setModalMessage(response?.error || response?.message || 'Unable to save banner.');
       return;
@@ -349,7 +355,7 @@ const AddBanner = () => {
       >
         {({ isSubmitting, values,setFieldValue }) => {
           const isIntroType = values.type === 'INTRO_SLIDES' || values.type === 'INTRO_SLIDES_DRIVER' || values.type === 'FUTURE_BOOKING_INTRO_DRIVER' || values.type === 'RETURN_TRIP_INTRO_DRIVER'; 
-          const isTrainingVideo = values.type === 'TRAINING_VIDEO_DRIVER';
+          const isTrainingVideo = isTrainingVideoDriver(values.type) || isDriverAdsDemoVideo(values.type);
           const isServiceIntro = values.type === 'SERVICE_INTRO_IMAGE';
           const isQrPageImageType = values.type === 'QR_DRIVER_TO_DRIVER' || values.type === 'QR_DRIVER_TO_CUSTOMER' || values.type === 'QR_CUSTOMER_TO_CUSTOMER';
           const hideStandardFields = values.type === 'NEW_CUSTOMER' || isIntroType || isTrainingVideo;
@@ -372,13 +378,13 @@ const AddBanner = () => {
                       setFieldValue('mode', 'GENERAL');
                       setFieldValue('eligibilityConfig', {});
                     }
-                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'QR_DRIVER_TO_DRIVER' || selectedType === 'QR_DRIVER_TO_CUSTOMER' || selectedType === 'QR_CUSTOMER_TO_CUSTOMER' || selectedType === 'FUTURE_BOOKING_INTRO_DRIVER' || selectedType === 'RETURN_TRIP_INTRO_DRIVER') {
+                    if (selectedType === 'NEW_CUSTOMER' || selectedType === 'INTRO_SLIDES' || selectedType === 'INTRO_SLIDES_DRIVER' || selectedType === 'SERVICE_INTRO_IMAGE' || selectedType === 'TRAINING_VIDEO_DRIVER' || selectedType === 'DRIVER_ADS_DEMO_VIDEO' || selectedType === 'QR_DRIVER_TO_DRIVER' || selectedType === 'QR_DRIVER_TO_CUSTOMER' || selectedType === 'QR_CUSTOMER_TO_CUSTOMER' || selectedType === 'FUTURE_BOOKING_INTRO_DRIVER' || selectedType === 'RETURN_TRIP_INTRO_DRIVER') {
                       setFieldValue('zone', 'All');
                     }
-                    if (selectedType !== 'INTRO_SLIDES_DRIVER' && selectedType !== 'TRAINING_VIDEO_DRIVER') {
+                    if (selectedType !== 'INTRO_SLIDES_DRIVER' && !isTrainingVideoDriver(selectedType)) {
                       setFieldValue('driverType', '');
                     }
-                    if (selectedType === 'TRAINING_VIDEO_DRIVER') {
+                    if (isTrainingVideoDriver(selectedType)) {
                       setFieldValue('image', null);
                       setImagePreview(null);
                     }
@@ -396,6 +402,7 @@ const AddBanner = () => {
                   <option value="FUTURE_BOOKING_INTRO_DRIVER">Future Booking Intro (Driver)</option>
                   <option value="RETURN_TRIP_INTRO_DRIVER">Return Trip Intro (Driver)</option>         
                   <option value="TRAINING_VIDEO_DRIVER">Training Video (Driver)</option>
+                  <option value="DRIVER_ADS_DEMO_VIDEO">Driver Ads Demo Video</option>
                   {/* <option value="QR_DRIVER_TO_DRIVER">Qr Driver To Driver</option>
                   <option value="QR_DRIVER_TO_CUSTOMER">QR Driver To Customer</option>
                   <option value="QR_CUSTOMER_TO_CUSTOMER">QR Customer To Customer</option> */}
@@ -417,6 +424,7 @@ const AddBanner = () => {
                   >
                     <option value="GENERAL">General</option>
                     <option value="TARGETED">Targeted</option>
+                    <option value="NEW_CUSTOMER">New Customer</option>
                   </Field>
                 </div>
               )}
@@ -575,7 +583,7 @@ const AddBanner = () => {
                 <ErrorMessage name="status" component="div" className="text-red-500 text-sm" />
               </div>
 
-              <div  className={`${hideStandardFields ? 'hidden' : ''}`}>
+              <div className={`${hideStandardFields && !isDriverAdsDemoVideo(values.type) ? 'hidden' : ''}`}>
                 <label htmlFor="zone" className="text-sm font-medium text-gray-700">
                   Zone
                 </label>
@@ -584,7 +592,7 @@ const AddBanner = () => {
                   value={ZONE_OPTIONS.find((opt) => opt.value === values.zone) || null}
                   onChange={(opt) => setFieldValue('zone', opt?.value || '')}
                   placeholder="Select Zone"
-                  isDisabled={hideStandardFields}
+                  isDisabled={hideStandardFields && !isDriverAdsDemoVideo(values.type)}
                   className="w-full"
                   name="zone" />
                 <ErrorMessage name="zone" component="div" className="text-red-500 text-sm" />

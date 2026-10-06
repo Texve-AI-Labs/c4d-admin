@@ -11,6 +11,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -18,7 +19,12 @@ import { EMPTY_INITIAL_VALUES, RULE_TYPES } from "./constants";
 import DaysOfWeekSelector from "./DaysOfWeekSelector";
 
 const normalizeText = (value) => String(value ?? "").trim().toLowerCase();
-const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "" });
+const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
+const normalizeExpectedEarnings = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+};
+const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", expectedEarnings: "", slotType: "NORMAL" });
 
 const fetchActingDriverGeoOptions = async () => {
   const areaResp = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: "Service Area" });
@@ -42,7 +48,10 @@ const readText = (value) => {
 const resolveZoneValue = (value) =>
   readText(value?.zone || value?.zoneName || value?.name || value?.label || value?.serviceArea || value);
 
-const normalizeSlots = (config = {}) => (Array.isArray(config?.slots) ? config.slots : []);
+const normalizeSlots = (config = {}) =>
+  Array.isArray(config?.slots)
+    ? config.slots.map((slot) => ({ ...emptySlot(), ...slot, slotType: normalizeSlotType(slot?.slotType) }))
+    : [];
 
 const buildInitialForm = (initialValues = {}) => ({
   zoneId: initialValues.zoneId || "",
@@ -58,6 +67,11 @@ const buildInitialForm = (initialValues = {}) => ({
 });
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
+const SlotFieldLabel = ({ children }) => (
+  <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
+    {children}
+  </Typography>
+);
 
 function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
   const isViewMode = mode === "view";
@@ -139,13 +153,19 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
   };
 
   const buildPayload = () => {
+    const payloadSlots = slots.map((slot) => ({
+      ...slot,
+      expectedEarnings: normalizeExpectedEarnings(slot?.expectedEarnings),
+      slotType: normalizeSlotType(slot?.slotType),
+    }));
+
     const payload = {
       zone: form.zone,
       ruleType: form.ruleType,
       priority: form.ruleType === "SPECIAL_DATE" ? 1 : 100,
       isActive: Boolean(form.isActive),
       notes: form.notes || "",
-      config: { slots },
+      config: { slots: payloadSlots },
     };
 
     if (form.ruleType === "WEEKLY") {
@@ -182,8 +202,16 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       }
     }
 
-    if (!slots.some((slot) => slot?.startTime && slot?.endTime && String(slot?.maxBookings ?? "").trim() !== "")) {
-      nextErrors.slots = "Add at least one complete slot";
+    if (
+      !slots.some(
+        (slot) =>
+          slot?.startTime &&
+          slot?.endTime &&
+          String(slot?.maxBookings ?? "").trim() !== "" &&
+          String(slot?.expectedEarnings ?? "").trim() !== ""
+      )
+    ) {
+      nextErrors.slots = "Add at least one complete slot with expected earnings";
     }
 
     setErrors(nextErrors);
@@ -357,35 +385,63 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                     </Typography>
                   ) : (
                     slots.map((slot, index) => (
-                      <div key={index} className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-                        <Input
-                          type="time"
-                          value={slot.startTime || ""}
-                          onChange={(event) => updateSlot(index, "startTime", event.target.value)}
-                          label="Start Time"
-                          disabled={isViewMode}
-                        />
-                        <Input
-                          type="time"
-                          value={slot.endTime || ""}
-                          onChange={(event) => updateSlot(index, "endTime", event.target.value)}
-                          label="End Time"
-                          disabled={isViewMode}
-                        />
-                        <Input
-                          type="number"
-                          value={slot.maxBookings || ""}
-                          onChange={(event) => updateSlot(index, "maxBookings", event.target.value)}
-                          label="Max Bookings"
-                          disabled={isViewMode}
-                        />
+                      <div key={index} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        <div>
+                          <SlotFieldLabel>Start Time</SlotFieldLabel>
+                          <Input
+                            type="time"
+                            value={slot.startTime || ""}
+                            onChange={(event) => updateSlot(index, "startTime", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>End Time</SlotFieldLabel>
+                          <Input
+                            type="time"
+                            value={slot.endTime || ""}
+                            onChange={(event) => updateSlot(index, "endTime", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>Max Bookings</SlotFieldLabel>
+                          <Input
+                            type="number"
+                            value={slot.maxBookings || ""}
+                            onChange={(event) => updateSlot(index, "maxBookings", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>Expected Earnings</SlotFieldLabel>
+                          <Input
+                            type="number"
+                            value={slot.expectedEarnings || ""}
+                            onChange={(event) => updateSlot(index, "expectedEarnings", event.target.value)}
+                            disabled={isViewMode}
+                          />
+                        </div>
+                        <div>
+                          <SlotFieldLabel>Slot Type</SlotFieldLabel>
+                          <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                            <Switch
+                              checked={normalizeSlotType(slot.slotType) === "PEAK"}
+                              onChange={(event) => updateSlot(index, "slotType", event.target.checked ? "PEAK" : "NORMAL")}
+                              label={normalizeSlotType(slot.slotType)}
+                              disabled={isViewMode}
+                            />
+                          </div>
+                        </div>
                         <Button
                           type="button"
-                          className="bg-red-600 text-white hover:bg-red-700"
+                          size="sm"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 p-2 text-white hover:bg-red-700"
                           onClick={() => removeSlot(index)}
                           disabled={isViewMode}
+                          title="Remove slot"
                         >
-                          Remove
+                          <TrashIcon className="h-5 w-5" />
                         </Button>
                       </div>
                     ))

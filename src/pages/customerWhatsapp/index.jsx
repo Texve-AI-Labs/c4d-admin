@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import CustomerChatList from "./components/CustomerChatList";
 import CustomerMessageThread from "./components/CustomerMessageThread";
 import TemplatePicker from "./components/TemplatePicker";
+import WhatsAppFullscreenButton from "@/components/whatsapp/WhatsAppFullscreenButton";
 import { customerWhatsappApi, getWhatsappToken, normalizeMessage } from "./customerWhatsappApi";
 import { friendlyWhatsAppError, unsupportedWhatsAppMediaMessage } from "@/utils/whatsapp/errors";
 import { useRealtimeEvents } from "@/context/realtimeEvents";
@@ -56,6 +57,8 @@ const extractSingleMessagePayload = (payload) => {
 };
 
 export default function CustomerWhatsappPage() {
+  const whatsappShellRef = useRef(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messagesByConversation, setMessagesByConversation] = useState({});
@@ -769,7 +772,12 @@ export default function CustomerWhatsappPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-155px)] min-h-[620px] overflow-hidden rounded-lg border border-[#d9e1dd] bg-white shadow-sm">
+    <div ref={whatsappShellRef} className={`relative flex flex-col overflow-hidden rounded-lg border border-[#d9e1dd] bg-white shadow-sm ${isExpanded ? "fixed inset-0 z-[9999] h-screen w-screen" : "h-[calc(100vh-155px)] min-h-[620px] w-full"}`}>
+      <div className="flex shrink-0 items-center justify-between border-b border-[#d9e1dd] bg-[#f0f2f5] px-3 py-2">
+        <p className="text-sm font-semibold text-[#111b21]">Customer WhatsApp</p>
+        <WhatsAppFullscreenButton containerRef={whatsappShellRef} expanded={isExpanded} onExpandedChange={setIsExpanded} />
+      </div>
+      <div className="flex min-h-0 flex-1">
       <CustomerChatList
         conversations={conversations}
         selectedId={selectedConversation?.id}
@@ -821,6 +829,7 @@ export default function CustomerWhatsappPage() {
         conversations={conversations}
         onForwardMessage={handleForwardMessage}
       />
+      </div>
       {error && (
         <div className="fixed bottom-5 right-5 z-[80] rounded bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg">
           {error}

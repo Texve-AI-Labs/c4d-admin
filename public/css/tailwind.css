@@ -5,6 +5,12 @@
 @layer base {
 	html { @apply antialiased; }
 	body { @apply bg-surface-soft text-gray-800; }
+	input[type="number"] { -moz-appearance: textfield; }
+	input[type="number"]::-webkit-inner-spin-button,
+	input[type="number"]::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
 }
 
 @layer components {

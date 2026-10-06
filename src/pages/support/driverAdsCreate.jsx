@@ -7,7 +7,7 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import DriverAdsZone from "@/components/driverAdsZone";
 import { driverAdsValidationSchema } from "./driverAdsValidation";
-import { appendFormFields, mapPlacementsToConfig, normalizeSubZoneId } from "./driverAdsPayload";
+import { appendFormFields, expandVehicleImages, mapPlacementsToConfig, normalizeSubZoneId } from "./driverAdsPayload";
 
 
 const RequiredLabel = ({ children }) => (
@@ -31,6 +31,9 @@ function DriverAdsCreate() {
     paymentFrequency: "MONTHLY",
     paymentAmount: "",
     tier: "SILVER",
+    availableVehicle: "",
+    vehicleImages: [],
+    planBenefits: [],
     claimRequest: false,
     imageFile: null,
     isActive: true,
@@ -53,10 +56,13 @@ function DriverAdsCreate() {
         paymentFrequency: values.paymentFrequency || "MONTHLY",
         paymentAmount: values.paymentAmount,
         tier: values.tier,
+        availableVehicle: values.availableVehicle,
         claimRequest: values.claimRequest,
         isActive: values.isActive,
       });
       formData.append("config", JSON.stringify(mapPlacementsToConfig(values.placements)));
+      formData.append("vehicleImages", JSON.stringify(expandVehicleImages(values.vehicleImages)));
+      formData.append("planBenefits", JSON.stringify({ benefits: values.planBenefits.filter(Boolean) }));
       if (values.imageFile) {
         formData.append("image1", values.imageFile);
         formData.append("extImage1", values.imageFile.name.split(".").pop());
@@ -106,6 +112,104 @@ function DriverAdsCreate() {
                     className="w-full"
                   />
                   {touched.name && errors.name ? <p className="mt-1 text-xs text-red-600">{errors.name}</p> : null}
+                </div>
+                <div>
+                  <RequiredLabel>Available Vehicle</RequiredLabel>
+                  <Select
+                    value={values.availableVehicle}
+                    onChange={(value) => setFieldValue("availableVehicle", value)}
+                  >
+                    <Option value="CAB">CAB</Option>
+                    <Option value="AUTO">AUTO</Option>
+                    <Option value="ALL">ALL</Option>
+                  </Select>
+                  {touched.availableVehicle && errors.availableVehicle ? (
+                    <p className="mt-1 text-xs text-red-600">{errors.availableVehicle}</p>
+                  ) : null}
+                </div>
+
+                <div className="order-9 md:col-span-2 rounded-xl border border-blue-gray-100 p-4">
+                  <Typography className="mb-3 text-sm font-medium text-black">
+                    Vehicle Images
+                  </Typography>
+                  <FieldArray name="vehicleImages">
+                    {({ push, remove }) => (
+                      <div className="space-y-3">
+                        {values.vehicleImages.map((item, index) => (
+                          <div key={index} className="flex gap-3">
+                            <Select
+                              label="Position"
+                              value={item.position}
+                              onChange={(value) => {
+                                if (value === "ALL") {
+                                  setFieldValue("vehicleImages", [{ ...item, position: "ALL" }]);
+                                } else {
+                                  setFieldValue(`vehicleImages[${index}].position`, value);
+                                }
+                              }}
+                            >
+                              <Option value="REAR">REAR</Option>
+                              <Option value="LEFT">LEFT</Option>
+                              <Option value="RIGHT">RIGHT</Option>
+                              <Option value="ALL">ALL</Option>
+                            </Select>
+                            <Input
+                              label="Image URL"
+                              value={item.url}
+                              onChange={(e) => setFieldValue(`vehicleImages[${index}].url`, e.target.value)}
+                              className="w-full"
+                            />
+                            <IconButton variant="text" color="red" onClick={() => remove(index)}>
+                              <TrashIcon className="h-5 w-5" />
+                            </IconButton>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className={`${ColorStyles.bgColor} inline-flex items-center text-white`}
+                          onClick={() => push({ position: "", url: "" })}
+                        >
+                          <PlusIcon className="mr-2 h-4 w-4" />
+                          Add Image
+                        </Button>
+                      </div>
+                    )}
+                  </FieldArray>
+                </div>
+
+                <div className="order-9 md:col-span-2 rounded-xl border border-blue-gray-100 p-4">
+                  <Typography className="mb-3 text-sm font-medium text-black">
+                    Plan Benefits
+                  </Typography>
+                  <FieldArray name="planBenefits">
+                    {({ push, remove }) => (
+                      <div className="space-y-3">
+                        {values.planBenefits.map((benefit, index) => (
+                          <div key={index} className="flex gap-3">
+                            <Input
+                              label="Benefit"
+                              value={benefit}
+                              onChange={(e) => setFieldValue(`planBenefits[${index}]`, e.target.value)}
+                              className="w-full"
+                            />
+                            <IconButton variant="text" color="red" onClick={() => remove(index)}>
+                              <TrashIcon className="h-5 w-5" />
+                            </IconButton>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className={`${ColorStyles.bgColor} inline-flex items-center text-white`}
+                          onClick={() => push("")}
+                        >
+                          <PlusIcon className="mr-2 h-4 w-4" />
+                          Add Benefit
+                        </Button>
+                      </div>
+                    )}
+                  </FieldArray>
                 </div>
 
                 <div>
@@ -229,7 +333,7 @@ function DriverAdsCreate() {
                   <Typography className="text-sm font-medium text-blue-gray-700">Claim Request</Typography>
                 </div>
 
-                <div className="md:col-span-2 rounded-xl border border-blue-gray-100 p-4">
+                <div className="order-10 md:col-span-2 rounded-xl border border-blue-gray-100 p-4">
                   <div className="mb-4 flex items-center justify-between">
                     <Typography className="text-sm font-medium text-black">Placements</Typography>
 
@@ -288,7 +392,7 @@ function DriverAdsCreate() {
                   </FieldArray>
                 </div>
 
-                <div className="md:col-span-2 flex justify-center gap-3">
+                <div className="order-12 md:col-span-2 flex justify-center gap-3">
                   <Button
                     type="button"
                     className="bg-red-600 text-white"

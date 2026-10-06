@@ -5,10 +5,6 @@ import {
   CardBody,
   Typography,
   Chip,
-  Popover,
-  PopoverHandler,
-  PopoverContent,
-  Checkbox,
   Button,
   Spinner,
 } from "@material-tailwind/react";
@@ -17,7 +13,6 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import moment from "moment";
-import { FaFilter } from "react-icons/fa";
 import { safeText } from "@/utils/text";
 
 const debounce = (func, delay) => {
@@ -31,9 +26,6 @@ const debounce = (func, delay) => {
 export function VehiclesList({ id = 0 }) {
   const [vehicleList, setVehicleList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState(["All"]);
-  const [subScriptionStatusFilter, setSubScriptionStatusFilter] = useState(["All"]);
-  const [typeFilter, setTypeFilter] = useState(["All"]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -135,91 +127,6 @@ export function VehiclesList({ id = 0 }) {
     return buttons;
   };
 
-// const filteredVehicles = vehicleList.filter((vehicle) => {
-//   const matchesSearch = ['name', 'carNumber', 'driverName'].some((field) => {
-//     if (field === 'carNumber') {
-//       const fieldValue = vehicle[field]?.toString().replace(/\s/g, '');
-//       const query = searchQuery.replace(/\s/g, '');
-//       return fieldValue?.includes(query);
-//     } else {
-//       const fieldValue = vehicle[field]?.toString().toLowerCase();
-//       const query = searchQuery.toLowerCase();
-//       return fieldValue?.includes(query);
-//     }
-//   });
-
-//   const status = vehicle.Drivers[0]?.status || '';
-//   const carType = vehicle.carType || '';
-//     const subscriptionStatus = vehicle.subscriptionStatus || '';
-
-//   return (
-//     matchesSearch &&
-//     (statusFilter.includes('All') || statusFilter.includes(status)) &&
-//     (typeFilter.includes('All') || typeFilter.includes(carType))&&
-//     (subScriptionStatusFilter.includes('All') || subScriptionStatusFilter.includes(subscriptionStatus) )
-// );
-// })
-
-  const handleFilterChange = (filterType, value) => {
-    if (filterType === "Drivers") {
-      setStatusFilter((prev) => {
-        if (value === "All") return ["All"];
-        const newFilter = prev.includes(value)
-          ? prev.filter((item) => item !== value)
-          : [...prev.filter((item) => item !== "All"), value];
-        return newFilter.length === 0 ? ["All"] : newFilter;
-      });
-    } else if (filterType === "carType") {
-      setTypeFilter((prev) => {
-        if (value === "All") return ["All"];
-        const newFilter = prev.includes(value)
-          ? prev.filter((item) => item !== value)
-          : [...prev.filter((item) => item !== "All"), value];
-        return newFilter.length === 0 ? ["All"] : newFilter;
-      });
-    }  else if(filterType === "subscriptionStatus") {
-      setSubScriptionStatusFilter((prev) => {
-        if (value === "All") return ["All"];
-        const newFilter = prev.includes(value)
-          ? prev.filter((item) => item !== value)
-          : [...prev.filter((item) => item !== "All"), value];
-        return newFilter.length === 0 ? ["All"] : newFilter;
-      });
-    }
-  };
-
-  const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
-    <Popover placement="bottom-start">
-      <PopoverHandler>
-        <div className="flex items-center cursor-pointer">
-          <Typography
-            variant="small"
-            className="text-[11px] font-bold uppercase text-black mr-1"
-          >
-            {title}
-          </Typography>
-          <FaFilter className="text-black text-xs" />
-        </div>
-      </PopoverHandler>
-      <PopoverContent className="p-2">
-        {options.map((option) => (
-          <div key={option.value} className="flex items-center mb-2">
-            <Checkbox
-              color="blue"
-              checked={selectedFilters.includes(option.value)}
-              onChange={() => onFilterChange(option.value)}
-            />
-            <Typography color="blue-gray" className="font-medium ml-2">
-              {option.label}
-            </Typography>
-          </div>
-        ))}
-      </PopoverContent>
-    </Popover>
-  );
-
-
-
   return (
     <div className="mb-8 flex flex-col gap-12">
       <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
@@ -248,58 +155,18 @@ export function VehiclesList({ id = 0 }) {
             </CardHeader>
             <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
               <table className="w-full min-w-[640px] table-auto">
-                <thead>
+                <thead className="whitespace-nowrap">
                   <tr>
-                    {["Driver Name", "Cab Name", "Phone Number","Vehicle Type", "Vehicle Number", "Address","Registration Date", "Available Status", "Subscription Status"].map((el) => (
+                    {["Driver Name", "Cab Name", "Phone Number","Vehicle Type", "Vehicle Number", "Address","Registration Date", "Available Status", "Check Status", "Subscription Status"].map((el) => (
                       <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                        {el === "Vehicle Type" ? (
-                          <FilterPopover
-                            title={el}
-                            options={[
-                              { value: "All" , label: "All"}, 
-                              { value: "MINI", label: "Mini" },
-                              { value: "MUV", label: "Muv" },
-                              { value: "Sedan", label: "Sedan" },
-                              { value: "SUV", label: "Suv" },
-                            ]}
-                            selectedFilters={typeFilter}
-                            onFilterChange={(value) => handleFilterChange("carType", value)}
-                          />
-                        ) : el === "Subscription Status" ? (
-                          <FilterPopover
-                            title={el}
-                            options={[
-                              { value: "All" , label: "All"},
-                              { value: "ACTIVE", label: "Active" },
-                              { value: "IN_ACTIVE", label: "In_Active" },
-                            ]}
-                            selectedFilters={subScriptionStatusFilter}
-                            onFilterChange={(value) => handleFilterChange("subscriptionStatus", value)}
-                          />
-                        ) : el === "Available Status" ? (
-                          <FilterPopover
-                            title={el}
-                            options={[
-                              { value: "All", label: "All" },
-                              { value: "ACTIVE", label: "Active" },
-                              { value: "IN_ACTIVE", label: "In_Active" },
-                            ]}
-                            selectedFilters={statusFilter}
-                            onFilterChange={(value) => handleFilterChange("Drivers", value)}
-                          />
-                        ) : (
-                          <Typography
-                            variant="small"
-                            className="text-[11px] font-bold uppercase text-black"
-                          >
-                            {el}
-                          </Typography>
-                        )}
+                        <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
+                          {el}
+                        </Typography>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="whitespace-nowrap">
                   {loading ? (
                       <tr>
                       <td colSpan={9} className="py-3 px-5">
@@ -309,11 +176,7 @@ export function VehiclesList({ id = 0 }) {
                       </td>
                     </tr>
                   ) : (
-                  vehicleList.filter(name => 
-                    (statusFilter.includes('All') || statusFilter.includes(name?.Drivers[0]?.status)) &&
-                    (typeFilter.includes('All') || typeFilter.includes(name?.carType))&&
-                    (subScriptionStatusFilter.includes('All') || subScriptionStatusFilter.includes(name?.subscriptionStatus) )
-                  ).map(
+                  vehicleList.map(
                     ({ id, driverName, name, vehicleType, carType, type, assigned,firstName,driverAddress,curAddress,Account, carNumber, Drivers, subscriptionStatus, phoneNumber,status, created_at }) => (                      
                     <tr key={id}>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
@@ -345,21 +208,24 @@ export function VehiclesList({ id = 0 }) {
                         <Chip
                           variant="ghost"
                           color={Drivers?.[0]?.status === "ACTIVE" ? "green" : "blue-gray"}
-                          value={Drivers?.[0]?.status === "ACTIVE" ? "Active" : "In_Active"}
+                          value={Drivers?.[0]?.status === "ACTIVE" ? "Active" : "In Active"}
                           className="py-0.5 px-2 text-[11px] font-medium w-fit"
                         />
-                         {Drivers?.[0]?.status === "ACTIVE" && statusCheckedDriverIds.indexOf(Drivers?.[0]?.id)==-1 &&  <Typography
-                          className="text-xs font-semibold text-primary-900 underline cursor-pointer"
-                          onClick={()=>checkPresence(Drivers?.[0]?.id)}
-                        >
-                          Check Status
-                        </Typography>}
+                      </td>
+                      <td className="py-3 px-5 border-b border-blue-gray-50">
+                          {Drivers?.[0]?.status === "ACTIVE" && statusCheckedDriverIds.indexOf(Drivers?.[0]?.id) == -1 &&
+                            <Typography
+                              className="text-xs font-semibold text-primary-900 underline cursor-pointer"
+                              onClick={() => checkPresence(Drivers?.[0]?.id)}
+                            >
+                              Check Status
+                            </Typography>}
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
                         <Chip
                           variant="ghost"
                           color={subscriptionStatus === "ACTIVE" ? "green" : "blue-gray"}
-                          value={subscriptionStatus === "ACTIVE" ? "Active" : "In_Active"}
+                          value={subscriptionStatus === "ACTIVE" ? "Active" : "In Active"}
                           className="py-0.5 px-2 text-[11px] font-medium w-fit"
                         />
                       </td>

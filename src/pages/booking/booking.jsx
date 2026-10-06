@@ -36,6 +36,28 @@ const debounce = (func, delay) => {
   };
 };
 
+const estimateRentalRoundTripMinimum = async (values, setMinimumReturnAt, locations = {}) => {
+    const isRentalRoundTrip = values?.serviceType === 'RENTAL' &&
+        String(values?.packageTypeSelected || '').toUpperCase() === 'OUTSTATION' &&
+        String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
+    if (!isRentalRoundTrip) return;
+
+    const pickup = locations.pickup || values?.pickupLocation;
+    const drop = locations.drop || values?.dropLocation;
+    if (!pickup?.lat || !pickup?.lng || !drop?.lat || !drop?.lng) return;
+
+    const payload = { pickupLat: pickup.lat, pickupLong: pickup.lng, dropLat: drop.lat, dropLong: drop.lng };
+    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', payload);
+    const response = await ApiRequestUtils.post(API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE, payload);
+    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', response);
+
+    const durationMinutes = Number(response?.data?.estimatedDurationMinutes);
+    const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
+    if (response?.success && durationMinutes > 0 && fromDateTime.isValid()) {
+        setMinimumReturnAt(fromDateTime.clone().add(durationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm'));
+    }
+};
+
 const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}) => {
     useEffect(() => {
         const normalizedCarType = String(carType || '').toLowerCase();
@@ -67,12 +89,115 @@ const toTitleLabel = (value = '') =>
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (c) => c.toUpperCase());
 
+const getZoneCategories = (response) => {
+    const rows = Array.isArray(response?.data) ? response.data : [];
+    const nestedCategories = Array.isArray(response?.categories)
+        ? response.categories
+        : Array.isArray(response?.data?.categories)
+            ? response.data.categories
+            : [];
+    const rowCategories = rows.filter((item) => item?.category && item?.packageType !== undefined);
+    return [...nestedCategories, ...rowCategories].filter((item, index, list) =>
+        list.findIndex((candidate) => candidate.id === item.id) === index
+    );
+};
+
+const isRentalService = (serviceType) => ['RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(serviceType);
+const isCategoryService = (serviceType) => ['RIDES', 'AUTO'].includes(serviceType) || isRentalService(serviceType);
+
+const getRentalCategoryContext = (serviceType) => {
+    if (serviceType === 'RENTAL_HOURLY_PACKAGE') return { packageType: 'LOCAL', bookingType: null };
+    if (serviceType === 'RENTAL_DROP_TAXI') return { packageType: 'OUTSTATION', bookingType: 'DROP ONLY' };
+    if (serviceType === 'RENTAL') return { packageType: 'OUTSTATION', bookingType: 'ROUND TRIP' };
+    return null;
+};
+
+const getMatchingCategories = (categories, values) => {
+    if (!isCategoryService(values?.serviceType)) return [];
+    return categories
+        .filter((item) => {
+            if (!item?.isVisible || String(item.status).toUpperCase() !== 'ACTIVE') return false;
+            const rentalContext = getRentalCategoryContext(values.serviceType);
+            if (!rentalContext) return true;
+            if (String(item.packageType || '').toUpperCase() !== rentalContext.packageType) return false;
+            return rentalContext.bookingType === null
+                ? item.bookingType == null
+                : String(item.bookingType || '').toUpperCase() === rentalContext.bookingType;
+        })
+        .sort((a, b) => Number(a.displayOrder || 0) - Number(b.displayOrder || 0));
+};
+
+// Categories are catalog entries; packageId must come from the zone package rows.
+const getServicePackageId = (packages, serviceType, packageType, bookingType, selectedPackageId) => {
+    const normalizedServiceType = String(serviceType || '').toUpperCase();
+    const isRental = ['RENTAL', 'RENTAL_DROP_TAXI', 'RENTAL_HOURLY_PACKAGE'].includes(normalizedServiceType);
+    const packageServiceType = isRental ? 'RENTAL' : normalizedServiceType;
+    const normalizedPackageType = String(packageType || '').toUpperCase();
+    const normalizedBookingType = String(bookingType || '').toUpperCase();
+    const selectedPackageNumber = Number(selectedPackageId);
+    const selectedPackage = (packages || []).find((item) => Number(item?.id) === selectedPackageNumber);
+    const packageTypeMatches = (item) => {
+        const itemServiceType = String(item?.serviceType || '').toUpperCase();
+        const itemType = String(item?.type || '').toUpperCase();
+        const serviceMatches = packageServiceType === 'RENTAL'
+            ? itemServiceType === 'RENTAL' || ['LOCAL', 'OUTSTATION'].includes(itemType)
+            : itemServiceType === packageServiceType || itemType === packageServiceType;
+        if (!serviceMatches || !isRental) return serviceMatches;
+        return itemType === normalizedPackageType;
+    };
+    const packageTypeMatchesWithBooking = (item) => {
+        if (!packageTypeMatches(item)) return false;
+        const itemBookingType = String(item?.bookingType || item?.tripType || '').toUpperCase();
+        return normalizedPackageType === 'LOCAL'
+            ? item.bookingType == null
+            : itemBookingType === normalizedBookingType;
+    };
+    const matchingPackages = (packages || []).filter(packageTypeMatchesWithBooking);
+    const fallbackPackages = (packages || []).filter(packageTypeMatches);
+    const packageId = selectedPackage?.id || (isRental && selectedPackageNumber > 0
+        ? selectedPackageNumber
+        : matchingPackages[0]?.id || fallbackPackages[0]?.id);
+    const numericPackageId = Number(packageId);
+    console.log('[CATEGORY PACKAGE RESOLUTION]', {
+        serviceType,
+        packageType,
+        bookingType,
+        selectedPackageId,
+        packageIds: (packages || []).map((item) => item?.id),
+        matchingPackageIds: matchingPackages.map((item) => item?.id),
+        fallbackPackageIds: fallbackPackages.map((item) => item?.id),
+        packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
+    });
+    return Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined;
+};
+
+// Category services use the active category pricing returned with the quote.
+const getSelectedCategoryPricing = (quoteDetails, values) => {
+    const category = quoteDetails?.category || values?.category;
+    const categoryPricing = quoteDetails?.expectedPackageDetails?.categoryPricings?.find(
+        (item) => String(item?.category || '').toUpperCase() === String(category || '').toUpperCase() &&
+            String(item?.status).toUpperCase() === 'ACTIVE'
+    );
+    const pricing = categoryPricing?.pricing || {};
+    const tripKey = String(values?.tripType || '').trim().toUpperCase().replace(/\s+/g, '_');
+    const trip = pricing[tripKey] || {};
+    return {
+        pricing,
+        common: pricing.common || pricing,
+        trip,
+        ac: trip[String(values?.acType || '').toUpperCase()] || {},
+    };
+};
+
+const isCategoryPricingService = (serviceType) =>
+    ['RIDES', 'AUTO', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(serviceType);
 const toStorageScope = (pathname = '') => {
     const normalized = String(pathname || '').toLowerCase();
     const scope = normalized.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
     return scope || 'dashboard_booking';
 };
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
+const BOOKING_SEARCH_CONTEXT_PREFIX = 'bookingSearchContext_';
 
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -105,6 +230,7 @@ const getAdminDiscountUpdatedTs = (item = {}) =>
 const Booking = (props) => {
     const [loading, setLoading] = useState(false);
     const [packageTypeSelectedData, setPackageTypeSelectedData] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
     const [driverPackageNotice, setDriverPackageNotice] = useState(null);
     const [selectedPackagePeriod, setSelectedPackagePeriod] = useState('');
     const [selectedPackageId, setSelectedPackageId] = useState('');
@@ -124,6 +250,10 @@ const Booking = (props) => {
     const [searchBookingId, setSearchBookingId] = useState('');
     const [searchText, setSearchText] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [selectedSearchResult, setSelectedSearchResult] = useState(null);
+    const [selectedSearchEntityType, setSelectedSearchEntityType] = useState('');
+    const [searchValidationError, setSearchValidationError] = useState('');
+    const [searchContextRestored, setSearchContextRestored] = useState(false);
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [driverSuggestions, setDriverSuggestions] = useState([]);
@@ -131,6 +261,8 @@ const Booking = (props) => {
     const [pickupLocation, setPickupLocation] = useState(null);
     const [dropLocation, setDropLocation] = useState(null);
     const [driverPickUpLocation, setDriverPickUpLocation] = useState(null);
+    const [rentalRoundTripMinReturnAt, setRentalRoundTripMinReturnAt] = useState('');
+    const [rentalRoundTripEstimatedDurationText, setRentalRoundTripEstimatedDurationText] = useState('');
     const [mapCenter, setMapCenter] = useState({ lat: 12.906374, lng: 80.226452 });
     const [mapZoom, setMapZoom] = useState(10);
     const mapRef = useRef(null);
@@ -210,6 +342,7 @@ const Booking = (props) => {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingSearchKey = `bookingSearchId_${toStorageScope(location.pathname)}`;
+    const bookingSearchContextKey = `${BOOKING_SEARCH_CONTEXT_PREFIX}${toStorageScope(location.pathname)}`;
 
 
 
@@ -242,6 +375,21 @@ const Booking = (props) => {
   }, [isOpen]);
 
   useEffect(() => {
+    let storedContext = null;
+    try {
+      storedContext = JSON.parse(sessionStorage.getItem(bookingSearchContextKey) || 'null');
+    } catch (error) {
+      console.error('Error restoring booking search context:', error);
+    }
+
+    if (storedContext && typeof storedContext === 'object') {
+      setSelectedCustomer(Number(storedContext.customerId) || 0);
+      setSearchBookingId(storedContext.bookingNumber || '');
+      setSearchText(storedContext.searchText || storedContext.bookingNumber || '');
+      setSearchContextRestored(true);
+      return;
+    }
+
     const storedSearchId = sessionStorage.getItem(bookingSearchKey) || sessionStorage.getItem(LEGACY_BOOKING_SEARCH_KEY) || '';
     if (storedSearchId) {
       sessionStorage.setItem(bookingSearchKey, storedSearchId);
@@ -250,7 +398,84 @@ const Booking = (props) => {
       setSearchBookingId((prev) => prev || storedSearchId);
       setSearchText((prev) => prev || storedSearchId);
     }
-  }, [bookingSearchKey]);
+    setSearchContextRestored(true);
+  }, [bookingSearchContextKey, bookingSearchKey]);
+
+  useEffect(() => {
+    if (!searchContextRestored) return;
+
+    try {
+      sessionStorage.setItem(bookingSearchContextKey, JSON.stringify({
+        searchText,
+        bookingNumber: searchBookingId,
+        customerId: Number(selectedCustomer) || 0,
+      }));
+    } catch (error) {
+      console.error('Error saving booking search context:', error);
+    }
+  }, [searchContextRestored, bookingSearchContextKey, searchText, searchBookingId, selectedCustomer]);
+
+  const clearBookingSearchState = useCallback(() => {
+    setSearchText('');
+    setSearchBookingId('');
+    setSelectedCustomer(0);
+    setSearchResults([]);
+    setSelectedSearchResult(null);
+    setSelectedSearchEntityType('');
+    setSearchValidationError('');
+    sessionStorage.removeItem(bookingSearchKey);
+    sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+    sessionStorage.removeItem(bookingSearchContextKey);
+  }, [bookingSearchKey, bookingSearchContextKey]);
+
+  const getSearchResultLabel = (result = {}) => {
+    if (String(result?.type || '').toLowerCase() === 'booking') {
+      return result?.bookingNumber || '';
+    }
+    return [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
+  };
+
+  const getSearchResultCustomerId = (result = {}) =>
+    Number(result?.customerId || result?.Customer?.id || (String(result?.type || '').toLowerCase() === 'customer' ? result?.id : 0)) || 0;
+
+  const applySelectedSearch = () => {
+    if (!selectedSearchResult) {
+      setSearchValidationError('Please select a search result.');
+      return;
+    }
+
+    if (!selectedSearchEntityType) {
+      setSearchValidationError('Please select search type.');
+      return;
+    }
+
+    const resultType = selectedSearchEntityType === 'all'
+      ? String(selectedSearchResult?.type || '').toLowerCase()
+      : selectedSearchEntityType;
+
+    if (resultType === 'booking') {
+      const bookingNumber = selectedSearchResult?.bookingNumber || searchText;
+      if (!bookingNumber) {
+        setSearchValidationError('Selected result does not have a booking number.');
+        return;
+      }
+      setSelectedCustomer(0);
+      setSearchBookingId(bookingNumber);
+      setSearchText(bookingNumber);
+    } else if (resultType === 'customer') {
+      const selectedCustomerId = getSearchResultCustomerId(selectedSearchResult);
+      if (!selectedCustomerId) {
+        setSearchValidationError('Selected result does not have a customer id.');
+        return;
+      }
+      setSearchBookingId('');
+      setSelectedCustomer(selectedCustomerId);
+      setSearchText(getSearchResultLabel(selectedSearchResult).trim());
+    }
+
+    setSearchResults([]);
+    setSearchValidationError('');
+  };
 
   useEffect(() => {
     if (selectedAreaId) {
@@ -402,6 +627,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
     // console.log('Fetching packages with:', { serviceType, zone });
 	    if (!serviceType) {
 	      setPackageTypeSelectedData([]);
+          setCategoryOptions([]);
           setLuggageCapacityMap({});
 	      return;
 	    }
@@ -413,16 +639,18 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
     const mappedServiceType = serviceTypeMap[serviceType] || serviceType;
     // console.log('Mapped serviceType:', mappedServiceType);
 
-    // AUTO / PARCEL bookings do not use package list; skip silently
-    if (mappedServiceType === 'AUTO' || mappedServiceType === 'PARCEL') {
+    // Parcel has no zone-package/category lookup. AUTO still needs categories.
+    if (mappedServiceType === 'PARCEL') {
       setPackageTypeSelectedData([]);
+      setCategoryOptions([]);
       setLuggageCapacityMap({});
       return;
     }
 
-    if (!['DRIVER', 'RENTAL', 'RIDES'].includes(mappedServiceType)) {
+    if (!['DRIVER', 'RENTAL', 'RIDES', 'AUTO'].includes(mappedServiceType)) {
       console.error('Invalid serviceType:', mappedServiceType);
       setPackageTypeSelectedData([]);
+      setCategoryOptions([]);
       setLuggageCapacityMap({});
       return;
     }
@@ -430,13 +658,11 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
     const packageType = currentPackageType || 'Local';
     const isDriverService = mappedServiceType === 'DRIVER';
     if (isDriverService && (!pickupLocation?.lat || !pickupLocation?.lng || !dropLocation?.lat || !dropLocation?.lng)) {
-    //   console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
-    //     pickupLocation,
-    //     dropLocation,
-    //     packageType,
-    //   });
-      setPackageTypeSelectedData([]);
-      setLuggageCapacityMap({});
+      console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
+        pickupLocation,
+        dropLocation,
+        packageType,
+      });
       return;
     }
     const driverPackagePayload = {
@@ -450,9 +676,9 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       zone: zone || '',
       source: 'ROOTCABS WEBSITE',
     };
-    // if (isDriverService) {
-    //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
-    // }
+    if (isDriverService) {
+        console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+    }
     const data = isDriverService
       ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
       : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
@@ -460,7 +686,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
           zone: zone || '',
         });
     if (isDriverService) {
-      //   console.log('[DRIVER PACKAGE LOOKUP] response:', data);
+      console.log('[DRIVER PACKAGE LOOKUP] response:', data);
       const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
       if (notice?.title || notice?.message) {
         setDriverPackageNotice({
@@ -474,6 +700,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
 
     if (data?.success && Array.isArray(data?.data)) {
       setPackageTypeSelectedData(data.data);
+      setCategoryOptions(getZoneCategories(data));
       setLuggageCapacityMap(data?.luggageCapacity || {});
     //   console.log('Package list fetched:', data.data);
     } else {
@@ -485,8 +712,11 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
         });
       }
       console.error('Failed to fetch package list or data is not an array:', data?.message || 'No message provided');
-      setPackageTypeSelectedData([]);
-      setLuggageCapacityMap({});
+      if (!isDriverService) {
+        setPackageTypeSelectedData([]);
+        setCategoryOptions(getZoneCategories(data));
+        setLuggageCapacityMap({});
+      }
     }
   } catch (error) {
     if (serviceType === 'DRIVER') {
@@ -496,8 +726,11 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       });
     }
     console.error('Error fetching package list:', error.message || error);
-    setPackageTypeSelectedData([]);
-    setLuggageCapacityMap({});
+    if (serviceType !== 'DRIVER') {
+      setPackageTypeSelectedData([]);
+      setCategoryOptions([]);
+      setLuggageCapacityMap({});
+    }
   }
 }, [currentPackageType, dropLocation, pickupLocation]);
 
@@ -588,7 +821,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
          ),
 
          serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'DROP TAXI': values?.serviceType === "RENTAL_HOURLY_PACKAGE"? "HOURLY PACKAGE" : values?.serviceType === "RENTAL"? "OUTSTATION": values?.serviceType || '',
-        cabType: values?.carType || '', 
+        ...(!isCategoryPricingService(values?.serviceType) && { cabType: values?.carType || '' }),
         ...((values?.serviceType ==="PARCEL")) && {
 	    parcelVehicleType: values?.parcelVehicleType || '',
         subZoneId: values?.subZoneId || 0,
@@ -599,12 +832,56 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
     };
     setQuotationLogs((prevLogs) => [...prevLogs, newLog]);
 };
-  const getQuoteOutstationDetails = async (values) => {
+  const estimateRentalRoundTripDates = async (values, setMinimumReturnAt, locationOverrides = {}) => {
+        const estimatePayload = {
+            pickupLat: locationOverrides.pickupLocation?.lat || values?.pickupLocation?.lat,
+            pickupLong: locationOverrides.pickupLocation?.lng || values?.pickupLocation?.lng,
+            dropLat: locationOverrides.dropLocation?.lat || values?.dropLocation?.lat,
+            dropLong: locationOverrides.dropLocation?.lng || values?.dropLocation?.lng,
+        };
+        if (Object.values(estimatePayload).some((value) => value === undefined || value === null)) {
+            return values;
+        }
+
+        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+        const estimate = await ApiRequestUtils.post(
+            API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
+            estimatePayload
+        );
+        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+        setRentalRoundTripEstimatedDurationText(estimate?.data?.estimatedDurationText || '');
+
+        const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
+        if (!estimate?.success || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+            return values;
+        }
+        if (!values?.rideDate || !values?.rideTime) {
+            return values;
+        }
+
+        const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
+        const minimumReturnAt = fromDateTime.clone().add(durationMinutes, 'minutes').format('YYYY-MM-DDTHH:mm');
+        setMinimumReturnAt?.(minimumReturnAt);
+        return values;
+    };
+
+  const getQuoteOutstationDetails = async (values, setFieldValue) => {
         const isRentalOutstationRoundTrip =
             values?.serviceType === 'RENTAL' &&
             values?.packageTypeSelected === 'Outstation' &&
-            values?.tripType === 'Round Trip';
+            String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
         const isDropTaxiOutstation = values?.serviceType === 'RENTAL_DROP_TAXI';
+
+        console.log('[RENTAL ROUND TRIP CHECK]', {
+            serviceType: values?.serviceType,
+            packageType: values?.packageTypeSelected,
+            tripType: values?.tripType,
+            isRentalOutstationRoundTrip,
+        });
+
+        if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
+            await estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt);
+        }
 
         // For Outstation Round Trip and Drop Taxi: check distance BEFORE estimation
         if (isRentalOutstationRoundTrip || isDropTaxiOutstation) {
@@ -643,6 +920,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
             : (values?.tripType ? values.tripType.toUpperCase() : '');
 
+        const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
         const quoteData = {
             serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
             customerId: values?.customerId?.id,
@@ -651,9 +929,20 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             packageType: driverPackageType,
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             // carType: values?.carType != "Sedan" ? values?.carType.toUpperCase() : values?.carType,
-            ...(values.serviceType !== 'DRIVER' ? { carType: values.carType || '' } : 
+            ...(values.serviceType !== 'DRIVER' ? {} :
             { carType: values.carType || '', 
             transmissionType: values.transmissionType || '' 
+            }),
+            ...(isCategoryService(values?.serviceType) && {
+                categoryId: selectedCategory?.id || Number(values?.categoryId) || undefined,
+                category: selectedCategory?.category || values?.category || undefined,
+                packageId: getServicePackageId(
+                    Array.isArray(zoneData?.data) ? zoneData.data : packageTypeSelectedData,
+                    values?.serviceType,
+                    values?.packageTypeSelected,
+                    values?.tripType,
+                    values?.packageSelected
+                ),
             }),
             pickupLat: values?.pickupLocation?.lat,
             pickupLong: values?.pickupLocation?.lng,
@@ -665,7 +954,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             dropLong: values?.dropLocation?.lng,
             acType: values?.acType?.toUpperCase(),
             zone: actualZone,
-            isPremiumService : values?.isPremiumService ? true : false
+            ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
         };
         if (values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') {
             quoteData.bookingType = driverBookingType;
@@ -696,8 +985,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             quoteData.adminDiscount = adminDiscountPayload;
         }
         const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
-        // console.log("QOYTEE DATA", data);
-        if (data.success) {
+        console.log('[GET QUOTE OUTSTATION] response:', data);
+        if (data?.success) {
             setQuoteDetails(data?.data);
             setDiscountDetails(data?.data);
             setQuoteMeta({
@@ -706,6 +995,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             });
             // Add to quotationLogs
             addQuotationLog(values, data?.data);
+        } else {
+            console.error('[GET QUOTE OUTSTATION] failed:', data?.message || 'Empty response');
         }
         // console.log("QUOTE DETAILS", quoteDetails);
     };
@@ -794,6 +1085,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
             : (val?.tripType ? val.tripType.toUpperCase() : '');
 
+        const selectedCategory = categoryOptions.find((item) => item.id === Number(val?.categoryId));
         const quoteDate = {
             serviceType: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL' : val.serviceType || mappedServiceType,
             customerId: val?.customerId?.id,
@@ -803,9 +1095,20 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             serviceFor: val.serviceType === 'RENTAL_HOURLY_PACKAGE' ? 'RENTAL_HOURLY_PACKAGE' : val.serviceType,
             packageType: driverPackageType,
             fromDate: moment(`${val?.rideDate} ${val?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-            ...(val.serviceType !== 'DRIVER' ? { carType: val.carType || '' } : 
+            ...(val.serviceType !== 'DRIVER' ? {} :
                 { carType: val.carType || '', 
                   transmissionType: val.transmissionType || '' 
+                }),
+            ...(isCategoryService(val?.serviceType) && {
+                categoryId: selectedCategory?.id || Number(val?.categoryId) || undefined,
+                category: selectedCategory?.category || val?.category || undefined,
+                packageId: getServicePackageId(
+                    Array.isArray(zoneData?.data) ? zoneData.data : packageTypeSelectedData,
+                    val?.serviceType,
+                    val?.packageTypeSelected,
+                    val?.tripType,
+                    val?.packageSelected
+                ),
                 }),
             pickupLat: val?.pickupLocation?.lat,
             pickupLong: val?.pickupLocation?.lng,
@@ -816,7 +1119,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         //     driverEndLat: values?.driverEndLocation?.lat || null,
         // driverEndLong: values?.driverEndLocation?.lng || null,
             zone: actualZone,
-            isPremiumService : val?.isPremiumService ? true : false
+            ...(!isCategoryService(val?.serviceType) ? { isPremiumService: Boolean(val?.isPremiumService) } : {})
         };
         if (val.serviceType === 'RENTAL_HOURLY_PACKAGE' || val?.serviceType === 'DRIVER') {
             const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(val.packageSelected));
@@ -941,6 +1244,8 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         driverEndPlaceId: '',
         isPickupSameAsDriverStart: false,
         parcelVehicleType: 'BIKE',
+        categoryId: '',
+        category: '',
         // weightRange: 'W_0_7',
         receiverName: '',
         receiverPhone: '',
@@ -1246,7 +1551,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             driverStartLong: values.driverPickUpLocation?.lng,
             driverStartAddress: makeAddressPayload(values.driverPickUpAddress, values.driverPickUpPlaceId),
             source: 'Call',
-            carType: values.carType,
+            categoryId: values.categoryId ? Number(values.categoryId) : undefined,
+            category: values.category || undefined,
+            packageId: getServicePackageId(
+                Array.isArray(zoneCheckUp?.data) ? zoneCheckUp.data : packageTypeSelectedData,
+                values?.serviceType,
+                values?.packageTypeSelected,
+                values?.tripType,
+                values?.packageSelected
+            ),
             sourceType: values.sourceType,
             ...((values.sourceType === "Others" || values.sourceType === "Offline Ads") && {
                 otherSourceType: values.otherSourceType?.trim() || null
@@ -1255,7 +1568,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             zone: actualZone,  
             landmark: values.landmark || '',
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
-            isPremiumService : values?.isPremiumService ? true : false
+            ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
         }
         if (quoteMeta?.quoteRef) {
             bookingData.quoteRef = quoteMeta.quoteRef;
@@ -1313,6 +1626,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             dropLat: values.dropLocation?.lat,
             dropLong: values.dropLocation?.lng,
             dropAddress: makeAddressPayload(values.dropAddress, values.dropPlaceId),
+            categoryId: values.categoryId ? Number(values.categoryId) : undefined,
+            category: values.category || undefined,
+            packageId: getServicePackageId(
+                Array.isArray(zoneCheckUp?.data) ? zoneCheckUp.data : packageTypeSelectedData,
+                values?.serviceType,
+                values?.packageTypeSelected,
+                values?.tripType,
+                values?.packageSelected
+            ),
             // bookingType: 'DROP ONLY',
             source: values.source || 'Call',
             sourceType: values.sourceType,
@@ -1322,7 +1644,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             driverEndLat: values.driverEndLocation?.lat || null,
             zone: actualZone, 
             landMark: values.landMark || '',
-            isPremiumService : values?.isPremiumService ? true : false,
+            ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {}),
             fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
         };
         if (quoteMeta?.quoteRef) {
@@ -1400,6 +1722,20 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         );
 
         const isDriverService = values?.serviceType === 'DRIVER';
+        const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
+        const categoryPayload = isCategoryService(values?.serviceType)
+            ? {
+                categoryId: selectedCategory?.id || (values?.categoryId ? Number(values.categoryId) : undefined),
+                category: selectedCategory?.category || values?.category || undefined,
+                packageId: getServicePackageId(
+                    Array.isArray(zoneData?.data) ? zoneData.data : packageTypeSelectedData,
+                    values?.serviceType,
+                    values?.packageTypeSelected,
+                    values?.tripType,
+                    values?.packageSelected
+                ),
+            }
+            : {};
         const driverPackagePeriod = selectedPackage?.period ?? selectedPackagePeriod ?? '';
 
         const bookingData = {
@@ -1411,9 +1747,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             customerId: values.customerId?.id,
             adminBooking: true,
             serviceType: values.serviceType || mappedServiceType,
-            ...(isDriverService ? {} : { cabType: values.cabType }),
+            ...categoryPayload,
+            ...(!isDriverService && !isCategoryService(values?.serviceType) ? { cabType: values.cabType } : {}),
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
-            ...(values?.packageSelected && {
+            ...(!isCategoryService(values?.serviceType) && values?.packageSelected && {
                 packageId: values?.packageSelected === "0" ? 0 : Number(values?.packageSelected),
             }),
             ...((values?.serviceType !== 'RENTAL_HOURLY_PACKAGE' && values?.serviceType !== 'AUTO') && {
@@ -1427,7 +1764,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
             ...(isDriverService ? { carType: values.carType || '', 
                 transmissionType: values.transmissionType || '' }
-                : { carType: values.carType || '' }),
+                : {}),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
             pickupLong: values.pickupLocation.lng,
@@ -1448,7 +1785,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             landmark: values.landmark || '',
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
             zone: actualZone,
-            isPremiumService : values?.isPremiumService ? true : false
+            ...(!isCategoryService(values?.serviceType) ? { isPremiumService: Boolean(values?.isPremiumService) } : {})
         };
         if (quoteMeta?.quoteRef) {
             bookingData.quoteRef = quoteMeta.quoteRef;
@@ -1591,12 +1928,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 quoteRef: targetQuoteRef,
             },
         });
-                // console.log('selecting booking', data);
-        // setBookingStage(4);
-        // setBookingData(data);
-        // setBookingView(true);
-        // setEditBooking();
-        // setEditBookingView(false);
     };
 
     const onConfirmBooking = () => {
@@ -1604,14 +1935,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         setBookingView(false);
         //console.log("LIST", bookingStage);
     };
-
-    // if (loading) {
-    //     return (
-    //         <div className="flex justify-center items-center h-screen">
-    //             <Spinner className="h-12 w-12" />
-    //         </div>
-    //     );
-    // }
     const onCancelBookingView = () => { }
 
     const resetPackageValues = (setFieldValue, newServiceType) => {
@@ -1651,6 +1974,8 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
 
         // Clear package selection
         setFieldValue('packageSelected', '');
+        setFieldValue('categoryId', '');
+        setFieldValue('category', '');
 
         if (newServiceType === 'CAR_WASH') {
             setFieldValue('packageTypeSelected', 'CarWash');
@@ -1724,6 +2049,13 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             setFieldValue("pickupLocation", location);
             setPickupLocation(location);
             setPickupSuggestions([]);
+            if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && values?.dropLocation) {
+                estimateRentalRoundTripDates(
+                    { ...values, pickupLocation: location },
+                    setRentalRoundTripMinReturnAt,
+                    { pickupLocation: location, dropLocation }
+                );
+            }
             if (values?.serviceType === 'PARCEL') {
                 setFieldValue("senderAddress", address);
             }
@@ -1780,9 +2112,23 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             setFieldValue("dropLocation", location);
             setDropLocation(location);
             setDropSuggestions([]);
+            if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && values?.pickupLocation) {
+                estimateRentalRoundTripDates(
+                    { ...values, dropLocation: location },
+                    setRentalRoundTripMinReturnAt,
+                    { pickupLocation, dropLocation: location }
+                );
+            }
             if (values?.serviceType === 'PARCEL') {
                 setFieldValue("receiverAddress", address);
             }
+        }
+        if (isPickup || !type) {
+            await estimateRentalRoundTripMinimum(
+                { ...values, ...(isPickup ? { pickupLocation: location } : { dropLocation: location }) },
+                setRentalRoundTripMinReturnAt,
+                isPickup ? { pickup: location } : { drop: location }
+            );
         }
     }
 };
@@ -1828,39 +2174,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             if (!val.acType) { return true; } return false;
         }
     }
-    // const handlePickupMarkerDragEnd = useCallback((event) => {
-    //     const newLat = event.latLng.lat();
-    //     const newLng = event.latLng.lng();
-    //     setPickupLocation({ lat: newLat, lng: newLng });
-
-    //     // Fetch the address using Geocoding API
-    //     const geocoder = new window.google.maps.Geocoder();
-    //     geocoder.geocode({ location: { lat: newLat, lng: newLng } }, (results, status) => {
-    //         if (status === 'OK' && results[0]) {
-    //             setPickupAddress(results[0].formatted_address);
-    //             setFieldValue("pickupAddress", results[0].formatted_address);
-    //         } else {
-    //             setPickupAddress('Address not found');
-    //         }
-    //     });
-    // }, []);
-
-    // const handleDropMarkerDragEnd = useCallback((event) => {
-    //     const newLat = event.latLng.lat();
-    //     const newLng = event.latLng.lng();
-    //     setDropLocation({ lat: newLat, lng: newLng });
-
-    //     // Fetch the address using Geocoding API
-    //     const geocoder = new window.google.maps.Geocoder();
-    //     geocoder.geocode({ location: { lat: newLat, lng: newLng } }, (results, status) => {
-    //         if (status === 'OK' && results[0]) {
-    //             setFieldValue("dropAddress", results[0].formatted_address);
-    //             setDropAddress(results[0].formatted_address);
-    //         } else {
-    //             setDropAddress('Address not found');
-    //         }
-    //     });
-    // }, []);
 
     const getStatusDisplay = (status) => {
         const statusLower = status?.toLowerCase();
@@ -2003,9 +2316,6 @@ const isQuoteAdminDiscountEffective = isAdminDiscountEffective(String(quoteDetai
 const isAdminDiscountPresent = Number(quoteDetails?.adminDiscount?.discountValue || 0) > 0;
 const hasNormalDiscount = useSystemAmountDiscount || useSystemPercentDiscount;
 const hasEffectiveAdminDiscount = BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent;
-// const finalTotalLabel = hasNormalDiscount || hasEffectiveAdminDiscount
-//     ? (cancelChargeApplicable ? "Final Total (After Discounts + Cancel Charge):" : "Final Total (After Discounts):")
-//     : (cancelChargeApplicable ? "Final Total (After Cancel Charge):" : "Final Total:");
 const finalTotalAfterDiscounts =
     BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && isAdminDiscountPresent
         ? finalEstimatedFare
@@ -2024,42 +2334,42 @@ const priceDetailsCardClass = isPeakHour
                 <div className='py-2  rounded-xl flex justify-between bg-white mb-2'>
                     {customerData && (
                         <div className="p-2 flex w-[40%] flex-col relative">
+                            <div className="relative w-full">
                             <input
                                 type="text"
-                                className="relative w-full py-2 px-8 border  rounded-xl text-sm bg-gray-100 pr-10"
+                                className="w-full py-2 pl-9 pr-9 border rounded-xl text-sm bg-gray-100"
                                 placeholder="Search by booking ID or customer"
                                 value={searchText}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    setSearchText(value);
-                                    setSearchBookingId('');
-                                    searchBookings(value);
-                                }}
-                            />
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setSearchText(value);
+                                        setSearchBookingId('');
+                                        setSelectedCustomer(0);
+                                        setSelectedSearchResult(null);
+                                        setSelectedSearchEntityType('');
+                                        setSearchValidationError('');
+                                        searchBookings(value);
+                                    }}
+                                    />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                                 <MagnifyingGlassIcon className="w-5 h-5 text-gray-600" />
                             </div>
-                            {(searchText || searchBookingId) && (
-                                <button
+                                {(searchText || searchBookingId) && (
+                                        <button
                                     type="button"
                                     // className="bg-white text-gray-500 hover:text-gray-700"
                                     aria-label="Clear search"
-                                    onClick={() => { setSearchText(''); 
+                                    onClick={() => {
+                                                    clearBookingSearchState();
                                                     searchBookings('');
-                                                    setSearchBookingId(''); 
-                                                    setSelectedCustomer(0);
-                                                    setSearchResults([]); 
-                                                    
-                                                    sessionStorage.removeItem(bookingSearchKey);
-                                                    sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
-                                                   if (refreshFn) refreshFn();
-                                                   
+                                                    if (refreshFn) refreshFn();
                                                 }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 leading-none"
                                 >
                                     X
                                 </button>
                             )}
+                            </div>
                             {searchResults.length > 0 && (
                                 <ul className="absolute top-full left-0 w-full border rounded-lg bg-white mt-2 max-h-60 overflow-y-auto z-10">
                                     {searchResults.map((result, index) => (
@@ -2067,39 +2377,58 @@ const priceDetailsCardClass = isPeakHour
                                             key={result?.bookingNumber || result?.id || [result?.firstName, result?.phoneNumber].filter(Boolean).join('-') || index}
                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                             onClick={() => {
-                                                if (result?.type == 'booking') {
-                                                    setSelectedCustomer(0);
-                                                    setSearchBookingId(result?.bookingNumber);
-                                                    setSearchText(result?.bookingNumber);
-                                                } else {
-                                                    const label = [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
-                                                    setSearchText(label.trim());
-                                                    setSelectedCustomer(result?.id);
-                                                    setSearchBookingId('');
-                                                }
+                                                    setSelectedSearchResult(result);
+                                                    setSelectedSearchEntityType('');
+                                                    setSearchValidationError('');
+                                                    setSearchText(getSearchResultLabel(result).trim());
                                                 setSearchResults([]);
-                                                if (refreshFn) refreshFn();
+                                                // if (refreshFn) refreshFn();
                                             }}
                                         >
-                                            {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
+                                            {getSearchResultLabel(result)}
                                         </li>
                                     ))}
                                 </ul>
+	                            )}
+	                                {selectedSearchResult && (
+	                                    <div className="flex items-center gap-2 mt-2">
+	                                        {[
+	                                            { value: 'all', label: 'All', activeClass: 'bg-slate-700 text-white', inactiveClass: 'bg-slate-100 text-slate-700' },
+	                                            { value: 'booking', label: 'Booking', activeClass: 'bg-orange-600 text-white', inactiveClass: 'bg-orange-50 text-orange-700' },
+	                                            { value: 'customer', label: 'Customer', activeClass: 'bg-green-600 text-white', inactiveClass: 'bg-green-50 text-green-700' },
+	                                        ].map((option) => (
+	                                            <button
+	                                                key={option.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedSearchEntityType(option.value);
+                                                    setSearchValidationError('');
+                                                }}
+	                                                className={`px-3 py-1 rounded-md text-xs font-semibold border ${
+	                                                    selectedSearchEntityType === option.value
+	                                                        ? option.activeClass
+	                                                        : option.inactiveClass
+	                                                }`}
+	                                            >
+                                                {option.label}
+                                            </button>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={applySelectedSearch}
+                                            className="px-4 py-1 rounded-md text-xs font-semibold bg-blue-500 text-white"
+                                        >
+                                            Search
+                                        </button>
+                                    </div>
+                                )}
+                                {searchValidationError && (
+                                    <Typography className="text-xs text-red-600 mt-1">
+                                        {searchValidationError}
+                                    </Typography>
                             )}
                         </div>
                     )}
-                    {/* {customerData && <div className="p-2 flex w-[40%]">
-                        <SearchableDropdown
-                            searchVal={setCustomerNumber}
-                            addVal={addCustomerNumber}
-                            selected={editBooking?.customerId} 
-                            options={customerData} 
-                            onSelect={(val) => {
-                                setSelectedCustomer(val.id);
-                            }}
-                            setSearchBookingId={(value) => {setSearchBookingId(value)}}
-                        />
-                    </div>} */}
                     {String(props.typeProp || "").toUpperCase() !== "RETURN_TRIPS" &&
                         !String(location.pathname || "").toLowerCase().includes("/booking/list/returntrips") && (
                     <button
@@ -2115,7 +2444,7 @@ const priceDetailsCardClass = isPeakHour
                     
 
                 </div>
-                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} />
+	                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearBookingSearchState} />
             </div>
             <div>
                 {isOpen && (
@@ -2205,10 +2534,16 @@ const priceDetailsCardClass = isPeakHour
                                         validateOnMount={true}
                                         enableReinitialize={true}
                                     >
-                                       {({ handleSubmit, values, setFieldValue, isValid, dirty, handleChange, errors, status }) => {
+                                       {({ handleSubmit, values, setFieldValue, setFieldError, isValid, dirty, handleChange, errors, status }) => {
                                             const getCurrentPremiumOptions = () => {
                                                 return premiumServicesMap[values?.serviceType] || [];
                                             };
+                                            const visibleCategories = getMatchingCategories(categoryOptions, values);
+                                            const categorySelectionUnavailable =
+                                                isCategoryService(values.serviceType) && visibleCategories.length === 0;
+                                            const selectedCategoryPricing = getSelectedCategoryPricing(quoteDetails, values);
+                                            const categoryCommonPricing = selectedCategoryPricing.common;
+                                            const categoryAcPricing = selectedCategoryPricing.ac;
                                             const {
                                                 driverContinueDisabled,
                                                 ridesContinueDisabled,
@@ -2273,7 +2608,7 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental
                                             );
-                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap);
+                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap, values.serviceType);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
                                             zoneCheckUpFun(values).then(zoneData => {
@@ -2385,6 +2720,37 @@ const priceDetailsCardClass = isPeakHour
                                                         <ErrorMessage name="serviceType" component="div" className="text-red-500 text-sm" />
                                                     </div>
                                                 </div>)}
+                                                {isCategoryService(values.serviceType) && (
+                                                    <div className="mb-4">
+                                                        <Typography variant="h6" className="mb-2">Choose Category</Typography>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            {visibleCategories.map((item) => {
+                                                                const selected = Number(values.categoryId) === Number(item.id);
+                                                                return (
+                                                                    <button
+                                                                        type="button"
+                                                                        key={item.id}
+                                                                        onClick={() => {
+                                                                            setQuoteDetails(null);
+                                                                            setQuoteMeta(null);
+                                                                            setFieldValue('categoryId', item.id);
+                                                                            setFieldValue('category', item.category);
+                                                                            if (isCategoryService(values.serviceType) && item.metadata) {
+                                                                                setFieldValue('luggage', item.metadata.bags ?? '');
+                                                                                setFieldValue('seaterCapacity', item.metadata.seats ?? '');
+                                                                            }
+                                                                        }}
+                                                                        className={`rounded-xl border-2 p-4 text-left transition ${selected ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-300 bg-white hover:border-blue-300'}`}
+                                                                    >
+                                                                        <div className="font-semibold text-gray-900">{item.label}</div>                                                                        
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <ErrorMessage name="categoryId" component="div" className="text-red-500 text-sm" />
+                                                        {isCategoryService(values.serviceType) && visibleCategories.length === 0 && <div className="text-sm text-red-500">No categories available for this service.</div>}
+                                                    </div>
+                                                )}
                                                 {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || (values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI')) && (
                                                     <div className='space-y-3 my-3'>
                                                         <div className={`grid grid-cols-2 gap-4 ${values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' ? 'hidden' : ''}`}>
@@ -2395,6 +2761,8 @@ const priceDetailsCardClass = isPeakHour
                                                                         setFieldValue('packageTypeSelected', 'Local');
                                                                         setCurrentPackageType('Local');
                                                                         setFieldValue('packageSelected', '');
+                                                                        setFieldValue('categoryId', '');
+                                                                        setFieldValue('category', '');
                                                                         setRange({});
                                                                         setFieldValue('fromDate', '');
                                                                         setFieldValue('toDate', '');
@@ -2416,6 +2784,8 @@ const priceDetailsCardClass = isPeakHour
                                                                             setFieldValue('packageTypeSelected', 'Outstation');
                                                                             setCurrentPackageType('Outstation');
                                                                             setFieldValue('packageSelected', '');
+                                                                            setFieldValue('categoryId', '');
+                                                                            setFieldValue('category', '');
                                                                             setRange({});
                                                                             setFieldValue('fromDate', '');
                                                                             setFieldValue('toDate', '');
@@ -2439,7 +2809,13 @@ const priceDetailsCardClass = isPeakHour
                                                                         values.serviceType === 'RENTAL_HOURLY_PACKAGE') && (
                                                                             <Button
                                                                                 color={values.tripType === 'Drop Only' ? 'blue' : 'gray'}
-                                                                                onClick={() => setFieldValue('tripType', 'Drop Only')}
+                                                                                onClick={() => {
+                                                                                    setFieldValue('tripType', 'Drop Only');
+                                                                                    if (values.serviceType === 'RENTAL') {
+                                                                                        setFieldValue('categoryId', '');
+                                                                                        setFieldValue('category', '');
+                                                                                    }
+                                                                                }}
                                                                                 variant={values?.tripType === 'Drop Only' ? 'filled' : 'outlined'}
                                                                             >
                                                                                 Drop Only
@@ -2448,7 +2824,13 @@ const priceDetailsCardClass = isPeakHour
                                                                     {(values.serviceType === 'RENTAL' || values.serviceType === 'DRIVER') && (
                                                                         <Button
                                                                             color={values.tripType === 'Round Trip' ? 'blue' : 'gray'}
-                                                                            onClick={() => setFieldValue('tripType', 'Round Trip')}
+                                                                            onClick={() => {
+                                                                                setFieldValue('tripType', 'Round Trip');
+                                                                                if (values.serviceType === 'RENTAL') {
+                                                                                    setFieldValue('categoryId', '');
+                                                                                    setFieldValue('category', '');
+                                                                                }
+                                                                            }}
                                                                             variant={values?.tripType === 'Round Trip' ? 'filled' : 'outlined'}
                                                                         >
                                                                             Round Trip
@@ -2462,9 +2844,7 @@ const priceDetailsCardClass = isPeakHour
                                                     <div className="flex gap-2">
                                                         <div>
                                                             <div className="mt-3 flex gap-3">
-                                                                {(values?.isPremiumService ||
-                                                                            values?.serviceType === 'RENTAL' ||
-                                                                            values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                                            {values?.serviceType === 'DRIVER' ? (
                                                                                 <div className="w-full">
                                                                                     <label className="flex items-center space-x-2 cursor-pointer select-none">
                                                                                         <Field
@@ -2481,10 +2861,10 @@ const priceDetailsCardClass = isPeakHour
                                                                                         <span className="text-sm font-medium text-gray-700">Enable Premium Service</span>
                                                                                     </label>
                                                                                 </div>
-                                                                            )}
+                                                                            ) : null}
                                                                             </div>
                                                                                 <div>
-                                                                    {values?.isPremiumService && (
+                                                                    {values?.serviceType === 'DRIVER' && values?.isPremiumService && (
                                                                         <div className="w-full mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                                                             <p className="text-sm font-semibold text-blue-900 mb-3">
                                                                                 Premium Options Available:
@@ -2514,11 +2894,11 @@ const priceDetailsCardClass = isPeakHour
                                                                         </div>
                                                                     )}
                                                             </div>
-                                                        <div className='pt-2'>
+                                                        <div className={values?.serviceType === 'DRIVER' ? 'pt-2' : 'hidden'}>
                                                         {!values?.isPremiumService && ( <>
                                                                 <label className="text-sm font-medium text-black-700">Car Type <span className='text-red-500 text-sm'>*</span></label>
                                                                 <div className='pt-3 grid grid-cols-6 gap-3'>
-                                                                {(values?.serviceType === 'DRIVER' || values?.serviceType === 'RENTAL' || values?.serviceType === 'RENTAL_HOURLY_PACKAGE' || values?.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                                {values?.serviceType === 'DRIVER' && (
                                                                     ['Mini', 'Sedan', 'SUV', 'MUV'].map((carType) => (
                                                                         <label key={carType} className="flex items-center space-x-2">
                                                                             <Field
@@ -2534,7 +2914,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         </label>
                                                                     )))}
                                                                 </div>
-                                                                {['DRIVER', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(values.serviceType) && errors.carType && (
+                                                                {values.serviceType === 'DRIVER' && errors.carType && (
                                                                     <div className="text-red-500 text-sm mt-1">
                                                                         {errors.carType}
                                                                     </div>
@@ -2620,6 +3000,16 @@ const priceDetailsCardClass = isPeakHour
                                                                         setFieldValue('fromDate', '');
                                                                         setFieldValue('toDate', '');
                                                                     }
+                                                                    if (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && String(values?.tripType || '').toUpperCase() === 'ROUND TRIP' && values?.pickupLocation && values?.dropLocation) {
+                                                                        estimateRentalRoundTripDates({
+                                                                            ...values,
+                                                                            rideDate: formattedDate,
+                                                                            rideTime: formattedTime,
+                                                                        }, setRentalRoundTripMinReturnAt, {
+                                                                            pickupLocation,
+                                                                            dropLocation,
+                                                                        });
+                                                                    }
                                                                 }}
                                                             />
                                                             <ErrorMessage name="rideDateTime" component="div" className="text-red-500 text-sm" />
@@ -2639,8 +3029,14 @@ const priceDetailsCardClass = isPeakHour
                                                                 disabled={bookingStage === 1}
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                                 value={values.toDate && values.toTime ? `${values.toDate}T${values.toTime}` : ''}
-                                                                min={values.rideDate && values.rideTime? `${values.rideDate}T${values.rideTime}` : `${moment().format('YYYY-MM-DD')}T00:00`}
+                                                                min={rentalRoundTripMinReturnAt || (values.rideDate && values.rideTime ? `${values.rideDate}T${values.rideTime}` : `${moment().format('YYYY-MM-DD')}T00:00`)}
                                                                  onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                                                onBlur={(e) => {
+                                                                    const minimumReturn = rentalRoundTripMinReturnAt ? moment(rentalRoundTripMinReturnAt) : null;
+                                                                    setFieldError('returnDateTime', minimumReturn?.isValid() && e.target.value && moment(e.target.value).isBefore(minimumReturn)
+                                                                        ? `Return time must be on or after ${minimumReturn.format('DD-MM-YYYY HH:mm')}`
+                                                                        : '');
+                                                                }}
                                                                 onChange={(e) => {
                                                                     const selectedDateTime = e.target.value;
                                                                     const formattedDate = moment(selectedDateTime).format('YYYY-MM-DD');
@@ -2654,7 +3050,12 @@ const priceDetailsCardClass = isPeakHour
                                                                     }
                                                                 }}
                                                             />
-                                                            <ErrorMessage name="returnDateTime" component="div" className="text-red-500 text-sm" />
+                                                            <ErrorMessage name="returnDateTime" component="div" className="relative z-10 block min-h-[1.25rem] mt-1 px-1 text-red-500 text-sm leading-5 break-words" />
+                                                            {rentalRoundTripEstimatedDurationText && (
+                                                                <div className="mt-1 text-sm text-gray-600">
+                                                                    Estimated duration: {rentalRoundTripEstimatedDurationText}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -2705,64 +3106,10 @@ const priceDetailsCardClass = isPeakHour
                                                         </div>
                                                     </div>
                                                 }
-
-
-                                                {/* {(values.serviceType === 'DRIVER' || values.serviceType === 'CAB') && values.packageTypeSelected === "Outstation" && (
-                                    <div className="space-y-4 mb-4">
-                                        <Typography variant="h6" className="text-center">OR</Typography>
-                                        <Button
-                                            fullWidth
-                                            color="blue"
-                                            disabled={bookingStage === 1}
-                                            onClick={() => setDatePickerVisible(!datePickerVisible)}
-                                        >
-                                            Select Date Range
-                                        </Button>
-                                        {datePickerVisible && (
-                                            <div className='w-full'>
-                                                <DatePicker
-                                                    selected={values.fromDate}
-                                                    onChange={(dates) => {
-                                                        //console.log(values.rideDate, " ", dates.start)
-                                                        handleDateChange(dates, setFieldValue, handleChange, values.rideDate)
-                                                    }}
-                                                    startDate={values.fromDate}
-                                                    endDate={values.toDate}
-                                                    selectsRange
-                                                    inline
-                                                    className="w-full h-full"
-                                                    minDate={new Date()}
-                                                />
-                                            </div>
-                                        )}
-                                        {(range.startDate && range.endDate) && (
-                                            <Card className="p-4">
-                                                <div className="grid grid-cols-2 gap-4 mb-2">
-                                                    <div>
-                                                        <Typography>Departure</Typography>
-                                                        <Typography variant="h4">{new Date(range.startDate).getDate()}</Typography>
-                                                        <Typography>{new Date(range.startDate).toLocaleString('default', { month: 'short' })}</Typography>
-                                                    </div>
-                                                    <div>
-                                                        <Typography>Return</Typography>
-                                                        <Typography variant="h4">{new Date(range.endDate).getDate()}</Typography>
-                                                        <Typography>{new Date(range.endDate).toLocaleString('default', { month: 'short' })}</Typography>
-                                                    </div>
-                                                </div>
-                                                <Typography variant='h6'>
-                                                    Selected Date: {countDaysBetween(range.startDate, range.endDate)} days
-                                                </Typography>
-                                                <Typography variant='h6'>
-                                                    Total Amount: ₹ {countDaysBetween(range.startDate, range.endDate) * 1000}
-                                                </Typography>
-                                            </Card>
-                                        )}
-                                    </div>
-                                )} */}
                                                 {(values.serviceType === 'RIDES' || values.serviceType === 'AUTO') &&  (
                                                     <div className="mt-6">
                                                         <div className="mt-3 space-y-5">
-                                                            <div className="flex items-center space-x-3 ml-2">
+                                                            <div className="hidden">
                                                                 <Field
                                                                     type="checkbox"
                                                                     name="isPremiumService"
@@ -2776,7 +3123,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 />
                                                                 <span className="text-sm font-medium text-gray-700">Enable Premium Service</span>
                                                             </div>
-                                                            {values?.isPremiumService && (
+                                                            {values?.serviceType === 'DRIVER' && values?.isPremiumService && (
                                                                 <div className="w-full mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                                                                     <p className="text-sm font-semibold text-blue-900 mb-3">
                                                                         Premium Options Available:
@@ -2805,7 +3152,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     )}
                                                                 </div>
                                                             )}
-                                                            {!values.isPremiumService && values.serviceType && ["RIDES"].includes(values.serviceType) && (
+                                                            {values?.serviceType === 'DRIVER' && !values.isPremiumService && values.serviceType && ["RIDES"].includes(values.serviceType) && (
                                                                 <>
                                                                 <div className='ml-2'>
                                                                     <label className="text-sm font-medium text-black-700">Car Type <span className='text-red-500 text-sm'>*</span></label>
@@ -2996,12 +3343,6 @@ const priceDetailsCardClass = isPeakHour
                                                                 name="packageSelected"
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
                                                                 value={values.packageSelected}
-                                                                // onFocus={() =>  console.log('[DRIVER PACKAGE DROPDOWN]:', {
-                                                                //     packageType: values.packageTypeSelected,
-                                                                //     packageCount: packageTypeSelectedData.length,
-                                                                //     packages: packageTypeSelectedData,
-                                                                //     disabled: bookingStage === 1,
-                                                                // })}
                                                                 onChange={(e) => {
                                                                     const selectedId = e.target.value;
                                                                     setFieldValue('packageSelected', selectedId);
@@ -3262,30 +3603,10 @@ const priceDetailsCardClass = isPeakHour
                                                         <ErrorMessage name="driverEndAddress" component="div" className="text-red-500 text-sm" />
                                                     </div>
                                                 )}
-                                                 {/* Source Type Field for all services */}
                                                 {values.serviceType && (
                                                     <>
                                                         {values.serviceType === 'PARCEL' && (
                                                             <div className="p-2 space-y-3">
-                                                                {/* <label className="text-sm font-medium text-gray-700">
-                                                                    Weight Range <span className="text-red-500">*</span>
-                                                                </label>
-                                                                <div className="grid grid-cols-2 gap-3 pt-1">
-                                                                    {[
-                                                                        ...(values.parcelVehicleType === 'AUTO' ? [{ value: 'W_8_40', label: '8 to 40 Kg' }] : [{ value: 'W_0_7', label: '0 to 7 Kg' }]),
-                                                                    ].map((opt) => (
-                                                                        <label key={opt.value} className="flex items-center space-x-2 cursor-pointer">
-                                                                            <Field
-                                                                                type="radio"
-                                                                                name="weightRange"
-                                                                                value={opt.value}
-                                                                                className="h-4 w-4 text-primary-600"
-                                                                            />
-                                                                            <span className="text-sm text-gray-800">{opt.label}</span>
-                                                                        </label>
-                                                                    ))}
-                                                                </div>
-                                                                <ErrorMessage name="weightRange" component="div" className="text-red-500 text-sm" /> */}
 
                                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                                                                     <div>
@@ -3463,7 +3784,6 @@ const priceDetailsCardClass = isPeakHour
                                                                     >
                                                                         <option value="">Select type</option>
                                                                         <option value="PERCENTAGE">PERCENTAGE</option>
-                                                                        {/* <option value="AMOUNT">AMOUNT</option> */}
                                                                     </Field>
                                                                 </div>
                                                                 <div>
@@ -3519,50 +3839,12 @@ const priceDetailsCardClass = isPeakHour
                                                                     {Number(quoteDetails.amount?.distanceEstimated).toFixed(2) || 0} kms
                                                                 </Typography>
                                                             </div>
-                                                            {/* <div className="flex justify-between">
-                                                                                <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                                <Typography>
-                                                                                    {values.carType || quoteDetails.amount?.carType || ''}
-                                                                                </Typography>
-                                                                            </div> */}
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Base Fare:</Typography>
                                                                 <Typography>
                                                                     ₹ {quoteDetails.amount?.fareBreakdown?.baseFare}
                                                             </Typography>
                                                         </div>
-                                                                        {/* <div className="flex justify-between">
-                                                                        <Typography color="gray" variant="h6">Estimated Fare</Typography>
-                                                                        <Typography>
-                                                                            ₹ {(() => {
-                                                                            const selectedPackage = packageTypeSelectedData.find((pkg) => pkg.id === Number(values.packageSelected));
-                                                                            if (!selectedPackage) return "";
-
-                                                                                let amount = 0;
-                                                                            switch (values.carType?.toUpperCase()) {
-                                                                                case "MINI":
-                                                                                        amount = Number(selectedPackage.price || 0);
-                                                                                        break;
-                                                                                case "SEDAN":
-                                                                                        amount = Number(selectedPackage.price || 0);
-                                                                                        break;
-                                                                                case "SUV":
-                                                                                        amount = Number(selectedPackage.price || 0);
-                                                                                        break;
-                                                                                case "MUV":
-                                                                                        amount = Number(selectedPackage.priceMVP || 0);
-                                                                                        break;
-                                                                                default:
-                                                                                return "";
-                                                                            }
-
-                                                                                if (!amount || Number.isNaN(amount)) {
-                                                                                    return "";
-                                                                                }
-                                                                                return Math.round(amount);
-                                                                            })()}
-                                                                        </Typography>
-                                                                        </div> */}
                                                                         {quoteDetails.amount?.gst_amount > 0 && (
                                                                          <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">TAX Amount:</Typography>
@@ -3660,10 +3942,6 @@ const priceDetailsCardClass = isPeakHour
                                                                                     <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                                 </div>
                                                                             )}
-                                                                            {/* <div className='flex justify-between'>
-                                                                                <Typography color="gray" variant="h6">{finalTotalLabel} check</Typography>
-                                                                                <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                            </div> */}
                                                                     </div>
                                                                     </div>
                                                                 </Card>
@@ -3682,18 +3960,20 @@ const priceDetailsCardClass = isPeakHour
                                                             <hr className="my-2 border border-black" />
                                                             <div className="mt-4">
                                                                 <>
+                                                                    {values?.serviceType === 'DRIVER' && quoteDetails?.amount?.isPremiumFare && (
+                                                                        <div className="grid grid-cols-2 justify-between">
+                                                                            <Typography color="gray" variant="h6">Car Service</Typography>
+                                                                            <Typography className="font-semibold">Premium Car Service</Typography>
+                                                                            <Typography color="gray" variant="h6">Premium Car Type</Typography>
+                                                                            <Typography>{quoteDetails.amount?.premiumDetails?.appliedCarType}</Typography>
+                                                                        </div>
+                                                                    )}
                                                                     {values?.serviceType === 'RENTAL_HOURLY_PACKAGE' ? (
                                                                         <div className="space-y-3">
                                                                             <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Package Period:</Typography>
                                                                                 <Typography>
                                                                                     {quoteDetails.amount?.packageDetails?.period || ''} hours
-                                                                                </Typography>
-                                                                            </div>
-                                                                            <div className="flex justify-between">
-                                                                                <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                                <Typography>
-                                                                                    {quoteDetails.amount?.carType || ''}
                                                                                 </Typography>
                                                                             </div>
                                                                             <div className="flex justify-between">
@@ -3758,7 +4038,6 @@ const priceDetailsCardClass = isPeakHour
                                                                                     <div className="flex justify-between">
                                                                                         <Typography color="gray" variant="h6">Total Estimated Fare:</Typography>
                                                                                         <Typography className='font-roboto-medium text-lg text-gray-900'>
-                                                                                            {/* ₹ {(quoteDetails.amount?.packageDetails?.price) - (quoteDetails.amount?.packageDetails?.price * quoteDetails?.discount?.percentage / 100)} */}
                                                                                             ₹ {(() => {
                                                                                                 const carType = quoteDetails?.amount?.carType?.toUpperCase();
                                                                                                 const pkg = quoteDetails?.amount?.packageDetails;
@@ -3771,11 +4050,6 @@ const priceDetailsCardClass = isPeakHour
                                                                                                 return Math.round(discounted);
                                                                                             })()}
 
-                                                                                            {/* {(() => {
-                                                                                                const packagePrice = Number(quoteDetails.amount?.packageDetails?.price) || 0;
-                                                                                                const discountPercentage = Number(quoteDetails.discount?.percentage) || 0;
-                                                                                                return packagePrice - (packagePrice * discountPercentage / 100);
-                                                                                            })()} */}
                                                                                         </Typography>
                                                                                     </div>
                                                                                 </>
@@ -3819,25 +4093,9 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </div>
                                                                         )}
-                                                                        {/* <div className='flex justify-between'>
-                                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
-                                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </div> */}
                                                                         </div>
                                                                     ) : (
                                                                     <div className="grid grid-cols-2 justify-between">
-                                                                        {quoteDetails?.amount?.isPremiumFare && (
-                                                                            <>
-                                                                                <Typography color="gray" variant="h6">Car Service</Typography>
-                                                                                <Typography className='font-semibold'> {quoteDetails.amount?.isPremiumFare ? "Premium Car Service" : "Not a Premium Car Services "}</Typography>
-                                                                            </>
-                                                                        )}
-                                                                        {quoteDetails?.amount?.isPremiumFare && (
-                                                                            <>
-                                                                                <Typography color="gray" variant="h6">Premium Car Type</Typography>
-                                                                                <Typography> {quoteDetails.amount?.premiumDetails?.appliedCarType}</Typography>
-                                                                            </>
-                                                                        )}
 
                                                                     {values?.serviceType === 'PARCEL' && (
                                                                         <>
@@ -3939,10 +4197,7 @@ const priceDetailsCardClass = isPeakHour
                                                                         </>)}
                                                                     {values?.serviceType === 'DRIVER' && values?.packageTypeSelected === 'Outstation' && (
                                                                         <>
-                                                                            {/* <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                            <Typography>
-                                                                                {values.carType || quoteDetails.amount?.carType || ''}
-                                                                            </Typography> */}
+                                                                          
                                                                             <Typography color="gray" variant="h6">Base Fare</Typography>
                                                                             <Typography>
                                                                                 ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}
@@ -3970,22 +4225,7 @@ const priceDetailsCardClass = isPeakHour
                                                                                 </Typography>
                                                                             </>}
                                                                         </>)}
-                                                                        {/* {quoteDetails.amount.driverWithin > 0 && values.serviceType !== 'DRIVER' &&
-                                                                        <>
-                                                                        <Typography color="gray" variant="h6">Driver Km For Pickup Location</Typography>
-                                                                        <Typography>
-                                                                            {quoteDetails.amount.driverWithin + ' Km'}
-                                                                        </Typography>
-                                                                        </>
-                                                                        } */}
-                                                                        {(quoteDetails.amount?.isPremiumFare !== true) && (values?.serviceType === 'RIDES' || values?.serviceType === "RENTAL" || values?.serviceType === "RENTAL_DROP_TAXI" || values?.serviceType === "RENTAL_HOURLY_PACKAGE") && (
-                                                                            <>
-                                                                            <Typography color="gray" variant="h6">Car Type:</Typography>
-                                                                        <Typography>
-                                                                            {quoteDetails.amount?.carType || ''}
-                                                                        </Typography>   
-                                                                        </>)}
-                                                                        
+                                                                      
                                                                         {quoteDetails.amount?.isPrimeLocation === true && quoteDetails.amount?.rideSurchargeAmount > 0 && 
                                                                         <>
                                                                         <Typography color="gray" variant="h6">Surcharge Applied</Typography>
@@ -4044,19 +4284,15 @@ const priceDetailsCardClass = isPeakHour
                                                                                 {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && isQuoteAdminDiscountEffective && quoteDetails.adminDiscount?.discountValue > 0 &&
                                                                             (
                                                                                 <>
-                                                                                {/* <div className='flex justify-between'> */}
                                                                                     <Typography color="gray" variant="h6">Admin Discount Applied:</Typography>
                                                                                     <Typography>
                                                                                          {adminDiscountValueDisplay}
                                                                                     </Typography>
-                                                                                {/* </div> */}
-                                                                                 {/* <div className='flex justify-between'> */}
                                                                                     <Typography color="gray" variant="h6">Admin Discount Applied After Total estimated Fare:</Typography>
                                                                                     <Typography>
                                                                                        ₹ {Math.max(0, Math.round(finalEstimatedFare))}
 
                                                                                     </Typography>
-                                                                                {/* </div> */}
                                                                             </>)
                                                                             }                                                                                                                                                                                                                
                                                                         {cancelChargeApplicable && (
@@ -4065,22 +4301,6 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </>
                                                                         )}
-                                                                        {/* <>
-                                                                            <Typography color="gray" variant="h6">{finalTotalLabel}</Typography>
-                                                                            <Typography>₹ {Math.max(0, Math.round(finalTotalAfterDiscountsWithCancelCharge))}</Typography>
-                                                                        </> */}
-                                                                        {/* <Typography color="gray" variant="h6">Extra Km Price</Typography>
-                                                                        <Typography>
-                                                                            ₹ {quoteDetails.amount.extraKmPrice}
-                                                                        </Typography> */}
-                                                                        {/* <Typography color="gray" variant="h6">difference Days</Typography>
-                                                                        <Typography>
-                                                                            ₹ {quoteDetails.amount.differenceDays}
-                                                                        </Typography> */}
-                                                                        {/* <Typography color="gray" variant="h6">driver Charge</Typography>
-                                                                        <Typography>
-                                                                            ₹ {quoteDetails.amount.driverCharge}
-                                                                        </Typography> */}
                                                                     </div>
                                                                     )}
                                                                 </>
@@ -4089,39 +4309,7 @@ const priceDetailsCardClass = isPeakHour
                                                     </Card>
                                                 }
 
-                                                {/* {values.pickupAddress && isLoaded && (
-                                    <GoogleMap
-                                        mapContainerStyle={{ width: '100%', height: '50%' }}
-                                        center={mapCenter}
-                                        zoom={mapZoom}
-                                        onLoad={(map) => {
-                                            mapRef.current = map;
-                                        }}
-                                    >
-                                        {pickupLocation && (
-                                            <Marker
-                                                position={pickupLocation}
-                                                draggable={true}
-                                                icon={{
-                                                    url: '/img/Pickup-Location.png',
-                                                    scaledSize: new window.google.maps.Size(40, 40),
-                                                }}
-                                                onDragEnd={handlePickupMarkerDragEnd}
-                                            />
-                                        )}
-                                        {dropLocation && (
-                                            <Marker
-                                                position={dropLocation}
-                                                draggable={true}
-                                                icon={{
-                                                    url: '/img/Drop-Location.png',
-                                                    scaledSize: new window.google.maps.Size(40, 40)
-                                                }}
-                                                onDragEnd={handleDropMarkerDragEnd}
-                                            />
-                                        )}
-                                    </GoogleMap>
-                                )} */}
+                                               
                                                 {values.serviceType === 'RENTAL_HOURLY_PACKAGE' && quoteDetails && (
                                                     <div className="mb-5 space-y-4 shadow-md shadow-gray-700 bg-white rounded-xl p-4">
                                                         <Typography className="font-roboto-medium text-lg text-gray-900">
@@ -4133,14 +4321,11 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                                         <Typography className=" text-sm text-gray-700">
                                                                 • The first additional <span className="font-bold text-black">
-                                                                    {quoteDetails.expectedPackageDetails?.freeExtraMinutes}
+                                                                    {categoryCommonPricing?.freeExtraMinutes ?? quoteDetails.expectedPackageDetails?.freeExtraMinutes}
                                                                                 </span> minutes over customer <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours </span>, trip time are free. After that, customer will be charged <span className="font-bold text-black">₹{(() => {
                                                                     const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
                                                                     return selectedPackage ? (
-                                                                        values.carType === 'Mini' ? selectedPackage.additionalMinCharge :
-                                                                            values.carType === 'Sedan' ? selectedPackage.additionalMinChargeSedan :
-                                                                                values.carType === 'SUV' ? selectedPackage.additionalMinChargeSuv :
-                                                                                    selectedPackage.additionalMinChargeMVP
+                                                                        categoryCommonPricing?.additionalMinCharge
                                                                     ) : '';
                                                                 })()}</span> per minute.
                                                             </Typography>
@@ -4155,15 +4340,12 @@ const priceDetailsCardClass = isPeakHour
                                                                     const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
                                                                 if (!selectedPackage) return '';
                                                                 const price =
-                                                                        values.carType === 'Mini' ? selectedPackage.kilometerPrice :
-                                                                            values.carType === 'Sedan' ? selectedPackage.kilometerPriceSedan :
-                                                                                values.carType === 'SUV' ? selectedPackage.kilometerPriceSuv :
-                                                                                    selectedPackage.kilometerPriceMVP;
+                                                                        categoryCommonPricing?.kilometerPrice || categoryAcPricing?.acKilometerPrice;
                                                                 return Math.round(Number(price || 0));
                                                                 })()}</span> will be charged.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Night charge of <span className="font-bold text-black">₹ {packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.nightCharge || ''}</span> will be charged after {convertTimeFormat(packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.nightHoursFrom || '')}.
+                                                                • Night charge of <span className="font-bold text-black">₹ {categoryCommonPricing?.nightCharge || ''}</span> will be charged after {convertTimeFormat(categoryCommonPricing?.nightHoursFrom || '')}.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Hourly Packages are available only for Local services.
@@ -4204,7 +4386,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography> 
                                                              <Typography className="text-sm text-gray-700">
                                                                 • The first additional <span className="font-bold text-black">
-                                                                                {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
+                                                                                {categoryCommonPricing?.freeExtraMinutes ?? quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
                                                             {quoteDetails.amount?.driverWithin > 0 && 
                                                             <Typography className="text-sm text-gray-700">
@@ -4217,9 +4399,9 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             )}
 
-                                                            {quoteDetails.expectedPackageDetails?.nightCharge > 0 && (
+                                                            {Number(categoryCommonPricing?.nightCharge || quoteDetails.expectedPackageDetails?.nightCharge || 0) > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.expectedPackageDetails?.nightCharge || '0')}</span>
+                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(categoryCommonPricing?.nightCharge || quoteDetails.expectedPackageDetails?.nightCharge || 0)}</span>
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.extraNightCharge > 0 && (
@@ -4285,7 +4467,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                                <Typography className="text-sm text-gray-700">
                                                                 The first additional <span className="font-bold text-black">
-                                                                                {quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
+                                                                                {categoryCommonPricing?.freeExtraMinutes ?? quoteDetails.expectedPackageDetails?.freeExtraMinutes}</span> minutes over customer estimated trip time are free. After that, customer will be charged <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.fareBreakdown?.extraHours?.rate || '')}</span> per minute.
                                                             </Typography>
                                                             {quoteDetails.amount?.driverWithin > 0 && 
                                                             <Typography className=" text-sm text-gray-700">
@@ -4336,7 +4518,7 @@ const priceDetailsCardClass = isPeakHour
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
 
                                                 {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady || Boolean(errors.returnDateTime)} onClick={() => getQuoteOutstationDetails(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
@@ -4346,19 +4528,19 @@ const priceDetailsCardClass = isPeakHour
                                                     </Button>
                                                 }
                                                  {values.serviceType == 'RENTAL_DROP_TAXI' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
 
                                                 {values.serviceType == 'RIDES' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
 
                                                 {values.serviceType == 'RENTAL_HOURLY_PACKAGE' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
@@ -4368,7 +4550,7 @@ const priceDetailsCardClass = isPeakHour
                                                     </Button>
                                                 }
                                                  {values.serviceType == 'AUTO' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }

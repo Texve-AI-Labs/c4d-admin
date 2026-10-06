@@ -92,10 +92,7 @@ const formatVehicleTypeValue = (value) => {
 
   if (normalized === "AUTO") return "Auto";
   if (normalized === "BIKE") return "Bike";
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
 
   return raw
     .toLowerCase()
@@ -373,6 +370,8 @@ const CompletedOnboardingDetails = () => {
     return Object.entries(account)
       .filter(([key, value]) => {
         if (["requiredDocuments", "uploads", "accountDocumentStatus", "vehicleDocumentStatus", "cab"].includes(key)) return false;
+        // `zone` mirrors `district` in the account payload; display only the canonical Zone row.
+        if (key === "zone") return false;
         if (value === null || value === undefined || value === "") return false;
         if (typeof value === "object") return false;
         return true;
@@ -546,6 +545,7 @@ const CompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        zone: accountDraft?.district || "",
         accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
@@ -955,8 +955,8 @@ const CompletedOnboardingDetails = () => {
                               }
                               setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                             }}
-                            className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                            disabled={key === "type"}
+                            className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                            disabled={key === "type" || key === "phoneNumber"}
                             maxLength={key === "phoneNumber" ? 10 : undefined}
                           />
                         )}

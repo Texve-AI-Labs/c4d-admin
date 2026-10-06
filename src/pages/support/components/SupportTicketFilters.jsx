@@ -30,7 +30,16 @@ function SupportTicketFilters({
         </Select>
 
         <Input type="number" label="Booking ID" value={filters.bookingId} onChange={(e) => onFilterChange("bookingId", e.target.value)} />
-        <Input type="text" label="Category" value={filters.category} onChange={(e) => onFilterChange("category", e.target.value)} />
+
+         <Select label="Category" value={filters.category} onChange={(value) => onFilterChange("category", value || "")}>
+          <Option value="">All</Option>
+          <Option value="Driver asked extra fare">Driver asked extra fare</Option>
+          <Option value="Payment issue">Payment issue</Option>
+          <Option value="I left an item">I left an item</Option>
+          <Option value="Driver behavior issue">Driver behavior issue</Option>
+          <Option value="Need invoice">Need invoice</Option>
+        </Select>        
+
         <Input type="date" label="From Date" value={filters.fromDate} onChange={(e) => onFilterChange("fromDate", e.target.value)} />
         <Input type="date" label="To Date" value={filters.toDate} onChange={(e) => onFilterChange("toDate", e.target.value)} />
       </div>

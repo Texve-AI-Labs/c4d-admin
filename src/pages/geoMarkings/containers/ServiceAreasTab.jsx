@@ -162,6 +162,10 @@ const ServiceAreasTab = () => {
     setCoordinates(Array.isArray(coords) ? [...coords] : coords);
   };
 
+  const handleDraftChange = (draftCoordinates) => {
+    setCoordinates(Array.isArray(draftCoordinates) ? [...draftCoordinates] : []);
+  };
+
   const handlePolygonUpdate = (newCoordinates, index) => {
     setUpdatedServiceAreas(prev => {
       const updated = [...prev];
@@ -225,6 +229,7 @@ const ServiceAreasTab = () => {
           <div className="h-[500px] w-full">
             <GoogleMapDrawing
               onPolygonComplete={handlePolygonComplete}
+              onDraftChange={handleDraftChange}
               onPolygonUpdate={handlePolygonUpdate}
               onPolygonDelete={handlePolygonDelete}
               existingPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}

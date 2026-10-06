@@ -18,10 +18,7 @@ const RidesPeakHourTable = ({ priceData = []}) => {
                                     {[
                                         "Start Time",
                                         "End Time",
-                                        "Kilometer Price (MINI)",
-                                        "Kilometer Price (MUV)",
-                                        "Kilometer Price (SUV)",
-                                        "Kilometer Price (Sedan)",
+                                        "Kilometer Price",
                                     ].map((el, index) => (
                                         <th
                                             key={index}
@@ -44,10 +41,7 @@ const RidesPeakHourTable = ({ priceData = []}) => {
                                         {
                                             start,
                                             end,
-                                            kilometerPrice,
-                                            kilometerPriceMVP,
-                                            kilometerPriceSuv,
-                                            kilometerPriceSedan
+                                            kilometerPrice
                                         },
                                         key
                                     ) => {
@@ -73,21 +67,6 @@ const RidesPeakHourTable = ({ priceData = []}) => {
                                                 <td className={className}>
                                                     <Typography className="text-xs font-semibold text-blue-gray-600">
                                                         {kilometerPrice || "-"}
-                                                    </Typography>
-                                                </td>
-                                                <td className={className}>
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {kilometerPriceMVP || "-"}
-                                                    </Typography>
-                                                </td>
-                                                <td className={className}>
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {kilometerPriceSuv || "-"}
-                                                    </Typography>
-                                                </td>
-                                                <td className={className}>
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {kilometerPriceSedan || "-"}
                                                     </Typography>
                                                 </td>
                                             </tr>

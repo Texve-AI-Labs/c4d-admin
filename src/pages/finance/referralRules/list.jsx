@@ -1,5 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, CardHeader, CardBody, Typography, Spinner, Button, Chip } from "@material-tailwind/react";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Typography,
+  Spinner,
+  Button,
+  Chip,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+} from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -21,20 +33,36 @@ const TYPE_LABELS = {
   CUSTOMER: "Customer",
 };
 
+const getApiErrorMessage = (error, fallback = "Unable to fetch referral rules.") =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
+  error?.data?.error ||
+  error?.data?.message ||
+  error?.error ||
+  error?.message ||
+  fallback;
+
 const ReferralRuleList = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
 
   const fetchList = async () => {
     try {
       setLoading(true);
       const response = await ApiRequestUtils.get(API_ROUTES.GET_REFERRAL_RULE);
+      if (response?.success === false) {
+        setItems([]);
+        setApiError(getApiErrorMessage(response));
+        return;
+      }
       const list = Array.isArray(response?.data) ? response.data : [];
       setItems(list);
     } catch (error) {
       console.error("Failed to fetch referral rules:", error);
       setItems([]);
+      setApiError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -180,6 +208,17 @@ const ReferralRuleList = () => {
           )}
         </CardBody>
       </Card>
+      <Dialog open={Boolean(apiError)} handler={() => setApiError("")} size="sm">
+        <DialogHeader className="text-red-700">Alert !</DialogHeader>
+        <DialogBody divider>
+          <Typography className="text-sm font-medium text-gray-800">{apiError}</Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button className="bg-red-600" onClick={() => setApiError("")}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 };

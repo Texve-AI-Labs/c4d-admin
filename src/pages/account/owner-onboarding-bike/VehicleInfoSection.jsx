@@ -1,6 +1,16 @@
 import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import { safeText } from "@/utils/text";
+
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
 
 const formatVehicleTypeValue = (value) => {
   if (!value) return "-";
@@ -10,10 +20,7 @@ const formatVehicleTypeValue = (value) => {
 
   if (normalized === "AUTO") return "Auto";
   if (normalized === "BIKE") return "Bike";
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
   return raw
     .toLowerCase()
     .split(/\s+/)
@@ -26,8 +33,7 @@ const normalizeVehicleTypeInput = (value) => {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const normalized = raw.toUpperCase();
-  if (["AUTO", "BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") return normalized;
+  if (["AUTO"].includes(normalized)) return normalized;
   return normalized;
 };
 
@@ -377,17 +383,17 @@ const VehicleInfoSection = ({
                             />
                           )
                         ) : row.label === "Status" || row.label === "Commission Status" ? (
-                          <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                          <Chip value={safeText(row.value)} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
                         ) : row.label === "Vehicle Type" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
                             {formatVehicleTypeValue(row.value)}
                           </Typography>
                         ) : row.label === "Address" && row.value && typeof row.value === "object" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
-                            {row.value.name || row.value.address || row.value.fullText || "-"}
+                            {formatAddressValue(row.value)}
                           </Typography>
                         ) : (
-                          <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">{safeText(row.value)}</Typography>
                         )}
                       </div>
                     );
