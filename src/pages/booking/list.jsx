@@ -246,13 +246,10 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
             return 0;
         }
 
-        const propCustomerId = toPositiveNumber(customerId);
-        if (propCustomerId) {
-            return propCustomerId;
-        }
-
-        const storedContext = parseStoredJsonSafe(bookingSearchContextKey);
-        return toPositiveNumber(storedContext?.customerId);
+        // The parent owns the active customer filter. A zero value explicitly
+        // means the list must show all customers; do not resurrect stale
+        // customer IDs from sessionStorage after the booking modal closes.
+        return toPositiveNumber(customerId);
     };
 
     const getInquiryTypeFromPath = (pathname = "") => {
