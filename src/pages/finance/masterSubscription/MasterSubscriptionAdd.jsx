@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Switch } from "@material-tailwind/react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@material-tailwind/react";
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Switch } from "@material-tailwind/react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, PLAN_GROUP_CAR_TYPES } from "@/utils/constants";
 import { SUBSCRIPTION_ADD_SCHEME } from "@/utils/validations";
@@ -22,6 +22,12 @@ const getApplicableEntity = (serviceType) => {
   };
   return mapping[serviceType] || "";
 };
+
+const getErrorMessage = (error, fallbackMessage) =>
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  error?.message ||
+  fallbackMessage;
 
 const initialValues = {
   groupName: "",
@@ -99,8 +105,21 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label htmlFor="assignmentType" className="text-sm font-medium text-gray-700">Assignment Type</label>
-              <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+              <Field
+                as="select"
+                name="assignmentType"
+                className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
+                onChange={(event) => {
+                  const assignmentType = event.target.value;
+                  setFieldValue("assignmentType", assignmentType);
+                  setFieldValue("assignmentValue", assignmentType === "DRIVER_TYPE" ? "ACTING_DRIVER" : "");
+                  if (assignmentType === "DRIVER_TYPE") {
+                    setFieldValue("serviceType", "ACTING_DRIVER");
+                  }
+                }}
+              >
                 <option value="">Select Assignment Type</option>
+                <option value="DRIVER_TYPE">Driver Type</option>
                 <option value="TIER">Tier</option>
                 <option value="DRIVER_ID">Driver ID</option>
                 <option value="CAB_ID">Cab ID</option>
@@ -111,7 +130,9 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
 
             <div>
               <label htmlFor="assignmentValue" className="text-sm font-medium text-gray-700">Assignment Value</label>
-              {values.assignmentType === "TIER" ? (
+              {values.assignmentType === "DRIVER_TYPE" ? (
+                <Field type="text" name="assignmentValue" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" />
+              ) : values.assignmentType === "TIER" ? (
                 <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
                   <option value="">Select Tier</option>
                   <option value="SILVER">Silver</option>
@@ -199,7 +220,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
               <label htmlFor="description" className="text-sm font-medium text-gray-700">Description</label>
               <Field as="textarea" name="description" rows="3" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder="Description for this plan group" />
             </div>
-            <div className="flex items-center">
+            <div className="items-center hidden">
               <Field type="checkbox" name="isDefault" className="mr-2 h-4 w-4 text-primary-600 border-gray-300 rounded" />
               <label htmlFor="isDefault" className="text-sm font-medium text-gray-700">Is default</label>
             </div>
@@ -237,7 +258,11 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
           </div>
 
           <div className="overflow-x-auto">
-            <div className="grid min-w-[1350px] grid-cols-9 gap-4">
+            <div className="grid min-w-[1620px] grid-cols-10 gap-4 rounded-lg p-3">
+            <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
+              <div className="text-sm font-semibold text-gray-800">Plan 1</div>
+              <div className="text-xs text-gray-600">Default</div>
+            </div>
             <div>
               <label htmlFor="name" className="text-sm font-medium text-gray-700">Plan Name</label>
               <Field as="select" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -307,17 +332,23 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                 onChange={(e) => setFieldValue("primaryPlanStatus", e.target.checked ? "ACTIVE" : "INACTIVE")}
                   />
                 </div>
+            <div className="flex items-center justify-center rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
+              Default plan
+            </div>
              
             </div>
-          </div>
 
           {values.plans && values.plans.length > 0 && (
-            <div className="mt-6 space-y-4 overflow-x-auto">
+            <div className="mt-4 space-y-3">
               {values.plans.map((plan, index) => (
                 <div
                   key={index}
-                  className="grid min-w-[1350px] grid-cols-9 gap-4 rounded-lg p-3"
+                  className="grid min-w-[1620px] grid-cols-10 gap-4 rounded-lg p-3"
                 >
+                  <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-800">Plan {index + 2}</div>
+                    <div className="text-xs text-gray-600">Additional</div>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Plan Name</label>
                     <Field as="select" name={`plans[${index}].name`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -385,10 +416,26 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                       }
                     />
                     </div>
+                  <div className="flex items-center justify-center">
+                    <button
+                      type="button"
+                      className="rounded-md border border-red-200 p-2 text-red-600 hover:bg-red-50"
+                      title="Remove plan"
+                      onClick={() =>
+                        setFieldValue(
+                          "plans",
+                          values.plans.filter((_, planIndex) => planIndex !== index)
+                        )
+                      }
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
+          </div>
         </div>
       </div>
       <div className="flex flex-row">
@@ -414,7 +461,7 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
 }
 
 const MasterSubscriptionAdd = () => {
-  const [alert, setAlert] = useState(false);
+  const [messageModal, setMessageModal] = useState(null);
   const [geoData, setGeoData] = useState({ serviceAreas: [] });
   const navigate = useNavigate();
 
@@ -448,7 +495,7 @@ const MasterSubscriptionAdd = () => {
         effectiveFrom: values.effectiveFrom || "",
         effectiveTo: values.effectiveTo || "",
         priority: Number(values.priority) || 0,
-        carType: values.serviceType === "RIDES_RENTAL_CABS" ? values.carType || "" : "",
+        ...(values.serviceType === "RIDES_RENTAL_CABS" ? { carType: values.carType || "" } : {}),
       },
       plans: [
         {
@@ -514,24 +561,32 @@ const MasterSubscriptionAdd = () => {
       }
     } catch (error) {
       if (error.response?.status === 400 && error.response?.data?.error === "Driver has an overlapping subscription") {
-        setAlert({
-          color: "black",
+        setMessageModal({
+          title: "Alert !",
           message: "This account is already subscribed. Please check the subscription details.",
         });
-        setTimeout(() => setAlert(null), 5000);
+      } else {
+        setMessageModal({
+          title: "Alert !",
+          message: getErrorMessage(error, "Failed to create master subscription. Please try again."),
+        });
       }
     }
   };
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
-      {alert && (
-        <div className="mb-2">
-          <Alert color={alert.color} className="py-3 px-6 rounded-xl">
-            {alert.message}
-          </Alert>
-        </div>
-      )}
+      <Dialog open={Boolean(messageModal)} handler={() => setMessageModal(null)} size="sm">
+        <DialogHeader>{messageModal?.title || "Message"}</DialogHeader>
+        <DialogBody divider>
+          <p className="text-sm text-gray-700">{messageModal?.message}</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button color="blue" onClick={() => setMessageModal(null)}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
       <h2 className="text-2xl font-bold mb-4">Add Master Subscription</h2>
       <Formik
         initialValues={initialValues}

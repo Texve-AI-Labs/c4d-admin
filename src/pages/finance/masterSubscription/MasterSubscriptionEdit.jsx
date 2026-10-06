@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { Button, Switch } from "@material-tailwind/react";
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Switch } from "@material-tailwind/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, PLAN_GROUP_CAR_TYPES } from "@/utils/constants";
@@ -21,6 +22,12 @@ const getApplicableEntity = (serviceType) => {
   };
   return mapping[serviceType] || "";
 };
+
+const getErrorMessage = (error, fallbackMessage) =>
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  error?.message ||
+  fallbackMessage;
 
 const initialValuesTemplate = {
   groupName: "",
@@ -92,6 +99,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               <label htmlFor="assignmentType" className="text-sm font-medium text-gray-700">Assignment Type</label>
               <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100"  disabled>
                 <option value="">Select Assignment Type</option>
+                <option value="DRIVER_TYPE">Driver Type</option>
                 <option value="TIER">Tier</option>
                 <option value="DRIVER_ID">Driver ID</option>
                 <option value="CAB_ID">Cab ID</option>
@@ -102,7 +110,9 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
 
             <div>
               <label htmlFor="assignmentValue" className="text-sm font-medium text-gray-700">Assignment Value</label>
-              {values.assignmentType === "TIER" ? (
+              {values.assignmentType === "DRIVER_TYPE" ? (
+                <Field type="text" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" disabled />
+              ) : values.assignmentType === "TIER" ? (
                 <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
                   <option value="">Select Tier</option>
                   <option value="SILVER">Silver</option>
@@ -197,7 +207,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               <label htmlFor="description" className="text-sm font-medium text-gray-700">Description</label>
               <Field as="textarea" name="description" rows="3" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder="Description for this plan group" />
             </div>
-            <div className="flex items-center">
+            <div className="hidden items-center">
               <Field type="checkbox" name="isDefault" className="mr-2 h-4 w-4 text-primary-600 border-gray-300 rounded" />
               <label htmlFor="isDefault" className="text-sm font-medium text-gray-700">Is default</label>
             </div>
@@ -236,7 +246,11 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
           </div>
 
           <div className="overflow-x-auto">
-          <div className="grid min-w-[1350px] grid-cols-9 gap-4">
+          <div className="grid min-w-[1620px] grid-cols-10 gap-4 rounded-lg p-3">
+            <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
+              <div className="text-sm font-semibold text-gray-800">Plan 1</div>
+              <div className="text-xs text-gray-600">Default</div>
+            </div>
             <div className="hidden">
               <label htmlFor="serviceType" className="text-sm font-medium text-gray-700">Service Type</label>
               <Field as="select" name="serviceType" disabled className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100">
@@ -319,14 +333,20 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     onChange={(e) => setFieldValue("primaryPlanStatus", e.target.checked ? "ACTIVE" : "INACTIVE")}
                   />
                 </div>
+                <div className="flex items-center justify-center rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
+                  Default plan
+                </div>
              
             </div>
-          </div>
 
           {values.plans && values.plans.length > 0 && (
-            <div className="mt-6 space-y-4 overflow-x-auto">
+            <div className="mt-4 space-y-3">
               {values.plans.map((plan, index) => (
-                <div key={index} className="grid min-w-[1350px] grid-cols-9 gap-4 rounded-lg p-3">
+                <div key={index} className="grid min-w-[1620px] grid-cols-10 gap-4 rounded-lg p-3">
+                  <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-800">Plan {index + 2}</div>
+                    <div className="text-xs text-gray-600">Additional</div>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Plan Name</label>
                     <Field as="select" name={`plans[${index}].name`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -392,10 +412,26 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                       onChange={(e) => setFieldValue(`plans[${index}].status`, e.target.checked ? "ACTIVE" : "INACTIVE")}
                     />
                   </div>
+                  <div className="flex items-center justify-center">
+                    <button
+                      type="button"
+                      className="rounded-md border border-red-200 p-2 text-red-600 hover:bg-red-50"
+                      title="Remove plan"
+                      onClick={() =>
+                        setFieldValue(
+                          "plans",
+                          values.plans.filter((_, planIndex) => planIndex !== index)
+                        )
+                      }
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -417,6 +453,7 @@ const MasterSubscriptionEdit = () => {
   const [geoData, setGeoData] = useState({ serviceAreas: [] });
   const [initialValues, setInitialValues] = useState(initialValuesTemplate);
   const [existingAssignments, setExistingAssignments] = useState([]);
+  const [messageModal, setMessageModal] = useState(null);
 
   useEffect(() => {
     const fetchGeoData = async () => {
@@ -577,7 +614,7 @@ const MasterSubscriptionEdit = () => {
           effectiveFrom: values.effectiveFrom || "",
           effectiveTo: values.effectiveTo || "",
           priority: Number(values.priority) || 0,
-          carType: values.serviceType === "RIDES_RENTAL_CABS" ? values.carType || "" : "",
+          ...(values.serviceType === "RIDES_RENTAL_CABS" ? { carType: values.carType || "" } : {}),
         },
         plans: [primaryPlan, ...extraPlans],
         assignments: [
@@ -597,11 +634,26 @@ const MasterSubscriptionEdit = () => {
       }
     } catch (error) {
       console.error("Error updating master subscription:", error);
+      setMessageModal({
+        title: "Alert !",
+        message: getErrorMessage(error, "Failed to update master subscription. Please try again."),
+      });
     }
   };
 
   return (
     <div className="p-4 bg-white">
+      <Dialog open={Boolean(messageModal)} handler={() => setMessageModal(null)} size="sm">
+        <DialogHeader>{messageModal?.title || "Message"}</DialogHeader>
+        <DialogBody divider>
+          <p className="text-sm text-gray-700">{messageModal?.message}</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button color="blue" onClick={() => setMessageModal(null)}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
       <h2 className="text-2xl font-bold mb-4">Master Subscription Edit</h2>
       <Formik
         initialValues={initialValues}

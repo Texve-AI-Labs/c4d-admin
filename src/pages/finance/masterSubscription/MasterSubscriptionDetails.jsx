@@ -208,6 +208,7 @@ const MasterSubscriptionDetails = () => {
                                     <label className="text-sm font-medium text-gray-700">Assignment Type</label>
                                     <Field as="select" name="assignmentType" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
                                         <option value="">Select Assignment Type</option>
+                                        <option value="DRIVER_TYPE">Driver Type</option>
                                         <option value="TIER">Tier</option>
                                         <option value="DRIVER_ID">Driver ID</option>
                                         <option value="CAB_ID">Cab ID</option>
@@ -292,7 +293,7 @@ const MasterSubscriptionDetails = () => {
                                     <label className="text-sm font-medium text-gray-700">Description</label>
                                     <Field as="textarea" name="description" rows="3" disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                 </div>
-                                <div className="flex items-center">
+                                <div className="hidden items-center">
                                     <Field type="checkbox" name="isDefault" disabled className="mr-2 h-4 w-4 text-primary-600 border-gray-300 rounded" />
                                     <span className="text-sm font-medium text-gray-700">Is default</span>
                                 </div>
@@ -306,7 +307,7 @@ const MasterSubscriptionDetails = () => {
                                     {values.plans.map((plan, index) => (
                                         <div
                                             key={plan.id || index}
-                                            className="grid min-w-[1350px] grid-cols-9 gap-6 rounded-lg p-3 bg-white"
+                                            className="grid min-w-[1500px] grid-cols-9 gap-6 rounded-lg p-3 bg-white"
                                         >
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Plan Name</label>
