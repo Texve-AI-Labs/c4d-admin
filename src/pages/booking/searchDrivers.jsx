@@ -814,17 +814,28 @@ export function SearchDrivers(props) {
         : groupedDriverTables;
 
     const renderDriverTable = (rows) => (
-                                <table className="w-full">
+                                <table className="w-full min-w-[1170px] table-fixed">
+                                    <colgroup>
+                                        <col className="w-[130px]" />
+                                        <col className="w-[130px]" />
+                                        <col className="w-[105px]" />
+                                        <col className="w-[225px]" />
+                                        <col className="w-[90px]" />
+                                        <col className="w-[70px]" />
+                                        <col className="w-[130px]" />
+                                        <col className="w-[150px]" />
+                                        <col className="w-[140px]" />
+                                    </colgroup>
                                     <thead>
                                         <tr>
                     {driverTableColumns.map((el) => (
                                                 <th
                                                     key={el}
-                                                    className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left"
+                                                    className="border-b border-blue-gray-50 px-3 py-3 text-left"
                                                 >
                                                     <Typography
                                                         variant="small"
-                                                        className="text-[11px] font-bold uppercase text-blue-gray-400 flex items-center cursor-pointer"
+                                                        className="flex items-center text-[11px] font-bold uppercase text-blue-gray-400"
                                                         onClick={() => {
                                                             ['Local Count', 'Outstation Count', 'Distance'].includes(el) && handleSort(el === 'Local Count' ? 'localCount' : el === 'Distance' ? 'distance' : 'outstationCount')
                                                         }}
@@ -847,10 +858,11 @@ export function SearchDrivers(props) {
                                             </tr>
                                         )}
                                         {rows.map(({ id, firstName, name, zone,Shifts, curAddress, status, phoneNumber, distance, rating, slot, Drivers, priorityType, routing }, key) => {
-                                                const className = `whitespace-nowrap py-3 px-5 ${key === rows.length - 1
+                                                const className = `px-3 py-3 align-top ${key === rows.length - 1
                                                     ? ""
                                                     : "border-b border-blue-gray-50"
                                                     }`;
+                                                const compactCellClassName = `${className} whitespace-nowrap`;
 
                     return (
                                                     <tr key={id}>
@@ -860,7 +872,7 @@ export function SearchDrivers(props) {
                                                                     <Typography
                                                                         variant="small"
                                                                         color="blue-gray"
-                                                                        className="font-semibold"
+                                                                        className="break-words font-semibold leading-5"
                                                                     >
                                                                         {props?.bookingData?.serviceType == "CAB" ? name : firstName}
                                                                     </Typography>
@@ -868,36 +880,37 @@ export function SearchDrivers(props) {
                                                             </div>
                                                         </td>
                                                         <td className={className}>
-                                                            <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                            <Typography className="break-all text-xs font-semibold leading-5 text-blue-gray-600">
                                                                 {(props?.bookingData?.serviceType === "CAB" && Drivers?.[0]?.phoneNumber) ? Drivers?.[0]?.phoneNumber : phoneNumber}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
-                                                            <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                            <Typography className="break-words text-xs font-semibold leading-5 text-blue-gray-600">
                                                                 {zone || "-"}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
-                                                            <Typography className='text-xs font-semibold text-blue-gray-600'>
+                                                            <Typography className='break-words text-xs font-semibold leading-5 text-blue-gray-600'>
                                                                 {Shifts?.[0]?.curAddress?.name || curAddress?.name || curAddress || "-"}
                                                             </Typography>
                                                         </td>
-                                                        <td className={className}>
+                                                        <td className={compactCellClassName}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-600">
                                                                 {(props?.bookingData?.serviceType == "CAB" && Drivers?.[0]?.distance) ? `${Math.round(Drivers?.[0]?.distance)} km` : distance !== undefined && distance !== null && distance !== "" ? `${Number(distance).toFixed(2)} km` : 'Unknown'}
                                                             </Typography>
                                                         </td>
-                                                        <td className={className}>
+                                                        <td className={compactCellClassName}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-600">
                                                                 {rating !== undefined && rating !== null && rating !== "" ? rating : "-"}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
-                                                            <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                            <Typography className="break-words text-xs font-semibold leading-5 text-blue-gray-600">
                                                                 {getDriverSlotLabel(slot)}
                                                             </Typography>
                                                         </td>
                                                         <td className={className}>
+                                                            <div className="flex flex-col items-start gap-1">
                                                             <Chip
                                                                 variant="ghost"
                                                                 color={status === "ACTIVE" ? "green" : "blue-gray"}
@@ -919,12 +932,13 @@ export function SearchDrivers(props) {
                                                                         </Typography>
                                                                     )
                                                                 )}
+                                                            </div>
                                                         </td>
                                                         <td className={className}>
                                                             {status === "ACTIVE" && <Button
                                                                 as="a"
                                                                 onClick={() => { onAssignDriver(props?.bookingData?.serviceType, id, props?.bookingData?.serviceType == 'DRIVER' ? id : Drivers[0]?.id) }}
-                                                                className="text-xs font-semibold text-white bg-primary"
+                                                                className="w-full px-2 py-2 text-xs font-semibold leading-4 text-white bg-primary"
                                                             >
                                                                 {driverActionButtonLabel}
                                                             </Button>}
@@ -953,7 +967,7 @@ export function SearchDrivers(props) {
                                 {hasGroupedDriverTables ? (
                                     <div className="space-y-5">
                                         {visibleDriverTables.map(({ title, rows }) => (
-                                            <div key={title}>
+                                            <div key={title} className="min-w-[1170px]">
                                                 <div className="border-b border-blue-gray-50 bg-blue-gray-50 px-5 py-3">
                                                     <Typography className="text-xs font-bold uppercase text-blue-gray-600">
                                                         {title}
