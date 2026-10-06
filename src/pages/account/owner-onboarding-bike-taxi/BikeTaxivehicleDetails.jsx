@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
+import { saveDocumentFile } from '@/utils/downloadUtils';
 import BikeTaxiAccountCreationTabs from './BikeTaxiAccountCreationTabs';
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 
@@ -269,6 +270,7 @@ const BikeTaxiVehicleOnboardingDetails = () => {
                         onClick={() =>
                           setModalData({
                             id: row.proof?.id,
+                              documentId: row.proof?.id,
                             type: row.type,
                             status: getReviewStatus(row.status),
                             image1: row.proof?.image1,
@@ -376,26 +378,10 @@ const BikeTaxiVehicleOnboardingDetails = () => {
             </div>
             <div className="flex justify-center mt-4">
               {modalData.image1 && (
-                <a
-                  href={modalData.image1}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                >
-                  Download Image 1
-                </a>
+                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 1</button>
               )}
               {modalData.image2 && (
-                <a
-                  href={modalData.image2}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                >
-                  Download Image 2
-                </a>
+                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 2</button>
               )}
             </div>
             {["PENDING VERIFICATION", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].includes(vehicleStageStatus) &&

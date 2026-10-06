@@ -233,6 +233,23 @@ let data;
 
         return response;
     },
+    fetchDocumentDownload: async (apiRoute, params = {}) => {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No authentication token found');
+
+        const response = await axios.get(getBaseUrl() + apiRoute, {
+            headers: {
+                'token': token,
+                ...(token ? { Authorization: 'Bearer ' + token } : {}),
+                ...getNgrokSkipHeaders(),
+            },
+            params,
+            responseType: 'blob',
+        });
+
+        return response;
+    },
+
    fetchPdfDowload: async (apiRoute) => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found');
