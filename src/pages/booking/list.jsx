@@ -33,10 +33,39 @@ const toStorageScope = (pathname = '') => {
 
 const getBookingFiltersKey = (pathname) => `bookingFilters_${toStorageScope(pathname)}`;
 const getBookingSearchKey = (pathname) => `bookingSearchId_${toStorageScope(pathname)}`;
+const getBookingCustomerKey = (pathname) => `bookingCustomerId_${toStorageScope(pathname)}`;
 const LEGACY_BOOKING_FILTERS_KEY = 'bookingListFilters';
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 const getDateFilterFromTab = (tab) =>
     tab === 'TODAY' ? 'Today' : tab === 'REMAINING' ? 'Future' : tab === 'CUSTOM_DATE' ? 'Custom date' : 'All';
+const isBookingNumberSearch = (value = '') => /^C4D/i.test(String(value || '').trim());
+
+const DEFAULT_BOOKING_COUNTS = {
+    endedCount: "0",
+    quotedCount: "0",
+    totalBookingCount: "0",
+    confirmedCount: "0",
+    supportCount: "0",
+    uniqueCustomerPerDayBookingCount: "0",
+};
+
+const normalizeBookingListState = (state = {}) => {
+    const activeTab = state.activeTab || 'ALL_BOOKINGS';
+    return {
+        activeTab,
+        statusFilter: Array.isArray(state.statusFilter) ? state.statusFilter : ['All'],
+        serviceTypeFilter: Array.isArray(state.serviceTypeFilter) ? state.serviceTypeFilter : ['All'],
+        sourceFilter: Array.isArray(state.sourceFilter) ? state.sourceFilter : ['All'],
+        tripCoordinatorFilter: Array.isArray(state.tripCoordinatorFilter) ? state.tripCoordinatorFilter : ['All'],
+        zoneFilter: Array.isArray(state.zoneFilter) ? state.zoneFilter : ['All'],
+        dateFilter: getDateFilterFromTab(activeTab),
+        customDateFrom: state.customDateFrom || '',
+        customDateTo: state.customDateTo || '',
+        currentPage: typeof state.currentPage === 'number' ? state.currentPage : 1,
+        searchBookingId: state.searchBookingId || '',
+        customerId: Number(state.customerId || 0),
+    };
+};
 
 const getItemSafe = (key) => {
     if (!isBrowser()) return null;
@@ -82,25 +111,21 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
             return;
         }
 
-        const parsed = JSON.parse(storedFilters);
+        const parsed = normalizeBookingListState(JSON.parse(storedFilters));
 
-        const restoredActiveTab = parsed.activeTab || 'ALL_BOOKINGS';
-        setActiveTab(restoredActiveTab);
-        if (Array.isArray(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
-        if (Array.isArray(parsed.serviceTypeFilter)) setServiceTypeFilter(parsed.serviceTypeFilter);
-        if (Array.isArray(parsed.sourceFilter)) setSourceFilter(parsed.sourceFilter);
-        if (Array.isArray(parsed.tripCoordinatorFilter)) setTripCoordinatorFilter(parsed.tripCoordinatorFilter);
-        if (Array.isArray(parsed.zoneFilter)) setZoneFilter(parsed.zoneFilter);
-        // Keep date filter strictly derived from active tab to avoid UI/API mismatch.
-        setDateFilter(getDateFilterFromTab(restoredActiveTab));
-        if (parsed.customDateFrom) setCustomDateFrom(parsed.customDateFrom);
-        if (parsed.customDateTo) setCustomDateTo(parsed.customDateTo);
-        if (typeof parsed.currentPage === 'number') {
-            setPagination((prev) => ({
-                ...prev,
-                currentPage: parsed.currentPage,
-            }));
-        }
+        setActiveTab(parsed.activeTab);
+        setStatusFilter(parsed.statusFilter);
+        setServiceTypeFilter(parsed.serviceTypeFilter);
+        setSourceFilter(parsed.sourceFilter);
+        setTripCoordinatorFilter(parsed.tripCoordinatorFilter);
+        setZoneFilter(parsed.zoneFilter);
+        setDateFilter(parsed.dateFilter);
+        setCustomDateFrom(parsed.customDateFrom);
+        setCustomDateTo(parsed.customDateTo);
+        setPagination((prev) => ({
+            ...prev,
+            currentPage: parsed.currentPage,
+        }));
     } catch (error) {
         console.error('Error loading booking list filters from sessionStorage:', error);
     } finally {
@@ -125,7 +150,7 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
             }
         };
 
-export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange }) {
+export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange, onClearSearch }) {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingFeatures = useMemo(() => {
@@ -145,6 +170,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const hasFeature = (feature) => bookingFeatures.includes(feature);
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
+    const bookingCustomerKey = getBookingCustomerKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
     const [selectedBookingId, setSelectedBookingId] = useState(null);
     const [activeTab, setActiveTab] = useState(() => getInitialActiveTab(bookingFiltersKey));
@@ -171,7 +197,8 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [selectedBookingForSupportApproval, setSelectedBookingForSupportApproval] = useState(null);
     const [supportApprovalDecision, setSupportApprovalDecision] = useState('END_TRIP');
     const [supportApprovalReasonDetails, setSupportApprovalReasonDetails] = useState('');
-    const [counts, setCounts] = useState({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0"});
+    const [counts, setCounts] = useState(DEFAULT_BOOKING_COUNTS);
+    const [summaryLoading, setSummaryLoading] = useState(false);
     const [dateFilter, setDateFilter] = useState('All');
     const [customDateFrom, setCustomDateFrom] = useState('');
     const [customDateTo, setCustomDateTo] = useState('');
@@ -300,6 +327,23 @@ useEffect(() => {
 
     useEffect(() => {
         setFiltersLoaded(false);
+        const returnedListState = location.state?.listState;
+        if (returnedListState && typeof returnedListState === 'object') {
+            const restoredState = normalizeBookingListState(returnedListState);
+            setActiveTab(restoredState.activeTab);
+            setStatusFilter(restoredState.statusFilter);
+            setServiceTypeFilter(restoredState.serviceTypeFilter);
+            setSourceFilter(restoredState.sourceFilter);
+            setTripCoordinatorFilter(restoredState.tripCoordinatorFilter);
+            setZoneFilter(restoredState.zoneFilter);
+            setDateFilter(restoredState.dateFilter);
+            setCustomDateFrom(restoredState.customDateFrom);
+            setCustomDateTo(restoredState.customDateTo);
+            setPagination((prev) => ({ ...prev, currentPage: restoredState.currentPage }));
+            setItemSafe(bookingFiltersKey, JSON.stringify(restoredState));
+            setFiltersLoaded(true);
+            return;
+        }
         loadBookingFilters({
             filtersKey: bookingFiltersKey,
             setActiveTab,
@@ -314,24 +358,12 @@ useEffect(() => {
             setPagination,
             setFiltersLoaded,
         });
-    }, [bookingFiltersKey]);
+    }, [bookingFiltersKey, location.state, location.pathname, navigate]);
 
     useEffect(() => {
         if (!filtersLoaded) return;
         try {
-            const filtersToStore = {
-                activeTab,
-                statusFilter,
-                serviceTypeFilter,
-                sourceFilter,
-                tripCoordinatorFilter,
-                zoneFilter,
-                dateFilter,
-                customDateFrom,
-                customDateTo,
-                currentPage: pagination.currentPage,
-            };
-            setItemSafe(bookingFiltersKey, JSON.stringify(filtersToStore));
+            setItemSafe(bookingFiltersKey, JSON.stringify(getCurrentListState()));
         } catch (error) {
             console.error('Error saving booking list filters to sessionStorage:', error);
         }
@@ -368,7 +400,15 @@ useEffect(() => {
   setShowDriverHours(false); // Hide the popup after selection
 };
 
-const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({pagination,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId,activeTab,dateFilter,customDateFrom,customDateTo,customerId,type,summaryRequestRef,setCounts,});
+const resolvedCustomerId = useMemo(() => {
+    const numericCustomerId = Number(customerId || 0);
+    if (numericCustomerId > 0) return numericCustomerId;
+    const storedCustomerId = Number(getItemSafe(bookingCustomerKey) || 0);
+    return storedCustomerId > 0 ? storedCustomerId : 0;
+}, [customerId, bookingCustomerKey]);
+const resolvedBookingNumber = resolvedCustomerId > 0 ? '' : (isBookingNumberSearch(effectiveSearchId) ? effectiveSearchId : '');
+
+const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId: resolvedBookingNumber,activeTab,customDateFrom,customDateTo,customerId: resolvedCustomerId,type,summaryRequestRef,DEFAULT_COUNTS: DEFAULT_BOOKING_COUNTS,setCounts,setSummaryLoading,});
 const fetchServiceAreas = async () => {
         try {
             const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {});
@@ -398,6 +438,7 @@ const handleTabChange = (value) => {
     }
     if (value !== activeTab) {
         // console.log('Tab changed to:', value);
+        setSummaryLoading(true);
         setActiveTab(value);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         // Reset all filters when switching tabs
@@ -566,12 +607,12 @@ if (!statusFilter.includes('All')) {
         }
         
         const queryParams = {
-            "customerId": customerId,
+            "customerId": resolvedCustomerId,
             'type': type ? type : '',
             'page': page,
             'limit': pagination.itemsPerPage,
             'filterType': JSON.stringify(filterType),
-            'bookingNumber': effectiveSearchId,
+            'bookingNumber': resolvedBookingNumber,
         };
         
         // Add date parameters if they exist
@@ -594,7 +635,6 @@ if (!statusFilter.includes('All')) {
                 totalItems: data?.pagination?.totalItems || 0,
                 itemsPerPage: data?.pagination?.itemsPerPage || 20,
             });
-                setCounts(data?.counts || { endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount: "0", uniqueCustomerPerDayBookingCount:"0" });
                 setOnlineDrivers(data?.onlineDrivers || []);
                 setTotalDriverCount(data?.totalDrivers || 0);
                 setTodayOnlineDrivers(data?.todayOnlineDrivers || 0);
@@ -603,20 +643,17 @@ if (!statusFilter.includes('All')) {
             else {
                 setBookingsList([]);
                 setOnlineDrivers([]);
-                setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount: "0", uniqueCustomerPerDayBookingCount:"0" });
             }
         } 
         else {
             console.error('API request failed:', data?.message);
             setBookingsList([]);
             setOnlineDrivers([]);
-            setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount: "0", uniqueCustomerPerDayBookingCount:"0" });
         }
     } catch (error) {
         console.error('Error fetching bookings:', error);
         setBookingsList([]);
         setOnlineDrivers([]);
-        setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount: "0", uniqueCustomerPerDayBookingCount:"0" });
     } finally {
         if (currentRequestId !== latestRequestRef.current) {
             return;
@@ -678,9 +715,9 @@ if (!statusFilter.includes('All')) {
         // }, 10000);
 
         // return () => clearInterval(intervalId);
-    }, [customerId, effectiveSearchId, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
+    }, [resolvedCustomerId, resolvedBookingNumber, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
 
-    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,buildSummaryQueryParams,fetchBookingSummary,pagination,customerId,effectiveSearchId,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter});
+    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,buildSummaryQueryParams,fetchBookingSummary,customerId: resolvedCustomerId,effectiveSearchId: resolvedBookingNumber,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter});
 
     useEffect(() => {
         const totalPendings = Number(counts?.totalPendings || 0);
@@ -814,7 +851,29 @@ if (!statusFilter.includes('All')) {
         }
     };
 
+    const getCurrentListState = () => ({
+        activeTab,
+        statusFilter,
+        serviceTypeFilter,
+        sourceFilter,
+        tripCoordinatorFilter,
+        zoneFilter,
+        dateFilter,
+        customDateFrom,
+        customDateTo,
+        currentPage: pagination.currentPage,
+        searchBookingId: resolvedBookingNumber,
+        customerId: resolvedCustomerId,
+    });
+
+    const persistCurrentListState = () => {
+        const listState = getCurrentListState();
+        setItemSafe(bookingFiltersKey, JSON.stringify(listState));
+        return listState;
+    };
+
     const handleBookingSelect = (data, event) => {
+        persistCurrentListState();
         setSelectedBookingId(data.id);
         if (onSelectBooking) {
             event?.preventDefault?.();
@@ -894,6 +953,15 @@ if (!statusFilter.includes('All')) {
         [bookingFeatures, allTabLabel, isCompactFeatureList]
     );
     const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
+    const renderTabsSkeleton = () => (
+        <div className="flex w-full p-1 animate-pulse" aria-hidden="true">
+            {tabs.map(({ value }) => (
+                <div key={value} className="flex-1 px-3 py-1">
+                    <div className="h-7 rounded-md bg-gray-100" />
+                </div>
+            ))}
+        </div>
+    );
 
     useEffect(() => {
         if (!tabValues.includes(activeTab)) {
@@ -939,7 +1007,9 @@ if (!statusFilter.includes('All')) {
         setIsCustomDatePopoverOpen(false);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setEffectiveSearchId('');
+        onClearSearch?.();
         sessionStorage.removeItem(bookingSearchKey);
+        sessionStorage.removeItem(bookingCustomerKey);
         sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
         const today = moment().format('YYYY-MM-DD');
         const startDate = refreshedTab === 'TODAY' ? today : '';
@@ -954,7 +1024,8 @@ if (!statusFilter.includes('All')) {
             ['All'],
             ['All'],
             '',
-            refreshedTab
+            refreshedTab,
+            0
         );
     };
 
@@ -977,7 +1048,7 @@ if (!statusFilter.includes('All')) {
 // };
 
     // Function to trigger API call with specific dates (bypasses state timing issues)
-   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab) => {
+   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = resolvedBookingNumber, activeTabParam = activeTab, customerIdParam = resolvedCustomerId) => {
         const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
         
@@ -1003,7 +1074,7 @@ if (!statusFilter.includes('All')) {
             }
             
             const queryParams = {
-                "customerId": customerId,
+                "customerId": customerIdParam,
                 'type': type ? type : '',
                 'page': page,
                 'limit': pagination.itemsPerPage,
@@ -1034,21 +1105,17 @@ if (!statusFilter.includes('All')) {
                         totalItems: data?.pagination?.totalItems || 0,
                         itemsPerPage: data?.pagination?.itemsPerPage || 20,
                     });
-                    setCounts(data?.counts || { endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0" });
                     setSelectedBookingId(null);
                 } else {
                     setBookingsList([]);
-                    setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0" });
                 }
             } else {
                 console.error('API request failed:', data?.message);
                 setBookingsList([]);
-                setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0" });
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
             setBookingsList([]);
-            setCounts({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0" });
         } finally {
             if (currentRequestId !== latestRequestRef.current) {
                 return;
@@ -1113,11 +1180,11 @@ if (!statusFilter.includes('All')) {
                         <div className="grid grid-cols-1 py-12 sm:grid-cols-2 md:grid-cols-7 gap-2">
                             {[
                                 // { key: 'totalBookingCount', label: 'Total Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', chipColor: 'bg-blue-600 text-white' },
-                                { key: 'uniqueCustomerPerDayBookingCount', label: 'Total Unique Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', chipColor: 'bg-blue-600 text-white' },
-                                { key: 'quotedCount', label: 'Quoted', icon: FaClipboardList, color: 'bg-yellow-50 text-yellow-900', chipColor: 'bg-yellow-600 text-white' },
-                                { key: 'confirmedCount', label: 'Confirmed', icon: FaCalendarAlt, color: 'bg-purple-50 text-purple-900', chipColor: 'bg-purple-600 text-white' },
-                                { key: 'endedCount', label: 'Trip Completed', icon: FaCheckCircle, color: 'bg-green-50 text-green-900', chipColor: 'bg-green-600 text-white' },
-                                { key: 'supportCount', label: 'Support Cancelled', icon: FaExclamationTriangle, color: 'bg-red-50 text-red-900', chipColor: 'bg-red-600 text-white' },
+                                { key: 'uniqueCustomerPerDayBookingCount', label: 'Total Unique Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', spinnerColor: 'text-blue-900', chipColor: 'bg-blue-600 text-white' },
+                                { key: 'quotedCount', label: 'Quoted', icon: FaClipboardList, color: 'bg-yellow-50 text-yellow-900', spinnerColor: 'text-yellow-900', chipColor: 'bg-yellow-600 text-white' },
+                                { key: 'confirmedCount', label: 'Confirmed', icon: FaCalendarAlt, color: 'bg-purple-50 text-purple-900', spinnerColor: 'text-purple-900', chipColor: 'bg-purple-600 text-white' },
+                                { key: 'endedCount', label: 'Trip Completed', icon: FaCheckCircle, color: 'bg-green-50 text-green-900', spinnerColor: 'text-green-900', chipColor: 'bg-green-600 text-white' },
+                                { key: 'supportCount', label: 'Support Cancelled', icon: FaExclamationTriangle, color: 'bg-red-50 text-red-900', spinnerColor: 'text-red-900', chipColor: 'bg-red-600 text-white' },
                             ].map((item, index) => {
                                 const IconComponent = item.icon;
                                 return (
@@ -1128,10 +1195,14 @@ if (!statusFilter.includes('All')) {
                                         <Typography variant="small" className="text-xs font-medium mb-1 text-center w-full">
                                             {item.label}
                                         </Typography>
-                                        <div className="flex items-center justify-center w-full">
-                                            <Typography variant="h6" className="font-bold text-2xl">
-                                                {counts?.[item.key] ?? "0"}
-                                            </Typography>
+                                        <div className="flex items-center justify-center w-full min-h-[32px]">
+                                            {summaryLoading ? (
+                                                <Spinner className={`h-5 w-5 ${item.spinnerColor}`} />
+                                            ) : (
+                                                <Typography variant="h6" className="font-bold text-2xl">
+                                                    {counts?.[item.key] ?? "0"}
+                                                </Typography>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -1237,6 +1308,7 @@ if (!statusFilter.includes('All')) {
                 <CardBody className='pt-0'>
                     <div className="bg-gray-300 z-0 mb-4 rounded-lg">
                     <div className="flex w-full items-center">
+                        {loading ? renderTabsSkeleton() : (
                         <div className="flex w-full p-1" role="tablist" aria-label="Booking date tabs">
                             {tabs.map(({ label, value }) => (
                                 <button
@@ -1313,6 +1385,7 @@ if (!statusFilter.includes('All')) {
                 </button>
             ))}
         </div>
+                        )}
                             </div>
                         </div>
                         <div className='overflow-x-scroll px-0 pt-0 pb-2'>
@@ -1648,6 +1721,10 @@ if (!statusFilter.includes('All')) {
                                                                         )}&fromPath=${encodeURIComponent(
                                                                             location.pathname
                                                                         )}`}
+                                                                    state={{
+                                                                        fromPath: location.pathname,
+                                                                        listState: getCurrentListState(),
+                                                                    }}
                                                                     onClick={(event) => handleBookingSelect(data, event)}
                                                                 >
                                                                     <Typography

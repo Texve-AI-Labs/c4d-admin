@@ -20,7 +20,6 @@ export const useBookingSummaryRealtime = ({
   customDateTo,
   buildSummaryQueryParams,
   fetchBookingSummary,
-  pagination,
   customerId,
   effectiveSearchId,
   type,
@@ -28,14 +27,11 @@ export const useBookingSummaryRealtime = ({
   sourceFilter,
   tripCoordinatorFilter,
   zoneFilter,
-  dateFilter,
 }) => {
   const { isLive, isReconnecting, eventSeq, lastEvent } = useRealtimeEvents();
   const scheduleRef = useRef({
     timer: null,
-    inFlight: false,
     lastFetchAt: 0,
-    pendingAfterFlight: false,
     isHidden: typeof document !== "undefined" ? document.hidden : false,
     pendingWhileHidden: false,
     lastQueryKey: "",
@@ -50,7 +46,7 @@ export const useBookingSummaryRealtime = ({
 
   const refreshSummary = useMemo(
     () => async ({ dedupeMs = SAME_QUERY_DEDUPE_MS, force = false } = {}) => {
-      const queryParams = buildSummaryQueryParams({ page: pagination.currentPage });
+      const queryParams = buildSummaryQueryParams();
       const queryKey = JSON.stringify(queryParams || {});
       const state = scheduleRef.current;
       const now = Date.now();
@@ -64,7 +60,7 @@ export const useBookingSummaryRealtime = ({
       state.lastSuccessfulSummaryAt = Date.now();
       return result;
     },
-    [buildSummaryQueryParams, fetchBookingSummary, pagination.currentPage]
+    [buildSummaryQueryParams, fetchBookingSummary]
   );
 
   const requestSummaryRefresh = useMemo(
@@ -86,23 +82,8 @@ export const useBookingSummaryRealtime = ({
       }
 
       const run = async () => {
-        if (state.inFlight) {
-          state.pendingAfterFlight = true;
-          return;
-        }
-        state.inFlight = true;
-        try {
-          await refreshSummary({ dedupeMs, force });
-          state.lastFetchAt = Date.now();
-        } finally {
-          state.inFlight = false;
-          if (state.pendingAfterFlight) {
-            state.pendingAfterFlight = false;
-            state.timer = setTimeout(() => {
-              run();
-            }, PAGE_SUMMARY_DEBOUNCE_MS);
-          }
-        }
+        await refreshSummary({ dedupeMs, force });
+        state.lastFetchAt = Date.now();
       };
 
       const elapsed = Date.now() - state.lastFetchAt;
@@ -122,18 +103,16 @@ export const useBookingSummaryRealtime = ({
   useEffect(() => {
     if (!filtersLoaded) return;
     if (activeTab === "CUSTOM_DATE" && (!customDateFrom || !customDateTo)) return;
-    requestSummaryRefresh({ immediate: true, force: true });
+    requestSummaryRefresh({ immediate: true });
   }, [
     customerId,
     effectiveSearchId,
     type,
-    pagination.currentPage,
     activeTab,
     statusFilter,
     sourceFilter,
     tripCoordinatorFilter,
     zoneFilter,
-    dateFilter,
     customDateFrom,
     customDateTo,
     filtersLoaded,

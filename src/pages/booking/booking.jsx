@@ -73,6 +73,13 @@ const toStorageScope = (pathname = '') => {
     return scope || 'dashboard_booking';
 };
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
+const getBookingSearchKey = (pathname) => `bookingSearchId_${toStorageScope(pathname)}`;
+const getBookingCustomerKey = (pathname) => `bookingCustomerId_${toStorageScope(pathname)}`;
+const isBookingSuggestion = (result = {}) =>
+    String(result?.type || result?.entityType || '').toLowerCase() === 'booking' ||
+    Boolean(result?.bookingNumber);
+const getSearchCustomerId = (result = {}) =>
+    Number(result?.id || result?.customerId || result?.customer_id || result?.Customer?.id || 0);
 
 const getSuggestionText = (suggestion) => {
     if (typeof suggestion === 'string') return suggestion;
@@ -208,7 +215,8 @@ const Booking = (props) => {
      const [refreshFn, setRefreshFn] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
-    const bookingSearchKey = `bookingSearchId_${toStorageScope(location.pathname)}`;
+    const bookingSearchKey = getBookingSearchKey(location.pathname);
+    const bookingCustomerKey = getBookingCustomerKey(location.pathname);
 
 
 
@@ -242,14 +250,18 @@ const Booking = (props) => {
 
   useEffect(() => {
     const storedSearchId = sessionStorage.getItem(bookingSearchKey) || sessionStorage.getItem(LEGACY_BOOKING_SEARCH_KEY) || '';
+    const storedCustomerId = Number(sessionStorage.getItem(bookingCustomerKey) || 0);
     if (storedSearchId) {
       sessionStorage.setItem(bookingSearchKey, storedSearchId);
+    }
+    if (storedCustomerId > 0) {
+      setSelectedCustomer((prev) => Number(prev || 0) || storedCustomerId);
     }
     if (storedSearchId) {
       setSearchBookingId((prev) => prev || storedSearchId);
       setSearchText((prev) => prev || storedSearchId);
     }
-  }, [bookingSearchKey]);
+  }, [bookingSearchKey, bookingCustomerKey]);
 
   useEffect(() => {
     if (selectedAreaId) {
@@ -1550,6 +1562,15 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
     //     );
     // }
     const onCancelBookingView = () => { }
+    const clearListSearch = useCallback(() => {
+        setSearchText('');
+        setSearchResults([]);
+        setSearchBookingId('');
+        setSelectedCustomer(0);
+        sessionStorage.removeItem(bookingSearchKey);
+        sessionStorage.removeItem(bookingCustomerKey);
+        sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+    }, [bookingSearchKey, bookingCustomerKey]);
 
     const resetPackageValues = (setFieldValue, newServiceType) => {
         // Clear location-related fields
@@ -1971,6 +1992,8 @@ const priceDetailsCardClass = isPeakHour
                                     const value = e.target.value;
                                     setSearchText(value);
                                     setSearchBookingId('');
+                                    setSelectedCustomer(0);
+                                    sessionStorage.removeItem(bookingCustomerKey);
                                     searchBookings(value);
                                 }}
                             />
@@ -1989,8 +2012,8 @@ const priceDetailsCardClass = isPeakHour
                                                     setSearchResults([]); 
                                                     
                                                     sessionStorage.removeItem(bookingSearchKey);
+                                                    sessionStorage.removeItem(bookingCustomerKey);
                                                     sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
-                                                   if (refreshFn) refreshFn();
                                                    
                                                 }}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -2005,21 +2028,25 @@ const priceDetailsCardClass = isPeakHour
                                             key={result?.bookingNumber || result?.id || [result?.firstName, result?.phoneNumber].filter(Boolean).join('-') || index}
                                             className="p-2 cursor-pointer hover:bg-gray-100"
                                             onClick={() => {
-                                                if (result?.type == 'booking') {
+                                                if (isBookingSuggestion(result)) {
                                                     setSelectedCustomer(0);
                                                     setSearchBookingId(result?.bookingNumber);
                                                     setSearchText(result?.bookingNumber);
+                                                    sessionStorage.setItem(bookingSearchKey, result?.bookingNumber || '');
+                                                    sessionStorage.removeItem(bookingCustomerKey);
                                                 } else {
                                                     const label = [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ');
+                                                    const selectedCustomerId = getSearchCustomerId(result);
                                                     setSearchText(label.trim());
-                                                    setSelectedCustomer(result?.id);
+                                                    setSelectedCustomer(selectedCustomerId);
                                                     setSearchBookingId('');
+                                                    sessionStorage.setItem(bookingSearchKey, label.trim());
+                                                    sessionStorage.setItem(bookingCustomerKey, String(selectedCustomerId));
                                                 }
                                                 setSearchResults([]);
-                                                if (refreshFn) refreshFn();
                                             }}
                                         >
-                                            {result?.type == 'booking' ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
+                                            {isBookingSuggestion(result) ? result?.bookingNumber : [result?.firstName, result?.phoneNumber].filter(Boolean).join(' - ')}
                                         </li>
                                     ))}
                                 </ul>
@@ -2053,7 +2080,7 @@ const priceDetailsCardClass = isPeakHour
                     
 
                 </div>
-                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} />
+                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearListSearch} />
             </div>
             <div>
                 {isOpen && (
@@ -2065,12 +2092,10 @@ const priceDetailsCardClass = isPeakHour
                                             () => {
                                                 setIsOpen(false);
                                                 onConfirmBooking();
-                                                setSelectedCustomer(0);
                                                 setEditBookingView();
                                                 setEditBooking();
                                                 setQuoteDetails();
                                                 setQuoteMeta(null);
-                                                setSearchBookingId('');
                                                 setShowQuickCreateCustomer(false);
                                             }
                                         }

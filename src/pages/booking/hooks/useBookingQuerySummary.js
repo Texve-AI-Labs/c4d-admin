@@ -3,26 +3,33 @@ import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 
+const DEFAULT_BOOKING_COUNTS = {
+  endedCount: "0",
+  quotedCount: "0",
+  totalBookingCount: "0",
+  confirmedCount: "0",
+  supportCount: "0",
+  uniqueCustomerPerDayBookingCount: "0",
+};
+
 export const useBookingQuerySummary = ({
-  pagination,
   statusFilter,
   sourceFilter,
   tripCoordinatorFilter,
   zoneFilter,
   effectiveSearchId,
   activeTab,
-  dateFilter,
   customDateFrom,
   customDateTo,
   customerId,
   type,
   summaryRequestRef,
-  DEFAULT_COUNTS,
+  DEFAULT_COUNTS = DEFAULT_BOOKING_COUNTS,
   setCounts,
+  setSummaryLoading,
 }) => {
   const buildBookingQueryParams = useCallback(
     ({
-      page = pagination.currentPage,
       statusFilterParam = statusFilter,
       sourceFilterParam = sourceFilter,
       tripCoordinatorFilterParam = tripCoordinatorFilter,
@@ -57,9 +64,6 @@ export const useBookingQuerySummary = ({
         } else if (activeTabParam === "REMAINING") {
           startDate = moment().add(1, "day").format("YYYY-MM-DD");
           endDate = "";
-        } else if (dateFilter === "Last 7 days") {
-          startDate = moment().subtract(7, "days").format("YYYY-MM-DD");
-          endDate = moment().format("YYYY-MM-DD");
         } else if (activeTabParam === "CUSTOM_DATE") {
           startDate = customDateFrom;
           endDate = customDateTo;
@@ -72,8 +76,6 @@ export const useBookingQuerySummary = ({
       const queryParams = {
         customerId,
         type: type ? type : "",
-        page,
-        limit: pagination.itemsPerPage,
         filterType: JSON.stringify(filterType),
         bookingNumber: effectiveSearchIdParam,
       };
@@ -82,14 +84,12 @@ export const useBookingQuerySummary = ({
       return queryParams;
     },
     [
-      pagination,
       statusFilter,
       sourceFilter,
       tripCoordinatorFilter,
       zoneFilter,
       effectiveSearchId,
       activeTab,
-      dateFilter,
       customDateFrom,
       customDateTo,
       customerId,
@@ -100,6 +100,7 @@ export const useBookingQuerySummary = ({
   const fetchBookingSummary = useCallback(
     async (queryParams) => {
       const currentSummaryRequestId = ++summaryRequestRef.current;
+      setSummaryLoading?.(true);
       try {
         const data = await ApiRequestUtils.getWithQueryParam(
           API_ROUTES.GET_ADMIN_BOOKINGS_SUMMARY,
@@ -116,14 +117,17 @@ export const useBookingQuerySummary = ({
         console.error("Error fetching booking summary:", error);
         if (currentSummaryRequestId !== summaryRequestRef.current) return;
         setCounts(DEFAULT_COUNTS);
+      } finally {
+        if (currentSummaryRequestId === summaryRequestRef.current) {
+          setSummaryLoading?.(false);
+        }
       }
     },
-    [summaryRequestRef, DEFAULT_COUNTS, setCounts]
+    [summaryRequestRef, DEFAULT_COUNTS, setCounts, setSummaryLoading]
   );
 
   const buildSummaryQueryParams = useCallback(
     ({
-      page = pagination.currentPage,
       statusFilterParam = statusFilter,
       sourceFilterParam = sourceFilter,
       tripCoordinatorFilterParam = tripCoordinatorFilter,
@@ -134,7 +138,6 @@ export const useBookingQuerySummary = ({
       endDateOverride,
     } = {}) =>
       buildBookingQueryParams({
-        page,
         statusFilterParam,
         sourceFilterParam,
         tripCoordinatorFilterParam,
@@ -145,7 +148,6 @@ export const useBookingQuerySummary = ({
         endDateOverride,
       }),
     [
-      pagination.currentPage,
       statusFilter,
       sourceFilter,
       tripCoordinatorFilter,

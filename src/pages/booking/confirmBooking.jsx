@@ -151,7 +151,11 @@ const ConfirmBooking = (props) => {
         if (hasSetIsOpen) {
             props.setIsOpen(false);
         } else {
-            navigate(backPath);
+            navigate(backPath, {
+                state: {
+                    listState: paramsPassed?.listState,
+                },
+            });
         }
     };
     const handleEditAction = (booking) => {
@@ -512,7 +516,6 @@ const ConfirmBooking = (props) => {
     }, [props.bookingData]);
 
     const onBackPressHandler = async () => {
-        triggerParentRefresh();
         closeOrNavigateBack();
     };
 
@@ -3217,7 +3220,11 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                 if (typeof props?.setIsOpen === "function") {
                     props.setIsOpen(false); 
                 } else {
-                    navigate(backPath); 
+                    navigate(backPath, {
+                        state: {
+                            listState: paramsPassed?.listState,
+                        },
+                    });
                 }
 
             } else {
