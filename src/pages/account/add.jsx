@@ -248,11 +248,15 @@ const AccountAdd = (props) => {
                             onClick={() => {
                                 if (label === 'Live Photo' || label === 'Bank Statement' || label === 'Insurance' || label === 'Permit') {
                                     setModalData({
+                                        documentId: fullDocVal?.id,
+                                        type: label,
                                         image1: fullDocVal?.image1
                                     });
                                 }
                                 else {
                                     setModalData({
+                                        documentId: fullDocVal?.id,
+                                        type: label,
                                         image1: fullDocVal?.image1,
                                         image2: fullDocVal?.image2,
                                     });
@@ -919,23 +923,21 @@ const AccountAdd = (props) => {
 
 
                             <div className="flex justify-center mt-4">
-                                <a
-                                    href={modalData.image1}
-                                    download
-                                    target="_blank"
+                                <button
+                                    type="button"
+                                    onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 1 })}
                                     className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
                                 >
                                     Download Image 1
-                                </a>
+                                </button>
                                 {modalData.image2 && (
-                                    <a
-                                        href={modalData.image2}
-                                        download
-                                        target="_blank"
+                                    <button
+                                        type="button"
+                                        onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 2 })}
                                         className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
                                     >
                                         Download Image 2
-                                    </a>
+                                    </button>
                                 )}
                             </div>
                         </div>

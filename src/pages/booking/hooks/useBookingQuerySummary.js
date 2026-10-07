@@ -4,21 +4,27 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 
 export const useBookingQuerySummary = ({
-  pagination,
   statusFilter,
   sourceFilter,
   tripCoordinatorFilter,
   zoneFilter,
   effectiveSearchId,
   activeTab,
-  dateFilter,
   customDateFrom,
   customDateTo,
   customerId,
   type,
   summaryRequestRef,
-  DEFAULT_COUNTS,
+  DEFAULT_COUNTS = {
+    endedCount: "0",
+    quotedCount: "0",
+    totalBookingCount: "0",
+    confirmedCount: "0",
+    supportCount: "0",
+    uniqueCustomerPerDayBookingCount: "0",
+  },
   setCounts,
+  setSummaryLoading,
 }) => {
   const buildBookingQueryParams = useCallback(
     ({
@@ -56,9 +62,6 @@ export const useBookingQuerySummary = ({
         } else if (activeTabParam === "REMAINING") {
           startDate = moment().add(1, "day").format("YYYY-MM-DD");
           endDate = "";
-        } else if (dateFilter === "Last 7 days") {
-          startDate = moment().subtract(7, "days").format("YYYY-MM-DD");
-          endDate = moment().format("YYYY-MM-DD");
         } else if (activeTabParam === "CUSTOM_DATE") {
           startDate = customDateFrom;
           endDate = customDateTo;
@@ -85,7 +88,6 @@ export const useBookingQuerySummary = ({
       zoneFilter,
       effectiveSearchId,
       activeTab,
-      dateFilter,
       customDateFrom,
       customDateTo,
       customerId,
@@ -119,6 +121,7 @@ export const useBookingQuerySummary = ({
       const currentSummaryRequestId = ++state.requestId;
       state.lastQueryKey = queryKey;
       state.lastQueryAt = now;
+      setSummaryLoading?.(true);
 
       const requestPromise = (async () => {
         try {
@@ -151,10 +154,11 @@ export const useBookingQuerySummary = ({
       } finally {
         if (currentSummaryRequestId === state.requestId) {
           state.inFlight = null;
+          setSummaryLoading?.(false);
         }
       }
     },
-    [summaryRequestRef, DEFAULT_COUNTS, setCounts]
+    [summaryRequestRef, DEFAULT_COUNTS, setCounts, setSummaryLoading]
   );
 
   const buildSummaryQueryParams = useCallback(

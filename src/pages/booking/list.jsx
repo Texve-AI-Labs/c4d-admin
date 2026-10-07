@@ -49,6 +49,33 @@ const getCustomDateRangeError = (startDate, endDate) => {
     return '';
 };
 
+const DEFAULT_BOOKING_COUNTS = {
+    endedCount: "0",
+    quotedCount: "0",
+    totalBookingCount: "0",
+    confirmedCount: "0",
+    supportCount: "0",
+    uniqueCustomerPerDayBookingCount: "0",
+};
+
+const normalizeBookingListState = (state = {}) => {
+    const activeTab = state.activeTab || 'ALL_BOOKINGS';
+    return {
+        activeTab,
+        statusFilter: Array.isArray(state.statusFilter) ? state.statusFilter : ['All'],
+        serviceTypeFilter: Array.isArray(state.serviceTypeFilter) ? state.serviceTypeFilter : ['All'],
+        sourceFilter: Array.isArray(state.sourceFilter) ? state.sourceFilter : ['All'],
+        tripCoordinatorFilter: Array.isArray(state.tripCoordinatorFilter) ? state.tripCoordinatorFilter : ['All'],
+        zoneFilter: Array.isArray(state.zoneFilter) ? state.zoneFilter : ['All'],
+        dateFilter: getDateFilterFromTab(activeTab),
+        customDateFrom: state.customDateFrom || '',
+        customDateTo: state.customDateTo || '',
+        currentPage: typeof state.currentPage === 'number' ? state.currentPage : 1,
+        searchBookingId: state.searchBookingId || '',
+        customerId: toPositiveNumber(state.customerId),
+    };
+};
+
 const getItemSafe = (key) => {
     if (!isBrowser()) return null;
     try {
@@ -94,7 +121,7 @@ const getLocalItemSafe = (key) => {
     }
 };
 
-const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServiceTypeFilter, setSourceFilter, setTripCoordinatorFilter, setZoneFilter, setDateFilter, setCustomDateFrom, setCustomDateTo, setPagination, setFiltersLoaded }) => {
+const loadBookingFilters = ({ filtersKey, searchKey, setActiveTab, setStatusFilter, setServiceTypeFilter, setSourceFilter, setTripCoordinatorFilter, setZoneFilter, setDateFilter, setCustomDateFrom, setCustomDateTo, setPagination, setRestoredCustomerId, setFiltersLoaded }) => {
     try {
         let storedFilters = getItemSafe(filtersKey);
         if (!storedFilters) {
@@ -109,7 +136,7 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
             return;
         }
 
-        const parsed = JSON.parse(storedFilters);
+        const parsed = normalizeBookingListState(JSON.parse(storedFilters));
 
         const restoredActiveTab = parsed.activeTab || 'ALL_BOOKINGS';
         setActiveTab(restoredActiveTab);
@@ -127,6 +154,10 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
                 ...prev,
                 currentPage: parsed.currentPage,
             }));
+        }
+        setRestoredCustomerId?.(parsed.customerId);
+        if (searchKey) {
+            setItemSafe(searchKey, parsed.searchBookingId || '');
         }
     } catch (error) {
         console.error('Error loading booking list filters from sessionStorage:', error);
@@ -202,7 +233,8 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [showQuoteExpireModal, setShowQuoteExpireModal] = useState(false);
     const [selectedBookingForQuoteExpire, setSelectedBookingForQuoteExpire] = useState(null);
     const [quoteExpireReason, setQuoteExpireReason] = useState('');
-    const [counts, setCounts] = useState({ endedCount: "0", quotedCount: "0", totalBookingCount: "0", confirmedCount: "0", supportCount:"0", uniqueCustomerPerDayBookingCount:"0"});
+    const [counts, setCounts] = useState(DEFAULT_BOOKING_COUNTS);
+    const [summaryLoading, setSummaryLoading] = useState(false);
     const [dateFilter, setDateFilter] = useState('All');
     const [customDateFrom, setCustomDateFrom] = useState('');
     const [customDateTo, setCustomDateTo] = useState('');
@@ -210,6 +242,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [isManualDateFilter, setIsManualDateFilter] = useState(false);
     const [filtersLoaded, setFiltersLoaded] = useState(false);
     const [effectiveSearchId, setEffectiveSearchId] = useState(searchBookingId);
+    const [restoredCustomerId, setRestoredCustomerId] = useState(0);
     const previousSearchBookingIdRef = useRef(searchBookingId || '');
     const [searchResetPending, setSearchResetPending] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
@@ -241,18 +274,27 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
         itemsPerPage: pagination.itemsPerPage,
     });
 
+    const isBookingNumberSearch = (value = '') => /^C4D/i.test(String(value || '').trim());
+
+    const getResolvedBookingNumber = (value = effectiveSearchId) => {
+        const searchValue = String(value || '').trim();
+        return isBookingNumberSearch(searchValue) ? searchValue : '';
+    };
+
     const getResolvedCustomerId = (bookingNumber = effectiveSearchId) => {
-        if (String(bookingNumber || '').trim()) {
+        if (isBookingNumberSearch(bookingNumber)) {
             return 0;
         }
 
         const propCustomerId = toPositiveNumber(customerId);
-        if (propCustomerId) {
-            return propCustomerId;
+        if (String(bookingNumber || '').trim()) {
+            return propCustomerId || toPositiveNumber(restoredCustomerId);
         }
 
-        const storedContext = parseStoredJsonSafe(bookingSearchContextKey);
-        return toPositiveNumber(storedContext?.customerId);
+        // The parent owns the active customer filter. A zero value explicitly
+        // means the list must show all customers; do not resurrect stale
+        // customer IDs from sessionStorage after the booking modal closes.
+        return propCustomerId;
     };
 
     const getInquiryTypeFromPath = (pathname = "") => {
@@ -360,8 +402,28 @@ useEffect(() => {
 
     useEffect(() => {
         setFiltersLoaded(false);
+        const returnedListState = location.state?.listState;
+        if (returnedListState && typeof returnedListState === 'object') {
+            const restoredState = normalizeBookingListState(returnedListState);
+            setActiveTab(restoredState.activeTab);
+            setStatusFilter(restoredState.statusFilter);
+            setServiceTypeFilter(restoredState.serviceTypeFilter);
+            setSourceFilter(restoredState.sourceFilter);
+            setTripCoordinatorFilter(restoredState.tripCoordinatorFilter);
+            setZoneFilter(restoredState.zoneFilter);
+            setDateFilter(restoredState.dateFilter);
+            setCustomDateFrom(restoredState.customDateFrom);
+            setCustomDateTo(restoredState.customDateTo);
+            setRestoredCustomerId(restoredState.customerId);
+            setPagination((prev) => ({ ...prev, currentPage: restoredState.currentPage }));
+            setItemSafe(bookingFiltersKey, JSON.stringify(restoredState));
+            setItemSafe(bookingSearchKey, restoredState.searchBookingId || '');
+            setFiltersLoaded(true);
+            return;
+        }
         loadBookingFilters({
             filtersKey: bookingFiltersKey,
+            searchKey: bookingSearchKey,
             setActiveTab,
             setStatusFilter,
             setServiceTypeFilter,
@@ -372,9 +434,10 @@ useEffect(() => {
             setCustomDateFrom,
             setCustomDateTo,
             setPagination,
+            setRestoredCustomerId,
             setFiltersLoaded,
         });
-    }, [bookingFiltersKey]);
+    }, [bookingFiltersKey, bookingSearchKey, location.state]);
 
     useEffect(() => {
         if (!filtersLoaded) return;
@@ -390,12 +453,14 @@ useEffect(() => {
                 customDateFrom,
                 customDateTo,
                 currentPage: pagination.currentPage,
+                searchBookingId: String(effectiveSearchId || '').trim(),
+                customerId: getResolvedCustomerId(effectiveSearchId),
             };
             setItemSafe(bookingFiltersKey, JSON.stringify(filtersToStore));
         } catch (error) {
             console.error('Error saving booking list filters to sessionStorage:', error);
         }
-    }, [filtersLoaded, bookingFiltersKey, activeTab, statusFilter, serviceTypeFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, pagination.currentPage]);
+    }, [filtersLoaded, bookingFiltersKey, activeTab, statusFilter, serviceTypeFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, pagination.currentPage, effectiveSearchId, customerId, restoredCustomerId]);
 
     useEffect(() => {
         const stored = getItemSafe(bookingSearchKey) || getItemSafe(LEGACY_BOOKING_SEARCH_KEY) || '';
@@ -428,7 +493,7 @@ useEffect(() => {
   setShowDriverHours(false); // Hide the popup after selection
 };
 
-const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({pagination,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId,activeTab,dateFilter,customDateFrom,customDateTo,customerId,type,summaryRequestRef,setCounts,});
+const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId: getResolvedBookingNumber(effectiveSearchId),activeTab,customDateFrom,customDateTo,customerId: getResolvedCustomerId(effectiveSearchId),type,summaryRequestRef,DEFAULT_COUNTS: DEFAULT_BOOKING_COUNTS,setCounts,setSummaryLoading,});
 const fetchServiceAreas = async () => {
         try {
             const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {});
@@ -458,6 +523,7 @@ const handleTabChange = (value) => {
     }
     if (value !== activeTab) {
         // console.log('Tab changed to:', value);
+        setSummaryLoading(true);
         setActiveTab(value);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         // Reset all filters when switching tabs
@@ -643,7 +709,7 @@ if (!statusFilter.includes('All')) {
             'page': page,
             'limit': pagination.itemsPerPage,
             'filterType': JSON.stringify(filterType),
-            'bookingNumber': effectiveSearchId,
+            'bookingNumber': getResolvedBookingNumber(effectiveSearchId),
         };
         
         // Add date parameters if they exist
@@ -751,7 +817,7 @@ if (!statusFilter.includes('All')) {
         // return () => clearInterval(intervalId);
     }, [customerId, effectiveSearchId, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
 
-    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,customDateRangeValid: !getCustomDateRangeError(customDateFrom, customDateTo),buildSummaryQueryParams,fetchBookingSummary,customerId,effectiveSearchId,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,dateFilter});
+    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,customDateRangeValid: !getCustomDateRangeError(customDateFrom, customDateTo),buildSummaryQueryParams,fetchBookingSummary,customerId: getResolvedCustomerId(effectiveSearchId),effectiveSearchId: getResolvedBookingNumber(effectiveSearchId),type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter});
 
     useEffect(() => {
         const totalPendings = Number(counts?.totalPendings || 0);
@@ -917,7 +983,23 @@ if (!statusFilter.includes('All')) {
         }
     };
 
+    const getCurrentListState = () => ({
+        activeTab,
+        statusFilter,
+        serviceTypeFilter,
+        sourceFilter,
+        tripCoordinatorFilter,
+        zoneFilter,
+        dateFilter,
+        customDateFrom,
+        customDateTo,
+        currentPage: pagination.currentPage,
+        searchBookingId: String(effectiveSearchId || '').trim(),
+        customerId: getResolvedCustomerId(effectiveSearchId),
+    });
+
     const handleBookingSelect = (data, event) => {
+        setItemSafe(bookingFiltersKey, JSON.stringify(getCurrentListState()));
         setSelectedBookingId(data.id);
         if (onSelectBooking) {
             event?.preventDefault?.();
@@ -1115,7 +1197,7 @@ if (!statusFilter.includes('All')) {
                 'page': page,
                 'limit': pagination.itemsPerPage,
                 'filterType': JSON.stringify(filterType),
-                'bookingNumber': effectiveSearchIdParam,
+                'bookingNumber': getResolvedBookingNumber(effectiveSearchIdParam),
             };
             
             // Add date parameters
@@ -1218,12 +1300,12 @@ if (!statusFilter.includes('All')) {
                     {/* Status Cards Grid */}
                         <div className="grid grid-cols-1 py-12 sm:grid-cols-2 md:grid-cols-8 gap-2">
                             {[
-                                { key: 'totalBookingCount', label: 'Total Enquiry', icon: FaChartBar, color: 'bg-blue-gray-50 text-orange', chipColor: 'bg-orange-200 text-orange' },
-                                { key: 'uniqueCustomerPerDayBookingCount', label: 'Total Unique Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', chipColor: 'bg-blue-600 text-white' },
-                                { key: 'quotedCount', label: 'Quoted', icon: FaClipboardList, color: 'bg-yellow-50 text-yellow-900', chipColor: 'bg-yellow-600 text-white' },
-                                { key: 'confirmedCount', label: 'Confirmed', icon: FaCalendarAlt, color: 'bg-purple-50 text-purple-900', chipColor: 'bg-purple-600 text-white' },
-                                { key: 'endedCount', label: 'Trip Completed', icon: FaCheckCircle, color: 'bg-green-50 text-green-900', chipColor: 'bg-green-600 text-white' },
-                                { key: 'supportCount', label: 'Support Cancelled', icon: FaExclamationTriangle, color: 'bg-red-50 text-red-900', chipColor: 'bg-red-600 text-white' },
+                                { key: 'totalBookingCount', label: 'Total Enquiry', icon: FaChartBar, color: 'bg-blue-gray-50 text-orange', spinnerColor: 'text-orange', chipColor: 'bg-orange-200 text-orange' },
+                                { key: 'uniqueCustomerPerDayBookingCount', label: 'Total Unique Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', spinnerColor: 'text-blue-900', chipColor: 'bg-blue-600 text-white' },
+                                { key: 'quotedCount', label: 'Quoted', icon: FaClipboardList, color: 'bg-yellow-50 text-yellow-900', spinnerColor: 'text-yellow-900', chipColor: 'bg-yellow-600 text-white' },
+                                { key: 'confirmedCount', label: 'Confirmed', icon: FaCalendarAlt, color: 'bg-purple-50 text-purple-900', spinnerColor: 'text-purple-900', chipColor: 'bg-purple-600 text-white' },
+                                { key: 'endedCount', label: 'Trip Completed', icon: FaCheckCircle, color: 'bg-green-50 text-green-900', spinnerColor: 'text-green-900', chipColor: 'bg-green-600 text-white' },
+                                { key: 'supportCount', label: 'Support Cancelled', icon: FaExclamationTriangle, color: 'bg-red-50 text-red-900', spinnerColor: 'text-red-900', chipColor: 'bg-red-600 text-white' },
                             ].map((item, index) => {
                                 const IconComponent = item.icon;
                                 return (
@@ -1234,10 +1316,14 @@ if (!statusFilter.includes('All')) {
                                         <Typography variant="small" className="text-xs font-medium mb-1 text-center w-full">
                                             {item.label}
                                         </Typography>
-                                        <div className="flex items-center justify-center w-full">
-                                            <Typography variant="h6" className="font-bold text-2xl">
-                                                {counts?.[item.key] ?? "0"}
-                                            </Typography>
+                                        <div className="flex items-center justify-center w-full min-h-[32px]">
+                                            {summaryLoading ? (
+                                                <Spinner className={`h-5 w-5 ${item.spinnerColor}`} />
+                                            ) : (
+                                                <Typography variant="h6" className="font-bold text-2xl">
+                                                    {counts?.[item.key] ?? "0"}
+                                                </Typography>
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -1825,6 +1911,10 @@ if (!statusFilter.includes('All')) {
                                                                         )}&fromPath=${encodeURIComponent(
                                                                             location.pathname
                                                                         )}`}
+                                                                    state={{
+                                                                        fromPath: location.pathname,
+                                                                        listState: getCurrentListState(),
+                                                                    }}
                                                                     onClick={(event) => handleBookingSelect(data, event)}
                                                                 >
                                                                     <Typography

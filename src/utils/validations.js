@@ -108,11 +108,6 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         then: () => Yup.string().required('Please select a car type'),
         otherwise: () => Yup.string().nullable(),
     }),
-    categoryId: Yup.number().when('serviceType', {
-        is: (val) => ['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI', 'AUTO'].includes(val),
-        then: () => Yup.number().typeError('Please select a category').moreThan(0, 'Please select a category').required('Please select a category'),
-        otherwise: () => Yup.number().nullable(),
-    }),
     transmissionType: Yup.string().when('serviceType', {
         is: (val) => val === 'DRIVER',
         then: () => Yup.string().required('Transmission Type is required'),
@@ -938,6 +933,8 @@ export const CASH_BACK_SCHEMA = Yup.object().shape({
         .required("Zones are required"),
       cashbackDiscount: Yup.number()
         .typeError("Cashback discount must be a number")
+        .min(1, "Cashback discount must be between 1% and 100%")
+        .max(100, "Cashback discount must be between 1% and 100%")
         .required("Cashback discount is required"),
       parcelVehicleType: Yup.string().nullable(),
       subZoneId: Yup.string().nullable(),

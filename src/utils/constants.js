@@ -862,6 +862,7 @@ export const API_ROUTES = {
     'GET_DRIVERS_ADMIN': '/admin/driver/',
     'GET_DOCUMENT_DETAILS_LIST': '/admin/documents',
     'GET_DOCUMENT_DETAILS': '/admin/user/documents',
+    'DOCUMENT_DOWNLOAD': '/documents',
     'GET_ONLINE_REGISTER_DETAILS': '/online-register',
     'GET_CREATE_DRIVER': '/register/driver/',
     'GET_CREATE_OWNER': '/register/account',

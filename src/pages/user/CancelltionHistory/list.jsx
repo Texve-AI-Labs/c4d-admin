@@ -8,6 +8,7 @@ import {
   Spinner,
 } from "@material-tailwind/react";
 import { FunnelIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import moment from "moment";
@@ -20,8 +21,10 @@ function DriverCancellationHistoryList() {
   const [minCancellationCount, setMinCancellationCount] = useState("");
   const [maxCancellationCount, setMaxCancellationCount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});
+  const [cancellationSortOrder, setCancellationSortOrder] = useState("");
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -35,8 +38,13 @@ function DriverCancellationHistoryList() {
   const toIstEndBoundary = (dateValue) =>
     `${dateValue}T23:59:59.999+05:30`;
 
-  const getCancellationLogs = async (override = null, pageOverride = null) => {
+  const getCancellationLogs = async (
+    override = null,
+    pageOverride = null,
+    sortOverride = null
+  ) => {
     setLoading(true);
+    setErrorMessage("");
     try {
       const currentFilters = override ?? {
         driverIdSearch,
@@ -64,6 +72,10 @@ function DriverCancellationHistoryList() {
       const requestPage = pageOverride ?? pagination.currentPage;
       queryParams.page = requestPage;
       queryParams.limit = pagination.itemsPerPage;
+      const requestSort = sortOverride ?? cancellationSortOrder;
+      if (requestSort) {
+        queryParams.sort = requestSort;
+      }
 
       const response = await ApiRequestUtils.getWithQueryParam(
         API_ROUTES.GET_DRIVER_CANCELLATION_LOGS,
@@ -71,8 +83,13 @@ function DriverCancellationHistoryList() {
       );
 
       if (response?.success) {
-        const rows = response?.data?.rows;
-        const apiPagination = response?.data?.meta?.pagination;
+        const rows = response?.data?.rows || response?.data?.items || response?.rows || [];
+        const apiPagination =
+          response?.data?.meta?.pagination ||
+          response?.data?.pagination ||
+          response?.meta?.pagination ||
+          response?.pagination ||
+          {};
         setRecords(Array.isArray(rows) ? rows : []);
         setPagination((prev) => ({
           ...prev,
@@ -86,6 +103,7 @@ function DriverCancellationHistoryList() {
         }));
       } else {
         setRecords([]);
+        setErrorMessage(response?.message || "Failed to fetch driver cancellation history.");
         setPagination((prev) => ({
           ...prev,
           currentPage: requestPage,
@@ -96,6 +114,7 @@ function DriverCancellationHistoryList() {
     } catch (error) {
       console.error("Failed to fetch driver cancellation logs:", error);
       setRecords([]);
+      setErrorMessage(error?.message || "Failed to fetch driver cancellation history.");
       setPagination((prev) => ({
         ...prev,
         totalPages: 1,
@@ -116,6 +135,8 @@ function DriverCancellationHistoryList() {
     setEndDate("");
     setMinCancellationCount("");
     setMaxCancellationCount("");
+    setErrorMessage("");
+    setExpandedRows({});
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
     getCancellationLogs({
       driverIdSearch: "",
@@ -128,6 +149,26 @@ function DriverCancellationHistoryList() {
   };
 
   const handleApplyFilters = () => {
+    const minCount = minCancellationCount === "" ? null : Number(minCancellationCount);
+    const maxCount = maxCancellationCount === "" ? null : Number(maxCancellationCount);
+
+    if (startDate && endDate && startDate > endDate) {
+      setErrorMessage("End date must be on or after the start date.");
+      return;
+    }
+    if (
+      (minCount !== null && !Number.isFinite(minCount)) ||
+      (maxCount !== null && !Number.isFinite(maxCount)) ||
+      (minCount !== null && minCount < 0) ||
+      (maxCount !== null && maxCount < 0) ||
+      (minCount !== null && maxCount !== null && minCount > maxCount)
+    ) {
+      setErrorMessage("Enter valid cancellation count limits.");
+      return;
+    }
+
+    setErrorMessage("");
+    setExpandedRows({});
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
     getCancellationLogs(null, 1);
     setShowFilters(false);
@@ -138,6 +179,14 @@ function DriverCancellationHistoryList() {
       setPagination((prev) => ({ ...prev, currentPage: page }));
       getCancellationLogs(null, page);
     }
+  };
+
+  const handleCancellationSort = () => {
+    const nextSort = cancellationSortOrder === "ASC" ? "DESC" : "ASC";
+    setCancellationSortOrder(nextSort);
+    setExpandedRows({});
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    getCancellationLogs(null, 1, nextSort);
   };
 
   const generatePageButtons = () => {
@@ -289,6 +338,54 @@ function DriverCancellationHistoryList() {
         </div>
       ) : null}
 
+      {errorMessage ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          role="presentation"
+          onClick={() => setErrorMessage("")}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="driver-cancellation-error-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <Typography
+                  id="driver-cancellation-error-title"
+                  variant="h6"
+                  className="text-red-700"
+                >
+                  Cancellation History Error
+                </Typography>
+                <Typography className="mt-2 text-sm text-blue-gray-700">
+                  {errorMessage}
+                </Typography>
+              </div>
+              <button
+                type="button"
+                aria-label="Close error dialog"
+                className="rounded-md px-2 py-1 text-xl leading-none text-blue-gray-500 hover:bg-blue-gray-50"
+                onClick={() => setErrorMessage("")}
+              >
+                ×
+              </button>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <Button
+                size="sm"
+                className="bg-red-700 text-white"
+                onClick={() => setErrorMessage("")}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader
           variant="gradient"
@@ -317,12 +414,29 @@ function DriverCancellationHistoryList() {
                     key={el}
                     className="border-b border-blue-gray-50 py-3 px-5 text-left"
                   >
-                    <Typography
-                      variant="small"
-                      className="text-[11px] font-bold uppercase text-black"
-                    >
-                      {el}
-                    </Typography>
+                    <div className="flex items-center gap-1">
+                      <Typography
+                        variant="small"
+                        className="text-[11px] font-bold uppercase text-black"
+                      >
+                        {el}
+                      </Typography>
+                      {el === "Cancellation Count" ? (
+                        <button
+                          type="button"
+                          aria-label={`Sort cancellation count ${cancellationSortOrder === "ASC" ? "descending" : "ascending"}`}
+                          className="rounded p-1 text-black hover:bg-blue-gray-50"
+                          onClick={handleCancellationSort}
+                          disabled={loading}
+                        >
+                          {cancellationSortOrder === "ASC" ? (
+                            <ChevronUpIcon className="h-4 w-4" />
+                          ) : (
+                            <ChevronDownIcon className="h-4 w-4" />
+                          )}
+                        </button>
+                      ) : null}
+                    </div>
                   </th>
                 ))}
               </tr>
@@ -363,8 +477,8 @@ function DriverCancellationHistoryList() {
                   const history = Array.isArray(record?.history) ? record.history : [];
 
                   return (
-                    <>
-                      <tr key={rowKey}>
+                    <React.Fragment key={rowKey}>
+                      <tr>
                         <td className={rowClass}>
                           <Typography className="text-xs font-semibold text-blue-gray-900">
                             {driverId}
@@ -452,7 +566,10 @@ function DriverCancellationHistoryList() {
                                       </td>
                                       <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
                                         {item?.createdAt
-                                          ? moment(item.createdAt).format("DD-MM-YYYY / hh:mm A")
+                                          ? moment
+                                              .parseZone(item.createdAt)
+                                              .utcOffset("+05:30")
+                                              .format("DD-MM-YYYY / hh:mm A")
                                           : "-"}
                                       </td>
                                       <td className="border-b border-blue-gray-50 py-2 px-3 text-black">
@@ -479,7 +596,7 @@ function DriverCancellationHistoryList() {
                           </td>
                         </tr>
                       ) : null}
-                    </>
+                    </React.Fragment>
                   );
                 })
               )}

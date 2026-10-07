@@ -28,14 +28,11 @@ export const useBookingSummaryRealtime = ({
   sourceFilter,
   tripCoordinatorFilter,
   zoneFilter,
-  dateFilter,
 }) => {
   const { isLive, isReconnecting, eventSeq, lastEvent } = useRealtimeEvents();
   const scheduleRef = useRef({
     timer: null,
-    inFlight: false,
     lastFetchAt: 0,
-    pendingAfterFlight: false,
     isHidden: typeof document !== "undefined" ? document.hidden : false,
     pendingWhileHidden: false,
     lastQueryKey: "",
@@ -84,23 +81,8 @@ export const useBookingSummaryRealtime = ({
       }
 
       const run = async () => {
-        if (state.inFlight) {
-          state.pendingAfterFlight = true;
-          return;
-        }
-        state.inFlight = true;
-        try {
-          await refreshSummary({ dedupeMs, force });
-          state.lastFetchAt = Date.now();
-        } finally {
-          state.inFlight = false;
-          if (state.pendingAfterFlight) {
-            state.pendingAfterFlight = false;
-            state.timer = setTimeout(() => {
-              run();
-            }, PAGE_SUMMARY_DEBOUNCE_MS);
-          }
-        }
+        await refreshSummary({ dedupeMs, force });
+        state.lastFetchAt = Date.now();
       };
 
       const elapsed = Date.now() - state.lastFetchAt;
@@ -131,7 +113,6 @@ export const useBookingSummaryRealtime = ({
     sourceFilter,
     tripCoordinatorFilter,
     zoneFilter,
-    dateFilter,
     customDateFrom,
     customDateTo,
     customDateRangeValid,

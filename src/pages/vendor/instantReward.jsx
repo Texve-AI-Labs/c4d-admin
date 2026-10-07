@@ -11,12 +11,22 @@ import moment from 'moment';
 const validationSchema = Yup.object({
   phoneNumber: Yup.string().when('selectedType', {
     is: 'Driver',
-    then: (schema) => schema.required('Phone Number is required'),
+    then: (schema) =>
+      schema
+        .trim()
+        .matches(/^[6-9]\d{9}$/, 'Enter a valid 10-digit phone number')
+        .required('Phone Number is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
-  amount: Yup.string()
+  amount: Yup.number()
+    .typeError('Must be a valid amount')
     .required('Amount is required')
-    .matches(/^\d+(\.\d{1,2})?$/, 'Must be a valid amount (e.g., 10 or 10.00)'),
+    .positive('Amount must be greater than 0')
+    .test(
+      'whole-number',
+      'Amount must be a whole number',
+      (value) => value === undefined || /^\d+$/.test(String(value))
+    ),
   customerId: Yup.array().when('selectedType', {
     is: 'Customer',
     then: (schema) =>
@@ -26,6 +36,16 @@ const validationSchema = Yup.object({
     otherwise: (schema) => schema.max(0, 'Customer should not be selected for Drivers'),
   }),
 });
+
+const getRewardSubmissionErrorMessage = (data) => {
+  const statusCode = data?.error?.statusCode || data?.statusCode || data?.code;
+
+  if (Number(statusCode) === 410) {
+    return 'Customer account is deleted so unable process the rewards credit';
+  }
+
+  return data?.message || 'Failed to send reward. Please try again.';
+};
 
 const InstantReward = () => {
   const [customers, setCustomers] = useState([]);
@@ -87,9 +107,11 @@ const handlePageChange = (page) => {
           .filter((reward) => selectedType === 'Customer' || selectedType === 'Driver')
           .filter((reward) => {
             if (selectedType === 'Customer' && reward.customerId?.length > 0) {
-              return reward.customerId.some((id) => customers.some((c) => c.id === id));
+              return reward.customerId.some((id) =>
+                customers.some((customer) => String(customer.id) === String(id))
+              );
             } else if (selectedType === 'Driver' && reward.driverId?.length > 0) {
-              return reward.Drivers?.length > 0;
+              return true;
             }
             return false;
           })
@@ -97,13 +119,15 @@ const handlePageChange = (page) => {
             let name = '-';
             let phoneNumber = '-';
             if (selectedType === 'Customer' && reward.customerId?.length > 0) {
-              const matchedCustomers = customers.filter((c) => reward.customerId.includes(c.id));
-              name = matchedCustomers.map((c) => c.firstName).join(', ');
-              phoneNumber = matchedCustomers.map((c) => c.phoneNumber || '-').join(', ');
+              const matchedCustomers = customers.filter((customer) =>
+                reward.customerId.some((id) => String(id) === String(customer.id))
+              );
+              name = matchedCustomers.map((c) => c.firstName || 'Customer').join(', ') || '-';
+              phoneNumber = matchedCustomers.map((c) => c.phoneNumber || '-').join(', ') || '-';
             } else if (selectedType === 'Driver' && reward.driverId?.length > 0) {
               const matchedDrivers = reward.Drivers || [];
-              name = matchedDrivers.map((d) => d.firstName || 'Driver').join(', ');
-              phoneNumber = matchedDrivers.map((d) => d.phoneNumber || '-').join(', ');
+              name = matchedDrivers.map((d) => d.firstName || 'Driver').join(', ') || 'Driver';
+              phoneNumber = matchedDrivers.map((d) => d.phoneNumber || '-').join(', ') || '-';
             }
 
             return {
@@ -140,9 +164,6 @@ const handlePageChange = (page) => {
     }, []);
 
   useEffect(() => {
-    if (customers.length === 0) {
-      return;
-    }
     fetchRewards('Customer');
   }, [customers]);
 
@@ -152,24 +173,34 @@ const handlePageChange = (page) => {
       setError(null);
       const payload = {
         serviceType: values.selectedType.toUpperCase(),
-        amount: values.amount,
-        phoneNumber: values.selectedType === 'Driver' ? values.phoneNumber : undefined,
+        amount: Number(values.amount),
+        phoneNumber: values.selectedType === 'Driver' ? values.phoneNumber.trim() : undefined,
         customerId: values.selectedType === 'Customer' ? values.customerId : undefined,
       };
       // console.log('Submit Payload:', payload);
       const data = await ApiRequestUtils.post(API_ROUTES.INSTANT_REWARD, payload);
       if (data?.success) {
-        setModalData({ message: 'The Reward is sent successfully' });
+        setModalData({ title: 'Success', message: 'The Reward is sent successfully', type: 'success' });
         resetForm();
-        fetchRewards(values.selectedType);
+        await fetchRewards(values.selectedType);
         setTimeout(() => {
           setModalData(null);
           navigate('/dashboard/finance/instant-reward');
         }, 2000);
+      } else {
+        setModalData({
+          title: 'Alert !',
+          message: getRewardSubmissionErrorMessage(data),
+          type: 'error',
+        });
       }
     } catch (error) {
       console.error('Submission error:', error);
-      setError(error.response?.data?.message || 'Failed to send reward. Please try again.');
+      setModalData({
+        title: 'Alert !',
+        message: getRewardSubmissionErrorMessage(error.response?.data),
+        type: 'error',
+      });
     } finally {
       setIsSubmittingReward(false);
       setSubmitting(false);
@@ -185,6 +216,10 @@ const handlePageChange = (page) => {
   const generatePageButtons = () => {
   const buttons = [];
   const maxVisible = 5;
+
+    if (totalPages === 0) {
+      return buttons;
+    }
 
   let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
   let endPage = Math.min(totalPages, startPage + maxVisible - 1);
@@ -231,7 +266,7 @@ const handlePageChange = (page) => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ isSubmitting, setFieldValue, values }) => {
+        {({ isSubmitting, setFieldValue, setFieldTouched, values }) => {
           // console.log('Form Values:', values);
           return (
             <Form className="space-y-4">
@@ -289,7 +324,7 @@ const handlePageChange = (page) => {
                           const ids = selected ? selected.map((item) => item.value) : [];
                           // console.log('Selected Customer IDs:', ids);
                           setFieldValue('customerId', ids);
-                          setFieldValue('phoneNumber', '');
+                          setFieldTouched('customerId', true, false);
                         }}
                         className="basic-multi-select"
                         classNamePrefix="select"
@@ -424,6 +459,7 @@ const handlePageChange = (page) => {
                         )}
                       </tbody>
                     </table>
+                  {totalPages > 0 && (
                   <div className="flex items-center justify-center mt-4">
                       <Button
                         size="sm"
@@ -445,6 +481,7 @@ const handlePageChange = (page) => {
                         {">"}
                       </Button>
                     </div>
+                  )}
                   </>
                 )}
               </div>
@@ -459,8 +496,13 @@ const handlePageChange = (page) => {
           aria-labelledby="modal-title"
         >
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 id="modal-title" className="text-lg font-bold mb-4">
-              Success
+            <h3
+              id="modal-title"
+              className={`text-lg font-bold mb-4 ${
+                modalData.type === 'error' ? 'text-red-600' : 'text-gray-900'
+              }`}
+            >
+              {modalData.title}
             </h3>
             <p className="text-gray-600">{modalData.message}</p>
             <div className="mt-4 flex justify-end">

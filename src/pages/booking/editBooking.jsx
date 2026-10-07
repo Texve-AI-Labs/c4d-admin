@@ -2496,7 +2496,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                 </Typography>
                                                                 {quoteDetails?.walletApplicable === true  && (
                                                                         <>
-                                                                            <div className="flex justify-between items-start gap-3">
+                                                                            {/* <div className="flex justify-between items-start gap-3"> */}
                                                                                 <Typography color="gray" variant="h6">Wallet Amount Applied</Typography>
                                                                                 <Typography>
                                                                                     ₹ {Math.round(
@@ -2506,8 +2506,9 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                                         0
                                                                                     )}
                                                                                 </Typography>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-start gap-3">
+                                                                            {/* </div> */}
+                                                                            
+                                                                            {/* <div className="flex justify-between items-start gap-3"> */}
                                                                                 <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
                                                                                 <Typography>
                                                                                     ₹ {Math.max(
@@ -2523,7 +2524,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                                         )
                                                                                     )}
                                                                                 </Typography>
-                                                                            </div>
+                                                                            {/* </div> */}
                                                                         </>
                                                                     )}
                                                                 {useSystemPercentDiscount && <>
@@ -2952,6 +2953,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                                 0
                                                                             )}
                                                                         </Typography>
+                                                                        
                                                                         <Typography color="gray" variant="h6">Final Estimated Fare after Wallet Deduction</Typography>
                                                                         <Typography>
                                                                             ₹ {Math.max(

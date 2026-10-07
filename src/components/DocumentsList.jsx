@@ -14,6 +14,7 @@ import { API_ROUTES } from "@/utils/constants";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import Swal from "sweetalert2";
+import { saveDocumentFile } from "@/utils/downloadUtils";
 
 const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcelsList, serviceType, onStatusUpdated }) => {
     const [documentData, setdocumentData] = useState([]);
@@ -283,23 +284,9 @@ const DocumentsList = ({ id, type, noApprove = true, cabsList, autoList, parcels
                             </div>
 
                             <div className="flex justify-center mt-4">
-                                <a
-                                    href={modalData?.image}
-                                    download
-                                    target="_blank"
-                                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                >
-                                    Download Image 1
-                                </a>
+                                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData?.documentId || modalData?.id, documentType: modalData?.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 1</button>
                                 {modalData?.image2 && (
-                                    <a
-                                        href={modalData?.image2}
-                                        download
-                                        target="_blank"
-                                        className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                    >
-                                        Download Image 2
-                                    </a>
+                                    <button type="button" onClick={() => saveDocumentFile({ documentId: modalData?.documentId || modalData?.id, documentType: modalData?.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 2</button>
                                 )}
                             </div>
                             <Typography variant="body1" className="text-gray-600">

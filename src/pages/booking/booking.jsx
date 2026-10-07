@@ -2571,7 +2571,7 @@ const priceDetailsCardClass = isPeakHour
                                                 values.serviceType === 'RENTAL_HOURLY_PACKAGE' ? hourlyContinueDisabled :
                                                 values.serviceType === 'RENTAL_DROP_TAXI' ? dropTaxiContinueDisabled :
                                                 false;
-                                            const continueHint = Utils.getBookingContinueHint({
+	                                            const baseContinueHint = Utils.getBookingContinueHint({
                                                 values,
                                                 errors,
                                                 dirty,
@@ -2582,7 +2582,10 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental,
                                             });
-                                            const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer);
+	                                            const categorySelectionRequired = isCategoryService(values.serviceType) && visibleCategories.length > 0;
+	                                            const categorySelectionMissing = categorySelectionRequired && !values.categoryId;
+	                                            const continueHint = categorySelectionMissing ? 'Please choose category.' : baseContinueHint;
+	                                            const estimationReady = Utils.isBookingReadyForEstimation(values, selectedCustomer) && !categorySelectionMissing;
                                             // console.log('estimation gate debug', {
                                             //     serviceType: values.serviceType,
                                             //     packageTypeSelected: values.packageTypeSelected,
@@ -4359,7 +4362,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Typography>
                                                             )}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.amount?.packageDetails?.waitingMins}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.amount?.packageDetails?.waitingCharge}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryCommonPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryCommonPricing?.waitingCharge || 0}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
@@ -4423,7 +4426,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Typography>
                                                             )}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryCommonPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryCommonPricing?.waitingCharge || 0}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
@@ -4503,7 +4506,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 • If the driver’s start or end point is under 2 km, no charge is added; charges apply only when it is above 2 km.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Waiting beyond <span className='font-bold text-black'>{quoteDetails?.expectedPackageDetails?.waitingMins}</span> Mins  will be charged at <span className='font-bold text-black'> ₹ {quoteDetails?.expectedPackageDetails?.waitingCharge}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryCommonPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryCommonPricing?.waitingCharge || 0}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">

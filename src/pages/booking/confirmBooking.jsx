@@ -208,7 +208,11 @@ const ConfirmBooking = (props) => {
         if (hasSetIsOpen) {
             props.setIsOpen(false);
         } else {
-            navigate(backPath);
+            navigate(backPath, {
+                state: {
+                    listState: paramsPassed?.listState,
+                },
+            });
         }
     };
     const handleEditAction = (booking) => {
@@ -1110,7 +1114,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
     const isDropTaxiBooking = (booking) => (booking?.serviceType === 'RENTAL' && booking?.bookingType === 'DROP ONLY' && booking?.packageType ==='Outstation') || booking?.serviceType === 'RENTAL_DROP_TAXI';
     const isOutstationBooking = (booking) => booking?.serviceType === 'RENTAL' && booking?.packageType === 'Outstation' && booking?.bookingType === 'ROUND TRIP';
     const isHourlyShowingPrice = (booking) => booking?.serviceType === 'RENTAL' && booking?.packageType === 'Local';
-    const shouldHideDashFallback = (bookingDetails?.status === BOOKING_STATUS.QUOTED && String(bookingDetails?.source) === "Mobile App" && (bookingDetails?.carType === null));
+    const shouldHideDashFallback = (bookingDetails?.status === BOOKING_STATUS.QUOTED && String(bookingDetails?.source) === "Mobile App" && (bookingDetails?.category === null));
     const hasPreferredBaseFare = bookingDetails?.finalFareBreakdown?.baseFare !== undefined && bookingDetails?.finalFareBreakdown?.baseFare !== null;
     const preferredBaseFare = Number(bookingDetails?.finalFareBreakdown?.baseFare || 0);
     const fallbackBaseFare = Number(bookingDetails?.value?.fareBreakdown?.baseFare || 0);
@@ -3439,7 +3443,11 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                 if (typeof props?.setIsOpen === "function") {
                     props.setIsOpen(false); 
                 } else {
-                    navigate(backPath); 
+                    navigate(backPath, {
+                        state: {
+                            listState: paramsPassed?.listState,
+                        },
+                    }); 
                 }
 
             } else {
