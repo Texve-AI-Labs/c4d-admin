@@ -456,7 +456,7 @@ const AccountDocuments = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
-      {uploadError && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"><div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"><h2 className="text-lg font-semibold text-red-900">Document Upload Error</h2><p className="mt-3 text-sm text-gray-700">{uploadError}</p><div className="mt-6 flex justify-end"><Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button></div></div></div>}
+      {uploadError && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"><div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"><h2 className="text-lg font-semibold text-red-900">Alert !</h2><p className="mt-3 text-sm text-gray-700">{uploadError}</p><div className="mt-6 flex justify-end"><Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button></div></div></div>}
       <AccountCreationTabs activeStage={2} />
       <div className="mb-4">
         {/* <h2 className="text-2xl font-bold">Account Documents</h2> */}

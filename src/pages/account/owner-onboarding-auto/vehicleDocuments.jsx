@@ -221,7 +221,7 @@ const VehicleDocuments = () => {
       {uploadError &&
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-red-900">Document Upload Error</h2>
+            <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
             <p className="mt-3 text-sm text-gray-700">{uploadError}</p>
             <div className="mt-6 flex justify-end">
               <Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button>
