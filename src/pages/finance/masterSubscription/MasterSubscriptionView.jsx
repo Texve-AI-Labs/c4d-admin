@@ -313,6 +313,7 @@ export function MasterSubscriptionView() {
                                                                         {[
                                                                             "Plan Name",
                                                                             "Price",
+                                                                            "Final Price After Discount",
                                                                             "Base Credits",
                                                                             "Bonus Credits",
                                                                             "Total Credits",
@@ -346,6 +347,9 @@ export function MasterSubscriptionView() {
                                                                                         ? 'Free'
                                                                                         : plan.packagePrice}
                                                                                 </Link>
+                                                                            </td>
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
+                                                                                {plan.type === "PAID" ? Number(plan.discountPrice || 0) : '-'}
                                                                             </td>
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {Number(plan.price || 0) === 0 ? 'Free' : plan.price}

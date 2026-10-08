@@ -43,6 +43,7 @@ const initialValuesTemplate = {
   primaryPlanId: null,
   primaryPlanStatus: "ACTIVE",
   packagePrice: "",
+  discountPrice: 0,
   price: 0,
   name: "",
   bonusPrice: 0,
@@ -231,6 +232,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     type: "",
                     status: values.status || "ACTIVE",
                     packagePrice: "",
+                    discountPrice: 0,
                     price: "",
                     bonusPrice: "",
                     totalPrice: "",
@@ -246,7 +248,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
           </div>
 
           <div className="overflow-x-auto">
-          <div className="grid min-w-[1620px] grid-cols-10 gap-4 rounded-lg p-3">
+          <div className="grid min-w-[1950px] grid-cols-11 gap-4 rounded-lg p-3">
             <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
               <div className="text-sm font-semibold text-gray-800">Plan 1</div>
               <div className="text-xs text-gray-600">Default</div>
@@ -285,6 +287,13 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               <Field type="number" name="packagePrice" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
               <ErrorMessage name="packagePrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
+            {values.type === "PAID" && (
+            <div>
+              <label htmlFor="discountPrice" className="text-sm font-medium text-gray-700">Final Price After Discount</label>
+              <Field type="number" name="discountPrice" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+              <ErrorMessage name="discountPrice" component="div" className="text-red-500 text-sm my-1" />
+            </div>
+            )}
             <div>
               <label htmlFor="price" className="text-sm font-medium text-gray-700">Base Credits</label>
               <Field type="number" name="price" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
@@ -342,7 +351,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
           {values.plans && values.plans.length > 0 && (
             <div className="mt-4 space-y-3">
               {values.plans.map((plan, index) => (
-                <div key={index} className="grid min-w-[1620px] grid-cols-10 gap-4 rounded-lg p-3">
+                <div key={index} className="grid min-w-[1950px] grid-cols-11 gap-4 rounded-lg p-3">
                   <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
                     <div className="text-sm font-semibold text-gray-800">Plan {index + 2}</div>
                     <div className="text-xs text-gray-600">Additional</div>
@@ -369,6 +378,13 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     <Field type="number" name={`plans[${index}].packagePrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                     <ErrorMessage name={`plans[${index}].packagePrice`} component="div" className="text-red-500 text-sm my-1" />
                   </div>
+                  {plan.type === "PAID" && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Final Price After Discount</label>
+                    <Field type="number" name={`plans[${index}].discountPrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                    <ErrorMessage name={`plans[${index}].discountPrice`} component="div" className="text-red-500 text-sm my-1" />
+                  </div>
+                  )}
                   <div>
                     <label className="text-sm font-medium text-gray-700">Base Credits</label>
                     <Field type="number" name={`plans[${index}].price`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
@@ -517,6 +533,7 @@ const MasterSubscriptionEdit = () => {
             primaryPlanId: primaryPlan.id ?? null,
             primaryPlanStatus: primaryPlan.status || normalizedStatus,
             packagePrice: primaryPlan.packagePrice || 0,
+            discountPrice: primaryPlan.discountPrice || 0,
             price: primaryPlan.price || 0,
             name: primaryPlan.name || "",
             bonusPrice: primaryPlan.bonusPrice || 0,
@@ -531,6 +548,7 @@ const MasterSubscriptionEdit = () => {
               name: p.name || "",
               type: p.type || "",
               packagePrice: p.packagePrice || 0,
+              discountPrice: p.discountPrice || 0,
               price: p.price || 0,
               bonusPrice: p.bonusPrice || 0,
               totalPrice: p.totalPrice || 0,
@@ -558,6 +576,7 @@ const MasterSubscriptionEdit = () => {
         planId: values.primaryPlanId || id,
         price: Number(values.price) || 0,
         packagePrice: Number(values.packagePrice) || 0,
+        discountPrice: values.type === "PAID" ? Number(values.discountPrice || 0) : 0,
         serviceType: values.serviceType || "",
         zone: values.zone || "",
         name: values.name || "",
@@ -577,6 +596,7 @@ const MasterSubscriptionEdit = () => {
             plan.name ||
             plan.type ||
             plan.packagePrice ||
+            plan.discountPrice ||
             plan.price ||
             plan.bonusPrice ||
             plan.totalPrice ||
@@ -587,6 +607,7 @@ const MasterSubscriptionEdit = () => {
             planId: plan.id || undefined,
             price: Number(plan.price || 0),
             packagePrice: Number(plan.packagePrice || 0),
+            discountPrice: plan.type === "PAID" ? Number(plan.discountPrice || 0) : 0,
             serviceType: plan.serviceType || "",
             zone: values.zone || "",
             name: plan.name || "",
