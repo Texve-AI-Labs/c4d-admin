@@ -9,6 +9,7 @@ import { DRIVER_SCHEMA } from '@/utils/validations';
 import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select';
 import moment from "moment";
+import { saveDocumentFile } from '@/utils/downloadUtils';
 
 const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
 const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -24,7 +25,7 @@ const DocumentUploadInstructions = () => (
         <Typography className="text-sm font-semibold text-blue-gray-800">Document Upload Instructions</Typography>
         <ul className="mt-2 list-disc list-inside text-sm text-blue-gray-700 space-y-1">
             <li>All listed documents are required.</li>
-            <li>Allowed file types: JPG, PNG, PDF. Maximum size: 10 MB per file.</li>
+            <li>Documents: JPG, PNG, or PDF. Live Photo: JPG or PNG only. Maximum size: 10 MB per file.</li>
             <li>Aadhaar Image: upload 2 documents.</li>
             <li>Driving License Image: upload 2 documents.</li>
             <li>Live Photo: upload 1 document.</li>
@@ -110,6 +111,7 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect }) => {
 const DriverEdit = () => {
     const [driverVal, setDriverVal] = useState({});
     const [alert, setAlert] = useState(null);
+    const [registrationError, setRegistrationError] = useState("");
     const [packageDetails, setPackageDetails] = useState([]);
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -226,6 +228,7 @@ const DriverEdit = () => {
         dateOfBirth: driverVal?.result?.dob || "",
         age: driverVal?.result?.age || "",
         status: driverVal?.result?.status || "",
+        blockedReason: driverVal?.result?.blockedReason || "",
         // driverExperience: driverVal?.driverExperience || "",
         phoneNumber: driverVal?.result?.phoneNumber ? driverVal?.result?.phoneNumber.replace(/^(\+91)/, '') : "",
         license: driverVal?.result?.license || "",
@@ -261,6 +264,10 @@ const DriverEdit = () => {
     
     const [showBlockedReason, setShowBlockedReason] = useState(false);
 const [blockedReason, setBlockedReason] = useState('');
+
+    useEffect(() => {
+        setBlockedReason(driverVal?.result?.blockedReason || "");
+    }, [driverVal]);
     const searchLocations = async (query) => {
         if (query.length > 2) {
             const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, {
@@ -345,7 +352,7 @@ const [blockedReason, setBlockedReason] = useState('');
 
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         if (isSubmitting) return;
-        console.log('onSubmit :', values)
+        // console.log('onSubmit :', values)
         setIsSubmitting(true);
         try {
             const driverDetails = {
@@ -390,7 +397,7 @@ const [blockedReason, setBlockedReason] = useState('');
             let driverData = { driverDetails }
             //return;
             const data = await ApiRequestUtils.update(API_ROUTES.UPDATE_DRIVER, driverData);
-            console.log('data in driver add :', data);
+            // console.log('data in driver add :', data);
             if (data?.success) {
                 navigate('/dashboard/vendors/account/drivers', {
                     state: {
@@ -428,10 +435,14 @@ const [blockedReason, setBlockedReason] = useState('');
         id: state.value,
         name: state.label
     }));
-    const accountDistrictOptions = DISTRICT_LIST.map((district) => ({
-        id: district.value,
-        name: district.label
-    }));
+    const accountDistrictOptions = DISTRICT_LIST
+        .filter((district, index, list) =>
+            list.findIndex((item) => item.value === district.value) === index
+        )
+        .map((district) => ({
+            id: district.value,
+            name: district.label
+        }));
 
     const getDocumentByType = (value, type) => {
         return value.find(proof => proof.type === type) || "";
@@ -478,7 +489,7 @@ const [blockedReason, setBlockedReason] = useState('');
                         </label>
                         <input
                             type="file"
-                            accept="image/*, application/pdf"
+                            accept={name === "livePhoto" ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                             id={name}
                             name={name}
                             onChange={onChange}
@@ -495,14 +506,17 @@ const [blockedReason, setBlockedReason] = useState('');
                             onClick={() => {
                                 if (label === 'Live Photo') {
                                     setModalData({
-                                        image: fullDocVal?.image1
+                                        image: fullDocVal?.image1,
+                                        documentId: fullDocVal?.id,
+                                        type: fullDocVal?.type || name,
                                     })
                                 }
                                 else {
                                     setModalData({
                                         image: fullDocVal?.image1,
-
-                                        image2: fullDocVal?.image2
+                                        image2: fullDocVal?.image2,
+                                        documentId: fullDocVal?.id,
+                                        type: fullDocVal?.type || name,
                                     });
                                 }
 
@@ -529,8 +543,14 @@ const [blockedReason, setBlockedReason] = useState('');
         if (!requirement && selectedFiles.length > 2) return "You can upload a maximum of two documents.";
 
         for (const file of selectedFiles) {
-            if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
-                return "Invalid file type. Please upload JPG, PNG, or PDF.";
+            const isLivePhoto = label === "livePhoto";
+            const isAllowedType = isLivePhoto
+                ? ["image/jpeg", "image/png"].includes(file.type)
+                : ALLOWED_DOCUMENT_TYPES.includes(file.type);
+            if (!isAllowedType) {
+                return isLivePhoto
+                    ? "Invalid Live Photo type. Please upload JPG or PNG."
+                    : "Invalid file type. Please upload JPG, PNG, or PDF.";
             }
             if (file.size > MAX_DOCUMENT_SIZE) {
                 return "File size exceeds 10MB limit.";
@@ -548,11 +568,7 @@ const [blockedReason, setBlockedReason] = useState('');
 
             if (validationError) {
                 setLoading(false);
-                setAlert({
-                    message: validationError,
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(validationError);
                 e.target.value = "";
                 return;
             }
@@ -651,11 +667,7 @@ const [blockedReason, setBlockedReason] = useState('');
 
             if (validationError) {
                 setLoading(false);
-                setAlert({
-                    message: validationError,
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(validationError);
                 e.target.value = "";
                 return;
             }
@@ -762,6 +774,23 @@ const [blockedReason, setBlockedReason] = useState('');
 
     return (
         <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-7xl">
+            {registrationError ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                        <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
+                        <p className="mt-3 text-sm text-gray-700">{registrationError}</p>
+                        <div className="mt-6 flex justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setRegistrationError("")}
+                                className="bg-blue-600"
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             {loading ? (
                 <div className="flex justify-center items-center h-screen">
                     <Spinner className="h-12 w-12" />
@@ -785,7 +814,7 @@ const [blockedReason, setBlockedReason] = useState('');
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
-                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue }) => (
+                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue, setFieldTouched }) => (
                     <Form className="space-y-4">
                         <div className='grid grid-cols-1 gap-7'>
                             <div className='grid grid-cols-2 gap-7'>
@@ -868,11 +897,16 @@ const [blockedReason, setBlockedReason] = useState('');
                            <input
                             type="text"
                             id="blockedReason"
+                            name="blockedReason"
                             value={blockedReason}
-                              onChange={(e) => setBlockedReason(e.target.value)}
+                              onChange={(e) => {
+                                setBlockedReason(e.target.value);
+                                setFieldValue('blockedReason', e.target.value);
+                              }}
                                  className="p-2 w-full rounded-md border-gray-300 shadow-sm"
                                 required
                              />
+                             <ErrorMessage name="blockedReason" component="div" className="text-red-500 text-sm" />
                                </div>
                                  )}
 
@@ -903,7 +937,7 @@ const [blockedReason, setBlockedReason] = useState('');
                                         <span className="ml-2">Yellow Board</span>
                                     </label>
                                 </div>
-                                <ErrorMessage name="mode" component="div" className="text-red-500 text-sm" />
+                                <ErrorMessage name="licenseType" component="div" className="text-red-500 text-sm" />
                             </div>
 
                             <div>
@@ -1027,7 +1061,11 @@ const [blockedReason, setBlockedReason] = useState('');
                                         id="thaluk"
                                         name="thaluk"
                                         value={values.thaluk}
-                                        onChange={(e) => setFieldValue('thaluk', e.target.value)}
+                                        onChange={(e) => {
+                                            setFieldValue('thaluk', e.target.value);
+                                            setFieldTouched('thaluk', true, true);
+                                        }}
+                                        onBlur={() => setFieldTouched('thaluk', true, true)}
                                         className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select Thaluk</option>
@@ -1047,7 +1085,11 @@ const [blockedReason, setBlockedReason] = useState('');
                                         id="district"
                                         name="district"
                                         value={values.district}
-                                        onChange={(e) => setFieldValue('district', e.target.value)}
+                                        onChange={(e) => {
+                                            setFieldValue('district', e.target.value);
+                                            setFieldTouched('district', true, true);
+                                        }}
+                                        onBlur={() => setFieldTouched('district', true, true)}
                                         className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select Zone</option>
@@ -1067,7 +1109,11 @@ const [blockedReason, setBlockedReason] = useState('');
                                         id="accountDistrict"
                                         name="accountDistrict"
                                         value={values.accountDistrict}
-                                        onChange={(e) => setFieldValue("accountDistrict", e.target.value)}
+                                        onChange={(e) => {
+                                            setFieldValue("accountDistrict", e.target.value);
+                                            setFieldTouched("accountDistrict", true, true);
+                                        }}
+                                        onBlur={() => setFieldTouched("accountDistrict", true, true)}
                                         className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select District</option>
@@ -1088,7 +1134,11 @@ const [blockedReason, setBlockedReason] = useState('');
                                         id="state"
                                         name="state"
                                         value={values.state}
-                                        onChange={(e) => setFieldValue('state', e.target.value)}
+                                        onChange={(e) => {
+                                            setFieldValue('state', e.target.value);
+                                            setFieldTouched('state', true, true);
+                                        }}
+                                        onBlur={() => setFieldTouched('state', true, true)}
                                         className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                     >
                                         <option value="" disabled>Select State</option>
@@ -1371,23 +1421,13 @@ const [blockedReason, setBlockedReason] = useState('');
                             </div>
                         </div>
                         <div className="flex justify-center mt-4">
-                            <a
-                                href={modalData.image}
-                                download="doucument.pdf"
-                                target='_blank'
-                                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                            >
+                            <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId, documentType: modalData.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">
                                 Download Image 1
-                            </a>
+                            </button>
                             {modalData.image2 && (
-                                <a
-                                    href={modalData.image2}
-                                    download
-                                    target="_blank"
-                                    className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                >
+                                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId, documentType: modalData.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">
                                     Download Image 2
-                                </a>
+                                </button>
                             )}
                         </div>
                     </DialogBody>

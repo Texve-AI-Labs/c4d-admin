@@ -213,7 +213,7 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
             cutoff.setFullYear(cutoff.getFullYear() - 18);
             return value <= cutoff;
         }),
-    phoneNumber: Yup.string().matches(/^[6-9]{1}[0-9]{9}/, 'Must be a valid mobile number').required('Phone number is required'),
+    phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid mobile number').required('Phone number is required'),
     license: Yup.string().matches('^[a-zA-Z]{2}[0-9]{13}$', 'Invalid Driver\'s License').required('Driving License is required'),
     licenseType: Yup.string().required('License Type is required'),
     licenseExpiryDate: Yup.date()
@@ -239,7 +239,7 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
         .trim(),
     streetName: Yup.string().required('Street is required').min(3, 'Street name must be atleast 3 characters'),
     thaluk: Yup.string().required('Thaluk is required'),
-    district: Yup.string().required('District is required'),
+    district: Yup.string().required('Zone is required'),
     accountDistrict: Yup.string().required('Account District is required'),
     state: Yup.string().required('State is required'),
     pincode: Yup.string()
@@ -280,7 +280,13 @@ export const DRIVER_SCHEMA = Yup.object({
             cutoff.setFullYear(cutoff.getFullYear() - 18);
             return value <= cutoff;
         }),
-    phoneNumber: Yup.string().matches(/^[6-9]{1}[0-9]{9}/, 'Must be a valid mobile number').required('Phone number is required'),
+    phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid mobile number').required('Phone number is required'),
+    status: Yup.string().required("Driver status is required"),
+    blockedReason: Yup.string().when("status", {
+        is: "BLOCKED",
+        then: (schema) => schema.trim().required("Block reason is required"),
+        otherwise: (schema) => schema.notRequired(),
+    }),
     license: Yup.string().matches('^[a-zA-Z]{2}[0-9]{13}$', 'Invalid Driver\'s License').required('Driving License is required'),
     licenseType: Yup.string().required('License Type is required'),
     licenseExpiryDate: Yup.date()
@@ -306,7 +312,7 @@ export const DRIVER_SCHEMA = Yup.object({
         .trim(),
     streetName: Yup.string().required('Street is required').min(3, 'Street name must be atleast 3 characters'),
     thaluk: Yup.string().required('Thaluk is required'),
-    district: Yup.string().required('District is required'),
+    district: Yup.string().required('Zone is required'),
     accountDistrict: Yup.string().required('Account District is required'),
     state: Yup.string().required('State is required'),
     pincode: Yup.string()
