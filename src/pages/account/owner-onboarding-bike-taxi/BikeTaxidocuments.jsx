@@ -9,6 +9,7 @@ import { parseAddressParts } from "@/utils/addressUtils";
 import BikeTaxiAccountCreationTabs from "./BikeTaxiAccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 import LocationInput from "./LocationInput";
+import { getDocumentRequirement, isSingleFileDocument, MAX_DOCUMENT_SIZE } from "./documentRequirements";
 const toTitle = (value) => {
   if (!value) return "-";
   return String(value)
@@ -132,6 +133,7 @@ const BikeTaxiAccountDocuments = () => {
   const [account, setAccount] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
+  const [uploadError, setUploadError] = useState("");
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [isSameAddress, setIsSameAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -248,7 +250,7 @@ const BikeTaxiAccountDocuments = () => {
   const subjectType = "ACCOUNT";
   const serviceType = account?.type || "Bike";
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
+  const isSingleFileDocType = (docType) => isSingleFileDocument(docType);
   const getZoomKey = (docType, imageIndex) => `${docType || "UNKNOWN"}_${imageIndex}`;
   const getZoomValue = (docType, imageIndex) => previewZoom[getZoomKey(docType, imageIndex)] || 1;
   const updateZoom = (docType, imageIndex, direction) => {
@@ -400,26 +402,22 @@ const BikeTaxiAccountDocuments = () => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    const maxSize = 10 * 1024 * 1024;
     const singleFile = isSingleFileDocType(row.docType);
+    const requiredCount = getDocumentRequirement(row.docType);
+    const allowedTypes = singleFile ? ["image/jpeg", "image/png"] : ["image/jpeg", "image/png", "application/pdf"];
 
-    if (singleFile && files.length > 1) {
-      window.alert("Only one document is allowed for this type.");
-      return;
-    }
-    if (!singleFile && files.length > 2) {
-      window.alert("You can upload a maximum of two documents.");
+    if (files.length !== requiredCount) {
+      setUploadError(`${toTitle(row.docType)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
       return;
     }
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type)) {
-        window.alert("Invalid file type. Please upload JPG, PNG, or PDF.");
+      if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
+        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
         return;
       }
-      if (file.size > maxSize) {
-        window.alert("File size exceeds 10MB limit.");
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        setUploadError("File size exceeds 10MB limit.");
         return;
       }
     }
@@ -459,6 +457,7 @@ const BikeTaxiAccountDocuments = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
+      {uploadError && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"><div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"><h2 className="text-lg font-semibold text-red-900">Alert !</h2><p className="mt-3 text-sm text-gray-700">{uploadError}</p><div className="mt-6 flex justify-end"><Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button></div></div></div>}
       <BikeTaxiAccountCreationTabs activeStage={2} />
       <div className="mb-4">
         {/* <h2 className="text-2xl font-bold">Account Documents</h2> */}
@@ -555,7 +554,7 @@ const BikeTaxiAccountDocuments = () => {
                         type="file"
                         id={`upload-${row.key}`}
                         className="hidden"
-                        accept="image/*,application/pdf"
+                        accept={isSingleFileDocType(row.docType) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                         multiple={!isSingleFileDocType(row.docType)}
                         onChange={(e) => handleUploadDocument(e, row)}
                         disabled={Boolean(uploadingByType[row.docType])}
