@@ -7,6 +7,7 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { saveDocumentFile } from '@/utils/downloadUtils';
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
+import { getDocumentRequirement, isSingleFileDocument, MAX_DOCUMENT_SIZE } from './documentRequirements';
 const toTitle = (value) => {
   if (!value) return "-";
   return String(value)
@@ -52,6 +53,7 @@ const VehicleDocuments = () => {
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
   const [uploadErrorsByType, setUploadErrorsByType] = useState({});
+  const [uploadError, setUploadError] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
@@ -114,41 +116,37 @@ const VehicleDocuments = () => {
       ? `Approve these vehicle documents: ${blockedVehicleDocuments.join(", ")}.`
       : "";
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
+  const isSingleFileDocType = (docType) => isSingleFileDocument(docType);
 
   const handleUploadDocument = async (event, row) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
     setUploadErrorsByType((prev) => ({ ...prev, [row.docType]: "" }));
 
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    const maxSize = 10 * 1024 * 1024;
     const singleFile = isSingleFileDocType(row.docType);
+    const requiredCount = getDocumentRequirement(row.docType);
+    const allowedTypes = singleFile ? ["image/jpeg", "image/png"] : ["image/jpeg", "image/png", "application/pdf"];
 
-    if (singleFile && files.length > 1) {
+    if (files.length !== requiredCount) {
+      setUploadError(`${toTitle(row.docType)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
       setUploadErrorsByType((prev) => ({
         ...prev,
-        [row.docType]: "Only one document is allowed for this type.",
-      }));
-      return;
-    }
-    if (!singleFile && files.length > 2) {
-      setUploadErrorsByType((prev) => ({
-        ...prev,
-        [row.docType]: "You can upload a maximum of two documents.",
+        [row.docType]: `${toTitle(row.docType)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`,
       }));
       return;
     }
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type)) {
+      if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
+        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
         setUploadErrorsByType((prev) => ({
           ...prev,
-          [row.docType]: "Invalid file type. Please upload JPG, PNG, or PDF.",
+          [row.docType]: singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.",
         }));
         return;
       }
-      if (file.size > maxSize) {
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        setUploadError("File size exceeds 10MB limit.");
         setUploadErrorsByType((prev) => ({
           ...prev,
           [row.docType]: "File size exceeds 10MB limit.",
@@ -220,6 +218,17 @@ const VehicleDocuments = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
+      {uploadError &&
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
+            <p className="mt-3 text-sm text-gray-700">{uploadError}</p>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button>
+            </div>
+          </div>
+        </div>
+      }
       <AccountCreationTabs activeStage={3} />
       <div className="mb-4">
         {/* <h2 className="text-2xl font-bold">Vehicle Documents</h2> */}
@@ -314,7 +323,7 @@ const VehicleDocuments = () => {
                           type="file"
                           id={`upload-${row.key}`}
                           className="hidden"
-                          accept="image/*,application/pdf"
+                          accept={isSingleFileDocType(row.docType) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                           multiple={!isSingleFileDocType(row.docType)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.docType])}

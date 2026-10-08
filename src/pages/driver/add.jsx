@@ -9,6 +9,7 @@ import { DRIVER_ADD_SCHEMA } from '@/utils/validations';
 import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
 import { handleDriverRegisterApiError } from './registerApiErrorHandler';
+import { saveDocumentFile } from '@/utils/downloadUtils';
 
 const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
 const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
@@ -24,7 +25,7 @@ const DocumentUploadInstructions = () => (
         <Typography className="text-sm font-semibold text-blue-gray-800">Document Upload Instructions</Typography>
         <ul className="mt-2 list-disc list-inside text-sm text-blue-gray-700 space-y-1">
             <li>All listed documents are required.</li>
-            <li>Allowed file types: JPG, PNG, PDF. Maximum size: 10 MB per file.</li>
+            <li>Documents: JPG, PNG, or PDF. Live Photo: JPG or PNG only. Maximum size: 10 MB per file.</li>
             <li>Aadhaar Image: upload 2 documents.</li>
             <li>Driving License Image: upload 2 documents.</li>
             <li>Live Photo: upload 1 document.</li>
@@ -236,7 +237,7 @@ const DriverAdd = () => {
             const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, {
                 address: query
             });
-            console.log("data", data)
+            // console.log("data", data)
             if (data?.success && data?.data) {
                 setAddressSuggestions(data?.data)
             }
@@ -293,7 +294,7 @@ const DriverAdd = () => {
                 setSubmitting(false);
                 return;
             } else {
-                console.log('ELSE IN SUBMIT :');
+                // console.log('ELSE IN SUBMIT :');
                 setDriverAdded({
                     driverId: data?.data?.id,
                     value: true
@@ -332,7 +333,11 @@ const DriverAdd = () => {
         id: state.value,
         name: state.label
     }));
-    const accountDistrictOptions = DISTRICT_LIST.map((district) => ({
+    const accountDistrictOptions = DISTRICT_LIST
+        .filter((district, index, list) =>
+            list.findIndex((item) => item.value === district.value) === index
+        )
+    .map((district) => ({
         id: district.value,
         name: district.label
     }));
@@ -364,7 +369,7 @@ const DriverAdd = () => {
                         </label>
                         <input
                             type="file"
-                            accept="image/*, application/pdf"
+                            accept={name === "livePhoto" ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                             id={name}
                             name={name}
                             onChange={onChange}
@@ -381,12 +386,16 @@ const DriverAdd = () => {
                             onClick={() => {
                                 if (label === 'Live Photo') {
                                     setModalData({
-                                        image: fullDocVal?.image1
+                                        image: fullDocVal?.image1,
+                                        documentId: fullDocVal?.id,
+                                        type: fullDocVal?.type || name,
                                     })
                                 } else {
                                     setModalData({
                                         image: fullDocVal?.image1,
                                         image2: fullDocVal?.image2,
+                                        documentId: fullDocVal?.id,
+                                        type: fullDocVal?.type || name,
                                     })
                                 }
                             }}
@@ -410,8 +419,14 @@ const DriverAdd = () => {
         if (!requirement && selectedFiles.length > 2) return "You can upload a maximum of two documents.";
 
         for (const file of selectedFiles) {
-            if (!ALLOWED_DOCUMENT_TYPES.includes(file.type)) {
-                return "Invalid file type. Please upload JPG, PNG, or PDF.";
+            const isLivePhoto = label === "livePhoto";
+            const isAllowedType = isLivePhoto
+                ? ["image/jpeg", "image/png"].includes(file.type)
+                : ALLOWED_DOCUMENT_TYPES.includes(file.type);
+            if (!isAllowedType) {
+                return isLivePhoto
+                    ? "Invalid Live Photo type. Please upload JPG or PNG."
+                    : "Invalid file type. Please upload JPG, PNG, or PDF.";
             }
             if (file.size > MAX_DOCUMENT_SIZE) {
                 return "File size exceeds 10MB limit.";
@@ -429,11 +444,7 @@ const DriverAdd = () => {
 
             if (validationError) {
                 setLoading(false);
-                setAlert({
-                    message: validationError,
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(validationError);
                 e.target.value = "";
                 return;
             }
@@ -471,9 +482,9 @@ const DriverAdd = () => {
             formData.append('extImage2', files[1].name.split('.').pop());
             formData.append('fileTypeImage2', files[1].type);
             }
-            console.log('formData ->', formData);
+            // console.log('formData ->', formData);
             const data = await ApiRequestUtils.postDocs(API_ROUTES.UPLOAD_KYC_DOCUMENTS, formData);
-            console.log('DATA IN DOC INSERT :', data);
+            // console.log('DATA IN DOC INSERT :', data);
             if (data?.success) {
                 setImagePreviews((prev) => ({
                     ...prev,
@@ -492,7 +503,7 @@ const DriverAdd = () => {
             }
             setLoading(false); 
         } catch (err) {
-            console.log("ERR ->", err);
+            // console.log("ERR ->", err);
             setLoading(false);
         }
     };
@@ -505,11 +516,7 @@ const DriverAdd = () => {
 
             if (validationError) {
                 setLoading(false);
-                setAlert({
-                    message: validationError,
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(validationError);
                 e.target.value = "";
                 return;
             }
@@ -535,7 +542,7 @@ const DriverAdd = () => {
 
             const data = await ApiRequestUtils.postDocs(API_ROUTES.UPLOAD_PHOTO, formData);
 
-            console.log('DATA IN DOC INSERT :', data);
+            // console.log('DATA IN DOC INSERT :', data);
 
             if (data?.success) {
                 setLoading(false);
@@ -636,11 +643,11 @@ const DriverAdd = () => {
             <h2 className="text-2xl font-bold mb-4">Add New Driver</h2>
             <Formik
                 initialValues={initialValues}
-                // validationSchema={DRIVER_ADD_SCHEMA}
+                validationSchema={DRIVER_ADD_SCHEMA}
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
-                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue }) => (
+                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue, setFieldTouched }) => (
                     <Form className="space-y-4">
                         <div className={`grid grid-cols-1 gap-7`}>
                             <div className="grid grid-cols-1 gap-4">
@@ -714,7 +721,7 @@ const DriverAdd = () => {
                                                 <span className="ml-2">Yellow Board</span>
                                             </label>
                                         </div>
-                                        <ErrorMessage name="mode" component="div" className="text-red-500 text-sm" />
+                                        <ErrorMessage name="licenseType" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
                                         <label htmlFor="licenseExpiryDate" className="text-sm font-medium text-gray-700">License Expiry Date<RequiredMark /></label>
@@ -833,7 +840,11 @@ const DriverAdd = () => {
                                                 id="thaluk"
                                                 name="thaluk"
                                                 value={values.thaluk}
-                                                onChange={(e) => setFieldValue("thaluk", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("thaluk", e.target.value);
+                                                    setFieldTouched("thaluk", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("thaluk", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
@@ -858,7 +869,11 @@ const DriverAdd = () => {
                                                 id="district"
                                                 name="district"
                                                 value={values.district}
-                                                onChange={(e) => setFieldValue("district", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("district", e.target.value);
+                                                    setFieldTouched("district", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("district", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
@@ -883,7 +898,11 @@ const DriverAdd = () => {
                                                 id="accountDistrict"
                                                 name="accountDistrict"
                                                 value={values.accountDistrict}
-                                                onChange={(e) => setFieldValue("accountDistrict", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("accountDistrict", e.target.value);
+                                                    setFieldTouched("accountDistrict", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("accountDistrict", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
@@ -908,7 +927,11 @@ const DriverAdd = () => {
                                                 id="state"
                                                 name="state"
                                                 value={values.state}
-                                                onChange={(e) => setFieldValue("state", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("state", e.target.value);
+                                                    setFieldTouched("state", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("state", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
@@ -1154,23 +1177,13 @@ const DriverAdd = () => {
                             </div>
 
                             <div className="flex justify-center mt-4">
-                                <a
-                                    href={modalData.image}
-                                    download
-                                    target="_blank"
-                                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                >
+                                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId, documentType: modalData.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">
                                     Download Image 1
-                                </a>
+                                </button>
                                 {modalData.image2 && (
-                                    <a
-                                        href={modalData.image2}
-                                        download
-                                        target="_blank"
-                                        className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                    >
+                                    <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId, documentType: modalData.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">
                                         Download Image 2
-                                    </a>
+                                    </button>
                                 )}
                             </div>
                         </div>
