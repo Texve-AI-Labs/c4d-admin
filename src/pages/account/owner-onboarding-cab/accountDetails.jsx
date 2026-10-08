@@ -8,6 +8,7 @@ import { saveDocumentFile } from '@/utils/downloadUtils';
 import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from './AccountCreationTabs';
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
+import { getDocumentRequirement, isSingleFileDocument, MAX_DOCUMENT_SIZE } from './documentRequirements';
 import LocationInput from "./LocationInput";
 
 const isPdfFile = (src = "") =>
@@ -132,6 +133,7 @@ const AccountOnboardingDetails = () => {
   const [onboardingData, setOnboardingData] = useState(null);
   const [modalData, setModalData] = useState(null);
   const [uploadingByType, setUploadingByType] = useState({});
+  const [uploadError, setUploadError] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [selectedDocType, setSelectedDocType] = useState("");
   const [previewZoom, setPreviewZoom] = useState({});
@@ -344,7 +346,7 @@ const AccountOnboardingDetails = () => {
   }
   const canContinueMessage = canContinueMessageParts.join(" ");
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType);
+  const isSingleFileDocType = (docType) => isSingleFileDocument(docType);
 
   const handleAddressInputChange = (key, value) => {
     setAddressForm((prev) => ({ ...prev, [key]: value }));
@@ -474,26 +476,24 @@ const AccountOnboardingDetails = () => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    const maxSize = 10 * 1024 * 1024;
+    const allowedTypes = isSingleFileDocType(row.type)
+      ? ["image/jpeg", "image/png"]
+      : ["image/jpeg", "image/png", "application/pdf"];
     const singleFile = isSingleFileDocType(row.type);
+    const requiredCount = getDocumentRequirement(row.type);
 
-    if (singleFile && files.length > 1) {
-      window.alert("Only one document is allowed for this type.");
-      return;
-    }
-    if (!singleFile && files.length > 2) {
-      window.alert("You can upload a maximum of two documents.");
+    if (files.length !== requiredCount) {
+      setUploadError(`${toTitle(row.type)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
       return;
     }
 
     for (const file of files) {
       if (!allowedTypes.includes(file.type)) {
-        window.alert("Invalid file type. Please upload JPG, PNG, or PDF.");
+        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
         return;
       }
-      if (file.size > maxSize) {
-        window.alert("File size exceeds 10MB limit.");
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        setUploadError("File size exceeds 10MB limit.");
         return;
       }
     }
@@ -508,7 +508,7 @@ const AccountOnboardingDetails = () => {
       formData.append("fileTypeImage1", files[0].type);
     }
 
-    if (files[1] && !singleFile) {
+    if (files[1] && requiredCount > 1) {
       formData.append("image2", files[1]);
       formData.append("extImage2", files[1].name.split(".").pop() || "");
       formData.append("fileTypeImage2", files[1].type);
@@ -525,6 +525,7 @@ const AccountOnboardingDetails = () => {
       await fetchOnboardingDetails();
     } catch (error) {
       console.error("Failed to upload document:", error);
+      setUploadError("Failed to upload document. Please try again.");
     } finally {
       setUploadingByType((prev) => ({ ...prev, [row.type]: false }));
       event.target.value = "";
@@ -595,6 +596,17 @@ const AccountOnboardingDetails = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
+      {uploadError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
+            <p className="mt-3 text-sm text-gray-700">{uploadError}</p>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
       <AccountCreationTabs activeStage={2} />
       <div className="mb-4">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
@@ -645,7 +657,7 @@ const AccountOnboardingDetails = () => {
         <ul className="text-sm text-gray-600 list-disc list-inside">
           {requiredAccountDocs.map((docType) => (
             <li key={docType}>
-              <strong>{toTitle(docType)}:</strong> {["PHOTO", "INSURANCE", "PERMIT", "VEHICLE_PHOTO"].includes(docType) ? "1 document" : "2 documents"}
+              <strong>{toTitle(docType)}:</strong> {getDocumentRequirement(docType)} document{getDocumentRequirement(docType) > 1 ? "s" : ""}
             </li>
           ))}
         </ul>
@@ -724,7 +736,7 @@ const AccountOnboardingDetails = () => {
                           type="file"
                           id={`upload-${row.type}`}
                           className="hidden"
-                          accept="image/*,application/pdf"
+                          accept={isSingleFileDocType(row.type) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
                           multiple={!isSingleFileDocType(row.type)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.type])}
