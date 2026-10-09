@@ -181,6 +181,7 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
             baseFare: toNumber(item.pricing.baseFare),
             kilometer: toNumber(item.pricing.kilometer),
             kilometerPrice: toNumber(item.pricing.kilometerPrice),
+            extraKilometerPrice: toNumber(item.pricing.kilometerPrice),
             minCharge: 0,
             peakHours: [],
             nightCharge: toNumber(item.pricing.nightCharge),
