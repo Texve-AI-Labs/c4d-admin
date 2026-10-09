@@ -144,6 +144,9 @@ const VehicleInfoSection = ({
         rawAddress.id ||
         "";
     }
+    if (!map.AddressPlaceId) {
+      map.AddressPlaceId = section?.rawValues?.curAddressPlaceId || "";
+    }
     if (!map.Address && rawAddress) {
       map.Address = typeof rawAddress === "object" ? rawAddress.name || "" : String(rawAddress);
     }
