@@ -32,6 +32,12 @@ const formatBikeTaxiVehicleType = (value) => {
   return toDisplayCase(value);
 };
 
+const getExistingAddressPlaceId = (cabResult) =>
+  cabResult?.curAddress?.placeId || 
+  cabResult?.curAddress?.place_id || 
+  cabResult?.curAddress?.placeID || 
+  cabResult?.curAddressPlaceId || "";
+
 const getStatusTextClass = (status) => {
   const normalized = String(status || "").toUpperCase();
   if (normalized === "VERIFIED" || normalized === "APPROVED") return "text-green-600";
@@ -440,6 +446,9 @@ const BikeTaxiCompletedOnboardingDetails = () => {
         creditLogRows,
         rawValues: {
           carType: cabResult?.carType || "",
+          vehicleType: cabResult?.vehicleType || "",
+          curAddress: cabResult?.curAddress || null,
+          curAddressPlaceId: getExistingAddressPlaceId(cabResult),
         },
       };
     });
@@ -692,7 +701,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
           "",
         curAddress: makeAddressPayload(
           draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
-          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+          draftValues?.AddressPlaceId || getExistingAddressPlaceId(cabResult)
         ),
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "",

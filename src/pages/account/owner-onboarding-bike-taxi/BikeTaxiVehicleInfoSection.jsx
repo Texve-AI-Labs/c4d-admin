@@ -37,6 +37,11 @@ const formatAddressValue = (value) => {
   return String(value);
 };
 
+const normalizeBikeTaxiVehicleType = (value) => {
+  const normalized = String(value || "").trim().toUpperCase();
+  return normalized === "BIKE" || normalized === "SCOOTY" ? normalized : "";
+};
+
 const BikeTaxiVehicleInfoSection = ({
   vehicleSections = [],
   getStatusChipColor,
@@ -72,8 +77,12 @@ const BikeTaxiVehicleInfoSection = ({
         map.AddressPlaceId = row.value.placeId || row.value.place_id || row.value.placeID || row.value.id || "";
         return;
       }
-      map[row.label] = row.value === "-" ? "" : safeText(row.value, "");
+      map[row.label] = row.label === "Vehicle Type"
+        ? normalizeBikeTaxiVehicleType(row.value)
+        : row.value === "-" ? "" : safeText(row.value, "");
     });
+    if (!map.AddressPlaceId) map.AddressPlaceId = section?.rawValues?.curAddressPlaceId || "";
+    if (!map["Vehicle Type"]) map["Vehicle Type"] = normalizeBikeTaxiVehicleType(section?.rawValues?.vehicleType);
     return map;
   };
 
