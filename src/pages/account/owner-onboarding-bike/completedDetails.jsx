@@ -82,6 +82,13 @@ const makeAddressPayload = (name, placeId) => ({
   ...(placeId ? { placeId } : {}),
 });
 
+const getExistingAddressPlaceId = (cabResult) =>
+  cabResult?.curAddress?.placeId ||
+  cabResult?.curAddress?.place_id ||
+  cabResult?.curAddress?.placeID ||
+  cabResult?.curAddressPlaceId ||
+  "";
+
 const formatVehicleTypeValue = (value) => {
   if (!value) return "-";
 
@@ -429,6 +436,7 @@ const CompletedOnboardingDetails = () => {
           vehicleNumber: cabResult?.vehicleNumber || "",
           vehicleType: cabResult?.vehicleType || "",
           curAddress: cabResult?.curAddress || null,
+          curAddressPlaceId: getExistingAddressPlaceId(cabResult),
         },
       };
     });
@@ -670,7 +678,7 @@ const CompletedOnboardingDetails = () => {
       const existingAddress = cabResult?.curAddress || {};
       const addressPayload = makeAddressPayload(
         draftValues?.Address || existingAddress?.name || "",
-        draftValues?.AddressPlaceId || existingAddress?.placeId || existingAddress?.place_id || existingAddress?.placeID || ""
+        draftValues?.AddressPlaceId || getExistingAddressPlaceId(cabResult)
       );
       if (!addressPayload?.placeId) {
         window.alert("Please select the address from the suggestions so placeId can be saved.");

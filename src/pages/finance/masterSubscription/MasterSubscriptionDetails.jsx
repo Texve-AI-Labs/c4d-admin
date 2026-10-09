@@ -307,7 +307,7 @@ const MasterSubscriptionDetails = () => {
                                     {values.plans.map((plan, index) => (
                                         <div
                                             key={plan.id || index}
-                                            className="grid min-w-[1500px] grid-cols-9 gap-6 rounded-lg p-3 bg-white"
+                                            className="grid min-w-[1950px] grid-cols-10 gap-6 rounded-lg p-3 bg-white"
                                         >
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Plan Name</label>
@@ -335,6 +335,12 @@ const MasterSubscriptionDetails = () => {
                                                 <label className="text-sm font-medium text-gray-700">Price</label>
                                                 <Field type="number" name={`plans[${index}].packagePrice`} disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             </div>
+                                            {plan.type === "PAID" && (
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-700">Final Price After Discount</label>
+                                                <Field type="number" name={`plans[${index}].discountPrice`} disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                            </div>
+                                            )}
                                             <div>
                                                 <label className="text-sm font-medium text-gray-700">Base Credits</label>
                                                 <Field type="number" name={`plans[${index}].price`} disabled className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
