@@ -53,7 +53,7 @@ const LocalPricingFields = ({ prefix, disabled }) => (
         <NumberInput name={`${prefix}.pricing.baseKm`} label="Base Km" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.baseFare`} label="Base Fare" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.kilometer`} label="Package Km" disabled={disabled} />
-        <NumberInput name={`${prefix}.pricing.kilometerPrice`} label="Kilometer Price" disabled={disabled} />
+        <NumberInput name={`${prefix}.pricing.kilometerPrice`} label="Extra Kilometer Price" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.nightCharge`} label="Night Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.driverCharge`} label="Driver Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.freeExtraMinutes`} label="Free Extra Minutes" disabled={disabled} />
