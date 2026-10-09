@@ -82,6 +82,12 @@ const makeAddressPayload = (name, placeId) => ({
   ...(placeId ? { placeId } : {}),
 });
 
+const getExistingAddressPlaceId = (cabResult) =>
+  cabResult?.curAddress?.placeId ||
+  cabResult?.curAddress?.place_id ||
+  cabResult?.curAddress?.placeID ||
+  cabResult?.curAddressPlaceId ||
+  "";
 const normalizeServiceType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
   return normalized === "auto" ? "Auto" : "Parcel";
@@ -447,6 +453,8 @@ const CompletedOnboardingDetails = () => {
         creditLogRows,
         rawValues: {
           carType: cabResult?.carType || "",
+          curAddress: cabResult?.curAddress || "",
+          curAddressPlaceId: getExistingAddressPlaceId(cabResult),
         },
       };
     });
@@ -688,6 +696,8 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
+      const existingAddressPlaceId = getExistingAddressPlaceId(cabResult);
+      const selectedAddressPlaceId = draftValues?.AddressPlaceId || "";
       const autoDetails = {
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
@@ -699,7 +709,7 @@ const CompletedOnboardingDetails = () => {
           "",
         curAddress: makeAddressPayload(
           draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
-          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+          selectedAddressPlaceId || existingAddressPlaceId
         ),
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "",
