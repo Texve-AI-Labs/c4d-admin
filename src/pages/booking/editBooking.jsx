@@ -2477,7 +2477,7 @@ const getQuoteOutstationDetails = async (values) => {
                                                                 </Typography>
                                                                 <Typography color="gray" variant="h6">Pick up to Drop  Kilometer + Driver Km For Pickup Location</Typography>
                                                                 <Typography>
-                                                                    {(quoteDetails.amount?.estimatedDistance).toFixed(1)} Kms {quoteDetails.amount?.driverWithin > 0 && (<> + {Number(quoteDetails.amount.driverWithin).toFixed(1)} Kms</>)}
+                                                                    {(quoteDetails.amount?.distanceEstimated).toFixed(1)} Kms {quoteDetails.amount?.driverWithin > 0 && (<> + {Number(quoteDetails.amount.driverWithin).toFixed(1)} Kms</>)}
                                                                 </Typography>
                                                                 {values?.serviceType === 'RIDES' && (<>
 
