@@ -164,7 +164,7 @@ export const PERSONAL_INFO_DETAILS_EDIT_SCHEMA = Yup.object().shape({
 
 export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
     type: Yup.string().required('Service Type is required'),
-    name: Yup.string().required('Full Name/Company Name is required'),
+    name: Yup.string().required('Full Name/Company Name/Owner Name is required'),
     phoneNumber: Yup.string()
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
@@ -185,7 +185,7 @@ export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
 
 export const ACCOUNT_EDIT_SCHEMA = Yup.object().shape({
     type: Yup.string().required('Service Type is required'),
-    name: Yup.string().required('Full Name/Company Name is required'),
+    name: Yup.string().required('Full Name/Company Name/Owner Name is required'),
     phoneNumber: Yup.string()
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
