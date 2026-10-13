@@ -242,10 +242,6 @@ export function AccountList() {
   }, []);
 
   useEffect(() => {
-    setServiceTypeFilter(["Bike"]);
-  }, []);
-
-  useEffect(() => {
     if (!filtersLoaded) return;
 
     const data = {
