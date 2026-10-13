@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect  } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { ColorStyles } from '@/utils/constants';
@@ -7,11 +7,17 @@ const ParcelSearch = ({ onSearch, hideAddNewButton = false }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    onSearch(value);
-  };
+const handleSearchChange = (e) => {
+  setSearchQuery(e.target.value);
+};
+
+useEffect(() => {
+  const debounceTimer = setTimeout(() => {
+    onSearch(searchQuery.trim());
+  }, 2000);
+
+  return () => clearTimeout(debounceTimer);
+}, [searchQuery, onSearch]);
 
   return (
     <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
