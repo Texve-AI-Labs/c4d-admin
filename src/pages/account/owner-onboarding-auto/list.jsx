@@ -242,10 +242,6 @@ export function AccountList() {
   }, []);
 
   useEffect(() => {
-    setServiceTypeFilter(["Auto"]);
-  }, []);
-
-  useEffect(() => {
     if (!filtersLoaded) return;
 
     const data = {
