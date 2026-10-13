@@ -244,10 +244,6 @@ export function AccountList() {
   }, []);
 
   useEffect(() => {
-    setServiceTypeFilter(["Parcel"]);
-  }, []);
-
-  useEffect(() => {
     if (!filtersLoaded) return;
 
     const data = {
