@@ -636,7 +636,7 @@ export function AccountList() {
               <tr>
                 {["Created Date",
                   // "ID",
-                  "Account Name",
+                  "Owner Name",
                   // "Email",
                   "Phone Number",
                   "Service Type",

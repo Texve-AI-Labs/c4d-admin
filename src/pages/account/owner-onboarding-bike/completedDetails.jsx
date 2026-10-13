@@ -386,7 +386,9 @@ const CompletedOnboardingDetails = () => {
       .map(([key, value]) => {
         const label = toLabel(key);
         const displayLabel =
-          key === "district"
+          key === "name"
+            ? "Owner Name"
+            : key === "district"
             ? "Zone"
             : key === "accountDistrict"
               ? "Account District"
@@ -446,7 +448,7 @@ const CompletedOnboardingDetails = () => {
     const preferredLeftOrder = [
       "Id",
       "Type",
-      "Name",
+      "Owner Name",
       "Phone Number",
       "Email",
       "Source",
@@ -843,7 +845,7 @@ const CompletedOnboardingDetails = () => {
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                     {[
                       ["type", "Service Type"],
-                      ["name", "Name"],
+                      ["name", "Owner Name"],
                       ["phoneNumber", "Phone Number"],
                       ["email", "Email"],
                       ["source", "Source"],
