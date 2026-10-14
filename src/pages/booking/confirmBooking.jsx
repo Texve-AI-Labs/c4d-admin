@@ -2191,7 +2191,10 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     {/* </div> */}
                             {/* need to add logic for price */}
                     {/* <div className="grid sm:grid-cols-2 gap-4 text-sm">                                         */}
-                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && !isCategoryPricingService(bookingDetails?.serviceType) && bookingDetails?.serviceType !== 'PARCEL' && (
+                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP &&
+                                (!isCategoryPricingService(bookingDetails?.serviceType) ||
+                                    (bookingDetails?.serviceType === 'RENTAL' && bookingDetails?.packageType === 'Local')) &&
+                                bookingDetails?.serviceType !== 'PARCEL' && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
@@ -2205,15 +2208,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                                             ? bookingDetails?.Package?.price
                                                             : bookingDetails?.Package?.price
                                                 : (bookingDetails?.packageType === 'Local' && bookingDetails?.serviceType === 'RENTAL')
-                                                    ? (
-                                                        bookingDetails?.carType === "Sedan"
-                                                            ? bookingDetails?.Package?.priceSedan
-                                                            : bookingDetails?.carType === "MUV"
-                                                                ? bookingDetails?.Package?.priceMVP
-                                                                : bookingDetails?.carType === "SUV"
-                                                                    ? bookingDetails?.Package?.priceSuv
-                                                                    : bookingDetails?.Package?.price 
-                                                    )
+                                                    ? bookingDetails?.Package?.categoryPricing?.pricing?.price
                                                     : bookingDetails?.value?.fareBreakdown?.total) || 0
                                         )).toFixed(2)}`}
                                     </span>
