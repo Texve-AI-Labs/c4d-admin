@@ -1538,7 +1538,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                 isCategoryService(values.serviceType) && visibleCategories.length === 0;
                             const selectedCategoryPricing = getSelectedCategoryPricing(quoteDetails, values);
                             const categoryCommonPricing = selectedCategoryPricing.common;
-                            useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap, values.serviceType);
+                            useLuggageAndSeaterLogic(values.carType, setFieldValue, values.serviceType);
                     return(
                                 <> {customerData && (
                                     <div className="p-2 flex mb-4 pointer-events-none">

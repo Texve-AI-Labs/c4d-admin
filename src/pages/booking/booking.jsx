@@ -58,8 +58,9 @@ const estimateRentalRoundTripMinimum = async (values, setMinimumReturnAt, locati
     }
 };
 
-const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}) => {
+const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}, serviceType = '') => {
     useEffect(() => {
+        if (['RIDES', 'AUTO', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(serviceType)) return;
         const normalizedCarType = String(carType || '').toLowerCase();
         const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
         const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
@@ -74,7 +75,7 @@ const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {
             setFieldValue('luggage', '');
             setFieldValue('seaterCapacity', '');
         }
-    }, [carType, setFieldValue, luggageCapacityMap]);
+    }, [carType, setFieldValue, luggageCapacityMap, serviceType]);
 };
 // Format date to YYYY-MM-DD for input's min attribute
 const minsToHHMM = (totalMins)=> {
@@ -3981,18 +3982,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             </div>
                                                                             <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Package Price:</Typography>
-                                                                                <Typography>
-                                                                                    ₹ {Math.round((() => {
-                                                                                        const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
-                                                                                        if (!selectedPackage) return 0;
-                                                                                        switch (quoteDetails.amount?.carType?.toUpperCase()) {
-                                                                                            case "MINI": return selectedPackage.price || 0;
-                                                                                            case "SEDAN": return selectedPackage.priceSedan || 0;
-                                                                                            case "SUV": return selectedPackage.priceSuv || 0;
-                                                                                            case "MUV": return selectedPackage.priceMVP || 0;
-                                                                                            default: return 0;
-                                                                                        }
-                                                                                        })())}
+                                                                                <Typography> ₹ {quoteDetails.amount?.fareBreakdown?.baseFare || '0'}
                                                                                 </Typography>
                                                                             </div>
                                                                             {quoteDetails.amount?.gst_amount > 0 && (
@@ -4006,7 +3996,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Estimate Fare:</Typography>
                                                                                 <Typography>
-                                                                                    {quoteDetails.amount?.fare_after_gst|| ''}
+                                                                                    ₹ {quoteDetails.amount?.fare_after_gst|| ''}
                                                                                 </Typography>
                                                                             </div>
                                                                             {quoteDetails?.walletApplicable === true  && (
