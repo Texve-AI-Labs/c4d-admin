@@ -27,6 +27,7 @@ import EditBooking from './editBooking';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { getCapacityValues } from './utils/capacityMapping';
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -58,25 +59,6 @@ const estimateRentalRoundTripMinimum = async (values, setMinimumReturnAt, locati
     }
 };
 
-const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}, serviceType = '') => {
-    useEffect(() => {
-        if (['RIDES', 'AUTO', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(serviceType)) return;
-        const normalizedCarType = String(carType || '').toLowerCase();
-        const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
-        const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
-
-        if (carType === 'Mini' || carType === 'Sedan') {
-            setFieldValue('luggage', luggageValue);
-            setFieldValue('seaterCapacity', '5');
-        } else if (carType === 'SUV' || carType === 'MUV') {
-            setFieldValue('luggage', luggageValue);
-            setFieldValue('seaterCapacity', '7');
-        } else {
-            setFieldValue('luggage', '');
-            setFieldValue('seaterCapacity', '');
-        }
-    }, [carType, setFieldValue, luggageCapacityMap, serviceType]);
-};
 // Format date to YYYY-MM-DD for input's min attribute
 const minsToHHMM = (totalMins)=> {
         const hrs = Math.floor(totalMins / 60);
@@ -269,6 +251,7 @@ const Booking = (props) => {
     const mapRef = useRef(null);
     const [quoteDetails, setQuoteDetails] = useState(null);
     const [quoteMeta, setQuoteMeta] = useState(null);
+    const [capacityConfig, setCapacityConfig] = useState({});
     const approvedHistoryRefreshKeyRef = useRef('');
     const approvedStatusSyncTimerRef = useRef(null);
     const adminStatusSyncInFlightRef = useRef(false);
@@ -703,6 +686,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       setPackageTypeSelectedData(data.data);
       setCategoryOptions(getZoneCategories(data));
       setLuggageCapacityMap(data?.luggageCapacity || {});
+      setCapacityConfig({ seaterCapacity: data?.seaterCapacity, luggageCapacity: data?.luggageCapacity });
     //   console.log('Package list fetched:', data.data);
     } else {
       if (isDriverService) {
@@ -735,7 +719,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
   }
 }, [currentPackageType, dropLocation, pickupLocation]);
 
-useEffect(() => {
+                                                    useEffect(() => {
 //   console.log('useEffect for package list:', { selectedAreaId, currentServiceType, currentPackageType });
   if (!selectedAreaId || !currentServiceType) {
     // console.log('Skipping getPackageListDetails: missing selectedAreaId or currentServiceType');
@@ -1781,8 +1765,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             ...((values.sourceType === "Others" || values.sourceType === "Offline Ads") && {
              otherSourceType: values.otherSourceType?.trim() || null
             }),
-            luggage: values.luggage,
-            seaterCapacity:values.seaterCapacity,
             landmark: values.landmark || '',
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
             zone: actualZone,
@@ -2613,7 +2595,27 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental
                                             );
-                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap, values.serviceType);
+                                        useEffect(() => {
+                                            const selectedCategory = categoryOptions.find(
+                                                (item) => Number(item.id) === Number(values.categoryId)
+                                            );
+                                            const capacity = getCapacityValues({
+                                                serviceType: values.serviceType,
+                                                carType: values.carType,
+                                                category: values.category || selectedCategory?.category,
+                                                capacityConfig,
+                                            });
+                                            console.log('[CAPACITY MAPPING]', {
+                                                serviceType: values.serviceType,
+                                                category: values.category || selectedCategory?.category,
+                                                categoryId: values.categoryId,
+                                                carType: values.carType,
+                                                capacityConfig,
+                                                capacity,
+                                            });
+                                            setFieldValue('luggage', capacity.luggage, false);
+                                            setFieldValue('seaterCapacity', capacity.seaterCapacity, false);
+                                        }, [values.serviceType, values.carType, values.category, capacityConfig, setFieldValue]);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
                                             zoneCheckUpFun(values).then(zoneData => {
@@ -2740,10 +2742,6 @@ const priceDetailsCardClass = isPeakHour
                                                                             setQuoteMeta(null);
                                                                             setFieldValue('categoryId', item.id);
                                                                             setFieldValue('category', item.category);
-                                                                            if (isCategoryService(values.serviceType) && item.metadata) {
-                                                                                setFieldValue('luggage', item.metadata.bags ?? '');
-                                                                                setFieldValue('seaterCapacity', item.metadata.seats ?? '');
-                                                                            }
                                                                         }}
                                                                         className={`rounded-xl border-2 p-4 text-left transition ${selected ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-300 bg-white hover:border-blue-300'}`}
                                                                     >
@@ -3391,39 +3389,6 @@ const priceDetailsCardClass = isPeakHour
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                )}
-                                                   {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' ? 'visible' : '') && (
-                                                                    <div className="p-2 space-y-2">
-                                                                        <label className="block text-sm font-medium text-black-700">
-                                                                            Luggage
-                                                                        </label>
-                                                                        <Field
-                                                                            type="number"
-                                                                            name="luggage"
-                                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                            placeholder="Luggage Count (Auto-filled)"
-                                                                            disabled={true}
-                                                                            value={values.luggage}
-                                                                        />
-                                                                        <ErrorMessage name="luggage" component="div" className="text-red-500 text-sm" />
-                                                                    </div>
-                                                                )}
-                                                                {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' ? 'visible' : '') && (
-                                                                    <div className="p-2 space-y-2">
-                                                                        <label className="block text-sm font-medium text-black-700">
-                                                                            Seater Capacity
-                                                                        </label>
-                                                                        <Field
-                                                                            type="text"
-                                                                            name="seaterCapacity"
-                                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                            placeholder="Seater Capacity (Auto-filled)"
-                                                                            disabled={true}
-                                                                            value={values.seaterCapacity}
-                                                                        />
-                                                                       
-                                                                        <ErrorMessage name="seater" component="div" className="text-red-500 text-sm" />
                                                                     </div>
                                                                 )}
                                                     {(values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_DROP_TAXI' || values.serviceType === 'RIDES' || values.serviceType === 'AUTO') && (
@@ -3730,6 +3695,12 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                     <div className="p-2 space-y-2 ">
+                                                        {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                                <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
+                                                                <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                                            </div>
+                                                        )}
                                                         <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
                                                         <Field as="select" name="sourceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                                             <option value="">Select Source Type</option>
