@@ -2544,6 +2544,7 @@ const priceDetailsCardClass = isPeakHour
                                                 isCategoryService(values.serviceType) && visibleCategories.length === 0;
                                             const selectedCategoryPricing = getSelectedCategoryPricing(quoteDetails, values);
                                             const categoryCommonPricing = selectedCategoryPricing.common;
+                                            const categoryHourlyPricing = selectedCategoryPricing.pricing;
                                             const categoryAcPricing = selectedCategoryPricing.ac;
                                             const {
                                                 driverContinueDisabled,
@@ -4314,13 +4315,11 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                                         <Typography className=" text-sm text-gray-700">
                                                                 • The first additional <span className="font-bold text-black">
-                                                                    {categoryCommonPricing?.freeExtraMinutes ?? quoteDetails.expectedPackageDetails?.freeExtraMinutes}
-                                                                                </span> minutes over customer <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours </span>, trip time are free. After that, customer will be charged <span className="font-bold text-black">₹{(() => {
-                                                                    const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
-                                                                    return selectedPackage ? (
-                                                                        categoryCommonPricing?.additionalMinCharge
-                                                                    ) : '';
-                                                                })()}</span> per minute.
+                                                                    {categoryHourlyPricing?.freeExtraMinutes}
+                                                                                </span> minutes over customer <span className="font-bold text-black">{quoteDetails?.expectedPackageDetails?.period || ''} hours </span>, 
+                                                                                trip time are free. After that, customer will be charged 
+                                                                                <span className="font-bold text-black"> ₹ {categoryHourlyPricing?.additionalMinCharge}
+                                                                </span> per minute.
                                                             </Typography>
                                                             {quoteDetails?.amount?.fareBreakdown?.gst_percentage > 0 && (
                                                                 <>
@@ -4329,16 +4328,10 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             </>)}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • For every extra kilometer <span className="font-bold text-black">₹ {(() => {
-                                                                    const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
-                                                                if (!selectedPackage) return '';
-                                                                const price =
-                                                                        categoryCommonPricing?.kilometerPrice || categoryAcPricing?.acKilometerPrice;
-                                                                return Math.round(Number(price || 0));
-                                                                })()}</span> will be charged.
+                                                                • For every extra kilometer <span className="font-bold text-black"> ₹ {categoryHourlyPricing?.extraKilometerPrice} </span> will be charged.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Night charge of <span className="font-bold text-black">₹ {categoryCommonPricing?.nightCharge || ''}</span> will be charged after {convertTimeFormat(categoryCommonPricing?.nightHoursFrom || '')}.
+                                                                • Night charge of <span className="font-bold text-black">₹ {categoryHourlyPricing?.nightCharge || ''}</span> will be charged after {convertTimeFormat(categoryHourlyPricing?.nightHoursFrom || '')}.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Hourly Packages are available only for Local services.
@@ -4352,7 +4345,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Typography>
                                                             )}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryCommonPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryCommonPricing?.waitingCharge || 0}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryHourlyPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryHourlyPricing?.waitingCharge || 0}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
