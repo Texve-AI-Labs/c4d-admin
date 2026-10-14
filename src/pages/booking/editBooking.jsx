@@ -628,6 +628,14 @@ const EditBooking = (props) => {
                     serviceType: mappedServiceType,
                     zone: zone || '',
                 });
+            let capacityResponse = data;
+            if (isDriverService) {
+                capacityResponse = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+                    serviceType: 'DRIVER',
+                    zone: zone || '',
+                });
+                // console.log('[DRIVER CAPACITY RESPONSE]', capacityResponse);
+            }
             if (isDriverService) {
                 // console.log('[DRIVER PACKAGE LOOKUP] response:', data);
                 const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
@@ -639,11 +647,21 @@ const EditBooking = (props) => {
                 }
             }
 
-            if (data?.success && Array.isArray(data?.data)) {
-                setPackageTypeSelectedData(data?.data);
+            console.log('[CAPACITY API RESPONSE]', {
+                serviceType: mappedServiceType,
+                response: data,
+                luggageCapacity: capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity,
+                seaterCapacity: capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity,
+            });
+            const packageRows = Array.isArray(data?.data) ? data.data : (data?.data?.packages || []);
+            const luggageCapacity = capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity || {};
+            const seaterCapacity = capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity || {};
+            setCapacityConfig({ seaterCapacity, luggageCapacity });
+
+            if (data?.success && packageRows.length > 0) {
+                setPackageTypeSelectedData(packageRows);
                 setCategoryOptions(getZoneCategories(data));
-                setLuggageCapacityMap(data?.luggageCapacity || {});
-                setCapacityConfig({ seaterCapacity: data?.seaterCapacity, luggageCapacity: data?.luggageCapacity });
+                setLuggageCapacityMap(luggageCapacity);
             } else {
                 if (isDriverService) {
                     const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
@@ -1347,7 +1365,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                             : (values?.tripType?.toUpperCase() || ''),
                     }),
                     ...(isDriverService
-                        ? { carType: values?.carType || bookingData?.carType || '', transmissionType: values?.transmissionType || bookingData?.transmissionType || '' }
+                        ? {
+                            carType: values?.carType || bookingData?.carType || '',
+                            transmissionType: values?.transmissionType || bookingData?.transmissionType || '',
+                            luggage: values?.luggage || '',
+                            seaterCapacity: values?.seaterCapacity || '',
+                        }
                         : {}),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,

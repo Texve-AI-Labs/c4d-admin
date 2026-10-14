@@ -669,6 +669,14 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
           serviceType: mappedServiceType,
           zone: zone || '',
         });
+    let capacityResponse = data;
+    if (isDriverService) {
+      capacityResponse = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+        serviceType: 'DRIVER',
+        zone: zone || '',
+      });
+    //   console.log('[DRIVER CAPACITY RESPONSE]', capacityResponse);
+    }
     if (isDriverService) {
     //   console.log('[DRIVER PACKAGE LOOKUP] response:', data);
       const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
@@ -680,13 +688,21 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       }
     }
 
-    // console.log('Raw API response:', JSON.stringify(data, null, 2));
+    // console.log('[CAPACITY API RESPONSE]', {
+    //   serviceType: mappedServiceType,
+    //   response: data,
+    //   luggageCapacity: capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity,
+    //   seaterCapacity: capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity,
+    // });
+    const packageRows = Array.isArray(data?.data) ? data.data : (data?.data?.packages || []);
+    const luggageCapacity = capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity || {};
+    const seaterCapacity = capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity || {};
+    setCapacityConfig({ seaterCapacity, luggageCapacity });
 
-    if (data?.success && Array.isArray(data?.data)) {
-      setPackageTypeSelectedData(data.data);
+    if (data?.success && packageRows.length > 0) {
+      setPackageTypeSelectedData(packageRows);
       setCategoryOptions(getZoneCategories(data));
-      setLuggageCapacityMap(data?.luggageCapacity || {});
-      setCapacityConfig({ seaterCapacity: data?.seaterCapacity, luggageCapacity: data?.luggageCapacity });
+      setLuggageCapacityMap(luggageCapacity);
     //   console.log('Package list fetched:', data.data);
     } else {
       if (isDriverService) {
@@ -1748,7 +1764,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             // transmissionType: values.transmissionType,
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
             ...(isDriverService ? { carType: values.carType || '', 
-                transmissionType: values.transmissionType || '' }
+                transmissionType: values.transmissionType || '',
+                luggage: values.luggage || '',
+                seaterCapacity: values.seaterCapacity || '' }
                 : {}),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
