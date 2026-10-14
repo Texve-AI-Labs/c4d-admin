@@ -81,16 +81,16 @@ const getServicePackageId = (packages, serviceType, packageType, bookingType, se
         ? selectedPackageNumber
         : matchingPackages[0]?.id || fallbackPackages[0]?.id);
     const numericPackageId = Number(packageId);
-    console.log('[CATEGORY PACKAGE RESOLUTION]', {
-        serviceType,
-        packageType,
-        bookingType,
-        selectedPackageId,
-        packageIds: (packages || []).map((item) => item?.id),
-        matchingPackageIds: matchingPackages.map((item) => item?.id),
-        fallbackPackageIds: fallbackPackages.map((item) => item?.id),
-        packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
-    });
+    // console.log('[CATEGORY PACKAGE RESOLUTION]', {
+    //     serviceType,
+    //     packageType,
+    //     bookingType,
+    //     selectedPackageId,
+    //     packageIds: (packages || []).map((item) => item?.id),
+    //     matchingPackageIds: matchingPackages.map((item) => item?.id),
+    //     fallbackPackageIds: fallbackPackages.map((item) => item?.id),
+    //     packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
+    // });
     return Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined;
 };
 
@@ -598,13 +598,13 @@ const EditBooking = (props) => {
             const dropLat = dropLocation?.lat || bookingData?.dropLat;
             const dropLong = dropLocation?.lng || bookingData?.dropLong;
             if (isDriverService && (!pickupLat || !pickupLong || !dropLat || !dropLong)) {
-                console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
-                    pickupLat,
-                    pickupLong,
-                    dropLat,
-                    dropLong,
-                    packageType,
-                });
+                // console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
+                //     pickupLat,
+                //     pickupLong,
+                //     dropLat,
+                //     dropLong,
+                //     packageType,
+                // });
                 return;
             }
 
@@ -619,9 +619,9 @@ const EditBooking = (props) => {
                 zone: zone || '',
                 source: 'ROOTCABS WEBSITE',
             };
-            if (isDriverService) {
-                console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
-            }
+            // if (isDriverService) {
+            //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+            // }
             const data = isDriverService
                 ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
                 : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
@@ -629,7 +629,7 @@ const EditBooking = (props) => {
                     zone: zone || '',
                 });
             if (isDriverService) {
-                console.log('[DRIVER PACKAGE LOOKUP] response:', data);
+                // console.log('[DRIVER PACKAGE LOOKUP] response:', data);
                 const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
                 if (notice?.title || notice?.message) {
                     setDriverPackageNotice({
@@ -688,12 +688,12 @@ const estimateRentalRoundTripDates = async (values, setMinimumReturnAt, location
         return values;
     }
 
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
     const estimate = await ApiRequestUtils.post(
         API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
         estimatePayload
     );
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
     setRentalRoundTripEstimatedDurationText(estimate?.data?.estimatedDurationText || '');
 
     const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
@@ -747,12 +747,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
         values?.packageTypeSelected === 'Outstation' &&
         String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
 
-    console.log('[RENTAL ROUND TRIP CHECK]', {
-        serviceType: values?.serviceType,
-        packageType: values?.packageTypeSelected,
-        tripType: values?.tripType,
-        isRentalOutstationRoundTrip,
-    });
+    // console.log('[RENTAL ROUND TRIP CHECK]', {
+    //     serviceType: values?.serviceType,
+    //     packageType: values?.packageTypeSelected,
+    //     tripType: values?.tripType,
+    //     isRentalOutstationRoundTrip,
+    // });
 
     if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
         await estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt);
@@ -851,7 +851,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
         quoteData.adminDiscount = adminDiscountPayload;
     }
     const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
-    console.log('[GET QUOTE OUTSTATION] response:', data);
+    // console.log('[GET QUOTE OUTSTATION] response:', data);
     if (data?.success) {
         setQuoteDetails(data?.data);
         setDiscountDetails(data?.data);
@@ -1531,14 +1531,14 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                     category: values.category || selectedCategory?.category,
                                     capacityConfig,
                                 });
-                                console.log('[CAPACITY MAPPING]', {
-                                    serviceType: values.serviceType,
-                                    category: values.category || selectedCategory?.category,
-                                    categoryId: values.categoryId,
-                                    carType: values.carType,
-                                    capacityConfig,
-                                    capacity,
-                                });
+                                // console.log('[CAPACITY MAPPING]', {
+                                //     serviceType: values.serviceType,
+                                //     category: values.category || selectedCategory?.category,
+                                //     categoryId: values.categoryId,
+                                //     carType: values.carType,
+                                //     capacityConfig,
+                                //     capacity,
+                                // });
                                 setFieldValue('luggage', capacity.luggage, false);
                                 setFieldValue('seaterCapacity', capacity.seaterCapacity, false);
                             }, [values.serviceType, values.carType, values.category, capacityConfig, setFieldValue]);

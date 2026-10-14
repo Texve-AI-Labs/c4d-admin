@@ -48,9 +48,9 @@ const estimateRentalRoundTripMinimum = async (values, setMinimumReturnAt, locati
     if (!pickup?.lat || !pickup?.lng || !drop?.lat || !drop?.lng) return;
 
     const payload = { pickupLat: pickup.lat, pickupLong: pickup.lng, dropLat: drop.lat, dropLong: drop.lng };
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', payload);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', payload);
     const response = await ApiRequestUtils.post(API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE, payload);
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', response);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', response);
 
     const durationMinutes = Number(response?.data?.estimatedDurationMinutes);
     const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
@@ -141,16 +141,16 @@ const getServicePackageId = (packages, serviceType, packageType, bookingType, se
         ? selectedPackageNumber
         : matchingPackages[0]?.id || fallbackPackages[0]?.id);
     const numericPackageId = Number(packageId);
-    console.log('[CATEGORY PACKAGE RESOLUTION]', {
-        serviceType,
-        packageType,
-        bookingType,
-        selectedPackageId,
-        packageIds: (packages || []).map((item) => item?.id),
-        matchingPackageIds: matchingPackages.map((item) => item?.id),
-        fallbackPackageIds: fallbackPackages.map((item) => item?.id),
-        packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
-    });
+    // console.log('[CATEGORY PACKAGE RESOLUTION]', {
+    //     serviceType,
+    //     packageType,
+    //     bookingType,
+    //     selectedPackageId,
+    //     packageIds: (packages || []).map((item) => item?.id),
+    //     matchingPackageIds: matchingPackages.map((item) => item?.id),
+    //     fallbackPackageIds: fallbackPackages.map((item) => item?.id),
+    //     packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
+    // });
     return Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined;
 };
 
@@ -642,11 +642,11 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
     const packageType = currentPackageType || 'Local';
     const isDriverService = mappedServiceType === 'DRIVER';
     if (isDriverService && (!pickupLocation?.lat || !pickupLocation?.lng || !dropLocation?.lat || !dropLocation?.lng)) {
-      console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
-        pickupLocation,
-        dropLocation,
-        packageType,
-      });
+    //   console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
+    //     pickupLocation,
+    //     dropLocation,
+    //     packageType,
+    //   });
       return;
     }
     const driverPackagePayload = {
@@ -660,9 +660,9 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       zone: zone || '',
       source: 'ROOTCABS WEBSITE',
     };
-    if (isDriverService) {
-        console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
-    }
+    // if (isDriverService) {
+    //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+    // }
     const data = isDriverService
       ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
       : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
@@ -670,7 +670,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
           zone: zone || '',
         });
     if (isDriverService) {
-      console.log('[DRIVER PACKAGE LOOKUP] response:', data);
+    //   console.log('[DRIVER PACKAGE LOOKUP] response:', data);
       const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
       if (notice?.title || notice?.message) {
         setDriverPackageNotice({
@@ -828,12 +828,12 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             return values;
         }
 
-        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+        // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
         const estimate = await ApiRequestUtils.post(
             API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
             estimatePayload
         );
-        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+        // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
         setRentalRoundTripEstimatedDurationText(estimate?.data?.estimatedDurationText || '');
 
         const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
@@ -857,12 +857,12 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
         const isDropTaxiOutstation = values?.serviceType === 'RENTAL_DROP_TAXI';
 
-        console.log('[RENTAL ROUND TRIP CHECK]', {
-            serviceType: values?.serviceType,
-            packageType: values?.packageTypeSelected,
-            tripType: values?.tripType,
-            isRentalOutstationRoundTrip,
-        });
+        // console.log('[RENTAL ROUND TRIP CHECK]', {
+        //     serviceType: values?.serviceType,
+        //     packageType: values?.packageTypeSelected,
+        //     tripType: values?.tripType,
+        //     isRentalOutstationRoundTrip,
+        // });
 
         if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
             await estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt);
@@ -970,7 +970,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             quoteData.adminDiscount = adminDiscountPayload;
         }
         const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
-        console.log('[GET QUOTE OUTSTATION] response:', data);
+        // console.log('[GET QUOTE OUTSTATION] response:', data);
         if (data?.success) {
             setQuoteDetails(data?.data);
             setDiscountDetails(data?.data);
@@ -2605,14 +2605,14 @@ const priceDetailsCardClass = isPeakHour
                                                 category: values.category || selectedCategory?.category,
                                                 capacityConfig,
                                             });
-                                            console.log('[CAPACITY MAPPING]', {
-                                                serviceType: values.serviceType,
-                                                category: values.category || selectedCategory?.category,
-                                                categoryId: values.categoryId,
-                                                carType: values.carType,
-                                                capacityConfig,
-                                                capacity,
-                                            });
+                                            // console.log('[CAPACITY MAPPING]', {
+                                            //     serviceType: values.serviceType,
+                                            //     category: values.category || selectedCategory?.category,
+                                            //     categoryId: values.categoryId,
+                                            //     carType: values.carType,
+                                            //     capacityConfig,
+                                            //     capacity,
+                                            // });
                                             setFieldValue('luggage', capacity.luggage, false);
                                             setFieldValue('seaterCapacity', capacity.seaterCapacity, false);
                                         }, [values.serviceType, values.carType, values.category, capacityConfig, setFieldValue]);
