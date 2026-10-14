@@ -44,6 +44,7 @@ const VehicleInfoSection = ({
   carTypeOptions = [],
   packageOptions = [],
   getLuggageForCarType,
+  getSeaterForCarType,
   isTravels = false,
   canManageDriver = false,
   showIndividualDriverDetails = false,
@@ -339,6 +340,7 @@ const VehicleInfoSection = ({
                                 setDraftValues((prev) => ({
                                   ...prev,
                                   [row.label]: nextCarType,
+                                  Seater: getSeaterForCarType?.(nextCarType.toUpperCase()) || prev.Seater || "",
                                   Luggage: getLuggageForCarType?.(nextCarType.toUpperCase()) || prev.Luggage || "",
                                 }));
                               }}

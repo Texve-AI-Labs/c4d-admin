@@ -156,6 +156,7 @@ const CompletedOnboardingDetails = () => {
   const [carTypeOptions, setCarTypeOptions] = useState([]);
   const [packageOptions, setPackageOptions] = useState([]);
   const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
+  const [seaterCapacityMap, setSeaterCapacityMap] = useState({});
   const [luggageCapacityError, setLuggageCapacityError] = useState("");
   const [cabFetchError, setCabFetchError] = useState("");
   const [cabRequestIds, setCabRequestIds] = useState([]);
@@ -282,9 +283,15 @@ const CompletedOnboardingDetails = () => {
 
   const getLuggageForCarType = (carTypeValue) => {
     const normalized = String(carTypeValue || "").toLowerCase();
-    const apiValue = Number(luggageCapacityMap?.[normalized]);
+    const apiValue = Number(luggageCapacityMap?.carTypes?.[normalized.toUpperCase()] ?? luggageCapacityMap?.[normalized]);
     if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
     return "";
+  };
+
+  const getSeaterForCarType = (carTypeValue) => {
+    const normalized = String(carTypeValue || "").toUpperCase();
+    const apiValue = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.[normalized]);
+    return Number.isFinite(apiValue) && apiValue > 0 ? String(apiValue) : "";
   };
 
   const fetchOnboardingDetails = async () => {
@@ -323,14 +330,17 @@ const CompletedOnboardingDetails = () => {
         });
         if (data?.success || data?.luggageCapacity) {
           setLuggageCapacityMap(data?.luggageCapacity || {});
+          setSeaterCapacityMap(data?.seaterCapacity || {});
           setLuggageCapacityError("");
         } else {
           setLuggageCapacityMap({});
+          setSeaterCapacityMap({});
           setLuggageCapacityError("Unable to load luggage capacity for this zone.");
         }
       } catch (error) {
         console.error("Failed to fetch luggage capacity:", error);
         setLuggageCapacityMap({});
+        setSeaterCapacityMap({});
         setLuggageCapacityError("Unable to load luggage capacity for this zone.");
       }
     };
@@ -1303,6 +1313,7 @@ const CompletedOnboardingDetails = () => {
             carTypeOptions={carTypeOptions}
             packageOptions={packageOptions}
             getLuggageForCarType={getLuggageForCarType}
+            getSeaterForCarType={getSeaterForCarType}
             isTravels={String(account?.type || "").toLowerCase() === "company"}
             canManageDriver={["company", "individual"].includes(String(account?.type || "").toLowerCase())}
             showIndividualDriverDetails={String(account?.type || "").toLowerCase() === "individual"}
