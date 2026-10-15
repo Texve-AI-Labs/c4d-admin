@@ -262,6 +262,7 @@ export function AccountList() {
 
   const fetchAccounts = async (page = 1, searchQuery = '', showLoader = true) => {
     const normalizedSearchQuery = (searchQuery ?? '').trim();
+    let requestKey = '';
     let requestSequence = 0;
     try {
       const zoneValue = Array.isArray(zoneFilter)
@@ -275,7 +276,7 @@ export function AccountList() {
         : selectedStages.length === 1
           ? selectedStages[0]
           : selectedStages;
-      const requestKey = JSON.stringify({
+      requestKey = JSON.stringify({
         page,
         limit: pagination.itemsPerPage,
         search: normalizedSearchQuery,
@@ -285,8 +286,8 @@ export function AccountList() {
         serviceType: normalizeServiceTypes(serviceTypeFilter),
       });
 
-      // Prevent duplicate concurrent same-parameter hits (common in StrictMode/effect replays).
-      if (requestKey === inFlightRequestKeyRef.current) {
+      // Prevent duplicate requests from filter restoration, StrictMode, or repeated renders.
+      if (requestKey === inFlightRequestKeyRef.current || requestKey === lastRequestKeyRef.current) {
         return;
       }
       requestSequence = ++requestSequenceRef.current;
@@ -319,6 +320,8 @@ export function AccountList() {
           search: normalizedSearchQuery,
         });
         setKycStatusCounts(extractKycStatusCounts(data));
+        lastRequestKeyRef.current = requestKey;
+        setLoading(false);
       } else {
         setKycStatusCounts(EMPTY_KYC_STATUS_COUNTS);
       }
@@ -326,8 +329,11 @@ export function AccountList() {
       console.error('Error fetching accounts:', error);
       setKycStatusCounts(EMPTY_KYC_STATUS_COUNTS);
     } finally {
-      inFlightRequestKeyRef.current = '';
-      if (requestSequence === requestSequenceRef.current) setLoading(false);
+      // A stale request must not clear the state of a newer active request.
+      if (inFlightRequestKeyRef.current === requestKey) {
+        inFlightRequestKeyRef.current = '';
+        if (requestSequence === requestSequenceRef.current) setLoading(false);
+      }
     }
   };
 
@@ -342,10 +348,21 @@ export function AccountList() {
     const searchChanged = prevSearchRef.current !== (pagination.search || '');
     prevSearchRef.current = pagination.search || '';
     fetchAccounts(pagination.currentPage, pagination.search, !searchChanged);
-  }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, sourceFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, zoneFilter]);
+  }, [
+    filtersLoaded,
+    pagination.currentPage,
+    pagination.search,
+    statusFilter.join("|"),
+    sourceFilter.join("|"),
+    serviceTypeFilter.join("|"),
+    availableStatusFilter.join("|"),
+    zoneFilter.join("|"),
+  ]);
 
   const handleRefresh = () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
+    lastRequestKeyRef.current = '';
+    inFlightRequestKeyRef.current = '';
     setPagination({
       currentPage: 1,
       totalPages: 1,
@@ -614,7 +631,7 @@ export function AccountList() {
           ${ColorStyles.bgColor}`}>
           <div className='flex items-center justify-between w-full'>
             <Typography variant="h6" color="white">
-              All Accounts List
+              All Parcel Accounts List
             </Typography>
             <button
               className="bg-primary-400 text-white px-4 py-2 rounded-2xl flex items-center gap-2 hover:bg-primary-500"
