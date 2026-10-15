@@ -145,6 +145,8 @@ import DiscountView from "./pages/discountModule/view";
 import DiscountEdit from "./pages/discountModule/edit";
 import DiscountAdd from "./pages/discountModule/add";
 import GstView from "./pages/GST/view";
+import FutureBookingAcceptWindowAdd from "./pages/GST/futureBookingAcceptWindowAdd.jsx";
+import FutureBookingAcceptWindowEdit from "./pages/GST/futureBookingAcceptWindowEdit.jsx";
 import GstAdd from "./pages/GST/add";
 import GstEdit from "./pages/GST/edit";
 import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
@@ -741,6 +743,22 @@ export const routes = [
         path: "/finance/luggage-policy/edit/:id",
         element: <LuggagePolicyEdit />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future booking accept window add",
+        path: "/finance/future-booking-accept-window/add",
+        element: <FutureBookingAcceptWindowAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future booking accept window edit",
+        path: "/finance/future-booking-accept-window/edit/:id",
+        element: <FutureBookingAcceptWindowEdit />,
+        display: false,
         permission: "Users",
       },
       {
