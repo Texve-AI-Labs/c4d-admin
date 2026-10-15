@@ -55,6 +55,8 @@ const LocalPricingFields = ({ prefix, disabled }) => (
         <NumberInput name={`${prefix}.pricing.kilometer`} label="Package Km" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.kilometerPrice`} label="Extra Kilometer Price" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.nightCharge`} label="Night Charge" disabled={disabled} />
+        <NumberInput name={`${prefix}.pricing.cancelMins`} label="Cancellation Mins" disabled={disabled} />
+        <NumberInput name={`${prefix}.pricing.cancelCharge`} label="Cancellation Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.waitingMins`} label="Waiting Mins" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.waitingCharge`} label="Waiting Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.driverCharge`} label="Driver Charge" disabled={disabled} />
@@ -314,6 +316,8 @@ export const createLocalCategoryPricing = () => ({
         kilometerPrice: '',
         peakHours: [],
         nightCharge: '',
+        cancelMins: '',
+        cancelCharge: '',
         waitingMins: '',
         waitingCharge: '',
         driverCharge: 0,

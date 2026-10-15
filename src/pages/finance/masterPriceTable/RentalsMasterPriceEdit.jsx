@@ -74,6 +74,8 @@ const normalizeCategoryPricings = (priceData) => {
                     kilometerPrice: pricing.kilometerPrice ?? '',
                     peakHours: Array.isArray(pricing.peakHours) ? pricing.peakHours : [],
                     nightCharge: pricing.nightCharge ?? '',
+                    cancelMins: toMinutes(pricing.cancelMins),
+                    cancelCharge: pricing.cancelCharge ?? '',
                     waitingMins: toMinutes(pricing.waitingMins),
                     waitingCharge: pricing.waitingCharge ?? '',
                     driverCharge: pricing.driverCharge ?? 0,
