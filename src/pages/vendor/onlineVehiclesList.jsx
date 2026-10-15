@@ -38,7 +38,6 @@ export function OnlineVehiclesList({ id = 0 }) {
    const [typeFilter, setTypeFilter] = useState(['All']);
   const intervalRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [driverIds, setDriverIds] = useState([]);
   const navigate = useNavigate();
   const prevSearchRef = useRef('');
 
@@ -46,36 +45,22 @@ export function OnlineVehiclesList({ id = 0 }) {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 15,
+    itemsPerPage: 50,
     search: '',
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const driverType = typeFilter[0] === 'All' ? "All" : typeFilter[0];
+  const driverType = typeFilter[0] === 'All' ? '' : typeFilter[0];
 
-  const checkPresence = async (driverId, vehicleId, all) => {
+  const normalizeVehicleType = (type) => {
+    const normalizedType = String(type || '').trim().toUpperCase().replace(/[-\s]/g, '_');
+
+    if (['BIKE', 'BIKE_TAXI', 'BIKETAXI'].includes(normalizedType)) return 'BIKE';
+    if (['PARCEL', 'PARCEL_BIKE', 'PARCELBIKE'].includes(normalizedType)) return 'PARCEL';
+    return normalizedType;
+  };
+
+  const checkPresence = async (driverId, vehicleId) => {
     try {
-      if (all) {
-        const result = await ApiRequestUtils.post(API_ROUTES.CHECK_PRESENCE, { driverId: driverIds });
-        if (result?.success && result?.data?.status) {
-          setVehicleList((prev) =>
-            prev.map((vehicle) =>
-              vehicle.id === vehicleId && vehicle.Drivers?.length > 0
-                ? {
-                    ...vehicle,
-                    Drivers: [
-                      {
-                        ...vehicle.Drivers[0],
-                        status: result.data.status === 'AVAILABLE' ? 'ACTIVE' : 'INACTIVE',
-                      },
-                    ],
-                  }
-                : vehicle
-            )
-          );
-        } else {
-          console.error('Invalid API response:', result?.message);
-        }
-      } else {
       const result = await ApiRequestUtils.post(API_ROUTES.CHECK_PRESENCE, { driverId });
       if (result?.success && result?.data?.status) {
         setVehicleList((prev) =>
@@ -95,7 +80,6 @@ export function OnlineVehiclesList({ id = 0 }) {
         );
       } else {
         console.error('Invalid API response:', result?.message);
-        }
       }
     } catch (error) {
       console.error('Error checking presence:', error);
@@ -110,9 +94,13 @@ export function OnlineVehiclesList({ id = 0 }) {
         vehicle.Drivers?.length > 0 &&
         !statusCheckedDriverIds.includes(vehicle.Drivers[0]?.id)
     );
-    for (const vehicle of vehiclesWithDrivers) {
-      await checkPresence(vehicle.Drivers[0]?.id, vehicle.id, true);
-    }
+    // Check drivers independently. The presence endpoint returns one status
+    // per request, so each response must stay associated with its vehicle.
+    await Promise.all(
+      vehiclesWithDrivers.map((vehicle) =>
+        checkPresence(vehicle.Drivers[0]?.id, vehicle.id)
+      )
+    );
   };
 
   const fetchCabList = async (page = 1, search = '', showLoader = true) => {
@@ -144,7 +132,6 @@ export function OnlineVehiclesList({ id = 0 }) {
         setVehicleList(updatedVehicleList);
         setStatusCheckedDriverIds([]);
         // console.log('Fetched vehicle list:', updatedVehicleList);
-        setDriverIds(data?.driverIds);
         setPagination({
           currentPage: page,
           totalPages: data?.pagination?.totalPages || 1,
@@ -198,7 +185,7 @@ export function OnlineVehiclesList({ id = 0 }) {
 
   const filteredVehicles = vehicleList.filter((v) => {
     if (typeFilter[0] === 'All') return true;
-    return (v.type?.toUpperCase() || '') === typeFilter[0];
+    return normalizeVehicleType(v.type) === typeFilter[0];
   });
 
   const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
@@ -488,7 +475,7 @@ export function OnlineVehiclesList({ id = 0 }) {
                             !statusCheckedDriverIds.includes(vehicle.Drivers[0]?.id) && (
                               <Typography
                                 className="text-xs font-semibold text-primary-900 underline cursor-pointer"
-                                onClick={() => checkPresence(vehicle.Drivers[0]?.id, vehicle.id, false)}
+                                onClick={() => checkPresence(vehicle.Drivers[0]?.id, vehicle.id)}
                               >
                                 Check Status
                               </Typography>
