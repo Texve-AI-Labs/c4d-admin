@@ -2142,7 +2142,7 @@ if (!statusFilter.includes('All')) {
                                                         )}
                                                         
                                                         {!isCompactFeatureList && (
-                                                        <td className={className}>
+                                                        <td className={`${className} space-y-3`}>
                                                             {/* {data?.status === 'STARTED' &&
                                                                 <Button
                                                                     fullWidth
