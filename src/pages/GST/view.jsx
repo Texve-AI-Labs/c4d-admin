@@ -1,3 +1,4 @@
+import { POLICY_CATEGORIES } from "./luggagePolicyConfig.js";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Card, CardHeader, CardBody, Typography, Button,
@@ -172,18 +173,9 @@ const GstView = () => {
                   {isDistanceRule && (
                   <th className="py-3 px-5 text-left whitespace-nowrap">Service Area Rules</th>
                   )}
-                  {isLuggagePolicy && (
-                  <th className="py-3 px-5 text-left whitespace-nowrap">Mini</th>
-                  )}
-                  {isLuggagePolicy && (
-                  <th className="py-3 px-5 text-left whitespace-nowrap">Sedan</th>
-                  )}
-                  {isLuggagePolicy && (
-                  <th className="py-3 px-5 text-left whitespace-nowrap">SUV</th>
-                  )}
-                  {isLuggagePolicy && (
-                  <th className="py-3 px-5 text-left whitespace-nowrap">MUV</th>
-                  )}
+                  {isLuggagePolicy && POLICY_CATEGORIES.map(({ category }) => (
+                    <th key={category} className="py-3 px-5 text-left whitespace-nowrap">{category}<span className="block text-xs font-normal">Seats / Luggage</span></th>
+                  ))}
                   <th className="py-3 px-5 text-left whitespace-nowrap">Status</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Actions</th>
 
@@ -192,12 +184,12 @@ const GstView = () => {
               <tbody>
                 {gstList.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-center py-4 whitespace-nowrap">No Settings Entries Found</td>
+                    <td colSpan={isLuggagePolicy ? 9 : isDriverFeedback ? 5 : 6} className="text-center py-4 whitespace-nowrap">No Settings Entries Found</td>
                   </tr>
                 ) : (
                   gstList.map((item, index) => (
                     <tr key={index} className="border-b">
-                      <td className="py-3 px-5 whitespace-nowrap">{formatLabel(item.serviceType)}</td>
+                      <td className="py-3 px-5 whitespace-nowrap">{(item.serviceType)}</td>
                       <td className="py-3 px-5 whitespace-nowrap">{formatLabel(item.name)}</td>
                       {/* {!isDriverFeedback && !isLuggagePolicy && (
                       <td className='py-3 px-5'>{item.customer||'-'}</td>
@@ -220,18 +212,11 @@ const GstView = () => {
                           : '-'}
                       </td>
                       )}
-                      {isLuggagePolicy && (
-                      <td className="py-3 px-5 whitespace-nowrap">{item?.config?.luggageCapacity?.mini ?? "-"}</td>
-                      )}
-                      {isLuggagePolicy && (
-                      <td className="py-3 px-5 whitespace-nowrap">{item?.config?.luggageCapacity?.sedan ?? "-"}</td>
-                      )}
-                      {isLuggagePolicy && (
-                      <td className="py-3 px-5 whitespace-nowrap">{item?.config?.luggageCapacity?.suv ?? "-"}</td>
-                      )}
-                      {isLuggagePolicy && (
-                      <td className="py-3 px-5 whitespace-nowrap">{item?.config?.luggageCapacity?.muv ?? "-"}</td>
-                      )}
+                      {isLuggagePolicy && POLICY_CATEGORIES.map(({ category }) => (
+                        <td key={category} className="py-3 px-5 whitespace-nowrap">
+                          {item.config?.seaterCapacity?.categories?.[category] ?? "-"} / {item.config?.luggageCapacity?.categories?.[category] ?? "-"}
+                        </td>
+                      ))}
                       <td className="py-3 px-5 whitespace-nowrap">
                         {item.isActive
                           ? <span className="text-green-600 font-semibold">Active</span>

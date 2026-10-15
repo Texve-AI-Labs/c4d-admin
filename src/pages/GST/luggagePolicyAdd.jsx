@@ -1,37 +1,16 @@
 import React from "react";
 import { Formik, Field, Form, ErrorMessage } from "formik";
-import * as Yup from "yup";
+import { LUGGAGE_POLICY_SCHEMA, createPolicyValues, buildPolicyConfig } from "./luggagePolicyConfig.js";
+import LuggageCapacityFields from "./LuggageCapacityFields.jsx";
 import { Button } from "@material-tailwind/react";
 import { ColorStyles, API_ROUTES } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { useNavigate } from "react-router-dom";
 
-const LUGGAGE_POLICY_SCHEMA = Yup.object().shape({
-  serviceType: Yup.string().required("Service Type is required"),
-  name: Yup.string().required("Name is required"),
-  description: Yup.string().required("Description is required"),
-  mini: Yup.number().typeError("Mini must be a number").min(0, "Mini cannot be negative").required("Mini is required"),
-  sedan: Yup.number().typeError("Sedan must be a number").min(0, "Sedan cannot be negative").required("Sedan is required"),
-  suv: Yup.number().typeError("SUV must be a number").min(0, "SUV cannot be negative").required("SUV is required"),
-  muv: Yup.number().typeError("MUV must be a number").min(0, "MUV cannot be negative").required("MUV is required"),
-  isActive: Yup.mixed()
-    .oneOf([true, false, "true", "false"], "Status is required")
-    .required("Status is required"),
-});
-
 const LuggagePolicyAdd = () => {
   const navigate = useNavigate();
 
-  const initialValues = {
-    serviceType: "ALL",
-    name: "LUGGAGE_POLICY",
-    description: "",
-    mini: 1,
-    sedan: 1,
-    suv: 2,
-    muv: 2,
-    isActive: "true",
-  };
+  const initialValues = createPolicyValues();
 
   const handleSubmit = async (values, { setSubmitting, setStatus }) => {
     setStatus(null);
@@ -41,14 +20,7 @@ const LuggagePolicyAdd = () => {
         type: "TERMS_AND_CONDITIONS",
         name: "LUGGAGE_POLICY",
         description: values.description,
-        config: {
-          luggageCapacity: {
-            mini: Number(values.mini),
-            sedan: Number(values.sedan),
-            suv: Number(values.suv),
-            muv: Number(values.muv),
-          },
-        },
+        config: buildPolicyConfig(values.config),
         isActive: values.isActive === true || values.isActive === "true",
       };
       const response = await ApiRequestUtils.post(API_ROUTES.POST_GST, payload, 0, { suppressAlert: true });
@@ -56,7 +28,7 @@ const LuggagePolicyAdd = () => {
         setStatus(response?.message || "Unable to save settings. Please try again.");
         return;
       }
-      navigate("/dashboard/finance/GSTList");
+      navigate("/dashboard/finance/GSTList", { state: { selectedType: "LUGGAGE_POLICY" } });
     } catch (error) {
       setStatus(error?.response?.data?.message || "Unable to save settings. Please try again.");
       console.error("Luggage policy save failed:", error);
@@ -108,33 +80,16 @@ const LuggagePolicyAdd = () => {
                 <ErrorMessage name="description" component="div" className="text-red-500 text-sm" />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700">Mini</label>
-                <Field name="mini" type="number" min="0" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
-                <ErrorMessage name="mini" component="div" className="text-red-500 text-sm" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Sedan</label>
-                <Field name="sedan" type="number" min="0" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
-                <ErrorMessage name="sedan" component="div" className="text-red-500 text-sm" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">SUV</label>
-                <Field name="suv" type="number" min="0" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
-                <ErrorMessage name="suv" component="div" className="text-red-500 text-sm" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">MUV</label>
-                <Field name="muv" type="number" min="0" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
-                <ErrorMessage name="muv" component="div" className="text-red-500 text-sm" />
-              </div>
+
             </div>
+
+            <LuggageCapacityFields />
 
             <div className="flex flex-row">
               <Button
                 fullWidth
                 type="button"
-                onClick={() => navigate("/dashboard/finance/GSTList")}
+                onClick={() => navigate("/dashboard/finance/GSTList", { state: { selectedType: "LUGGAGE_POLICY" } })}
                 className={`my-6 mx-2 border-2 rounded-xl ${ColorStyles.backButton}`}
               >
                 Cancel
