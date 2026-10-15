@@ -337,6 +337,12 @@ const VehicleInfoSection = ({
                               value={draftValues[row.label] || ""}
                               onChange={(e) => {
                                 const nextCarType = e.target.value;
+                                console.log("[Onboarding Vehicle Capacity Selection]", {
+                                  sectionId: section.id,
+                                  carType: nextCarType,
+                                  seater: getSeaterForCarType?.(nextCarType.toUpperCase()),
+                                  luggage: getLuggageForCarType?.(nextCarType.toUpperCase()),
+                                });
                                 setDraftValues((prev) => ({
                                   ...prev,
                                   [row.label]: nextCarType,
@@ -434,6 +440,12 @@ const VehicleInfoSection = ({
                               value={draftValues[row.label] || ""}
                               onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
+                            />
+                          ) : row.label === "Seater" || row.label === "Luggage" ? (
+                            <input
+                              value={draftValues[row.label] || ""}
+                              readOnly
+                              className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-gray-50 text-sm"
                             />
                           ) : row.label === "Address" ? (
                             <div className="relative w-full max-w-[220px]">

@@ -8,11 +8,14 @@ import Multiselect from 'multiselect-react-dropdown';
 import { CAB_SCHEMA } from '@/utils/validations';
 import moment from 'moment';
 
+const CAPACITY_CATEGORY_BY_CAR_TYPE = { MINI: 'ECONOMY_GO', SEDAN: 'COMFORT', SUV: 'PREMIUM', MUV: 'PREMIUM_XL' };
+
 const VehicleCapacityAutoSync = ({ carType, setFieldValue, seaterCapacityMap, luggageCapacityMap }) => {
     useEffect(() => {
         const normalized = String(carType || '').toUpperCase();
-        const seater = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.[normalized]);
-        const luggage = Number(luggageCapacityMap?.carTypes?.[normalized] ?? luggageCapacityMap?.[normalized.toLowerCase()]);
+        const category = CAPACITY_CATEGORY_BY_CAR_TYPE[normalized];
+        const seater = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.categories?.[category] ?? seaterCapacityMap?.[category] ?? seaterCapacityMap?.[normalized]);
+        const luggage = Number(luggageCapacityMap?.carTypes?.[normalized] ?? luggageCapacityMap?.categories?.[category] ?? luggageCapacityMap?.[category] ?? luggageCapacityMap?.[normalized.toLowerCase()]);
         setFieldValue('seater', Number.isFinite(seater) && seater > 0 ? String(seater) : '', false);
         setFieldValue('luggage', Number.isFinite(luggage) && luggage > 0 ? String(luggage) : '', false);
     }, [carType, seaterCapacityMap, luggageCapacityMap, setFieldValue]);

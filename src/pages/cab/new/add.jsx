@@ -15,6 +15,13 @@ const makeAddressPayload = (name, placeId) => ({
     ...(placeId ? { placeId } : {}),
 });
 
+const CAPACITY_CATEGORY_BY_CAR_TYPE = {
+    MINI: "ECONOMY_GO",
+    SEDAN: "COMFORT",
+    SUV: "PREMIUM",
+    MUV: "PREMIUM_XL",
+};
+
 const VehicleCapacityAutoSync = ({ carType, setFieldValue, getLuggageForCarType, getSeaterForCarType, luggageCapacityMap, seaterCapacityMap }) => {
     useEffect(() => {
         const normalizedCarType = String(carType || '').toLowerCase();
@@ -325,14 +332,19 @@ const CabAddNew = () => {
 
     const getLuggageForCarType = (carTypeValue) => {
         const normalized = String(carTypeValue || "").toLowerCase();
-        const apiValue = Number(luggageCapacityMap?.carTypes?.[normalized.toUpperCase()] ?? luggageCapacityMap?.[normalized]);
+        const key = normalized.toUpperCase();
+        const category = CAPACITY_CATEGORY_BY_CAR_TYPE[key];
+        const apiValue = Number(luggageCapacityMap?.carTypes?.[key] ?? luggageCapacityMap?.categories?.[category] ?? luggageCapacityMap?.[category] ?? luggageCapacityMap?.[normalized]);
+        console.log("[Cab Creation Luggage Capacity]", { carType: key, category: CAPACITY_CATEGORY_BY_CAR_TYPE[key], capacity: apiValue, luggageCapacityMap });
         if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
         return "";
     };
 
     const getSeaterForCarType = (carTypeValue) => {
         const normalized = String(carTypeValue || "").toUpperCase();
-        const apiValue = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.[normalized]);
+        const category = CAPACITY_CATEGORY_BY_CAR_TYPE[normalized];
+        const apiValue = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.categories?.[category] ?? seaterCapacityMap?.[category] ?? seaterCapacityMap?.[normalized]);
+        console.log("[Cab Creation Seater Capacity]", { carType: normalized, category: CAPACITY_CATEGORY_BY_CAR_TYPE[normalized], capacity: apiValue, seaterCapacityMap });
         return Number.isFinite(apiValue) && apiValue > 0 ? String(apiValue) : "";
     };
 
