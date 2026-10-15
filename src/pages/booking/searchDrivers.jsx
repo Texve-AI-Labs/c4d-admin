@@ -522,6 +522,8 @@ export function SearchDrivers(props) {
                 } else if (props.bookingData.serviceType === 'AUTO') {
                     setLoadingRides(false);
                     data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_AUTO_PACKAGE, {
+                        serviceType: props.bookingData.serviceType,
+                        category: props.bookingData.category,
                         latitude: props?.bookingData?.pickupLat,
                         longitude: props?.bookingData?.pickupLong,
                     });
@@ -539,6 +541,8 @@ export function SearchDrivers(props) {
                 }
                 else {
                     data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_CABS_PACKAGE, {
+                        serviceType: props.bookingData.serviceType,
+                        category: props.bookingData.category,
                         latitude: props?.bookingData?.pickupLat,
                         longitude: props?.bookingData?.pickupLong,
                     });
@@ -1221,7 +1225,7 @@ export function SearchDrivers(props) {
                                                                         color="blue-gray"
                                                                         className="font-semibold"
                                                                     >
-                                                                        {name || driver?.Parcel?.name}
+                                                                        {name || driver?.Parcel?.name || driver?.Auto?.name || driver?.Bike?.name}
                                                                     </Typography>
                                                                 </div>
                                                             </div>
