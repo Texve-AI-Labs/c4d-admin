@@ -983,7 +983,7 @@ export function MasterPriceView() {
                                         "Base Fare",
                                         "Kilometer",
                                         "KM Price",
-                                        "AC KM Price",
+                                        // "AC KM Price",
                                         "Additional Min",
                                         "Free Extra Mins",
                                         "Waiting Mins",
@@ -993,7 +993,7 @@ export function MasterPriceView() {
                                         "Driver Charge",
                                         "Cancellation Mins",
                                         "Cancel Charge",
-                                        "Peak Hours",
+                                        // "Peak Hours",
                                         "Status"
                                     ].map((el, index) => (
                                         <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
@@ -1087,11 +1087,11 @@ export function MasterPriceView() {
                                                     {formatValue(pricing.kilometerPrice ?? dropOnly.NON_AC?.kilometerPrice)}
                                                 </Typography>
                                             </td>
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {formatValue(dropOnly.AC?.acKilometerPrice)}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {formatValue(pricing.additionalMinCharge)}
@@ -1137,11 +1137,11 @@ export function MasterPriceView() {
                                                     {formatValue(pricing.cancelCharge)}
                                                 </Typography>
                                             </td>
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {formatPeakHours(pricing.peakHours)}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {formatStatus(status)}
