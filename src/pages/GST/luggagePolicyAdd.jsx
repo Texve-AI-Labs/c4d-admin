@@ -33,7 +33,8 @@ const LuggagePolicyAdd = () => {
     isActive: "true",
   };
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+    setStatus(null);
     try {
       const payload = {
         serviceType: "ALL",
@@ -50,9 +51,14 @@ const LuggagePolicyAdd = () => {
         },
         isActive: values.isActive === true || values.isActive === "true",
       };
-      await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);
+      const response = await ApiRequestUtils.post(API_ROUTES.POST_GST, payload, 0, { suppressAlert: true });
+      if (!response?.success) {
+        setStatus(response?.message || "Unable to save settings. Please try again.");
+        return;
+      }
       navigate("/dashboard/finance/GSTList");
     } catch (error) {
+      setStatus(error?.response?.data?.message || "Unable to save settings. Please try again.");
       console.error("Luggage policy save failed:", error);
     } finally {
       setSubmitting(false);
@@ -64,8 +70,9 @@ const LuggagePolicyAdd = () => {
       <h2 className="text-2xl font-bold mb-4">Add Luggage Policy</h2>
 
       <Formik initialValues={initialValues} validationSchema={LUGGAGE_POLICY_SCHEMA} onSubmit={handleSubmit}>
-        {({ isSubmitting }) => (
+        {({ status, isSubmitting }) => (
           <Form className="space-y-4">
+            {status && <div role="alert" className="text-red-500 text-sm">{status}</div>}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>

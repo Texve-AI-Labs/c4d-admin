@@ -23,7 +23,8 @@ const GstAdd = () => {
 
  
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+    setStatus(null);
     try {
       const payload = {
         serviceType: values.serviceType,
@@ -45,12 +46,17 @@ const GstAdd = () => {
         // },
       };
 
-      await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);
+      const response = await ApiRequestUtils.post(API_ROUTES.POST_GST, payload, 0, { suppressAlert: true });
+      if (!response?.success) {
+        setStatus(response?.message || "Unable to save settings. Please try again.");
+        return;
+      }
 
       navigate('/dashboard/finance/GSTList', {
         state: { updatedGst: payload },
       });
     } catch (error) {
+      setStatus(error?.response?.data?.message || "Unable to save settings. Please try again.");
       console.error('GST save failed:', error);
     } finally {
       setSubmitting(false);
@@ -62,8 +68,9 @@ const GstAdd = () => {
       <h2 className="text-2xl font-bold mb-4">Add GST</h2>
 
       <Formik initialValues={initialValues} validationSchema={GST_ADD_SCHEMA} onSubmit={handleSubmit}>
-        {({ isSubmitting }) => (
+        {({ status, isSubmitting }) => (
           <Form className="space-y-4">
+            {status && <div role="alert" className="text-red-500 text-sm">{status}</div>}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Service Type</label>
