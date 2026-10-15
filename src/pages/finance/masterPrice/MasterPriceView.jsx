@@ -982,7 +982,7 @@ export function MasterPriceView() {
                                         "Base KM",
                                         "Base Fare",
                                         "Kilometer",
-                                        "KM Price",
+                                        "Extra KM Price",
                                         // "AC KM Price",
                                         "Additional Min",
                                         "Free Extra Mins",
