@@ -145,6 +145,13 @@ const normalizeOnboardingPayload = (rawPayload) => {
   return { ...account, cabs };
 };
 
+const CAPACITY_CATEGORY_BY_CAR_TYPE = {
+  MINI: "ECONOMY_GO",
+  SEDAN: "COMFORT",
+  SUV: "PREMIUM",
+  MUV: "PREMIUM_XL",
+};
+
 const CompletedOnboardingDetails = () => {
   const { id } = useParams();
   const location = useLocation();
@@ -156,6 +163,7 @@ const CompletedOnboardingDetails = () => {
   const [carTypeOptions, setCarTypeOptions] = useState([]);
   const [packageOptions, setPackageOptions] = useState([]);
   const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
+  const [seaterCapacityMap, setSeaterCapacityMap] = useState({});
   const [luggageCapacityError, setLuggageCapacityError] = useState("");
   const [cabFetchError, setCabFetchError] = useState("");
   const [cabRequestIds, setCabRequestIds] = useState([]);
@@ -184,7 +192,7 @@ const CompletedOnboardingDetails = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [id, location?.state]);
+  }, [id]);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -282,9 +290,20 @@ const CompletedOnboardingDetails = () => {
 
   const getLuggageForCarType = (carTypeValue) => {
     const normalized = String(carTypeValue || "").toLowerCase();
-    const apiValue = Number(luggageCapacityMap?.[normalized]);
+    const key = normalized.toUpperCase();
+    const category = CAPACITY_CATEGORY_BY_CAR_TYPE[key];
+    const apiValue = Number(luggageCapacityMap?.carTypes?.[key] ?? luggageCapacityMap?.categories?.[category] ?? luggageCapacityMap?.[category] ?? luggageCapacityMap?.[normalized]);
+    console.log("[Onboarding Vehicle Luggage Capacity]", { carType: key, category: CAPACITY_CATEGORY_BY_CAR_TYPE[key], capacity: apiValue, luggageCapacityMap });
     if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
     return "";
+  };
+
+  const getSeaterForCarType = (carTypeValue) => {
+    const normalized = String(carTypeValue || "").toUpperCase();
+    const category = CAPACITY_CATEGORY_BY_CAR_TYPE[normalized];
+    const apiValue = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.categories?.[category] ?? seaterCapacityMap?.[category] ?? seaterCapacityMap?.[normalized]);
+    console.log("[Onboarding Vehicle Seater Capacity]", { carType: normalized, category: CAPACITY_CATEGORY_BY_CAR_TYPE[normalized], capacity: apiValue, seaterCapacityMap });
+    return Number.isFinite(apiValue) && apiValue > 0 ? String(apiValue) : "";
   };
 
   const fetchOnboardingDetails = async () => {
@@ -322,15 +341,19 @@ const CompletedOnboardingDetails = () => {
           zone,
         });
         if (data?.success || data?.luggageCapacity) {
+          console.log("[Onboarding Vehicle Capacity API]", data);
           setLuggageCapacityMap(data?.luggageCapacity || {});
+          setSeaterCapacityMap(data?.seaterCapacity || {});
           setLuggageCapacityError("");
         } else {
           setLuggageCapacityMap({});
+          setSeaterCapacityMap({});
           setLuggageCapacityError("Unable to load luggage capacity for this zone.");
         }
       } catch (error) {
         console.error("Failed to fetch luggage capacity:", error);
         setLuggageCapacityMap({});
+        setSeaterCapacityMap({});
         setLuggageCapacityError("Unable to load luggage capacity for this zone.");
       }
     };
@@ -1303,6 +1326,7 @@ const CompletedOnboardingDetails = () => {
             carTypeOptions={carTypeOptions}
             packageOptions={packageOptions}
             getLuggageForCarType={getLuggageForCarType}
+            getSeaterForCarType={getSeaterForCarType}
             isTravels={String(account?.type || "").toLowerCase() === "company"}
             canManageDriver={["company", "individual"].includes(String(account?.type || "").toLowerCase())}
             showIndividualDriverDetails={String(account?.type || "").toLowerCase() === "individual"}

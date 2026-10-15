@@ -53,7 +53,8 @@ const DistanceRuleAdd = () => {
     fetchServiceAreas();
   }, []);
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+    setStatus(null);
     try {
       const payload = {
         serviceType: 'RENTAL',
@@ -72,12 +73,17 @@ const DistanceRuleAdd = () => {
         isActive: values.isActive === true || values.isActive === 'true',
       };
 
-      await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);
+      const response = await ApiRequestUtils.post(API_ROUTES.POST_GST, payload, 0, { suppressAlert: true });
+      if (!response?.success) {
+        setStatus(response?.message || "Unable to save settings. Please try again.");
+        return;
+      }
 
       navigate('/dashboard/finance/GSTList', {
         state: { updatedGst: payload, selectedType: 'DISTANCE_RULE' },
       });
     } catch (error) {
+      setStatus(error?.response?.data?.message || "Unable to save settings. Please try again.");
       console.error('Distance rule save failed:', error);
     } finally {
       setSubmitting(false);
@@ -89,8 +95,9 @@ const DistanceRuleAdd = () => {
       <h2 className="text-2xl font-bold mb-4">Add Distance Rule</h2>
 
       <Formik initialValues={initialValues} validationSchema={DISTANCE_RULE_SCHEMA} onSubmit={handleSubmit} enableReinitialize>
-        {({ isSubmitting, values, setFieldValue }) => (
+        {({ status, isSubmitting, values, setFieldValue }) => (
           <Form className="space-y-4">
+            {status && <div role="alert" className="text-red-500 text-sm">{status}</div>}
             <Field type="hidden" name="serviceType" />
             <Field type="hidden" name="name" />
             <Field type="hidden" name="config.reason" />

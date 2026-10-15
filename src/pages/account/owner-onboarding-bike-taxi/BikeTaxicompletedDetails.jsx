@@ -193,7 +193,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [id, location?.state]);
+  }, [id]);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -364,6 +364,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
       .map(([key, value]) => {
         const label = toLabel(key);
         const displayLabel =
+          key === "name" ? "Owner Name" :
           key === "district" ? "Zone" :
           key === "accountDistrict" ? "Account District" :
           label === "Has Vehicle" ? "Isvehicle" : label;
@@ -458,7 +459,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
     const preferredLeftOrder = [
       "Id",
       "Type",
-      "Name",
+      "Owner Name",
       "Phone Number",
       "Email",
       "Source",
@@ -857,7 +858,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                   {[
                     ["type", "Service Type"],
-                    ["name", "Name"],
+                    ["name", "Owner Name"],
                     ["phoneNumber", "Phone Number"],
                     ["email", "Email"],
                     ["source", "Source"],

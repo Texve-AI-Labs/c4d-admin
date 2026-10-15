@@ -27,6 +27,7 @@ import EditBooking from './editBooking';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { PlusIcon } from '@heroicons/react/24/outline';
+import { getCapacityValues } from './utils/capacityMapping';
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -47,9 +48,9 @@ const estimateRentalRoundTripMinimum = async (values, setMinimumReturnAt, locati
     if (!pickup?.lat || !pickup?.lng || !drop?.lat || !drop?.lng) return;
 
     const payload = { pickupLat: pickup.lat, pickupLong: pickup.lng, dropLat: drop.lat, dropLong: drop.lng };
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', payload);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', payload);
     const response = await ApiRequestUtils.post(API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE, payload);
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', response);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', response);
 
     const durationMinutes = Number(response?.data?.estimatedDurationMinutes);
     const fromDateTime = moment(`${values?.rideDate} ${values?.rideTime}`, 'YYYY-MM-DD HH:mm');
@@ -58,24 +59,6 @@ const estimateRentalRoundTripMinimum = async (values, setMinimumReturnAt, locati
     }
 };
 
-const useLuggageAndSeaterLogic = (carType, setFieldValue, luggageCapacityMap = {}) => {
-    useEffect(() => {
-        const normalizedCarType = String(carType || '').toLowerCase();
-        const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
-        const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
-
-        if (carType === 'Mini' || carType === 'Sedan') {
-            setFieldValue('luggage', luggageValue);
-            setFieldValue('seaterCapacity', '5');
-        } else if (carType === 'SUV' || carType === 'MUV') {
-            setFieldValue('luggage', luggageValue);
-            setFieldValue('seaterCapacity', '7');
-        } else {
-            setFieldValue('luggage', '');
-            setFieldValue('seaterCapacity', '');
-        }
-    }, [carType, setFieldValue, luggageCapacityMap]);
-};
 // Format date to YYYY-MM-DD for input's min attribute
 const minsToHHMM = (totalMins)=> {
         const hrs = Math.floor(totalMins / 60);
@@ -158,16 +141,16 @@ const getServicePackageId = (packages, serviceType, packageType, bookingType, se
         ? selectedPackageNumber
         : matchingPackages[0]?.id || fallbackPackages[0]?.id);
     const numericPackageId = Number(packageId);
-    console.log('[CATEGORY PACKAGE RESOLUTION]', {
-        serviceType,
-        packageType,
-        bookingType,
-        selectedPackageId,
-        packageIds: (packages || []).map((item) => item?.id),
-        matchingPackageIds: matchingPackages.map((item) => item?.id),
-        fallbackPackageIds: fallbackPackages.map((item) => item?.id),
-        packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
-    });
+    // console.log('[CATEGORY PACKAGE RESOLUTION]', {
+    //     serviceType,
+    //     packageType,
+    //     bookingType,
+    //     selectedPackageId,
+    //     packageIds: (packages || []).map((item) => item?.id),
+    //     matchingPackageIds: matchingPackages.map((item) => item?.id),
+    //     fallbackPackageIds: fallbackPackages.map((item) => item?.id),
+    //     packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
+    // });
     return Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined;
 };
 
@@ -268,6 +251,7 @@ const Booking = (props) => {
     const mapRef = useRef(null);
     const [quoteDetails, setQuoteDetails] = useState(null);
     const [quoteMeta, setQuoteMeta] = useState(null);
+    const [capacityConfig, setCapacityConfig] = useState({});
     const approvedHistoryRefreshKeyRef = useRef('');
     const approvedStatusSyncTimerRef = useRef(null);
     const adminStatusSyncInFlightRef = useRef(false);
@@ -658,11 +642,11 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
     const packageType = currentPackageType || 'Local';
     const isDriverService = mappedServiceType === 'DRIVER';
     if (isDriverService && (!pickupLocation?.lat || !pickupLocation?.lng || !dropLocation?.lat || !dropLocation?.lng)) {
-      console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
-        pickupLocation,
-        dropLocation,
-        packageType,
-      });
+    //   console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
+    //     pickupLocation,
+    //     dropLocation,
+    //     packageType,
+    //   });
       return;
     }
     const driverPackagePayload = {
@@ -676,17 +660,25 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       zone: zone || '',
       source: 'ROOTCABS WEBSITE',
     };
-    if (isDriverService) {
-        console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
-    }
+    // if (isDriverService) {
+    //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+    // }
     const data = isDriverService
       ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
       : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
           serviceType: mappedServiceType,
           zone: zone || '',
         });
+    let capacityResponse = data;
     if (isDriverService) {
-      console.log('[DRIVER PACKAGE LOOKUP] response:', data);
+      capacityResponse = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+        serviceType: 'DRIVER',
+        zone: zone || '',
+      });
+    //   console.log('[DRIVER CAPACITY RESPONSE]', capacityResponse);
+    }
+    if (isDriverService) {
+    //   console.log('[DRIVER PACKAGE LOOKUP] response:', data);
       const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
       if (notice?.title || notice?.message) {
         setDriverPackageNotice({
@@ -696,12 +688,21 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       }
     }
 
-    // console.log('Raw API response:', JSON.stringify(data, null, 2));
+    // console.log('[CAPACITY API RESPONSE]', {
+    //   serviceType: mappedServiceType,
+    //   response: data,
+    //   luggageCapacity: capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity,
+    //   seaterCapacity: capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity,
+    // });
+    const packageRows = Array.isArray(data?.data) ? data.data : (data?.data?.packages || []);
+    const luggageCapacity = capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity || {};
+    const seaterCapacity = capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity || {};
+    setCapacityConfig({ seaterCapacity, luggageCapacity });
 
-    if (data?.success && Array.isArray(data?.data)) {
-      setPackageTypeSelectedData(data.data);
+    if (data?.success && packageRows.length > 0) {
+      setPackageTypeSelectedData(packageRows);
       setCategoryOptions(getZoneCategories(data));
-      setLuggageCapacityMap(data?.luggageCapacity || {});
+      setLuggageCapacityMap(luggageCapacity);
     //   console.log('Package list fetched:', data.data);
     } else {
       if (isDriverService) {
@@ -734,7 +735,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
   }
 }, [currentPackageType, dropLocation, pickupLocation]);
 
-useEffect(() => {
+                                                    useEffect(() => {
 //   console.log('useEffect for package list:', { selectedAreaId, currentServiceType, currentPackageType });
   if (!selectedAreaId || !currentServiceType) {
     // console.log('Skipping getPackageListDetails: missing selectedAreaId or currentServiceType');
@@ -843,12 +844,12 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             return values;
         }
 
-        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+        // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
         const estimate = await ApiRequestUtils.post(
             API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
             estimatePayload
         );
-        console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+        // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
         setRentalRoundTripEstimatedDurationText(estimate?.data?.estimatedDurationText || '');
 
         const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
@@ -872,12 +873,12 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
         const isDropTaxiOutstation = values?.serviceType === 'RENTAL_DROP_TAXI';
 
-        console.log('[RENTAL ROUND TRIP CHECK]', {
-            serviceType: values?.serviceType,
-            packageType: values?.packageTypeSelected,
-            tripType: values?.tripType,
-            isRentalOutstationRoundTrip,
-        });
+        // console.log('[RENTAL ROUND TRIP CHECK]', {
+        //     serviceType: values?.serviceType,
+        //     packageType: values?.packageTypeSelected,
+        //     tripType: values?.tripType,
+        //     isRentalOutstationRoundTrip,
+        // });
 
         if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
             await estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt);
@@ -985,7 +986,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             quoteData.adminDiscount = adminDiscountPayload;
         }
         const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
-        console.log('[GET QUOTE OUTSTATION] response:', data);
+        // console.log('[GET QUOTE OUTSTATION] response:', data);
         if (data?.success) {
             setQuoteDetails(data?.data);
             setDiscountDetails(data?.data);
@@ -1763,7 +1764,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             // transmissionType: values.transmissionType,
             // ...(values.transmissionType ? { transmissionType: values.transmissionType } : {}),
             ...(isDriverService ? { carType: values.carType || '', 
-                transmissionType: values.transmissionType || '' }
+                transmissionType: values.transmissionType || '',
+                luggage: values.luggage || '',
+                seaterCapacity: values.seaterCapacity || '' }
                 : {}),
             fromDate: moment(`${values.rideDate} ${values.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
             pickupLat: values.pickupLocation.lat,
@@ -1780,8 +1783,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             ...((values.sourceType === "Others" || values.sourceType === "Offline Ads") && {
              otherSourceType: values.otherSourceType?.trim() || null
             }),
-            luggage: values.luggage,
-            seaterCapacity:values.seaterCapacity,
             landmark: values.landmark || '',
             ...(isDriverService && driverPackagePeriod ? { period: driverPackagePeriod } : {}),
             zone: actualZone,
@@ -2543,6 +2544,7 @@ const priceDetailsCardClass = isPeakHour
                                                 isCategoryService(values.serviceType) && visibleCategories.length === 0;
                                             const selectedCategoryPricing = getSelectedCategoryPricing(quoteDetails, values);
                                             const categoryCommonPricing = selectedCategoryPricing.common;
+                                            const categoryHourlyPricing = selectedCategoryPricing.pricing;
                                             const categoryAcPricing = selectedCategoryPricing.ac;
                                             const {
                                                 driverContinueDisabled,
@@ -2611,7 +2613,27 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental
                                             );
-                                                    useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap, values.serviceType);
+                                        useEffect(() => {
+                                            const selectedCategory = categoryOptions.find(
+                                                (item) => Number(item.id) === Number(values.categoryId)
+                                            );
+                                            const capacity = getCapacityValues({
+                                                serviceType: values.serviceType,
+                                                carType: values.carType,
+                                                category: values.category || selectedCategory?.category,
+                                                capacityConfig,
+                                            });
+                                            // console.log('[CAPACITY MAPPING]', {
+                                            //     serviceType: values.serviceType,
+                                            //     category: values.category || selectedCategory?.category,
+                                            //     categoryId: values.categoryId,
+                                            //     carType: values.carType,
+                                            //     capacityConfig,
+                                            //     capacity,
+                                            // });
+                                            setFieldValue('luggage', capacity.luggage, false);
+                                            setFieldValue('seaterCapacity', capacity.seaterCapacity, false);
+                                        }, [values.serviceType, values.carType, values.category, capacityConfig, setFieldValue]);
                                         useEffect(() => {
                                         if (values.serviceType === 'RENTAL_HOURLY_PACKAGE' && values.pickupLocation?.lat && values.pickupLocation?.lng) {
                                             zoneCheckUpFun(values).then(zoneData => {
@@ -2738,10 +2760,6 @@ const priceDetailsCardClass = isPeakHour
                                                                             setQuoteMeta(null);
                                                                             setFieldValue('categoryId', item.id);
                                                                             setFieldValue('category', item.category);
-                                                                            if (isCategoryService(values.serviceType) && item.metadata) {
-                                                                                setFieldValue('luggage', item.metadata.bags ?? '');
-                                                                                setFieldValue('seaterCapacity', item.metadata.seats ?? '');
-                                                                            }
                                                                         }}
                                                                         className={`rounded-xl border-2 p-4 text-left transition ${selected ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-300 bg-white hover:border-blue-300'}`}
                                                                     >
@@ -3389,39 +3407,6 @@ const priceDetailsCardClass = isPeakHour
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                )}
-                                                   {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' ? 'visible' : '') && (
-                                                                    <div className="p-2 space-y-2">
-                                                                        <label className="block text-sm font-medium text-black-700">
-                                                                            Luggage
-                                                                        </label>
-                                                                        <Field
-                                                                            type="number"
-                                                                            name="luggage"
-                                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                            placeholder="Luggage Count (Auto-filled)"
-                                                                            disabled={true}
-                                                                            value={values.luggage}
-                                                                        />
-                                                                        <ErrorMessage name="luggage" component="div" className="text-red-500 text-sm" />
-                                                                    </div>
-                                                                )}
-                                                                {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' ? 'visible' : '') && (
-                                                                    <div className="p-2 space-y-2">
-                                                                        <label className="block text-sm font-medium text-black-700">
-                                                                            Seater Capacity
-                                                                        </label>
-                                                                        <Field
-                                                                            type="text"
-                                                                            name="seaterCapacity"
-                                                                            className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                            placeholder="Seater Capacity (Auto-filled)"
-                                                                            disabled={true}
-                                                                            value={values.seaterCapacity}
-                                                                        />
-                                                                       
-                                                                        <ErrorMessage name="seater" component="div" className="text-red-500 text-sm" />
                                                                     </div>
                                                                 )}
                                                     {(values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_DROP_TAXI' || values.serviceType === 'RIDES' || values.serviceType === 'AUTO') && (
@@ -3728,6 +3713,12 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                     <div className="p-2 space-y-2 ">
+                                                        {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                                <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
+                                                                <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                                            </div>
+                                                        )}
                                                         <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
                                                         <Field as="select" name="sourceType" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                                             <option value="">Select Source Type</option>
@@ -3981,18 +3972,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             </div>
                                                                             <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Package Price:</Typography>
-                                                                                <Typography>
-                                                                                    ₹ {Math.round((() => {
-                                                                                        const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
-                                                                                        if (!selectedPackage) return 0;
-                                                                                        switch (quoteDetails.amount?.carType?.toUpperCase()) {
-                                                                                            case "MINI": return selectedPackage.price || 0;
-                                                                                            case "SEDAN": return selectedPackage.priceSedan || 0;
-                                                                                            case "SUV": return selectedPackage.priceSuv || 0;
-                                                                                            case "MUV": return selectedPackage.priceMVP || 0;
-                                                                                            default: return 0;
-                                                                                        }
-                                                                                        })())}
+                                                                                <Typography> ₹ {quoteDetails.amount?.fareBreakdown?.baseFare || '0'}
                                                                                 </Typography>
                                                                             </div>
                                                                             {quoteDetails.amount?.gst_amount > 0 && (
@@ -4006,7 +3986,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">Estimate Fare:</Typography>
                                                                                 <Typography>
-                                                                                    {quoteDetails.amount?.fare_after_gst|| ''}
+                                                                                    ₹ {quoteDetails.amount?.fare_after_gst|| ''}
                                                                                 </Typography>
                                                                             </div>
                                                                             {quoteDetails?.walletApplicable === true  && (
@@ -4324,13 +4304,11 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                                         <Typography className=" text-sm text-gray-700">
                                                                 • The first additional <span className="font-bold text-black">
-                                                                    {categoryCommonPricing?.freeExtraMinutes ?? quoteDetails.expectedPackageDetails?.freeExtraMinutes}
-                                                                                </span> minutes over customer <span className="font-bold text-black">{packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ''} hours </span>, trip time are free. After that, customer will be charged <span className="font-bold text-black">₹{(() => {
-                                                                    const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
-                                                                    return selectedPackage ? (
-                                                                        categoryCommonPricing?.additionalMinCharge
-                                                                    ) : '';
-                                                                })()}</span> per minute.
+                                                                    {categoryHourlyPricing?.freeExtraMinutes}
+                                                                                </span> minutes over customer <span className="font-bold text-black">{quoteDetails?.expectedPackageDetails?.period || ''} hours </span>, 
+                                                                                trip time are free. After that, customer will be charged 
+                                                                                <span className="font-bold text-black"> ₹ {categoryHourlyPricing?.additionalMinCharge}
+                                                                </span> per minute.
                                                             </Typography>
                                                             {quoteDetails?.amount?.fareBreakdown?.gst_percentage > 0 && (
                                                                 <>
@@ -4339,16 +4317,10 @@ const priceDetailsCardClass = isPeakHour
                                                             </Typography>
                                                             </>)}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • For every extra kilometer <span className="font-bold text-black">₹ {(() => {
-                                                                    const selectedPackage = packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected));
-                                                                if (!selectedPackage) return '';
-                                                                const price =
-                                                                        categoryCommonPricing?.kilometerPrice || categoryAcPricing?.acKilometerPrice;
-                                                                return Math.round(Number(price || 0));
-                                                                })()}</span> will be charged.
+                                                                • For every extra kilometer <span className="font-bold text-black"> ₹ {categoryHourlyPricing?.extraKilometerPrice} </span> will be charged.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Night charge of <span className="font-bold text-black">₹ {categoryCommonPricing?.nightCharge || ''}</span> will be charged after {convertTimeFormat(categoryCommonPricing?.nightHoursFrom || '')}.
+                                                                • Night charge of <span className="font-bold text-black">₹ {categoryHourlyPricing?.nightCharge || ''}</span> will be charged after {convertTimeFormat(categoryHourlyPricing?.nightHoursFrom || '')}.
                                                             </Typography>
                                                             <Typography className=" text-sm text-gray-700">
                                                                 • Hourly Packages are available only for Local services.
@@ -4362,7 +4334,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 </Typography>
                                                             )}
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryCommonPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryCommonPricing?.waitingCharge || 0}</span> per minute,
+                                                                • Waiting beyond <span className='font-bold text-black'>{(categoryHourlyPricing?.waitingMins)}</span> Mins will be charged at <span className='font-bold text-black'> ₹ {categoryHourlyPricing?.waitingCharge || 0}</span> per minute,
                                                             </Typography>
                                                         </div>
                                                         <div className="border border-gray-300 bg-yellow-600 rounded-xl p-2">
@@ -4404,7 +4376,7 @@ const priceDetailsCardClass = isPeakHour
 
                                                             {Number(categoryCommonPricing?.nightCharge || quoteDetails.expectedPackageDetails?.nightCharge || 0) > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(categoryCommonPricing?.nightCharge || quoteDetails.expectedPackageDetails?.nightCharge || 0)}</span>
+                                                                • Driver Night charge <span className="font-bold text-black">₹ {Math.round(categoryCommonPricing?.nightCharge || quoteDetails.expectedPackageDetails?.nightCharge || 0)}</span>
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.extraNightCharge > 0 && (
@@ -4479,7 +4451,7 @@ const priceDetailsCardClass = isPeakHour
                                                             }
                                                             {quoteDetails.amount?.driverCharge > 0 && (
                                                             <Typography className=" text-sm text-gray-700">
-                                                                • Driver Night Stay charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge || '0')}</span>.
+                                                                • Driver Night charge <span className="font-bold text-black">₹ {Math.round(quoteDetails.amount?.extraNightCharge || '0')}</span>.
                                                             </Typography>
                                                             )}
                                                             {quoteDetails.amount?.gst_percentage > 0 && (

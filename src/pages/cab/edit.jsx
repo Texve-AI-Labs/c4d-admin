@@ -8,6 +8,20 @@ import Multiselect from 'multiselect-react-dropdown';
 import { CAB_SCHEMA } from '@/utils/validations';
 import moment from 'moment';
 
+const CAPACITY_CATEGORY_BY_CAR_TYPE = { MINI: 'ECONOMY_GO', SEDAN: 'COMFORT', SUV: 'PREMIUM', MUV: 'PREMIUM_XL' };
+
+const VehicleCapacityAutoSync = ({ carType, setFieldValue, seaterCapacityMap, luggageCapacityMap }) => {
+    useEffect(() => {
+        const normalized = String(carType || '').toUpperCase();
+        const category = CAPACITY_CATEGORY_BY_CAR_TYPE[normalized];
+        const seater = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.categories?.[category] ?? seaterCapacityMap?.[category] ?? seaterCapacityMap?.[normalized]);
+        const luggage = Number(luggageCapacityMap?.carTypes?.[normalized] ?? luggageCapacityMap?.categories?.[category] ?? luggageCapacityMap?.[category] ?? luggageCapacityMap?.[normalized.toLowerCase()]);
+        setFieldValue('seater', Number.isFinite(seater) && seater > 0 ? String(seater) : '', false);
+        setFieldValue('luggage', Number.isFinite(luggage) && luggage > 0 ? String(luggage) : '', false);
+    }, [carType, seaterCapacityMap, luggageCapacityMap, setFieldValue]);
+    return null;
+};
+
 const LocationInput = ({ field, form, suggestions, onSearch, type }) => {
     const [isFocused, setIsFocused] = useState(false);
 
@@ -90,6 +104,8 @@ const CabEdit = () => {
     const [accountRelatedDrivers, setAccountRelatedDrivers] = useState([]);
     const [carTypeOptions, setCarTypeOptions] = useState([]);
     const [selectedCarType, setSelectedCarType] = useState('');
+    const [seaterCapacityMap, setSeaterCapacityMap] = useState({});
+    const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
     const { id } = useParams();
     const isEditMode = !!id;
     const navigate = useNavigate();
@@ -134,6 +150,17 @@ const CabEdit = () => {
         const data = await ApiRequestUtils.get(API_ROUTES.GET_CAR_TYPE + "all");
         if (data?.success && data?.data.length > 0) {
             setCarTypeOptions(data?.data);
+        }
+    };
+
+    const getVehicleCapacity = async (zone) => {
+        try {
+            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, { serviceType: "RIDES", zone: zone || "Vellore" });
+            setSeaterCapacityMap(data?.seaterCapacity || {});
+            setLuggageCapacityMap(data?.luggageCapacity || {});
+        } catch (error) {
+            setSeaterCapacityMap({});
+            setLuggageCapacityMap({});
         }
     };
 
@@ -199,6 +226,7 @@ const getPackageListDetails = async () => {
 
     useEffect(() => {
         setSelectedCarType(getSelectedCarTypeLabel(cabVal?.result?.carType));
+        if (cabVal?.result) getVehicleCapacity(cabVal.result?.Account?.district || cabVal.result?.district || "Vellore");
     }, [cabVal?.result?.carType]);
 
     const fetchItem = async (itemId) => {
@@ -488,6 +516,12 @@ const getPackageListDetails = async () => {
             >
                 {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue }) => (
                     <Form className="space-y-4">
+                        <VehicleCapacityAutoSync
+                            carType={values.carType}
+                            setFieldValue={setFieldValue}
+                            seaterCapacityMap={seaterCapacityMap}
+                            luggageCapacityMap={luggageCapacityMap}
+                        />
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="name" className="text-sm font-medium text-gray-700">Vehicle Name</label>
@@ -606,12 +640,12 @@ const getPackageListDetails = async () => {
                             </div>
                             <div>
                                 <label htmlFor="seater" className="text-sm font-medium text-gray-700">Seater</label>
-                                <Field type="text" name="seater" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                <Field type="text" name="seater" className="p-2 w-full rounded-md border-gray-300 bg-gray-50" maxLength={10} readOnly />
                                 <ErrorMessage name="seater" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>
                                 <label htmlFor="luggage" className="text-sm font-medium text-gray-700">Luggage</label>
-                                <Field type="text" name="luggage" className="p-2 w-full rounded-md border-gray-300" maxLength={10} />
+                                <Field type="text" name="luggage" className="p-2 w-full rounded-md border-gray-300 bg-gray-50" maxLength={10} readOnly />
                                 <ErrorMessage name="luggage" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>

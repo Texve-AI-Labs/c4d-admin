@@ -242,10 +242,6 @@ export function AccountList() {
   }, []);
 
   useEffect(() => {
-    setServiceTypeFilter(["Bike"]);
-  }, []);
-
-  useEffect(() => {
     if (!filtersLoaded) return;
 
     const data = {
@@ -663,7 +659,7 @@ export function AccountList() {
               <tr>
                 {["Created Date",
                   // "ID",
-                  "Account Name",
+                  "Owner Name",
                   // "Email",
                   "Phone Number",
                   "Service Type",

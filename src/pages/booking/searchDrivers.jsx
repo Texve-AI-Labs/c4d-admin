@@ -125,6 +125,22 @@ export function SearchDrivers(props) {
         }));
     };
 
+    const isMaxRadiusResponse = (response) => {
+        const payload = response?.data?.data || response?.data || {};
+        return payload?.searchStatus === "MAX_RADIUS_REACHED"
+            || response?.searchStatus === "MAX_RADIUS_REACHED";
+    };
+
+    const stopMaxRadiusSearch = (response) => {
+        if (!isMaxRadiusResponse(response)) return false;
+        updateDriverSearchMeta(response);
+        setDrivers([]);
+        setLoadingRides(false);
+        setLoading(false);
+        setSeconds(0);
+        return true;
+    };
+
     const formatActingDrivers = (items, searchGroup = "") => items.map((item) => ({
         id: item.cabId || item.autoId || item.parcelId || item.driverId || item.DriverId || item.id,
         firstName: item.driverName || item.firstName || item.Driver?.firstName || "N/A",
@@ -283,6 +299,9 @@ export function SearchDrivers(props) {
                     }
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.GET_RIDES_CAB_DRIVERS, data);
                     updateDriverSearchMeta(requestDriver);
+                    if (stopMaxRadiusSearch(requestDriver)) {
+                        return;
+                    }
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
@@ -339,6 +358,9 @@ export function SearchDrivers(props) {
                     }
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.GET_RENTAL_CAB_DRIVERS, data);
                     updateDriverSearchMeta(requestDriver);
+                    if (stopMaxRadiusSearch(requestDriver)) {
+                        return;
+                    }
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
@@ -389,6 +411,9 @@ export function SearchDrivers(props) {
                     };
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.POST_AUTO_SEARCH, data);
                     updateDriverSearchMeta(requestDriver);
+                    if (stopMaxRadiusSearch(requestDriver)) {
+                        return;
+                    }
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
@@ -443,6 +468,9 @@ export function SearchDrivers(props) {
                     };
                     let requestDriver = await ApiRequestUtils.post(API_ROUTES.POST_PARCEL_SEARCH, data);
                     updateDriverSearchMeta(requestDriver);
+                    if (stopMaxRadiusSearch(requestDriver)) {
+                        return;
+                    }
                     if (requestDriver?.success) {
                         setDrivers([]);
                         setTimeout(async () => {
@@ -494,6 +522,8 @@ export function SearchDrivers(props) {
                 } else if (props.bookingData.serviceType === 'AUTO') {
                     setLoadingRides(false);
                     data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_AUTO_PACKAGE, {
+                        serviceType: props.bookingData.serviceType,
+                        category: props.bookingData.category,
                         latitude: props?.bookingData?.pickupLat,
                         longitude: props?.bookingData?.pickupLong,
                     });
@@ -511,6 +541,8 @@ export function SearchDrivers(props) {
                 }
                 else {
                     data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_CABS_PACKAGE, {
+                        serviceType: props.bookingData.serviceType,
+                        category: props.bookingData.category,
                         latitude: props?.bookingData?.pickupLat,
                         longitude: props?.bookingData?.pickupLong,
                     });
@@ -1005,7 +1037,7 @@ export function SearchDrivers(props) {
                         {props.bookingData?.requestType === 'REQUEST_ALL' ? (
                             <CardBody className="px-4 py-5">
                                 <div className="text-center max-w-xl mx-auto">
-                                    <div className="mb-5 flex flex-wrap justify-center gap-2">
+                                    <div className="mb-5 flex justify-center gap-6">
                                         <div className="w-28 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
                                             <Typography className="text-[11px] font-bold uppercase text-blue-gray-400">
                                                 Attempt
@@ -1077,6 +1109,18 @@ export function SearchDrivers(props) {
                                                     </Typography>
                                                 </div>
                                             )}
+                                        </div>
+                                    ) : isMaxDriverSearchRadius ? (
+                                        <div className="mx-auto max-w-md rounded-md border border-red-200 bg-red-50 px-4 py-4 text-center">
+                                            <Typography variant="h5" color="red" className="mb-2 font-bold">
+                                                Maximum Radius Reached
+                                            </Typography>
+                                            <Typography color="gray" className="mb-4 text-sm">
+                                                Unable to request {requestVehicleLabel}. The maximum search radius has been reached.
+                                            </Typography>
+                                            <Button color="red" size="sm" className="min-w-[210px]" disabled>
+                                                Request Unavailable
+                                            </Button>
                                         </div>
                                     ) : (
                                         <div className="mx-auto max-w-md rounded-md border border-gray-100 bg-white px-4 py-4 text-center">
@@ -1181,7 +1225,7 @@ export function SearchDrivers(props) {
                                                                         color="blue-gray"
                                                                         className="font-semibold"
                                                                     >
-                                                                        {name || driver?.Parcel?.name}
+                                                                        {name || driver?.Parcel?.name || driver?.Auto?.name || driver?.Bike?.name}
                                                                     </Typography>
                                                                 </div>
                                                             </div>

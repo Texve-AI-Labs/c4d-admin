@@ -1596,6 +1596,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'ENDED', label: 'Ended' },
                                                                 { value: 'DRIVER_NOT_AVAILABLE', label: 'Driver Not Available'},
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
+                                                                { value: 'DRIVER_CANCELLED', label: 'Driver Cancelled' },
                                                                 { value: 'SUPPORT_CANCELLED', label: 'Support Cancelled' },
                                                                 { value: 'COMPLETED', label: 'Completed' },
                                                             ]}
@@ -2141,7 +2142,7 @@ if (!statusFilter.includes('All')) {
                                                         )}
                                                         
                                                         {!isCompactFeatureList && (
-                                                        <td className={className}>
+                                                        <td className={`${className} space-y-3`}>
                                                             {/* {data?.status === 'STARTED' &&
                                                                 <Button
                                                                     fullWidth
@@ -2191,7 +2192,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
+                                                            {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux RC-1035 need to clarity {/* {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && ((['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status) &&(data?.Driver?.id || data?.Cab?.id)) || data?.status === 'DRIVER_CANCELLED') && */}                                                            
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => {

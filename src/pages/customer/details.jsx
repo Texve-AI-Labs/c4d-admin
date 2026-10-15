@@ -231,6 +231,7 @@ const CustomerDetails = () => {
                                             <option value="Mobile App">Mobile App</option>
                                             <option value="Website">Website</option>
                                             <option value="Call">Call</option>
+                                            <option value="RootCabs Website">RootCabs Website</option>
                                         </Field>
                                         <ErrorMessage name="source" component="div" className="text-red-500 text-sm" />
                                     </div>

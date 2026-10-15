@@ -22,6 +22,10 @@ export function MasterPriceAdd() {
         additionalMinChargeMVP:'',
         additionalMinChargeSuv:'',
         additionalMinChargeSedan:'',
+        additionalMins:'',
+        additionalMinsSedan:'',
+        additionalMinsSuv:'',
+        additionalMinsMUV:'',
         nightHoursFrom: '00:00',
         nightHoursTo: '00:00',
         nightCharge: '',
@@ -74,6 +78,10 @@ export function MasterPriceAdd() {
                 additionalMinChargeMVP: values.additionalMinChargeMVP || 0,
                 additionalMinChargeSuv: values.additionalMinChargeSuv || 0,
                 additionalMinChargeSedan: values.additionalMinChargeSedan || 0,
+                additionalMins: values.additionalMins || 0,
+                additionalMinsSedan: values.additionalMinsSedan || 0,
+                additionalMinsSuv: values.additionalMinsSuv || 0,
+                additionalMinsMUV: values.additionalMinsMUV || 0,
                 freeExtraMinutes: values.freeExtraMinutes || 0,
                 status: 1,
                 zone: values.zone,
@@ -243,6 +251,7 @@ export function MasterPriceAdd() {
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Car Type</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Price</th>
                                         <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-gray-100">
@@ -257,6 +266,9 @@ export function MasterPriceAdd() {
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-2" />
                                         </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMins" className="w-full text-center border rounded p-2" />
+                                        </td>
                                     </tr>
                                     {/* 'Sedan' */}
                                     <tr className=" whitespace-nowrap">
@@ -268,6 +280,9 @@ export function MasterPriceAdd() {
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinChargeSedan" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinsSedan" className="w-full text-center border rounded p-2" />
                                         </td>
                                     </tr>
                                     {/* 'Suv' */}
@@ -281,6 +296,9 @@ export function MasterPriceAdd() {
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinChargeSuv" className="w-full text-center border rounded p-2" />
                                         </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinsSuv" className="w-full text-center border rounded p-2" />
+                                        </td>
                                     </tr>
                                     {/* 'MVP' */}
                                     <tr className=" whitespace-nowrap">
@@ -292,6 +310,9 @@ export function MasterPriceAdd() {
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinChargeMVP" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinsMUV" className="w-full text-center border rounded p-2" />
                                         </td>
                                     </tr>
                                 </tbody>
@@ -306,6 +327,7 @@ export function MasterPriceAdd() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                     <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins Price</th>
+                                    <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Additional Mins</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-gray-100">
@@ -321,6 +343,9 @@ export function MasterPriceAdd() {
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinCharge" className="w-full text-center border rounded p-2" />
                                         </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMins" className="w-full text-center border rounded p-2" />
+                                        </td>
                                     </tr>
                                     {/* Sedan */}
                                     <tr className=" whitespace-nowrap">
@@ -333,6 +358,9 @@ export function MasterPriceAdd() {
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinChargeSedan" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinsSedan" className="w-full text-center border rounded p-2" />
                                         </td>
                                     </tr>
                                     {/* Suv */}
@@ -347,6 +375,9 @@ export function MasterPriceAdd() {
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinChargeSuv" className="w-full text-center border rounded p-2" />
                                         </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinsSuv" className="w-full text-center border rounded p-2" />
+                                        </td>
                                     </tr>
                                     {/* MVP */}
                                     <tr className=" whitespace-nowrap">
@@ -359,6 +390,9 @@ export function MasterPriceAdd() {
                                         </td>
                                         <td className="px-2 py-3 border">
                                             <Field type="number" name="additionalMinChargeMVP" className="w-full text-center border rounded p-2" />
+                                        </td>
+                                        <td className="px-2 py-3 border">
+                                            <Field type="number" name="additionalMinsMUV" className="w-full text-center border rounded p-2" />
                                         </td>
                                     </tr>
                                 </tbody>

@@ -98,7 +98,7 @@ const BikeTaxiAddAccountNew = () => {
                                     <ErrorMessage name="type" component="div" className="text-red-500 text-sm" />
                                 </div>
                                 <div>
-                                    <label htmlFor="name" className="text-sm font-medium text-gray-700">{"Company Name"}</label>
+                                    <label htmlFor="name" className="text-sm font-medium text-gray-700">Owner Name</label>
                                     <Field type="text" name="name" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                     <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
                                 </div>

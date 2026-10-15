@@ -60,7 +60,8 @@ const DriverFeedbackAdd = () => {
     [serviceAreaOptions]
   );
 
-  const handleSubmit = async (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+    setStatus(null);
     try {
       const isActive = values.isActive === true || values.isActive === "true";
       const zones = (values.selectedZones || [])
@@ -81,9 +82,14 @@ const DriverFeedbackAdd = () => {
         isActive,
       };
 // console.log("Submitting payload:", payload);
-      await ApiRequestUtils.post(API_ROUTES.POST_GST, payload);
+      const response = await ApiRequestUtils.post(API_ROUTES.POST_GST, payload, 0, { suppressAlert: true });
+      if (!response?.success) {
+        setStatus(response?.message || "Unable to save settings. Please try again.");
+        return;
+      }
       navigate("/dashboard/finance/GSTList");
     } catch (error) {
+      setStatus(error?.response?.data?.message || "Unable to save settings. Please try again.");
       console.error("Driver feedback save failed:", error);
     } finally {
       setSubmitting(false);
@@ -94,8 +100,9 @@ const DriverFeedbackAdd = () => {
     <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-3xl">
       <h2 className="text-2xl font-bold mb-4">Add Driver Feedback</h2>
       <Formik initialValues={initialValues} validationSchema={DRIVER_FEEDBACK_SCHEMA} onSubmit={handleSubmit}>
-        {({ isSubmitting, setFieldValue, values }) => (
+        {({ status, isSubmitting, setFieldValue, values }) => (
           <Form className="space-y-4">
+            {status && <div role="alert" className="text-red-500 text-sm">{status}</div>}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">Name</label>

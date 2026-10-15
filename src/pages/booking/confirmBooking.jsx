@@ -1142,28 +1142,17 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
     const hourlyPackageBaseFare = isHourlyShowingPrice(bookingDetails) && !isCategoryPricingService(bookingDetails?.serviceType)
         // ? Number(bookingDetails?.estimatedFareBreakdown?.distanceFare?.rate || 0)
         ? Number(
-            bookingDetails?.carType === "Sedan"
-                ? bookingDetails?.Package?.baseFareSedan
-                : bookingDetails?.carType === "MUV"
-                    ? bookingDetails?.Package?.baseFareMVP
-                    : bookingDetails?.carType === "SUV"
-                        ? bookingDetails?.Package?.baseFareSuv
-                        : bookingDetails?.Package?.baseFare || 0
+            bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
         )
         : 0;
     const packagePerKm = !isCategoryPricingService(bookingDetails?.serviceType) ? Number(
-        bookingDetails?.carType === "Sedan"
-            ? bookingDetails?.Package?.kilometerPriceSedan
-            : bookingDetails?.carType === "MUV"
-                ? bookingDetails?.Package?.kilometerPriceMVP
-                : bookingDetails?.carType === "SUV"
-                    ? bookingDetails?.Package?.kilometerPriceSuv
-                    : bookingDetails?.Package?.kilometerPrice || 0
+bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
     ) : 0;
-    const estimatedPerKm = Number(bookingDetails?.estimatedFareBreakdown?.distanceFare?.rate || 0);
+    const estimatedPerKm = Number(bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice || 0);
     const hourlyPackagePerKm = isHourlyShowingPrice(bookingDetails)
         ? (estimatedPerKm || packagePerKm)
         : packagePerKm;
+// console.log("hourlyPackagePerKm", hourlyPackagePerKm, "packagePerKm", packagePerKm, "estimatedPerKm", estimatedPerKm);
 
 
     return (
@@ -1796,7 +1785,11 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 <>
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Model:</span>
-                                    <span className="text-gray-900 font-medium">{bookingDetails?.Cab?.name || bookingDetails?.Cab?.carType || '-'}</span>
+                                    <span className="text-gray-900 font-medium">{bookingDetails?.Cab?.name  || '-'}</span>
+                                </div>
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Car Type:</span>
+                                    <span className="text-gray-900 font-medium">{bookingDetails?.Cab?.carType || '-'}</span>
                                 </div>
                                 </>)}
                                 <div className="flex flex-col-2 gap-2">
@@ -1942,7 +1935,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                             <div className="flex flex-col-2 gap-2">
                             <span className="text-gray-500 font-semibold">Package KM:</span>
                             <span className="text-gray-900 font-medium">
-                            {bookingDetails?.packageType === 'Local' ? `${bookingDetails?.Package?.kilometer} Km` : ''}
+                            {bookingDetails?.Package?.categoryPricing?.pricing?.kilometer || '0'}  Km
                             </span>
                             </div>
                             }
@@ -2198,7 +2191,10 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                     {/* </div> */}
                             {/* need to add logic for price */}
                     {/* <div className="grid sm:grid-cols-2 gap-4 text-sm">                                         */}
-                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP && !isCategoryPricingService(bookingDetails?.serviceType) && bookingDetails?.serviceType !== 'PARCEL' && (
+                            {bookingDetails?.status !== BOOKING_STATUS.ENDED && bookingDetails?.status !== BOOKING_STATUS.END_OTP &&
+                                (!isCategoryPricingService(bookingDetails?.serviceType) ||
+                                    (bookingDetails?.serviceType === 'RENTAL' && bookingDetails?.packageType === 'Local')) &&
+                                bookingDetails?.serviceType !== 'PARCEL' && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
@@ -2212,15 +2208,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                                             ? bookingDetails?.Package?.price
                                                             : bookingDetails?.Package?.price
                                                 : (bookingDetails?.packageType === 'Local' && bookingDetails?.serviceType === 'RENTAL')
-                                                    ? (
-                                                        bookingDetails?.carType === "Sedan"
-                                                            ? bookingDetails?.Package?.priceSedan
-                                                            : bookingDetails?.carType === "MUV"
-                                                                ? bookingDetails?.Package?.priceMVP
-                                                                : bookingDetails?.carType === "SUV"
-                                                                    ? bookingDetails?.Package?.priceSuv
-                                                                    : bookingDetails?.Package?.price 
-                                                    )
+                                                    ? bookingDetails?.Package?.categoryPricing?.pricing?.price
                                                     : bookingDetails?.value?.fareBreakdown?.total) || 0
                                         )).toFixed(2)}`}
                                     </span>
@@ -2247,7 +2235,7 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
                                 </div>
                             )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
-                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' &&(bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
+                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' &&(bookingDetails?.status === BOOKING_STATUS.BOOKING_ACCEPTED || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
                             )  && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>

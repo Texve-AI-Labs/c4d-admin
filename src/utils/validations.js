@@ -164,7 +164,7 @@ export const PERSONAL_INFO_DETAILS_EDIT_SCHEMA = Yup.object().shape({
 
 export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
     type: Yup.string().required('Service Type is required'),
-    name: Yup.string().required('Full Name/Company Name is required'),
+    name: Yup.string().required('Full Name/Company Name/Owner Name is required'),
     phoneNumber: Yup.string()
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
@@ -185,7 +185,7 @@ export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
 
 export const ACCOUNT_EDIT_SCHEMA = Yup.object().shape({
     type: Yup.string().required('Service Type is required'),
-    name: Yup.string().required('Full Name/Company Name is required'),
+    name: Yup.string().required('Full Name/Company Name/Owner Name is required'),
     phoneNumber: Yup.string()
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
@@ -410,16 +410,6 @@ export const CAB_SCHEMA = Yup.object({
     // notify: Yup.string().required('Notification Recipients is required'),
     // carType: Yup.string().required('Car Type is required'),
     vehicleType: Yup.string().required('Vehicle Type is required'),
-    seater: Yup.string()
-        .required('Seater is required')
-        .oneOf(['4', '5', '6', '7', '8', '9', '10', '12', '14'],
-            'Seater must be 4, 5, 6, 7, 8, 9, 10, 12, or 14'),
-    luggage: Yup.number()
-        .typeError('Luggage must be a number')
-        .required('Luggage capacity is required')
-        .integer('Must be a whole number (e.g., 1, 2, 3)')
-        .min(0, 'Luggage cannot be negative')
-        .max(10, 'Maximum luggage capacity is 10'),
     modelYear: Yup.string()
         .required('Year of Model is required')
         .test(
@@ -554,16 +544,6 @@ export const CAB_ADD_SCHEMA = Yup.object({
     carNumber:Yup.string().required('Car Number is requried'),
     carType: Yup.string().required('Car Type is required'),
     vehicleType: Yup.string().required('Vehicle Type is required'),
-    seater: Yup.string()
-        .required('Seater is required')
-        .oneOf(['4', '5', '6', '7', '8', '9', '10', '12', '14'],
-            'Seater must be 4, 5, 6, 7, 8, 9, 10, 12, or 14'),
-    luggage: Yup.number()
-        .typeError('Luggage must be a number')
-        .required('Luggage capacity is required')
-        .integer('Must be a whole number (e.g., 1, 2, 3)')
-        .min(0, 'Luggage cannot be negative')
-        .max(10, 'Maximum luggage capacity is 10'),
     modelYear: Yup.string()
         .required('Year of Model is required')
         .test(

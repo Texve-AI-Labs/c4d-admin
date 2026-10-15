@@ -11,6 +11,7 @@ import SearchableDropdown from '@/components/SearchableDropdown';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { buildAdminDiscountPayload, isAdminDiscountEffective, sanitizeAdminDiscountValue } from './utils/adminDiscount';
 import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
+import { getCapacityValues } from './utils/capacityMapping';
 
 const getZoneCategories = (response) => {
     const rows = Array.isArray(response?.data) ? response.data : [];
@@ -80,16 +81,16 @@ const getServicePackageId = (packages, serviceType, packageType, bookingType, se
         ? selectedPackageNumber
         : matchingPackages[0]?.id || fallbackPackages[0]?.id);
     const numericPackageId = Number(packageId);
-    console.log('[CATEGORY PACKAGE RESOLUTION]', {
-        serviceType,
-        packageType,
-        bookingType,
-        selectedPackageId,
-        packageIds: (packages || []).map((item) => item?.id),
-        matchingPackageIds: matchingPackages.map((item) => item?.id),
-        fallbackPackageIds: fallbackPackages.map((item) => item?.id),
-        packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
-    });
+    // console.log('[CATEGORY PACKAGE RESOLUTION]', {
+    //     serviceType,
+    //     packageType,
+    //     bookingType,
+    //     selectedPackageId,
+    //     packageIds: (packages || []).map((item) => item?.id),
+    //     matchingPackageIds: matchingPackages.map((item) => item?.id),
+    //     fallbackPackageIds: fallbackPackages.map((item) => item?.id),
+    //     packageId: Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined,
+    // });
     return Number.isFinite(numericPackageId) && numericPackageId > 0 ? numericPackageId : undefined;
 };
 
@@ -157,6 +158,7 @@ const EditBooking = (props) => {
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [driverPackageNotice, setDriverPackageNotice] = useState(null);
     const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
+    const [capacityConfig, setCapacityConfig] = useState({});
     const [pickupSuggestions, setPickupSuggestions] = useState([]);
     const [dropSuggestions, setDropSuggestions] = useState([]);
     const [mapCenter, setMapCenter] = useState({ lat: 12.906374, lng: 80.226452 });
@@ -596,13 +598,13 @@ const EditBooking = (props) => {
             const dropLat = dropLocation?.lat || bookingData?.dropLat;
             const dropLong = dropLocation?.lng || bookingData?.dropLong;
             if (isDriverService && (!pickupLat || !pickupLong || !dropLat || !dropLong)) {
-                console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
-                    pickupLat,
-                    pickupLong,
-                    dropLat,
-                    dropLong,
-                    packageType,
-                });
+                // console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
+                //     pickupLat,
+                //     pickupLong,
+                //     dropLat,
+                //     dropLong,
+                //     packageType,
+                // });
                 return;
             }
 
@@ -617,17 +619,25 @@ const EditBooking = (props) => {
                 zone: zone || '',
                 source: 'ROOTCABS WEBSITE',
             };
-            if (isDriverService) {
-                console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
-            }
+            // if (isDriverService) {
+            //     console.log('[DRIVER PACKAGE LOOKUP] request:', driverPackagePayload);
+            // }
             const data = isDriverService
                 ? await ApiRequestUtils.post(API_ROUTES.POST_ACTING_DRIVER_ZONE_PACKAGES, driverPackagePayload)
                 : await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
                     serviceType: mappedServiceType,
                     zone: zone || '',
                 });
+            let capacityResponse = data;
             if (isDriverService) {
-                console.log('[DRIVER PACKAGE LOOKUP] response:', data);
+                capacityResponse = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ZONE_PACKAGE_LIST, {
+                    serviceType: 'DRIVER',
+                    zone: zone || '',
+                });
+                // console.log('[DRIVER CAPACITY RESPONSE]', capacityResponse);
+            }
+            if (isDriverService) {
+                // console.log('[DRIVER PACKAGE LOOKUP] response:', data);
                 const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
                 if (notice?.title || notice?.message) {
                     setDriverPackageNotice({
@@ -637,10 +647,21 @@ const EditBooking = (props) => {
                 }
             }
 
-            if (data?.success && Array.isArray(data?.data)) {
-                setPackageTypeSelectedData(data?.data);
+            console.log('[CAPACITY API RESPONSE]', {
+                serviceType: mappedServiceType,
+                response: data,
+                luggageCapacity: capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity,
+                seaterCapacity: capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity,
+            });
+            const packageRows = Array.isArray(data?.data) ? data.data : (data?.data?.packages || []);
+            const luggageCapacity = capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity || {};
+            const seaterCapacity = capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity || {};
+            setCapacityConfig({ seaterCapacity, luggageCapacity });
+
+            if (data?.success && packageRows.length > 0) {
+                setPackageTypeSelectedData(packageRows);
                 setCategoryOptions(getZoneCategories(data));
-                setLuggageCapacityMap(data?.luggageCapacity || {});
+                setLuggageCapacityMap(luggageCapacity);
             } else {
                 if (isDriverService) {
                     const notice = data?.data && !Array.isArray(data.data) ? data.data : data;
@@ -685,12 +706,12 @@ const estimateRentalRoundTripDates = async (values, setMinimumReturnAt, location
         return values;
     }
 
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] request:', estimatePayload);
     const estimate = await ApiRequestUtils.post(
         API_ROUTES.POST_OUTSTATION_ROUND_TRIP_ESTIMATE,
         estimatePayload
     );
-    console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
+    // console.log('[RENTAL OUTSTATION ROUND TRIP ESTIMATE] response:', estimate);
     setRentalRoundTripEstimatedDurationText(estimate?.data?.estimatedDurationText || '');
 
     const durationMinutes = Number(estimate?.data?.estimatedDurationMinutes);
@@ -744,12 +765,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
         values?.packageTypeSelected === 'Outstation' &&
         String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
 
-    console.log('[RENTAL ROUND TRIP CHECK]', {
-        serviceType: values?.serviceType,
-        packageType: values?.packageTypeSelected,
-        tripType: values?.tripType,
-        isRentalOutstationRoundTrip,
-    });
+    // console.log('[RENTAL ROUND TRIP CHECK]', {
+    //     serviceType: values?.serviceType,
+    //     packageType: values?.packageTypeSelected,
+    //     tripType: values?.tripType,
+    //     isRentalOutstationRoundTrip,
+    // });
 
     if (isRentalOutstationRoundTrip && (!values?.toDate || !values?.toTime)) {
         await estimateRentalRoundTripDates(values, setRentalRoundTripMinReturnAt);
@@ -848,7 +869,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
         quoteData.adminDiscount = adminDiscountPayload;
     }
     const data = await ApiRequestUtils.post(API_ROUTES.GET_QUOTE_OUTSTATION, quoteData);
-    console.log('[GET QUOTE OUTSTATION] response:', data);
+    // console.log('[GET QUOTE OUTSTATION] response:', data);
     if (data?.success) {
         setQuoteDetails(data?.data);
         setDiscountDetails(data?.data);
@@ -1294,27 +1315,6 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
         return `${hours}:${minutes} ${period}`;
     }
 
-    // Luggage and seater capacity logic based on car type
-    const useLuggageAndSeaterLogic = (carType, setFieldValue, serviceType = '') => {
-        useEffect(() => {
-            if (isCategoryPricingService(serviceType)) return;
-            const normalizedCarType = String(carType || '').toLowerCase();
-            const apiLuggageValue = Number(luggageCapacityMap?.[normalizedCarType]);
-            const luggageValue = Number.isFinite(apiLuggageValue) && apiLuggageValue > 0 ? apiLuggageValue : '';
-
-            if (carType === 'Mini' || carType === 'Sedan') {
-                setFieldValue('luggage', luggageValue);
-                setFieldValue('seaterCapacity', '5');
-            } else if (carType === 'SUV' || carType === 'MUV') {
-                setFieldValue('luggage', luggageValue);
-                setFieldValue('seaterCapacity', '7');
-            } else {
-                setFieldValue('luggage', '');
-                setFieldValue('seaterCapacity', '');
-            }
-        }, [carType, setFieldValue, luggageCapacityMap, serviceType]);
-    };
-
     const editSubmit = async (values) => {
         let data;
         let editBookingData;
@@ -1365,7 +1365,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                             : (values?.tripType?.toUpperCase() || ''),
                     }),
                     ...(isDriverService
-                        ? { carType: values?.carType || bookingData?.carType || '', transmissionType: values?.transmissionType || bookingData?.transmissionType || '' }
+                        ? {
+                            carType: values?.carType || bookingData?.carType || '',
+                            transmissionType: values?.transmissionType || bookingData?.transmissionType || '',
+                            luggage: values?.luggage || '',
+                            seaterCapacity: values?.seaterCapacity || '',
+                        }
                         : {}),
                     fromDate: moment(`${values?.rideDate} ${values?.rideTime}`, "YYYY-MM-DD HH:mm:ss").toISOString(),
                     pickupLat: values?.pickupLocation?.lat ? values?.pickupLocation?.lat : bookingData?.pickupLat,
@@ -1538,7 +1543,28 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                 isCategoryService(values.serviceType) && visibleCategories.length === 0;
                             const selectedCategoryPricing = getSelectedCategoryPricing(quoteDetails, values);
                             const categoryCommonPricing = selectedCategoryPricing.common;
-                            useLuggageAndSeaterLogic(values.carType, setFieldValue, luggageCapacityMap, values.serviceType);
+                            const categoryHourlyPricing = selectedCategoryPricing.pricing;
+                            useEffect(() => {
+                                const selectedCategory = categoryOptions.find(
+                                    (item) => Number(item.id) === Number(values.categoryId)
+                                );
+                                const capacity = getCapacityValues({
+                                    serviceType: values.serviceType,
+                                    carType: values.carType,
+                                    category: values.category || selectedCategory?.category,
+                                    capacityConfig,
+                                });
+                                // console.log('[CAPACITY MAPPING]', {
+                                //     serviceType: values.serviceType,
+                                //     category: values.category || selectedCategory?.category,
+                                //     categoryId: values.categoryId,
+                                //     carType: values.carType,
+                                //     capacityConfig,
+                                //     capacity,
+                                // });
+                                setFieldValue('luggage', capacity.luggage, false);
+                                setFieldValue('seaterCapacity', capacity.seaterCapacity, false);
+                            }, [values.serviceType, values.carType, values.category, capacityConfig, setFieldValue]);
                     return(
                                 <> {customerData && (
                                     <div className="p-2 flex mb-4 pointer-events-none">
@@ -1674,10 +1700,6 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                 setQuoteDetails(null);
                                                                 setFieldValue('categoryId', item.id);
                                                                 setFieldValue('category', item.category);
-                                                                if (isCategoryService(values.serviceType) && item.metadata) {
-                                                                    setFieldValue('luggage', item.metadata.bags ?? '');
-                                                                    setFieldValue('seaterCapacity', item.metadata.seats ?? '');
-                                                                }
                                                             }}
                                                             className={`rounded-xl border-2 p-4 text-left transition ${selected ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-300 bg-white hover:border-blue-300'}`}
                                                         >
@@ -2227,39 +2249,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                 )}
                                             </div>)}
 
-                                        {/* Add luggage and seater capacity fields */}
-                                        {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
-                                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                                <div className="p-2 space-y-2">
-                                                    <label className="block text-sm font-medium text-black-700">
-                                                        Luggage
-                                                    </label>
-                                                    <Field
-                                                        type="number"
-                                                        name="luggage"
-                                                        className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                        placeholder="Luggage Count (Auto-filled)"
-                                                        disabled={true}
-                                                        value={values.luggage || ''}
-                                                    />
-                                                    <ErrorMessage name="luggage" component="div" className="text-red-500 text-sm" />
-                                                </div>
-                                                <div className="p-2 space-y-2">
-                                                    <label className="block text-sm font-medium text-black-700">
-                                                        Seater Capacity
-                                                    </label>
-                                                    <Field
-                                                        type="text"
-                                                        name="seaterCapacity"
-                                                        className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                        placeholder="Seater Capacity (Auto-filled)"
-                                                        disabled={true}
-                                                        value={values.seaterCapacity || ''}
-                                                    />
-                                                    <ErrorMessage name="seaterCapacity" component="div" className="text-red-500 text-sm" />
-                                                </div>
-                                            </div>
-                                        )}
+                                {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
+                                        <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                    </div>
+                                )}
                                 {/* Source Type Field for all services */}
                                         {values.serviceType && (
                                             <div className="space-y-2 mb-4">
@@ -2338,16 +2333,10 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                                 return Math.round(num);
                                                                             })()}`
                                                                         ) : values.serviceType === 'RENTAL' ? (
-                                                                            `₹${(() => {
+                                                                            `₹ ${(() => {
                                                                                 const selectedPackage = packageTypeSelectedData.find((pkg) => pkg.id === Number(values.packageSelected));
                                                                                 if (!selectedPackage) return 'N/A';
-                                                                                const car = values.carType?.toUpperCase();
-                                                                            const raw = car === 'MINI'  ? selectedPackage.price : 
-                                                                                    car === 'SEDAN' ? selectedPackage.priceSedan :
-                                                                                        car === 'SUV'   ? selectedPackage.priceSuv :
-                                                                                        car === 'MUV'   ? selectedPackage.priceMVP :
-                                                                                                null;
-
+                                                                                const raw = categoryHourlyPricing?.price;
                                                                                 const num = Number(raw);
                                                                                 if (!Number.isFinite(num)) return 'N/A';
                                                                                 return Math.round(num);
@@ -2901,7 +2890,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                 </Typography>
                                                                 <Typography color="gray" variant="h6">Pick up to Drop  Kilometer + Driver Km For Pickup Location</Typography>
                                                                 <Typography>
-                                                                    {(quoteDetails.amount?.estimatedDistance).toFixed(1)} Kms {quoteDetails.amount?.driverWithin > 0 && (<> + {Number(quoteDetails.amount.driverWithin).toFixed(1)} Kms</>)}
+                                                                    {(quoteDetails.amount?.distanceEstimated).toFixed(1)} Kms {quoteDetails.amount?.driverWithin > 0 && (<> + {Number(quoteDetails.amount.driverWithin).toFixed(1)} Kms</>)}
                                                                 </Typography>
                                                                 {values?.serviceType === 'RIDES' && (<>
 
