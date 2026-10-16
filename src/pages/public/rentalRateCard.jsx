@@ -29,7 +29,6 @@ const BOOKING_TYPE_FILTER_TO_RATE_KEY = {
   'DROP ONLY': 'DROP_ONLY',
   'ROUND TRIP': 'ROUND_TRIP',
 };
-const DEFAULT_ZONE = 'Vellore';
 
 const toDisplayValue = (value) => {
   const numeric = Number(value);
@@ -86,7 +85,7 @@ export function RentalTariffRateCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [serviceAreas, setServiceAreas] = useState([]);
-  const [selectedZone, setSelectedZone] = useState(DEFAULT_ZONE);
+  const [selectedZone, setSelectedZone] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedBookingType, setSelectedBookingType] = useState('');
 
@@ -139,12 +138,7 @@ export function RentalTariffRateCard() {
   }, [selectedZone, selectedCategory, selectedBookingType, loadTariffs]);
 
   const serviceAreaOptions = useMemo(() => {
-    const list = Array.isArray(serviceAreas) ? serviceAreas : [];
-    const hasDefaultZone = list.some((area) => area?.name === DEFAULT_ZONE);
-    if (hasDefaultZone) {
-      return list;
-    }
-    return [{ id: 'default-zone', name: DEFAULT_ZONE, type: 'Service Area' }, ...list];
+    return Array.isArray(serviceAreas) ? serviceAreas : [];
   }, [serviceAreas]);
 
   const hasData = tariffRows.length > 0;
@@ -295,6 +289,7 @@ export function RentalTariffRateCard() {
                   onChange={handleZoneChange}
                   className="rounded-lg border border-white/60 bg-white/10 px-3 py-2 text-sm text-white focus:outline-none"
                 >
+                  <option value="" className="text-black">Select Zone</option>
                   {serviceAreaOptions.map((area) => (
                     <option key={area.id} value={area.name} className="text-black">
                       {area.name}
