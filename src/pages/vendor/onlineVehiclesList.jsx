@@ -49,7 +49,7 @@ export function OnlineVehiclesList({ id = 0 }) {
     search: '',
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const driverType = typeFilter[0] === 'All' ? '' : typeFilter[0];
+  const driverType = typeFilter[0] === 'All' ? 'ALL' : typeFilter[0];
 
   const normalizeVehicleType = (type) => {
     const normalizedType = String(type || '').trim().toUpperCase().replace(/[-\s]/g, '_');
@@ -166,6 +166,10 @@ export function OnlineVehiclesList({ id = 0 }) {
   const handleFilterChange = (filterType, value) => {
     if (filterType === 'type') {
       setTypeFilter([value]);
+      setPagination((prev) => ({
+        ...prev,
+        currentPage: 1,
+      }));
     }
   };
 
