@@ -1,4 +1,4 @@
-import { ACCEPT_WINDOW_TYPE, ACCEPT_WINDOW_PATH } from "./futureBookingAcceptWindowConfig.js";
+import { ACCEPT_WINDOW_TYPE, ACCEPT_WINDOW_PATH, SERVICE_TYPES } from "./futureBookingAcceptWindowConfig.js";
 import { POLICY_CATEGORIES } from "./luggagePolicyConfig.js";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -235,7 +235,7 @@ const GstView = () => {
                         <td className="py-3 px-3 align-top">{item.config?.defaultMinutes ?? "-"}</td>
                         {["byBookingType", "byServiceType"].map((group) => (
                           <td key={group} className="py-3 px-3 align-top">
-                            {Object.entries(item.config?.[group] || {}).map(([key, minutes]) => <div key={key}>{key}: {minutes}</div>)}
+                            {Object.entries(item.config?.[group] || {}).filter(([key]) => group !== "byServiceType" || SERVICE_TYPES.includes(key)).map(([key, minutes]) => <div key={key}>{key}: {minutes}</div>)}
                           </td>
                         ))}
                       </>}
