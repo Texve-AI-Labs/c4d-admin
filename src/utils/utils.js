@@ -575,8 +575,9 @@ export const Utils = {
         const now = new Date();
         inputDate.setSeconds(0, 0);
         now.setSeconds(0, 0);
-        const nowMinus2Min = new Date(now.getTime() - 2 * 60 * 1000);
-        return inputDate.getTime() >= nowMinus2Min.getTime();
+        // Allow a small clock drift while the operator completes the form.
+        const nowMinus5Min = new Date(now.getTime() - 5 * 60 * 1000);
+        return inputDate.getTime() >= nowMinus5Min.getTime();
     },
  
     validateDateTimeRange: ({ startDate, endDate }) => {
