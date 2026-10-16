@@ -40,10 +40,6 @@ export function MasterPriceDetailsAndEdit() {
                 additionalMinChargeMVP: data?.data?.additionalMinChargeMVP || '',
                 additionalMinChargeSuv: data?.data?.additionalMinChargeSuv || '',
                 additionalMinChargeSedan: data?.data?.additionalMinChargeSedan || '',
-                additionalMins: data?.data?.additionalMins ?? 0,
-                additionalMinsSedan: data?.data?.additionalMinsSedan ?? 0,
-                additionalMinsSuv: data?.data?.additionalMinsSuv ?? 0,
-                additionalMinsMUV: data?.data?.additionalMinsMUV ?? 0,
                 nightHoursFrom: data?.data?.nightHoursFrom || '00:00',
                 nightHoursTo: data?.data?.nightHoursTo || '00:00',
                 nightCharge: data?.data?.nightCharge || '',
@@ -84,10 +80,6 @@ export function MasterPriceDetailsAndEdit() {
                 additionalMinChargeMVP: values.additionalMinChargeMVP,
                 additionalMinChargeSuv: values.additionalMinChargeSuv,
                 additionalMinChargeSedan: values.additionalMinChargeSedan,
-                additionalMins: values.additionalMins,
-                additionalMinsSedan: values.additionalMinsSedan,
-                additionalMinsSuv: values.additionalMinsSuv,
-                additionalMinsMUV: values.additionalMinsMUV,
                 status: values.status === 'Active' ? 1 : 0,
                 dropPriceAbove:values.dropPriceAbove,
                 zone: values.zone,
@@ -226,7 +218,6 @@ export function MasterPriceDetailsAndEdit() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
                                 </tr>
                             </thead>
 
@@ -236,28 +227,24 @@ export function MasterPriceDetailsAndEdit() {
                                     <td className="px-4 py-4 border border-gray-300">Mini</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMins || '-'}</td>
                                 </tr>
                                 {/* Sedan */}
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">Sedan</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.priceSedan || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSedan || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinsSedan || '-'}</td>
                                 </tr>
                                 {/* Suv */}
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">Suv</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.priceSuv || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSuv || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinsSuv || '-'}</td>
                                 </tr>
                                 {/* MVP */}
                                   <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">Muv</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeMVP || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinsMUV || '-'}</td>
                                 </tr>
                             </tbody>
                             </table>
@@ -273,7 +260,6 @@ export function MasterPriceDetailsAndEdit() {
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Car Type</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Base Fare</th>
                                     <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins price</th>
-                                    <th className="px-4 py-3  text-xs font-bold text-white uppercase border border-gray-300">Additional Mins</th>
                                    
                                 </tr>
                             </thead>
@@ -283,28 +269,24 @@ export function MasterPriceDetailsAndEdit() {
                                     <td className="px-4 py-4 border border-gray-300">Mini</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.price || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinCharge || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMins || '-'}</td>
                                    
                                 </tr>
                                     <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">Sedan</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.priceSedan || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSedan || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinsSedan || '-'}</td>
                                 </tr>
                                 {/* Suv */}
                                 <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">Suv</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.priceSuv || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeSuv || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinsSuv || '-'}</td>
                                 </tr>
                                 {/* MVP */}
                                   <tr className="bg-white hover:bg-gray-50 transition-all text-center text-gray-800 font-medium">
                                     <td className="px-4 py-4 border border-gray-300">Muv</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.priceMVP || "-"}</td>
                                     <td className="px-4 py-4 border border-gray-300">{values.additionalMinChargeMVP || '-'}</td>
-                                    <td className="px-4 py-4 border border-gray-300">{values.additionalMinsMUV || '-'}</td>
                                 </tr>
                             </tbody>
                             </table>
