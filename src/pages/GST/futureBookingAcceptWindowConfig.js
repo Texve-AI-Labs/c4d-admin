@@ -1,7 +1,7 @@
 export const ACCEPT_WINDOW_TYPE = "FUTURE_BOOKING_ACCEPT_WINDOW";
 export const ACCEPT_WINDOW_PATH = "/dashboard/finance/future-booking-accept-window";
 export const BOOKING_TYPES = ["DROP ONLY", "ROUND TRIP"];
-export const SERVICE_TYPES = ["AUTO", "RIDES", "PARCEL", "RENTAL"];
+export const SERVICE_TYPES = ["AUTO", "RIDES", "BIKE", "RENTAL"];
 
 export const isPositiveMinutes = (value) => String(value).trim() !== "" && Number.isSafeInteger(Number(value)) && Number(value) > 0;
 
