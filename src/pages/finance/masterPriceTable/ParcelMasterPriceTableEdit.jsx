@@ -7,6 +7,8 @@ import ParcelMasterPriceForm from "./parcelMasterPrice/ParcelMasterPriceForm";
 import { createInitialParcelForm } from "./parcelMasterPrice/defaults";
 import { mapApiToParcelForm } from "./parcelMasterPrice/mapper";
 import DemandPriceEdit from "./DemandPriceEdit";
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 export default function ParcelMasterPriceTableEdit() {
   const { id } = useParams();
@@ -64,19 +66,19 @@ export default function ParcelMasterPriceTableEdit() {
       setSaving(true);
       const reqBody = { packageId: Number(id), ...payload, demandRules };
 
-      let response = await ApiRequestUtils.post(API_ROUTES.PARCEL_PRICE_EDIT, reqBody);
+      let response = await ApiRequestUtils.post(API_ROUTES.PARCEL_PRICE_EDIT, reqBody, 0, { suppressAlert: true });
       if (!response?.success) {
-        response = await ApiRequestUtils.update(API_ROUTES.PARCEL_PRICE_EDIT, reqBody);
+        response = await ApiRequestUtils.update(API_ROUTES.PARCEL_PRICE_EDIT, reqBody, 0, { suppressAlert: true });
       }
 
       if (response?.success) {
         navigate("/dashboard/finance/master-price");
       } else {
-        setError(response?.message || "Update failed");
+        setError(getMasterPriceErrorMessage(response));
       }
     } catch (saveErr) {
       console.error("Save error:", saveErr);
-      setError("Network or server error while saving");
+      setError(getMasterPriceErrorMessage(saveErr));
     } finally {
       setSaving(false);
     }
@@ -84,6 +86,7 @@ export default function ParcelMasterPriceTableEdit() {
 
   return (
     <>
+      <MasterPriceErrorModal message={error} onClose={() => setError("")} />
       <ParcelMasterPriceForm
         title="Edit Parcel Master Price"
         initialForm={initialForm}
@@ -92,7 +95,7 @@ export default function ParcelMasterPriceTableEdit() {
         disableZoneAndVehicleType
         saving={saving}
         submitLabel="Update Parcel Price"
-        errorMessage={error}
+        errorMessage=""
         onSubmit={handleSubmit}
         onBack={() => navigate("/dashboard/finance/master-price")}
       />
