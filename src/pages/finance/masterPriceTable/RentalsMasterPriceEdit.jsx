@@ -8,6 +8,8 @@ import { Utils } from '@/utils/utils';
 import DemandPriceEdit from './DemandPriceEdit';
 import RentalMasterPriceForm, { createLocalCategoryPricing, createOutstationCategoryPricing } from './RentalMasterPriceForm';
 import { buildCategoryPricingsPayload, priceSchema } from './RentalsMasterPriceAdd';
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 const toTimeValue = (timeString) => timeString ? String(timeString).slice(0, 5) : '';
 const toMinutes = (timeString) => Utils.convertTimeFormatToMinutes(timeString || 0);
@@ -92,6 +94,7 @@ const normalizeCategoryPricings = (priceData) => {
 };
 
 const RentalsMasterPriceEdit = () => {
+    const [errorMessage, setErrorMessage] = useState('');
     const [initialValues, setInitialValues] = useState(null);
     const [demandRules, setDemandRules] = useState([]);
     const initialDemandPriceRef = useRef([]);
@@ -147,17 +150,20 @@ const RentalsMasterPriceEdit = () => {
                 demandRules,
             };
 
-            const response = await ApiRequestUtils.post(API_ROUTES.RENDAL_PRICE_EDIT, reqBody);
+            const response = await ApiRequestUtils.post(API_ROUTES.RENDAL_PRICE_EDIT, reqBody, 0, { suppressAlert: true });
             if (response?.success) {
                 navigate('/dashboard/finance/master-price');
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(response));
             }
         } catch (error) {
-            console.error('Error updating price details:', error);
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
     };
 
     return (
         <div className="p-4 mx-auto bg-white">
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
             <h2 className="text-2xl font-bold mb-4">Edit Rentals Pricing Details</h2>
             {initialValues ? (
             <Formik initialValues={initialValues} validationSchema={priceSchema} onSubmit={onSubmit} enableReinitialize validateOnMount>
