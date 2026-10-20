@@ -7,10 +7,13 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@material-tailwind/react';
 import { MASTERPRICE_ADD_SCHEME } from "@/utils/validations";
 import { Utils } from "@/utils/utils";
+import MasterPriceErrorModal from "@/components/masterPrice/MasterPriceErrorModal";
+import { getMasterPriceErrorMessage } from "@/components/masterPrice/masterPriceError";
 
 export function MasterPriceAdd() {
     const navigate = useNavigate();
     const [serviceAreas, setServiceAreas] = useState([]);
+    const [errorMessage, setErrorMessage] = useState('');
     const initialValues = {
         serviceType: '',
         zone: '',
@@ -86,15 +89,17 @@ export function MasterPriceAdd() {
             let data;
 
             if (values.type === 'Local') {
-                data = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_ADD_LOCAL_PACKAGE, masterpriceList);
+                data = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_ADD_LOCAL_PACKAGE, masterpriceList, 0, { suppressAlert: true });
             } else {
-                data = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_ADD_OUTSTAION_PACKAGE, masterpriceList);
+                data = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_ADD_OUTSTAION_PACKAGE, masterpriceList, 0, { suppressAlert: true });
             }
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(data));
             }
         } catch (err) {
-            console.log('ERROR IN SUBMIT :', err)
+            setErrorMessage(getMasterPriceErrorMessage(err));
         }
         setSubmitting(false);
     };
@@ -106,6 +111,7 @@ export function MasterPriceAdd() {
 
     return (
         <div className="p-4 bg-white rounded-xl">
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
 
             <h2 className="text-2xl font-bold mb-4">Add Master Price</h2>
             <Formik
