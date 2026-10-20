@@ -10,6 +10,8 @@ import { Utils } from '@/utils/utils';
 import MasterPriceLog from './MasterPriceLog';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
 import DemandPriceEdit from './DemandPriceEdit';
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Active' },
@@ -240,6 +242,7 @@ const buildBikePackagePayload = (values, packageId) => {
 };
 
 const BikeMasterPriceTableEdit = () => {
+    const [errorMessage, setErrorMessage] = useState('');
     const [initialValues, setInitialValues] = useState(null);
     const initialValuesRef = useRef(null);
     const { id } = useParams();
@@ -280,17 +283,20 @@ const BikeMasterPriceTableEdit = () => {
         try {
             const reqBody = buildBikePackagePayload(values, id);
 
-            const response = await ApiRequestUtils.post(API_ROUTES.BIKE_PRICE_EDIT, reqBody);
+            const response = await ApiRequestUtils.post(API_ROUTES.BIKE_PRICE_EDIT, reqBody, 0, { suppressAlert: true });
             if (response?.success) {
                 navigate('/dashboard/finance/master-price');
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(response));
             }
         } catch (error) {
-            console.error('Error updating bike price details:', error?.response?.data || error);
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
     };
 
     return (
         <div className="p-4 mx-auto bg-white">
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
             <h2 className="text-2xl font-bold mb-4">Bike Pricing Edit</h2>
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
                 {({ handleSubmit, setFieldValue, isValid, values, errors }) => (
