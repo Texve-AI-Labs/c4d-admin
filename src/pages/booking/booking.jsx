@@ -1469,31 +1469,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 if (createdBooking?.id) {
                     await sendQuotationLogs(createdBooking.id, loggedInUserId, createdBooking?.subZoneId || null);
                 }
-                const targetBookingId = createdBooking?.id;
-                const targetCustomerId = createdBooking?.customerId || values?.customerId?.id || 0;
-                const targetQuoteRef = normalizeQuoteRef(
-                    createdBooking?.quoteRef ||
-                    data?.data?.quoteRef ||
-                    bookingData?.quoteRef ||
-                    quoteMeta?.quoteRef ||
-                    ''
-                );
-                const confirmBookingSearchParams = new URLSearchParams({
-                    bookingId: String(targetBookingId || 0),
-                    customerId: String(targetCustomerId),
-                    fromPath: location.pathname,
-                });
-                if (targetQuoteRef) {
-                    confirmBookingSearchParams.set("quoteRef", targetQuoteRef);
-                }
-                navigate(`/dashboard/confirm-booking?${confirmBookingSearchParams.toString()}`, {
-                    state: {
-                        quoteRef: targetQuoteRef,
-                    },
-                });
                 formikBag.resetForm();
                 setSelectedCustomer(0);
                 setSearchBookingId('');
+                if (refreshFn) refreshFn();
                 return true;
             } else {
                 formikBag.setStatus({ submit: data?.message || 'Failed to create parcel booking. Please try again.' });
@@ -3003,6 +2982,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                                 value={values.rideDate && values.rideTime  ? `${values.rideDate}T${values.rideTime}` : ''}
                                                                 min={Utils.getNowDateTimeLocalInput()}
+                                                                max={values.serviceType === 'PARCEL' ? `${Utils.getTodayDateInput()}T23:59` : undefined}
                                                                  onClick={(e) => {
                                                                 if (e.target.showPicker) e.target.showPicker();
                                                                     }}
