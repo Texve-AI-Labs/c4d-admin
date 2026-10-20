@@ -9,6 +9,8 @@ import { API_ROUTES } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
 import DemandPriceEdit from './DemandPriceEdit';
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -167,6 +169,7 @@ const normalizeCategoryPricings = (priceData) => {
 
 const PriceEdit = () => {
     const [initialValues, setInitialValues] = useState(null);
+    const [errorMessage, setErrorMessage] = useState('');
     const { id } = useParams();
     const navigate = useNavigate();
     const initialValuesRef = useRef(null);
@@ -244,17 +247,20 @@ const PriceEdit = () => {
                 })),
             };
 
-            const response = await ApiRequestUtils.update(API_ROUTES.RIDES_PRICE_EDIT, reqBody);
+            const response = await ApiRequestUtils.update(API_ROUTES.RIDES_PRICE_EDIT, reqBody, 0, { suppressAlert: true });
             if (response?.success) {
                 navigate('/dashboard/finance/master-price', { state: { priceUpdated: true } });
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(response));
             }
         } catch (error) {
-            console.error('Error updating price details:', error);
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
     };
 
     return (
         <div className="p-4 mx-auto bg-white">
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
             <h2 className="text-2xl font-bold mb-4">Rides Pricing Edit</h2>
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
                 {({ handleSubmit, setFieldValue, isValid, values, errors }) => (
