@@ -151,6 +151,7 @@ export function SearchDrivers(props) {
         phoneNumber: item.phoneNumber || item.Driver?.phoneNumber || "",
         zone: item.zone || item.Zone?.name || "",
         rating: item.rating ?? item.Driver?.rating ?? "",
+        transmissionType: item.transmissionType || item.TransmissionType || item.Driver?.Cab?.transmissionType || item.Cab?.transmissionType || "",
         priceOffered: item.offerPrice || item.driverPrice || 0,
         tripCount: item.totalRides || item.Driver?.totalRides || 0,
         Drivers: [{ id: item.driverId || item.DriverId || item.Driver?.id }],
@@ -825,7 +826,7 @@ export function SearchDrivers(props) {
         }
         return slot.name || slot.label || slot.slotName || slot.time || slot.startTime || slot.id || "-";
     };
-    const driverTableColumns = ["Name", "Phone Number", "Zone","Current Address", "Distance", "Rating", "Slot", "Status", "Assign/ReAssign"];
+    const driverTableColumns = ["Name", "Phone Number", "Zone","Current Address", "Transmission Type","Distance", "Rating", "Slot", "Status", "Assign/ReAssign"];
     const driverGroupTitles = ["Top Priority Acting Drivers", "Recommended Drivers"];
     const groupedDriverTables = drivers.reduce((groups, driver) => {
         const title = driver.searchGroup || "Drivers";
@@ -852,6 +853,7 @@ export function SearchDrivers(props) {
                                         <col className="w-[130px]" />
                                         <col className="w-[105px]" />
                                         <col className="w-[225px]" />
+                                        <col className="w-[120px]" />
                                         <col className="w-[90px]" />
                                         <col className="w-[70px]" />
                                         <col className="w-[130px]" />
@@ -889,7 +891,8 @@ export function SearchDrivers(props) {
                                                 </td>
                                             </tr>
                                         )}
-                                        {rows.map(({ id, firstName, name, zone,Shifts, curAddress, status, phoneNumber, distance, rating, slot, Drivers, priorityType, routing }, key) => {
+                                        {rows.map(({ id, firstName, name, zone,Shifts, curAddress, status, phoneNumber, distance, rating, transmissionType, slot, Drivers, priorityType, routing, fullData }, key) => {
+                                                const resolvedTransmissionType = transmissionType || fullData?.transmissionType || fullData?.TransmissionType || fullData?.Driver?.Cab?.transmissionType || fullData?.Cab?.transmissionType || "-";
                                                 const className = `px-3 py-3 align-top ${key === rows.length - 1
                                                     ? ""
                                                     : "border-b border-blue-gray-50"
@@ -924,6 +927,11 @@ export function SearchDrivers(props) {
                                                         <td className={className}>
                                                             <Typography className='break-words text-xs font-semibold leading-5 text-blue-gray-600'>
                                                                 {Shifts?.[0]?.curAddress?.name || curAddress?.name || curAddress || "-"}
+                                                            </Typography>
+                                                        </td>
+                                                        <td className={compactCellClassName}>
+                                                            <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                                {resolvedTransmissionType}
                                                             </Typography>
                                                         </td>
                                                         <td className={compactCellClassName}>
