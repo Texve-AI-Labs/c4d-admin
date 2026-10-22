@@ -3,6 +3,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
+import { FULL_NAME_SCHEMA } from '@/utils/validations';
 import { Alert, Button, Dialog, DialogBody, DialogFooter, DialogHeader, Typography } from '@material-tailwind/react';
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -74,7 +75,7 @@ const CustomerAdd = (props) => {
 
     const validationSchema = Yup.object({
         salutation: Yup.string().required('Salutation is required'),
-        firstName: Yup.string().required('Name is required').matches(/^[a-zA-Z\s]+$/, 'Only letters are allowed'),
+        firstName: FULL_NAME_SCHEMA,
         source: Yup.string().required('source is required'),
         zone: Yup.string().required('Zone is required'),
         // sourceType: Yup.string().required('Source type is required'), // New validation
