@@ -3911,7 +3911,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             </>)
                                                                             }
                                                                             {cancelChargeApplicable && (
-                                                                                <div className='flex justify-between'>
+                                                                                <div className='flex justify-between order-first'>
                                                                                     <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
                                                                                     <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                                 </div>
@@ -4051,7 +4051,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             </>)
                                                                             }
                                                                         {cancelChargeApplicable && (
-                                                                            <div className='flex justify-between'>
+                                                                            <div className='flex justify-between order-first'>
                                                                                 <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </div>
@@ -4262,8 +4262,8 @@ const priceDetailsCardClass = isPeakHour
                                                                             }                                                                                                                                                                                                                
                                                                         {cancelChargeApplicable && (
                                                                             <>
-                                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
-                                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                                <Typography className="order-first" color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                                <Typography className="order-first">Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </>
                                                                         )}
                                                                     </div>
