@@ -847,7 +847,7 @@ export function SearchDrivers(props) {
         : groupedDriverTables;
 
     const renderDriverTable = (rows) => (
-                                <table className="w-full min-w-[1170px] table-fixed">
+                                <table className="w-full min-w-[1290px] table-fixed">
                                     <colgroup>
                                         <col className="w-[130px]" />
                                         <col className="w-[130px]" />
@@ -865,7 +865,7 @@ export function SearchDrivers(props) {
                     {driverTableColumns.map((el) => (
                                                 <th
                                                     key={el}
-                                                    className="border-b border-blue-gray-50 px-3 py-3 text-left"
+                                                    className="border-b border-blue-gray-50 px-3 py-3 text-left whitespace-nowrap"
                                                 >
                                                     <Typography
                                                         variant="small"
@@ -1007,7 +1007,7 @@ export function SearchDrivers(props) {
                                 {hasGroupedDriverTables ? (
                                     <div className="space-y-5">
                                         {visibleDriverTables.map(({ title, rows }) => (
-                                            <div key={title} className="min-w-[1170px]">
+                                            <div key={title} className="min-w-[1290px]">
                                                 <div className="border-b border-blue-gray-50 bg-blue-gray-50 px-5 py-3">
                                                     <Typography className="text-xs font-bold uppercase text-blue-gray-600">
                                                         {title}
@@ -1185,7 +1185,7 @@ export function SearchDrivers(props) {
                                             ...(props.bookingData?.serviceType !== "PARCEL" ? ["Travel Distance", "Travel Duration"] : []), "Assign/Reassign"].map((el) => (
                                                     <th
                                                         key={el}
-                                                        className="border-b border-blue-gray-50 py-3 px-5 text-left"
+                                                        className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap"
                                                     >
                                                         {el === "Cab Type" ? (
                                                             <FilterPopover
