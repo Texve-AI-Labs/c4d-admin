@@ -3693,7 +3693,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                     <div className="p-2 space-y-2 ">
-                                                        {(values.serviceType !== 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                        {values.serviceType !== 'DRIVER' && values.serviceType !== 'AUTO' && (
                                                             <div className="grid grid-cols-2 gap-4 mb-4">
                                                                 <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
                                                                 <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />

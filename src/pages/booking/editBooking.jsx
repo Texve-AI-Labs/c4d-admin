@@ -647,12 +647,12 @@ const EditBooking = (props) => {
                 }
             }
 
-            console.log('[CAPACITY API RESPONSE]', {
-                serviceType: mappedServiceType,
-                response: data,
-                luggageCapacity: capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity,
-                seaterCapacity: capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity,
-            });
+            // console.log('[CAPACITY API RESPONSE]', {
+            //     serviceType: mappedServiceType,
+            //     response: data,
+            //     luggageCapacity: capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity,
+            //     seaterCapacity: capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity,
+            // });
             const packageRows = Array.isArray(data?.data) ? data.data : (data?.data?.packages || []);
             const luggageCapacity = capacityResponse?.luggageCapacity || capacityResponse?.data?.luggageCapacity || {};
             const seaterCapacity = capacityResponse?.seaterCapacity || capacityResponse?.data?.seaterCapacity || {};
