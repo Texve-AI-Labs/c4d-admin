@@ -1933,9 +1933,9 @@ if (!statusFilter.includes('All')) {
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.Customer?.firstName ? data?.Customer?.firstName : '-'}
                                                                 </Typography>
-                                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {/* <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.Customer?.phoneNumber ? data?.Customer?.phoneNumber : '-'}
-                                                                </Typography>
+                                                                </Typography> */}
                                                             </div>
                                                             </td>
                                                         {/* <td className={className}>

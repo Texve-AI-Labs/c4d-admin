@@ -1839,6 +1839,15 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     
                                 </>                                    
                             )}
+                            {bookingDetails?.serviceType === 'DRIVER' && (
+                                <>
+                                    <div className="flex flex-col-2 gap-2">
+                                        <span className="text-gray-500 font-semibold">Transmission Type:</span>
+                                        <span className="text-gray-900 font-medium">{bookingDetails?.transmissionType}</span>
+                                    </div>
+                                    
+                                </>  
+                            )}
                             {bookingDetails?.serviceType ==='DRIVER' && bookingDetails?.packageType === 'Outstation' && (
                                       <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Period:</span>
@@ -2000,14 +2009,14 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     <span className="text-gray-900 font-medium">{categoryPackageContext.categoryLabel}</span>
                                 </div>
                             )}
-                            {(bookingDetails?.serviceType != 'RIDES'  && bookingDetails?.serviceType !='AUTO' && bookingDetails?.serviceType != 'BIKE') && bookingDetails.luggage > 0 &&
+                            {(bookingDetails?.serviceType != 'RIDES'  && bookingDetails?.serviceType !='AUTO' && bookingDetails?.serviceType != 'BIKE' && bookingDetails?.serviceType != 'DRIVER') && bookingDetails.luggage > 0 &&
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Luggage:</span>
                                     <span className="text-gray-900 font-medium">{bookingDetails.luggage || '0'}</span>
                                 </div>
                                 
                             }
-                            {(bookingDetails?.serviceType != 'RIDES'  && bookingDetails?.serviceType !='AUTO' && bookingDetails?.serviceType != 'BIKE') && bookingDetails.seaterCapacity > 0 &&
+                            {(bookingDetails?.serviceType != 'RIDES'  && bookingDetails?.serviceType !='AUTO' && bookingDetails?.serviceType != 'BIKE' && bookingDetails?.serviceType != 'DRIVER') && bookingDetails.seaterCapacity > 0 &&
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Seater Capacity:</span>
                                     <span className="text-gray-900 font-medium">{bookingDetails.seaterCapacity || '0'}</span>
@@ -2022,7 +2031,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                             bookingDetails?.packageType === "Local" ? "hours" : ""}`}</span>
                                 </div>
                             }
-                            {bookingDetails?.serviceType == 'DRIVER' && 
+                            {(bookingDetails?.serviceType == 'DRIVER' && bookingDetails?.value?.travelDistance > 0 && bookingDetails?.packageType === "Outstation") &&    
                               <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">KM:</span>
                                     <span className="text-gray-900 font-medium">{`${bookingDetails?.packageType == 'Local' ? `${Number(bookingDetails?.Package?.kilometer || 0).toFixed(2)}` + ' Km' : ''}
@@ -2070,7 +2079,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     <span className="text-gray-900 font-medium">₹ {bookingDetails?.estimatedFareBreakdown?.foodCharge}</span>
                                 </div>
                             }
-                            {bookingDetails?.status !== BOOKING_STATUS.END_OTP && bookingDetails?.status !== BOOKING_STATUS.ENDED  && bookingDetails?.serviceType !=="RIDES" && bookingDetails?.serviceType !=="AUTO" && bookingDetails?.serviceType !=="BIKE" && (!isHourlyShowingPrice(bookingDetails) || Number(bookingDetails?.value?.estimatedDistance || 0) > 0) &&
+                            {bookingDetails?.status !== BOOKING_STATUS.END_OTP && bookingDetails?.status !== BOOKING_STATUS.ENDED  && bookingDetails?.serviceType!== 'DRIVER' && bookingDetails?.serviceType !=="RIDES" && bookingDetails?.serviceType !=="AUTO" && bookingDetails?.serviceType !=="BIKE" && (!isHourlyShowingPrice(bookingDetails) || Number(bookingDetails?.value?.estimatedDistance || 0) > 0) &&
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total Distance :</span>
                                     <span className="text-gray-900 font-medium">{Number(bookingDetails?.value?.estimatedDistance || bookingDetails?.value?.distanceEstimated||  0).toFixed(2)} Kms</span>
@@ -2158,7 +2167,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                                 ).toFixed(2)}</span>
                                             </div>
                                         )}
-                                {bookingDetails?.serviceType != 'RIDES' && bookingDetails?.serviceType !== 'AUTO'  && bookingDetails?.serviceType!== 'BIKE' && (bookingDetails?.status == "ENDED" || bookingDetails?.status == "END_OTP") && (!isHourlyShowingPrice(bookingDetails) || (Number(bookingDetails?.totalDistanceKilometer || 0) + Number(bookingDetails?.value?.driverWithin || 0)) > 0) &&                
+                                {bookingDetails?.serviceType != 'RIDES' && bookingDetails?.serviceType!== 'DRIVER' && bookingDetails?.serviceType !== 'AUTO'  && bookingDetails?.serviceType!== 'BIKE' && (bookingDetails?.status == "ENDED" || bookingDetails?.status == "END_OTP") && (!isHourlyShowingPrice(bookingDetails) || (Number(bookingDetails?.totalDistanceKilometer || 0) + Number(bookingDetails?.value?.driverWithin || 0)) > 0) &&                
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Total Distance:</span>
                                     <span className="text-gray-900 font-medium">{(Number(bookingDetails?.totalDistanceKilometer)+Number (bookingDetails?.value?.driverWithin ||0)).toFixed(2)} Kms</span>
@@ -2812,7 +2821,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     </div>
 
                                 }
-                                {bookingDetails?.serviceType !== "RIDES" && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.serviceType !== 'PARCEL' && <>
+                                {bookingDetails?.serviceType !== "RIDES" && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'DRIVER' && bookingDetails?.serviceType !== 'BIKE' && bookingDetails?.serviceType !== 'PARCEL' && <>
                                 <div className="flex justify-between  my-1">
                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Start KM:</Typography>
                                     <Typography className="text-sm text-black font-medium">{bookingDetails?.startKM}</Typography>
@@ -2825,7 +2834,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                 </div>
                                 </>
                                 }
-                               {bookingDetails?.extraKMs > 0 && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' &&
+                               {bookingDetails?.extraKMs > 0 && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'DRIVER' && bookingDetails?.serviceType !== 'BIKE' &&
                                 <div className="flex justify-between  my-1">
                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Extra KMs:</Typography>
                                     <Typography className="text-sm text-black font-medium"> {Number(bookingDetails?.extraKMs).toFixed(2)}</Typography>
@@ -2851,7 +2860,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                         {(Number(bookingDetails?.value?.driverWithin + 2 || 0)).toFixed(2)} Km
                                     </Typography>
                                 </div>}
-                                {bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'BIKE' &&  bookingDetails?.serviceType !== "PARCEL" &&
+                                {bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'DRIVER' && bookingDetails?.serviceType !== 'BIKE' &&  bookingDetails?.serviceType !== "PARCEL" &&
                                 <div className="flex justify-between  my-1">
                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Total KM:</Typography>
                                     <Typography className="text-sm text-black font-medium">

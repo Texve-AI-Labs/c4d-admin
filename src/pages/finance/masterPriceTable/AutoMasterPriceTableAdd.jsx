@@ -9,6 +9,8 @@ import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
 import DemandPriceEdit from './DemandPriceEdit';
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Active' },
@@ -170,6 +172,7 @@ const buildAutoPackagePayload = (values) => {
 
 const AutoMasterPriceTableAdd = () => {
     const [serviceAreas, setServiceAreas] = useState([]);
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
     const fetchGeoData = async () => {
@@ -203,18 +206,21 @@ const AutoMasterPriceTableAdd = () => {
         try {
             const reqBody = buildAutoPackagePayload(values);
             // console.log("AUTO PAYLOAD", reqBody)
-            const data = await ApiRequestUtils.post(API_ROUTES.AUTO_MASTERPRICE_TABLE_ADD, reqBody);
+            const data = await ApiRequestUtils.post(API_ROUTES.AUTO_MASTERPRICE_TABLE_ADD, reqBody, 0, { suppressAlert: true });
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(data));
             }
         } catch (error) {
-            console.error('Error saving auto package:', error?.response?.data || error);
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
         setSubmitting(false);
     };
 
     return (
         <div className="p-4 mx-auto bg-white">
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
             <h2 className="text-2xl font-bold mb-4">Add Auto Pricing Details</h2>
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
                 {({ handleSubmit, setFieldValue, isValid, dirty, values, errors }) => (

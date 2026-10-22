@@ -476,10 +476,7 @@ const AccountOnboardingDetails = () => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const allowedTypes = isSingleFileDocType(row.type)
-      ? ["image/jpeg", "image/png"]
-      : ["image/jpeg", "image/png", "application/pdf"];
-    const singleFile = isSingleFileDocType(row.type);
+    const allowedTypes = ["image/jpeg", "image/png"];
     const requiredCount = getDocumentRequirement(row.type);
 
     if (files.length !== requiredCount) {
@@ -488,8 +485,8 @@ const AccountOnboardingDetails = () => {
     }
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type)) {
-        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
+      if (!allowedTypes.includes(file.type) || isPdfFile(file.name)) {
+        setUploadError("PDF files are not allowed. Please upload JPG or PNG.");
         return;
       }
       if (file.size > MAX_DOCUMENT_SIZE) {
@@ -736,7 +733,7 @@ const AccountOnboardingDetails = () => {
                           type="file"
                           id={`upload-${row.type}`}
                           className="hidden"
-                          accept={isSingleFileDocType(row.type) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
+                          accept="image/jpeg,image/png"
                           multiple={!isSingleFileDocType(row.type)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.type])}

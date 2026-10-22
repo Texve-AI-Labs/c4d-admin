@@ -8,7 +8,8 @@ import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
 import Select from 'react-select';
 import DemandPriceEdit from './DemandPriceEdit';
-
+import MasterPriceErrorModal from "@/components/masterPrice/MasterPriceErrorModal";
+import { getMasterPriceErrorMessage } from "@/components/masterPrice/masterPriceError";
 const STATUS_OPTIONS = [
     { value: 'ACTIVE', label: 'Active' },
     { value: 'INACTIVE', label: 'Inactive' },
@@ -33,7 +34,7 @@ const DriverMasterPriceTableEdit = () => {
     const navigate = useNavigate();
     const [demandRules, setDemandRules] = useState([]);
     const initialDemandPriceRef = useRef([]);
-
+    const [errorMessage, setErrorMessage] = useState('');
     useEffect(() => {
         fetchDriverDetails(id);
         console.log(id);
@@ -133,16 +134,18 @@ const DriverMasterPriceTableEdit = () => {
 
             let response;
             if (values.type === 'Local') {
-                response = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_EDIT_LOCAL_PACKAGE, reqdata);
+                response = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_EDIT_LOCAL_PACKAGE, reqdata, 0, { suppressAlert: true });
             } else if (values.type === 'Outstation') {
-                response = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_EDIT_OUTSTATION_PACKAGE, reqdata);
+                response = await ApiRequestUtils.post(API_ROUTES.ACTING_DRIVER_EDIT_OUTSTATION_PACKAGE, reqdata, 0, { suppressAlert: true });
             }
 
             if (response?.success) {
                 navigate(`/dashboard/finance/master-price/`);
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(response));
             }
         } catch (error) {
-            console.error("Error updating price details:", error);
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
     };
 
@@ -158,6 +161,7 @@ const DriverMasterPriceTableEdit = () => {
     return (
         <>
             <div className="p-4 mx-auto bg-white">
+                            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
                 <h2 className="text-2xl font-bold mb-4">Edit Driver Details</h2>
 
                 <Formik
@@ -200,7 +204,7 @@ const DriverMasterPriceTableEdit = () => {
                             </div>
                                  <div>
                                     <label className="text-sm font-medium text-gray-700">Base Hours</label>
-                                    <Field type="number" name="period" disabled className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-200" />
+                                    <Field type="number" name="period"  className="p-2 w-full rounded-md border-2 border-gray-300 bg-gray-200" />
                                 </div>
 
                             <div>

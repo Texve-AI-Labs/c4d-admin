@@ -123,9 +123,7 @@ const VehicleDocuments = () => {
     setUploadErrorsByType((prev) => ({ ...prev, [row.docType]: "" }));
 
     const requiredCount = getDocumentRequirement(row.docType);
-    const allowedTypes = requiredCount === 1
-      ? ["image/jpeg", "image/png"]
-      : ["image/jpeg", "image/png", "application/pdf"];
+    const allowedTypes = ["image/jpeg", "image/png"];
 
     if (files.length !== requiredCount) {
       const message = `${toTitle(row.docType)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`;
@@ -143,9 +141,7 @@ const VehicleDocuments = () => {
       const isPdfFile = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
       const isInvalidType = isPdfFile || !allowedTypes.includes(file.type);
       if (isInvalidType) {
-        const message = allowedTypes.length === 2
-          ? "Invalid file type. Please upload JPG or PNG."
-          : "Invalid file type. Please upload JPG, PNG, or PDF.";
+        const message = "PDF files are not allowed. Please upload JPG or PNG.";
         setModalData(null);
         setUploadError(message);
         setUploadErrorsByType((prev) => ({
@@ -339,7 +335,7 @@ const VehicleDocuments = () => {
                           type="file"
                           id={`upload-${row.key}`}
                           className="hidden"
-                          accept={isSingleFileDocType(row.docType) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
+                          accept="image/jpeg,image/png"
                           multiple={!isSingleFileDocType(row.docType)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.docType])}

@@ -1,4 +1,4 @@
-import { ACCEPT_WINDOW_TYPE, ACCEPT_WINDOW_PATH, SERVICE_TYPES } from "./futureBookingAcceptWindowConfig.js";
+import { ACCEPT_WINDOW_TYPE, ACCEPT_WINDOW_PATH, SERVICE_TYPES, ACCEPT_WINDOW_LABELS } from "./futureBookingAcceptWindowConfig.js";
 import { POLICY_CATEGORIES } from "./luggagePolicyConfig.js";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -187,7 +187,7 @@ const GstView = () => {
                   {isLuggagePolicy && POLICY_CATEGORIES.map(({ category }) => (
                     <th key={category} className="py-3 px-3 text-left align-top whitespace-normal">{category}<span className="block text-xs font-normal">Seats / Luggage</span></th>
                   ))}
-                  {isAcceptWindow && ["Default Minutes", "Booking Type Minutes", "Service Type Minutes"].map((label) => (
+                  {isAcceptWindow && ["Default Minutes", "Service Type Minutes"].map((label) => (
                     <th key={label} className="py-3 px-3 text-left align-top whitespace-normal">{label}</th>
                   ))}
                   <th className="py-3 px-3 text-left align-top whitespace-normal">Status</th>
@@ -198,7 +198,7 @@ const GstView = () => {
               <tbody>
                 {gstList.length === 0 ? (
                   <tr>
-                    <td colSpan={isLuggagePolicy ? 9 : isAcceptWindow ? 8 : isDriverFeedback ? 5 : 6} className="text-center py-4 whitespace-nowrap">No Settings Entries Found</td>
+                    <td colSpan={isLuggagePolicy ? 9 : isAcceptWindow ? 7 : isDriverFeedback ? 5 : 6} className="text-center py-4 whitespace-nowrap">No Settings Entries Found</td>
                   </tr>
                 ) : (
                   gstList.map((item, index) => (
@@ -233,11 +233,13 @@ const GstView = () => {
                       ))}
                       {isAcceptWindow && <>
                         <td className="py-3 px-3 align-top">{item.config?.defaultMinutes ?? "-"}</td>
-                        {["byBookingType", "byServiceType"].map((group) => (
-                          <td key={group} className="py-3 px-3 align-top">
-                            {Object.entries(item.config?.[group] || {}).filter(([key]) => group !== "byServiceType" || SERVICE_TYPES.includes(key)).map(([key, minutes]) => <div key={key}>{key}: {minutes}</div>)}
-                          </td>
-                        ))}
+                        <td className="py-3 px-3 align-top">
+                          {["byBookingType", "byServiceType"].map((group) => (
+                            <React.Fragment key={group}>
+                              {Object.entries(item.config?.[group] || {}).filter(([key]) => group !== "byServiceType" || SERVICE_TYPES.includes(key)).map(([key, minutes]) => <div key={key}>{ACCEPT_WINDOW_LABELS[key] || key}: {minutes}</div>)}
+                            </React.Fragment>
+                          ))}
+                        </td>
                       </>}
                       <td className="py-3 px-3 align-top whitespace-normal break-words">
                         {item.isActive

@@ -359,7 +359,7 @@ export function OnlineVehiclesList({ id = 0 }) {
                 <thead>
                   <tr>
                     {[
-                      'Type',
+                      'Type/preference',
                       'Driver Name',
                       'Cab Name',
                       'Phone Number',
@@ -399,7 +399,7 @@ export function OnlineVehiclesList({ id = 0 }) {
                             {el}
                           </Typography>
                         )}
-                        {el === 'Type' && (
+                        {el === 'Type/preference' && (
                       <FilterPopover
                         // title={el}
                         options={[

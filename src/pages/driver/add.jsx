@@ -12,7 +12,7 @@ import { handleDriverRegisterApiError } from './registerApiErrorHandler';
 import { saveDocumentFile } from '@/utils/downloadUtils';
 
 const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
-const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png"];
 const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
 const DOCUMENT_REQUIREMENTS = {
     aadhaarImage: { title: "Aadhaar Image", count: 2 },
@@ -25,7 +25,7 @@ const DocumentUploadInstructions = () => (
         <Typography className="text-sm font-semibold text-blue-gray-800">Document Upload Instructions</Typography>
         <ul className="mt-2 list-disc list-inside text-sm text-blue-gray-700 space-y-1">
             <li>All listed documents are required.</li>
-            <li>Documents: JPG, PNG, or PDF. Live Photo: JPG or PNG only. Maximum size: 10 MB per file.</li>
+            <li>Documents: JPG or PNG only. Maximum size: 10 MB per file.</li>
             <li>Aadhaar Image: upload 2 documents.</li>
             <li>Driving License Image: upload 2 documents.</li>
             <li>Live Photo: upload 1 document.</li>
@@ -369,7 +369,7 @@ const DriverAdd = () => {
                         </label>
                         <input
                             type="file"
-                            accept={name === "livePhoto" ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
+                            accept="image/jpeg,image/png"
                             id={name}
                             name={name}
                             onChange={onChange}
@@ -422,11 +422,11 @@ const DriverAdd = () => {
             const isLivePhoto = label === "livePhoto";
             const isAllowedType = isLivePhoto
                 ? ["image/jpeg", "image/png"].includes(file.type)
-                : ALLOWED_DOCUMENT_TYPES.includes(file.type);
+                : ALLOWED_DOCUMENT_TYPES.includes(file.type) && !/\.pdf$/i.test(file.name || "");
             if (!isAllowedType) {
                 return isLivePhoto
                     ? "Invalid Live Photo type. Please upload JPG or PNG."
-                    : "Invalid file type. Please upload JPG, PNG, or PDF.";
+                    : "PDF files are not allowed. Please upload JPG or PNG.";
             }
             if (file.size > MAX_DOCUMENT_SIZE) {
                 return "File size exceeds 10MB limit.";

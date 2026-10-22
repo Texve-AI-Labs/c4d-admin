@@ -4,6 +4,8 @@ import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 import ParcelMasterPriceForm from "./parcelMasterPrice/ParcelMasterPriceForm";
 import { createInitialParcelForm } from "./parcelMasterPrice/defaults";
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 export default function ParcelMasterPriceTableAdd() {
   const navigate = useNavigate();
@@ -49,15 +51,15 @@ export default function ParcelMasterPriceTableAdd() {
     setError("");
     try {
       setSaving(true);
-      const response = await ApiRequestUtils.post(API_ROUTES.ADD_PARCEL_PRICE, payload);
+      const response = await ApiRequestUtils.post(API_ROUTES.ADD_PARCEL_PRICE, payload, 0, { suppressAlert: true });
       if (response?.success) {
         navigate("/dashboard/finance/master-price");
       } else {
-        setError(response?.message || "Failed to add parcel master price");
+        setError(getMasterPriceErrorMessage(response));
       }
     } catch (saveErr) {
       console.error("Add parcel price failed", saveErr);
-      setError("Network or server error while saving");
+      setError(getMasterPriceErrorMessage(saveErr));
     } finally {
       setSaving(false);
     }
@@ -65,6 +67,7 @@ export default function ParcelMasterPriceTableAdd() {
 
   return (
     <div className="bg-white">
+      <MasterPriceErrorModal message={error} onClose={() => setError("")} />
     <ParcelMasterPriceForm
       title="Add Parcel Master Price"
       initialForm={initialForm}
@@ -72,7 +75,7 @@ export default function ParcelMasterPriceTableAdd() {
       zones={zones}
       saving={saving}
       submitLabel="Save Parcel Price"
-      errorMessage={error}
+      errorMessage=""
       onSubmit={handleSubmit}
       onBack={() => navigate("/dashboard/finance/master-price")}
     />

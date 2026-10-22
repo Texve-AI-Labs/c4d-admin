@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
-import { Alert, Button } from '@material-tailwind/react';
+import { Button } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
@@ -13,6 +13,8 @@ import RentalMasterPriceForm, {
     createLocalCategoryPricing,
     createOutstationCategoryPricing,
 } from './RentalMasterPriceForm';
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 const numberField = (label) => Yup.number()
     .typeError(`${label} is required`)
@@ -206,7 +208,7 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
 export { priceSchema, buildCategoryPricingsPayload };
 
 const RentalsPriceMasterAdd = () => {
-    const [alert, setAlert] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const [zones, setZones] = useState([]);
     const [demandRules, setDemandRules] = useState([]);
     const navigate = useNavigate();
@@ -254,28 +256,21 @@ const RentalsPriceMasterAdd = () => {
                 demandRules,
             };
 
-            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RENTALS_PRICE_TABLE, reqBody);
+            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RENTALS_PRICE_TABLE, reqBody, 0, { suppressAlert: true });
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
             } else {
-                setAlert({ message: data?.message || 'Failed to add rental price', color: 'red' });
+                setErrorMessage(getMasterPriceErrorMessage(data));
             }
         } catch (error) {
-            console.error('Error saving price details:', error);
-            setAlert({ message: 'Error saving data', color: 'red' });
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
         setSubmitting(false);
     };
 
     return (
         <div className="p-4 mx-auto bg-white">
-            {alert && (
-                <div className="mb-2">
-                    <Alert color={alert.color} className="py-3 px-6 rounded-xl">
-                        {alert.message}
-                    </Alert>
-                </div>
-            )}
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
             <h2 className="text-2xl font-bold mb-4">Add Rentals Price Details</h2>
             <Formik
                 initialValues={initialValues}

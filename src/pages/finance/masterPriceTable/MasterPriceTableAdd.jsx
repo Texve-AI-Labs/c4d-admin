@@ -9,6 +9,8 @@ import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { Utils } from '@/utils/utils';
 import RidesPeakHourTableEdit from './RidesPeakHourTableEdit';
 import DemandPriceEdit from './DemandPriceEdit';
+import MasterPriceErrorModal from '@/components/masterPrice/MasterPriceErrorModal';
+import { getMasterPriceErrorMessage } from '@/components/masterPrice/masterPriceError';
 
 const RATE_PARAMETER_OPTIONS = [
     { value: 'RAINY_DAY', label: 'Rainy Day' },
@@ -139,6 +141,7 @@ const FormLevelError = ({ error }) => (
 
 const PriceAdd = () => {
     const [serviceAreas, setServiceAreas] = useState([]);
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
     const fetchGeoData = async () => {
@@ -212,18 +215,21 @@ const PriceAdd = () => {
             };
             // console.log("RIDES payload",reqBody)
 
-            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody);
+            const data = await ApiRequestUtils.post(API_ROUTES.ADD_RIDES_PRICE_TABLE, reqBody, 0, { suppressAlert: true });
             if (data?.success) {
                 navigate('/dashboard/finance/master-price');
+            } else {
+                setErrorMessage(getMasterPriceErrorMessage(data));
             }
         } catch (error) {
-            console.error('Error saving price details:', error);
+            setErrorMessage(getMasterPriceErrorMessage(error));
         }
         setSubmitting(false);
     };
 
     return (
         <div className="p-4 mx-auto bg-white">
+            <MasterPriceErrorModal message={errorMessage} onClose={() => setErrorMessage('')} />
             <h2 className="text-2xl font-bold mb-4">Add Rides Pricing Details</h2>
             <Formik initialValues={initialValues} validationSchema={PRICE_SCHEMA} onSubmit={onSubmit} enableReinitialize>
                 {({ handleSubmit, setFieldValue, isValid, dirty, values, errors }) => (

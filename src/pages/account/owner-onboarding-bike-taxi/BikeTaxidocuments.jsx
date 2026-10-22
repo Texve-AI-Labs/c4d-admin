@@ -404,7 +404,7 @@ const BikeTaxiAccountDocuments = () => {
 
     const singleFile = isSingleFileDocType(row.docType);
     const requiredCount = getDocumentRequirement(row.docType);
-    const allowedTypes = singleFile ? ["image/jpeg", "image/png"] : ["image/jpeg", "image/png", "application/pdf"];
+    const allowedTypes = ["image/jpeg", "image/png"];
 
     if (files.length !== requiredCount) {
       setUploadError(`${toTitle(row.docType)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
@@ -413,7 +413,7 @@ const BikeTaxiAccountDocuments = () => {
 
     for (const file of files) {
       if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
-        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
+        setUploadError("PDF files are not allowed. Please upload JPG or PNG.");
         return;
       }
       if (file.size > MAX_DOCUMENT_SIZE) {
@@ -554,7 +554,7 @@ const BikeTaxiAccountDocuments = () => {
                         type="file"
                         id={`upload-${row.key}`}
                         className="hidden"
-                        accept={isSingleFileDocType(row.docType) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
+                        accept="image/jpeg,image/png"
                         multiple={!isSingleFileDocType(row.docType)}
                         onChange={(e) => handleUploadDocument(e, row)}
                         disabled={Boolean(uploadingByType[row.docType])}

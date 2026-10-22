@@ -2559,8 +2559,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                 )}
                                                                 {cancelChargeApplicable && (
                                                                     <>
-                                                                        <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
-                                                                        <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                        <Typography className="order-first" color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                        <Typography className="order-first">Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                     </>
                                                                 )}
                                                                 <>
@@ -3008,8 +3008,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                 )}
                                                                 {cancelChargeApplicable && (
                                                                     <>
-                                                                        <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
-                                                                        <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                        <Typography className="order-first" color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                        <Typography className="order-first">Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                     </>
                                                                 )}
                                                                 <>
@@ -3363,8 +3363,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                         )}
                                                         {cancelChargeApplicable && (
                                                             <>
-                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
-                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                <Typography className="order-first" color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                <Typography className="order-first">Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                             </>
                                                         )}
                                                         <>

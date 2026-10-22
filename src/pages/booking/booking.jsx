@@ -1469,31 +1469,10 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 if (createdBooking?.id) {
                     await sendQuotationLogs(createdBooking.id, loggedInUserId, createdBooking?.subZoneId || null);
                 }
-                const targetBookingId = createdBooking?.id;
-                const targetCustomerId = createdBooking?.customerId || values?.customerId?.id || 0;
-                const targetQuoteRef = normalizeQuoteRef(
-                    createdBooking?.quoteRef ||
-                    data?.data?.quoteRef ||
-                    bookingData?.quoteRef ||
-                    quoteMeta?.quoteRef ||
-                    ''
-                );
-                const confirmBookingSearchParams = new URLSearchParams({
-                    bookingId: String(targetBookingId || 0),
-                    customerId: String(targetCustomerId),
-                    fromPath: location.pathname,
-                });
-                if (targetQuoteRef) {
-                    confirmBookingSearchParams.set("quoteRef", targetQuoteRef);
-                }
-                navigate(`/dashboard/confirm-booking?${confirmBookingSearchParams.toString()}`, {
-                    state: {
-                        quoteRef: targetQuoteRef,
-                    },
-                });
                 formikBag.resetForm();
                 setSelectedCustomer(0);
                 setSearchBookingId('');
+                if (refreshFn) refreshFn();
                 return true;
             } else {
                 formikBag.setStatus({ submit: data?.message || 'Failed to create parcel booking. Please try again.' });
@@ -2944,8 +2923,8 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                             </div>
                                                             {(values.serviceType === 'DRIVER') && (
-                                                                <div className='pt-4'>
-                                                                    <label className="text-sm font-medium text-black-700">Transmission Type</label>
+                                                                <div className='pt-10'>
+                                                                    <label className="text-sm font-medium text-black-700">Transmission Type  <span className='text-red-500 text-sm'>*</span></label>
                                                                     <div className="flex gap-2 pt-3">
                                                                         {['Manual', 'Automatic'].map((transType) => (
                                                                             <label key={transType} className="flex items-center space-x-2">
@@ -2994,7 +2973,7 @@ const priceDetailsCardClass = isPeakHour
                                                     {(values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI' || values.serviceType === 'RIDES' || values.serviceType === 'AUTO' || values.serviceType === 'PARCEL') && (
                                                         <div className="flex-1 mb-2">
                                                             <Typography variant="h6" className="mb-2">
-                                                                Pickup Date & Time
+                                                                Pickup Date & Time <span className='text-red-500 text-sm'>*</span>
                                                             </Typography>
                                                             <Field
                                                                 type="datetime-local"
@@ -3003,6 +2982,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300"
                                                                 value={values.rideDate && values.rideTime  ? `${values.rideDate}T${values.rideTime}` : ''}
                                                                 min={Utils.getNowDateTimeLocalInput()}
+                                                                max={values.serviceType === 'PARCEL' ? `${Utils.getTodayDateInput()}T23:59` : undefined}
                                                                  onClick={(e) => {
                                                                 if (e.target.showPicker) e.target.showPicker();
                                                                     }}
@@ -3713,7 +3693,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                     <div className="p-2 space-y-2 ">
-                                                        {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
+                                                        {(values.serviceType !== 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
                                                             <div className="grid grid-cols-2 gap-4 mb-4">
                                                                 <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
                                                                 <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
@@ -3827,7 +3807,7 @@ const priceDetailsCardClass = isPeakHour
                                                                 {packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ""} hr
                                                             </Typography>
                                                             </div>
-                                                            <div className="flex justify-between">
+                                                            <div className="justify-between hidden">
                                                                 <Typography color="gray" variant="h6">KM:</Typography>
                                                                 <Typography>
                                                                     {Number(quoteDetails.amount?.distanceEstimated).toFixed(2) || 0} kms
@@ -3931,7 +3911,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             </>)
                                                                             }
                                                                             {cancelChargeApplicable && (
-                                                                                <div className='flex justify-between'>
+                                                                                <div className='flex justify-between order-first'>
                                                                                     <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
                                                                                     <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                                 </div>
@@ -4071,7 +4051,7 @@ const priceDetailsCardClass = isPeakHour
                                                                             </>)
                                                                             }
                                                                         {cancelChargeApplicable && (
-                                                                            <div className='flex justify-between'>
+                                                                            <div className='flex justify-between order-first'>
                                                                                 <Typography color="gray" variant="h6">Cancel Charge Added:</Typography>
                                                                                 <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </div>
@@ -4185,10 +4165,12 @@ const priceDetailsCardClass = isPeakHour
                                                                             <Typography>
                                                                                 ₹ {Number(quoteDetails.amount?.fareBreakdown?.baseFare).toFixed(2)}
                                                                             </Typography>
+                                                                            {quoteDetails.amount?.serviceType !== 'DRIVER' && ( <>
                                                                             <Typography color="gray" variant="h6">KM</Typography>
                                                                             <Typography>
                                                                                  {Number(quoteDetails?.amount?.distanceEstimated || 0).toFixed(2)}Kms
                                                                             </Typography>                                                                            
+                                                                            </>)}                                                                               
                                                                             {quoteDetails.amount?.fareBreakdown?.dropCharge > 0 && <>
                                                                                 <Typography color="gray" variant="h6">Drop Charge</Typography>
                                                                                 <Typography>
@@ -4280,8 +4262,8 @@ const priceDetailsCardClass = isPeakHour
                                                                             }                                                                                                                                                                                                                
                                                                         {cancelChargeApplicable && (
                                                                             <>
-                                                                                <Typography color="gray" variant="h6">Cancel Charge Added</Typography>
-                                                                                <Typography>Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
+                                                                                <Typography className="order-first" color="gray" variant="h6">Cancel Charge Added</Typography>
+                                                                                <Typography className="order-first">Yes (₹ {Math.round(cancelChargeAmount)})</Typography>
                                                                             </>
                                                                         )}
                                                                     </div>
