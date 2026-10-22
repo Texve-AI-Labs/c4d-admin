@@ -1839,6 +1839,15 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     
                                 </>                                    
                             )}
+                            {bookingDetails?.serviceType === 'DRIVER' && (
+                                <>
+                                    <div className="flex flex-col-2 gap-2">
+                                        <span className="text-gray-500 font-semibold">Transmission Type:</span>
+                                        <span className="text-gray-900 font-medium">{bookingDetails?.transmissionType}</span>
+                                    </div>
+                                    
+                                </>  
+                            )}
                             {bookingDetails?.serviceType ==='DRIVER' && bookingDetails?.packageType === 'Outstation' && (
                                       <div className="flex flex-col-2 gap-2">
                                         <span className="text-gray-500 font-semibold">Period:</span>
