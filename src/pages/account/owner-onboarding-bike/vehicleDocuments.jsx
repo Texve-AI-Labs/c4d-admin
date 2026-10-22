@@ -125,7 +125,7 @@ const VehicleDocuments = () => {
     if (!files.length) return;
     setUploadErrorsByType((prev) => ({ ...prev, [row.docType]: "" }));
 
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    const allowedTypes = ["image/jpeg", "image/png"];
     const singleFile = isSingleFileDocType(row.docType);
     const requiredCount = getDocumentRequirement(row.docType, account?.type);
 
@@ -140,10 +140,10 @@ const VehicleDocuments = () => {
 
     for (const file of files) {
       if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
-        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
+        setUploadError("PDF files are not allowed. Please upload JPG or PNG.");
         setUploadErrorsByType((prev) => ({
           ...prev,
-          [row.docType]: "Invalid file type. Please upload JPG, PNG, or PDF.",
+          [row.docType]: "PDF files are not allowed. Please upload JPG or PNG.",
         }));
         return;
       }
@@ -313,7 +313,7 @@ const VehicleDocuments = () => {
                           type="file"
                           id={`upload-${row.key}`}
                           className="hidden"
-                          accept={isSingleFileDocType(row.docType) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
+                          accept="image/jpeg,image/png"
                           multiple={!isSingleFileDocType(row.docType)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.docType])}

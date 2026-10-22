@@ -129,7 +129,7 @@ const VehicleOnboardingDetails = () => {
 
     const singleFile = isSingleFileDocType(row.type);
     const requiredCount = getDocumentRequirement(row.type, account?.type);
-    const allowedTypes = singleFile ? ["image/jpeg", "image/png"] : ["image/jpeg", "image/png", "application/pdf"];
+    const allowedTypes = ["image/jpeg", "image/png"];
 
     if (files.length !== requiredCount) {
       setUploadError(`${toTitle(row.type)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
@@ -138,7 +138,7 @@ const VehicleOnboardingDetails = () => {
 
     for (const file of files) {
       if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
-        setUploadError(singleFile ? "Invalid file type. Please upload JPG or PNG." : "Invalid file type. Please upload JPG, PNG, or PDF.");
+        setUploadError("PDF files are not allowed. Please upload JPG or PNG.");
         return;
       }
       if (file.size > MAX_DOCUMENT_SIZE) {
@@ -299,7 +299,7 @@ const VehicleOnboardingDetails = () => {
                           type="file"
                           id={`upload-${row.type}`}
                           className="hidden"
-                          accept={isSingleFileDocType(row.type) ? "image/jpeg,image/png" : "image/jpeg,image/png,application/pdf"}
+                          accept="image/jpeg,image/png"
                           multiple={!isSingleFileDocType(row.type)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.type])}
