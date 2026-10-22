@@ -355,6 +355,8 @@ const Booking = (props) => {
       setBookingView(false);
       setEditBookingView(false);
       setEditBooking(undefined);
+      setRentalRoundTripEstimatedDurationText('');
+      setRentalRoundTripMinReturnAt('');
     }
   }, [isOpen]);
 
@@ -866,12 +868,22 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         return values;
     };
 
-  const getQuoteOutstationDetails = async (values, setFieldValue) => {
+  const getQuoteOutstationDetails = async (values, setFieldValue, setFieldError) => {
         const isRentalOutstationRoundTrip =
             values?.serviceType === 'RENTAL' &&
             values?.packageTypeSelected === 'Outstation' &&
             String(values?.tripType || '').toUpperCase() === 'ROUND TRIP';
         const isDropTaxiOutstation = values?.serviceType === 'RENTAL_DROP_TAXI';
+
+        if (isRentalOutstationRoundTrip && rentalRoundTripMinReturnAt && values?.toDate && values?.toTime) {
+            const minimumReturn = moment(rentalRoundTripMinReturnAt);
+            const selectedReturn = moment(`${values.toDate}T${values.toTime}`);
+            if (minimumReturn.isValid() && selectedReturn.isBefore(minimumReturn)) {
+                setFieldError?.('returnDateTime', `Return time must be on or after ${minimumReturn.format('DD-MM-YYYY HH:mm')}`);
+                return;
+            }
+            setFieldError?.('returnDateTime', undefined);
+        }
 
         // console.log('[RENTAL ROUND TRIP CHECK]', {
         //     serviceType: values?.serviceType,
@@ -2412,7 +2424,15 @@ const priceDetailsCardClass = isPeakHour
                     {String(props.typeProp || "").toUpperCase() !== "RETURN_TRIPS" &&
                         !String(location.pathname || "").toLowerCase().includes("/booking/list/returntrips") && (
                     <button
-                        onClick={() => setIsOpen(true)}
+                        onClick={() => {
+                            setBookingStage(0);
+                            setBookingData(null);
+                            setBookingView(false);
+                            setEditBookingView(false);
+                            setRentalRoundTripEstimatedDurationText('');
+                            setRentalRoundTripMinReturnAt('');
+                            setIsOpen(true);
+                        }}
                         className={`relative rounded-xl px-6 py-2 mr-2 text-sm w-40 h-10 mt-2 ${ColorStyles.addButtonColor}`}
                     >
                         <div className="absolute inset-y-0 left-0 flex items-center  pointer-events-none px-3">
@@ -2592,6 +2612,32 @@ const priceDetailsCardClass = isPeakHour
                                                 validationCheckForDriver,
                                                 validationCheckForDriverRental
                                             );
+                                            // console.log('[FORM VALIDATION STATE]', {
+                                            //     serviceType: values.serviceType,
+                                            //     packageTypeSelected: values.packageTypeSelected,
+                                            //     tripType: values.tripType,
+                                            //     rideDate: values.rideDate,
+                                            //     rideTime: values.rideTime,
+                                            //     toDate: values.toDate,
+                                            //     toTime: values.toTime,
+                                            //     customerId: values.customerId,
+                                            //     sourceType: values.sourceType,
+                                            //     pickupAddress: values.pickupAddress,
+                                            //     dropAddress: values.dropAddress,
+                                            //     driverPickUpAddress: values.driverPickUpAddress,
+                                            //     acType: values.acType,
+                                            //     packageSelected: values.packageSelected,
+                                            //     categoryId: values.categoryId,
+                                            //     errors,
+                                            //     isValid,
+                                            //     dirty,
+                                            //     quoteSuccess: Boolean(quoteDetails),
+                                            //     estimationReady,
+                                            //     continueReady,
+                                            //     showContinueHint,
+                                            //     continueHint,
+                                            //     rentalContinueDisabled,
+                                            // });
                                         useEffect(() => {
                                             const selectedCategory = categoryOptions.find(
                                                 (item) => Number(item.id) === Number(values.categoryId)
@@ -3036,7 +3082,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     const minimumReturn = rentalRoundTripMinReturnAt ? moment(rentalRoundTripMinReturnAt) : null;
                                                                     setFieldError('returnDateTime', minimumReturn?.isValid() && e.target.value && moment(e.target.value).isBefore(minimumReturn)
                                                                         ? `Return time must be on or after ${minimumReturn.format('DD-MM-YYYY HH:mm')}`
-                                                                        : '');
+                                                                        : undefined);
                                                                 }}
                                                                 onChange={(e) => {
                                                                     const selectedDateTime = e.target.value;
@@ -3045,6 +3091,12 @@ const priceDetailsCardClass = isPeakHour
 
                                                                     setFieldValue('toDate', formattedDate);
                                                                     setFieldValue('toTime', formattedTime);
+
+                                                                    const minimumReturn = rentalRoundTripMinReturnAt ? moment(rentalRoundTripMinReturnAt) : null;
+                                                                    const selectedReturn = moment(selectedDateTime);
+                                                                    setFieldError('returnDateTime', minimumReturn?.isValid() && selectedReturn.isBefore(minimumReturn)
+                                                                        ? `Return time must be on or after ${minimumReturn.format('DD-MM-YYYY HH:mm')}`
+                                                                        : undefined);
 
                                                                     if (moment(formattedDate).isBefore(values.rideDate)) {
                                                                         setFieldValue('toTime', '');
@@ -4475,7 +4527,7 @@ const priceDetailsCardClass = isPeakHour
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
 
                                                 {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady || Boolean(errors.returnDateTime)} onClick={() => getQuoteOutstationDetails(values, setFieldValue)}>
+                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady || Boolean(errors.returnDateTime)} onClick={() => getQuoteOutstationDetails(values, setFieldValue, setFieldError)}>
                                                         Check Estimated Price
                                                     </Button>
                                                 }
