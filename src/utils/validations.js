@@ -1,6 +1,8 @@
 import * as Yup from 'yup'
 
 const FULL_NAME_REGEX = /^[A-Za-z ]+$/;
+const DRIVING_LICENSE_REGEX = /^[A-Za-z]{2}[0-9]{2}[A-Za-z ]?[0-9]{11}$/;
+const DRIVING_LICENSE_ERROR = "Invalid Driving License. Example: TN07X19990000286 or TN07 19990000286";
 const PASSWORD_RULES_SCHEMA = Yup.string()
     .min(8, 'Password must be at least 8 characters.')
     .max(64, 'Password cannot exceed 64 characters.')
@@ -214,7 +216,7 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
             return value <= cutoff;
         }),
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid mobile number').required('Phone number is required'),
-    license: Yup.string().matches('^[a-zA-Z]{2}[0-9]{13}$', 'Invalid Driver\'s License').required('Driving License is required'),
+    license: Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
     licenseType: Yup.string().required('License Type is required'),
     licenseExpiryDate: Yup.date()
         .min(new Date(), 'License expiry date must be in the future')
@@ -287,7 +289,7 @@ export const DRIVER_SCHEMA = Yup.object({
         then: (schema) => schema.trim().required("Block reason is required"),
         otherwise: (schema) => schema.notRequired(),
     }),
-    license: Yup.string().matches('^[a-zA-Z]{2}[0-9]{13}$', 'Invalid Driver\'s License').required('Driving License is required'),
+    license: Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
     licenseType: Yup.string().required('License Type is required'),
     licenseExpiryDate: Yup.date()
         .min(new Date(), 'License expiry date must be in the future')
@@ -404,7 +406,7 @@ export const CAB_SCHEMA = Yup.object({
     }),
     licenseNumber: Yup.string().when(['assignOrAddDriver'], {
         is: (assignOrAddDriver) => assignOrAddDriver === 'Add',
-        then: () => Yup.string().required('Driving License is required'),
+        then: () => Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
         otherwise: () => Yup.string()
     }),
     // notify: Yup.string().required('Notification Recipients is required'),
@@ -469,7 +471,7 @@ export const REASSIGN_DRIVER = Yup.object({
     }),
     licenseNumber: Yup.string().when(['assignOrAddDriver'], {
         is: (assignOrAddDriver) => assignOrAddDriver === 'Add',
-        then: () => Yup.string().required('Driving License is required'),
+        then: () => Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
         otherwise: () => Yup.string()
     }),
 })
@@ -538,7 +540,7 @@ export const CAB_ADD_SCHEMA = Yup.object({
     }),
     licenseNumber: Yup.string().when(['assignOrAddDriver'], {
         is: (assignOrAddDriver) => assignOrAddDriver === 'Add',
-        then: () => Yup.string().required('Driving License is required'),
+        then: () => Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
         otherwise: () => Yup.string()
     }),
     carNumber:Yup.string().required('Car Number is requried'),
