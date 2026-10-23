@@ -70,6 +70,9 @@ const DriverMasterPriceTableEdit = () => {
 
                     cancelMins: Utils.convertTimeFormatToMinutes(data.data.cancelMins),
                     cancelCharge: data.data.cancelCharge ?? 0,
+                    driverCancelMins: Utils.convertTimeFormatToMinutes(data.data.driverCancelMins),
+                    driverFreeCancellationsPerDay: data.data.driverFreeCancellationsPerDay ?? 0,
+                    driverCancellationCharge: data.data.driverCancellationCharge ?? 0,
 
                     baseFare:data.data.baseFare,
                     dropPriceAbove:data.data.dropPriceAbove,
@@ -121,6 +124,9 @@ const DriverMasterPriceTableEdit = () => {
                 nightCharge: Number(values.nightCharge),
                 cancelMins: Utils.convertMinutesToTimeFormat(values.cancelMins),
                 cancelCharge: Number(values.cancelCharge || 0),
+                driverCancelMins: Utils.convertMinutesToTimeFormat(values.driverCancelMins),
+                driverFreeCancellationsPerDay: Number(values.driverFreeCancellationsPerDay || 0),
+                driverCancellationCharge: Number(values.driverCancellationCharge || 0),
                 dropPriceAbove:Number(values.dropPriceAbove),
                 status: values.status === 'ACTIVE' ? 1 : 0,
                 demandRules: demandRules,
@@ -261,6 +267,31 @@ const DriverMasterPriceTableEdit = () => {
                                 />
                                 <ErrorMessage name="status" component="div" className="text-red-500 text-xs" />
                             </div>
+                        </div>
+
+                        <div className="mt-6 overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
+                            <table className="min-w-full bg-white border border-gray-300 text-center">
+                                <thead>
+                                    <tr className="bg-blue-600 text-white">
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Driver Cancel Mins</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Driver Free Cancellations Per Day</th>
+                                        <th className="px-4 py-3 text-xs font-bold uppercase border border-gray-300">Driver Cancellation Charge</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td className="p-2 border border-gray-300">
+                                            <Field type="number" name="driverCancelMins" className="p-2 w-full rounded-md border-2 border-gray-300" />
+                                        </td>
+                                        <td className="p-2 border border-gray-300">
+                                            <Field type="number" name="driverFreeCancellationsPerDay" className="p-2 w-full rounded-md border-2 border-gray-300" />
+                                        </td>
+                                        <td className="p-2 border border-gray-300">
+                                            <Field type="number" name="driverCancellationCharge" className="p-2 w-full rounded-md border-2 border-gray-300" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
 
                          {values?.type === 'Local' && (
