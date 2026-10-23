@@ -1777,6 +1777,15 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     <span className="text-gray-500 font-semibold">Phone:</span>
                                     <span className="text-gray-900 font-medium">{bookingDetails?.Driver?.phoneNumber || 'N/A'}</span>
                                 </div>
+                                {bookingDetails?.serviceType === 'DRIVER' && (
+                                    <>
+                                        <div className="flex flex-col-2 gap-2">
+                                            <span className="text-gray-500 font-semibold">Transmission Type:</span>
+                                            <span className="text-gray-900 font-medium">{bookingDetails?.Driver?.transmissionType}</span>
+                                        </div>
+
+                                    </>
+                                )}
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Vehicle Number:</span>
                                     <span className="text-gray-900 font-medium">{bookingDetails?.Cab?.carNumber  || bookingDetails?.Parcel?.vehicleNumber || bookingDetails?.Auto?.autoNumber || bookingDetails?.Bike?.bikeNumber || '-'}</span>
