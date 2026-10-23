@@ -126,6 +126,13 @@ const getReviewStatus = (status) => {
   return normalized;
 };
 
+const normalizeDocumentStatus = (status) => {
+  const normalized = String(status || "").trim().toUpperCase().replace(/\s+/g, "_");
+  if (normalized === "PENDING_UPLOAD") return "PENDING UPLOAD";
+  if (normalized === "PENDING_VERIFICATION") return "PENDING VERIFICATION";
+  return normalized;
+};
+
 const AccountOnboardingDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -253,7 +260,7 @@ const AccountOnboardingDetails = () => {
       return {
         type,
         proof,
-        status: resolvedStatus,
+        status: normalizeDocumentStatus(resolvedStatus),
         createdAt: proof?.created_at ? moment(proof.created_at).format("DD-MM-YYYY") : "-",
       };
     });
