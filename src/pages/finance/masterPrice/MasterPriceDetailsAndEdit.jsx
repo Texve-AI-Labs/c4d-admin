@@ -197,7 +197,7 @@ export function MasterPriceDetailsAndEdit() {
                                 <label className="text-sm font-medium text-gray-700">Night Charge</label>
                                 <Field type="number" name="nightCharge" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
                             </div>
-                            {values?.type === 'Outstation' && ( <>
+                            {values?.bookingType === 'DROP ONLY' && ( <>
                              <div>
                                 <label className="text-sm font-medium text-gray-700">Drop-only charge</label>
                                 <Field type="number" name="dropPrice" disabled className="p-2 w-full rounded-md border-gray-300 bg-gray-200" />
