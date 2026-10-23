@@ -208,7 +208,7 @@ function ServiceContentList() {
                                         <div className="text-sm font-semibold text-slate-900">{item?.content?.title || "-"}</div>
                                       </div>
                                       <div>
-                                        <div className="text-xs uppercase tracking-wide text-slate-400">Clari Text</div>
+                                        <div className="text-xs uppercase tracking-wide text-slate-400">clarification Text</div>
                                         <div className="text-sm text-slate-700">
                                           {item?.content?.clariText || "No description available."}
                                         </div>

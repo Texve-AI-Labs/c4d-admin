@@ -36,7 +36,7 @@ function ServiceContentContentEditor({ values, setFieldValue }) {
           <ErrorMessage name="content.title" component="div" className="mt-1 text-sm text-red-600" />
         </div>
         <div>
-          <label className="block text-sm font-medium">Clari Text</label>
+          <label className="block text-sm font-medium">clarification Text</label>
           <Field
             as="textarea"
             name="content.clariText"

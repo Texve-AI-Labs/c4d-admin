@@ -222,7 +222,7 @@ export function MasterPriceAdd() {
                                     <Field type="number" name="nightCharge" className="w-full text-center border-2 rounded p-2 border-gray-300" />
                                 </div>
                             </div>
-                            {values?.type === 'Outstation' && ( <>
+                            {values?.bookingType === 'DROP ONLY' && ( <>
                               <div>
                                 <label className="text-sm font-medium text-gray-700">Drop-only charge</label>
                                 <div className="flex items-center gap-2">
