@@ -607,7 +607,7 @@ const CabAddNew = () => {
                 resetForm();
             }
             else if (resp?.success && resp?.code === 200) {
-                navigate(`/dashboard/vendors/account/owner-onboarding-cab`);
+                navigate(`/dashboard/vendors/account/owner-onboarding-cab`, { replace: true });
             }
 
         } catch (error) {

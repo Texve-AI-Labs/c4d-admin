@@ -362,6 +362,7 @@ const ParcelCabAdd = () => {
 
             if (res?.success) {
               navigate(`/dashboard/vendors/account/owner-onboarding-bike`, {
+                replace: true,
                 state: {
                   accountUpdated: true,
                   accountName: values.ownerName || values.name || "Bike",

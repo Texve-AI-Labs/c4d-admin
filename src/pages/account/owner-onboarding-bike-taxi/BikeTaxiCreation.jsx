@@ -243,7 +243,7 @@ const validationSchema = Yup.object({
             };
             const res = await ApiRequestUtils.post(API_ROUTES.ADD_NEW_BIKE_TAXI, payload);
             if (res?.success) {
-              navigate(`/dashboard/vendors/account/owner-onboarding-bike-taxi/details/completed/${values.accountId}`);
+              navigate(`/dashboard/vendors/account/owner-onboarding-bike-taxi/details/completed/${values.accountId}`, { replace: true });
             } else {
               window.alert(res?.message || 'Failed to add Bike Taxi');
             }
