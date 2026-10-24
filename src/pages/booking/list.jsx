@@ -2221,7 +2221,7 @@ if (!statusFilter.includes('All')) {
                                                                     Assign {String(data?.parcelVehicleType || "BIKE").toUpperCase() === "AUTO" ? "Auto" : "Bike"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType === "PARCEL" && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && hasAssignedDriverOrCab &&
+                                                            {data?.serviceType === "PARCEL" && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED', 'DRIVER_CANCELLED'].includes(data?.status)) && hasAssignedDriverOrCab &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onReassignParcelVehicleHandler(data, data?.parcelVehicleType === "AUTO" ? "AUTO" : "BIKE")}
