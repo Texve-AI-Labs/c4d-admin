@@ -1974,7 +1974,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                 </div>
                             )}
                                     {isHourlyShowingPrice(bookingDetails) && hourlyPackagePerKm !== null && hourlyPackagePerKm !== undefined && (
-                                        <div className="flex gap-2">
+                                        <div className="hidden gap-2">
                                             <span className="text-gray-500 font-semibold">Per KM Rate:</span>
                                             <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${Number(hourlyPackagePerKm).toFixed(2)}`}</span>
                                         </div>
@@ -2253,7 +2253,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                 </div>
                             )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
-                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' &&(bookingDetails?.status === BOOKING_STATUS.BOOKING_ACCEPTED || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
+                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && (bookingDetails?.status === BOOKING_STATUS.BOOKING_ACCEPTED || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
                             )  && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
