@@ -3747,8 +3747,14 @@ const priceDetailsCardClass = isPeakHour
                                                     <div className="p-2 space-y-2 ">
                                                         {values.serviceType !== 'DRIVER' && values.serviceType !== 'AUTO' && (
                                                             <div className="grid grid-cols-2 gap-4 mb-4">
-                                                                <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
-                                                                <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                                                <div>
+                                                                    <Typography className="mb-1 text-sm font-medium text-gray-700">Luggage</Typography>
+                                                                    <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
+                                                                </div>
+                                                                <div>
+                                                                    <Typography className="mb-1 text-sm font-medium text-gray-700">Seater Capacity</Typography>
+                                                                    <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                                                </div>
                                                             </div>
                                                         )}
                                                         <label htmlFor="sourceType" className="text-sm font-medium text-gray-700">Source Type <span className="text-red-500">*</span></label>
