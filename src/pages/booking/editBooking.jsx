@@ -2249,10 +2249,16 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                 )}
                                             </div>)}
 
-                                {(values.serviceType === 'DRIVER' || values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
+                                {(values.serviceType === 'RENTAL' || values.serviceType === 'RENTAL_HOURLY_PACKAGE' || values.serviceType === 'RENTAL_DROP_TAXI') && (
                                     <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
-                                        <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                        <div>
+                                            <Typography className="mb-1 text-sm font-medium text-gray-700">Luggage</Typography>
+                                            <Field name="luggage" type="number" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Luggage" disabled />
+                                        </div>
+                                        <div>
+                                            <Typography className="mb-1 text-sm font-medium text-gray-700">Seater Capacity</Typography>
+                                            <Field name="seaterCapacity" type="text" className="p-2 w-full rounded-xl border-2 border-gray-300" placeholder="Seater Capacity" disabled />
+                                        </div>
                                     </div>
                                 )}
                                 {/* Source Type Field for all services */}
@@ -2310,6 +2316,18 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                             <Typography color="gray" variant="h6">Package:</Typography>
                                                             <Typography>
                                                                 {packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ""} hr
+                                                            </Typography>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <Typography color="gray" variant="h6">Package Price:</Typography>
+                                                            <Typography>
+                                                                ₹ {Math.round(Number(categoryHourlyPricing?.price || quoteDetails?.amount?.fareBreakdown?.baseFare || 0))}
+                                                            </Typography>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <Typography color="gray" variant="h6">Package Kilometer:</Typography>
+                                                            <Typography>
+                                                                {quoteDetails?.amount?.packageDetails?.kilometer ?? 0} Kms
                                                             </Typography>
                                                         </div>
                                                         <>
@@ -2416,6 +2434,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                         {Number(quoteDetails.amount?.estimatedDistance).toFixed(1)} Kms {quoteDetails.amount?.driverWithin > 0 && (<> + {Number(quoteDetails.amount.driverWithin).toFixed(1)} Kms</>)}
                                                                     </Typography>
 
+                                                                </>)}
+                                                                {values?.serviceType === 'RENTAL_HOURLY_PACKAGE' && (<>
+                                                                    <Typography color="gray" variant="h6">Package Kilometer</Typography>
+                                                                    <Typography>
+                                                                        {quoteDetails?.amount?.packageDetails?.kilometer ?? quoteDetails?.amount?.baseKm ?? 0} Kms
+                                                                    </Typography>
                                                                 </>)}
                                                                 {values?.serviceType !== 'DRIVER' &&
                                                                     <>
