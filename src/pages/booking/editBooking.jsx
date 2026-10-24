@@ -2318,6 +2318,18 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                 {packageTypeSelectedData.find(pkg => pkg.id === Number(values.packageSelected))?.period || ""} hr
                                                             </Typography>
                                                         </div>
+                                                        <div className="flex justify-between">
+                                                            <Typography color="gray" variant="h6">Package Price:</Typography>
+                                                            <Typography>
+                                                                ₹ {Math.round(Number(categoryHourlyPricing?.price || quoteDetails?.amount?.fareBreakdown?.baseFare || 0))}
+                                                            </Typography>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <Typography color="gray" variant="h6">Package Kilometer:</Typography>
+                                                            <Typography>
+                                                                {quoteDetails?.amount?.packageDetails?.kilometer ?? 0} Kms
+                                                            </Typography>
+                                                        </div>
                                                         <>
                                                             <div className="flex justify-between">
                                                                 <Typography color="gray" variant="h6">Estimated Fare</Typography>
@@ -2422,6 +2434,12 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                                         {Number(quoteDetails.amount?.estimatedDistance).toFixed(1)} Kms {quoteDetails.amount?.driverWithin > 0 && (<> + {Number(quoteDetails.amount.driverWithin).toFixed(1)} Kms</>)}
                                                                     </Typography>
 
+                                                                </>)}
+                                                                {values?.serviceType === 'RENTAL_HOURLY_PACKAGE' && (<>
+                                                                    <Typography color="gray" variant="h6">Package Kilometer</Typography>
+                                                                    <Typography>
+                                                                        {quoteDetails?.amount?.packageDetails?.kilometer ?? quoteDetails?.amount?.baseKm ?? 0} Kms
+                                                                    </Typography>
                                                                 </>)}
                                                                 {values?.serviceType !== 'DRIVER' &&
                                                                     <>

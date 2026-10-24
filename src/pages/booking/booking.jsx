@@ -4013,6 +4013,12 @@ const priceDetailsCardClass = isPeakHour
                                                                                 <Typography> ₹ {quoteDetails.amount?.fareBreakdown?.baseFare || '0'}
                                                                                 </Typography>
                                                                             </div>
+                                                                            <div className="flex justify-between">
+                                                                                <Typography color="gray" variant="h6">Package Kilometer:</Typography>
+                                                                                <Typography>
+                                                                                    {quoteDetails?.amount?.packageDetails?.kilometer ?? 0} Kms
+                                                                                </Typography>
+                                                                            </div>
                                                                             {quoteDetails.amount?.gst_amount > 0 && (
                                                                               <div className="flex justify-between">
                                                                                 <Typography color="gray" variant="h6">TAX Amount:</Typography>
@@ -4051,10 +4057,6 @@ const priceDetailsCardClass = isPeakHour
                                                                                         <Typography>
                                                                                             {quoteDetails.discount?.percentage} %
                                                                                         </Typography>
-                                                                                    </div>
-                                                                                    <div className="flex justify-between">
-                                                                                        <Typography color="gray" variant="h6">Kilometer :</Typography>
-                                                                                        <Typography>{quoteDetails?.amount?.packageDetails?.kilometer} Kms</Typography>
                                                                                     </div>
                                                                                     <div className="flex justify-between">
                                                                                         <Typography color="gray" variant="h6">Total Estimated Fare:</Typography>
