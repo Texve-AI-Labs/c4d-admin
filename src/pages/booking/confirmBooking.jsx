@@ -1790,6 +1790,12 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     <span className="text-gray-500 font-semibold">Vehicle Number:</span>
                                     <span className="text-gray-900 font-medium">{bookingDetails?.Cab?.carNumber  || bookingDetails?.Parcel?.vehicleNumber || bookingDetails?.Auto?.autoNumber || bookingDetails?.Bike?.bikeNumber || '-'}</span>
                                 </div>
+                                {bookingDetails?.serviceType === 'BIKE' && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Vehicle Type:</span>
+                                    <span className="text-gray-900 font-medium">{bookingDetails?.Bike?.vehicleType || '-'}</span>
+                                </div>
+                                )}
                                 {(bookingDetails?.serviceType !== 'AUTO') && (bookingDetails?.serviceType !== 'PARCEL') && (bookingDetails?.serviceType !== 'BIKE') && (
                                 <>
                                 <div className="flex flex-col-2 gap-2">
@@ -2246,20 +2252,20 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayWalletAmount.toFixed(2)}`}</span>
                                 </div>
                             )}
-                            {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
-                                <div className="flex flex-col-2 gap-2">
-                                    <span className="text-gray-500 font-semibold">Total After Wallet:</span>
-                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayQuoteTotalAfterWallet.toFixed(2)}`}</span>
-                                </div>
-                            )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
-                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && (bookingDetails?.status === BOOKING_STATUS.BOOKING_ACCEPTED || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
+                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && ((isDropTaxiBooking(bookingDetails) && [BOOKING_STATUS.QUOTED, BOOKING_STATUS.REQUEST_DRIVER, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.BOOKING_ACCEPTED].includes(bookingDetails?.status)) || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
                             )  && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
                                     <span className="text-gray-900 font-medium">
                                         {shouldHideDashFallback ? "-" : `₹ ${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}`}
                                     </span>
+                                </div>
+                            )}
+                            {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Total After Wallet:</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayQuoteTotalAfterWallet.toFixed(2)}`}</span>
                                 </div>
                             )}
                                 {/* {bookingDetails?.offerPrice > 0 && (
