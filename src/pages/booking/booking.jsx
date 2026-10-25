@@ -3745,7 +3745,7 @@ const priceDetailsCardClass = isPeakHour
                                                             </div>
                                                         )}
                                                     <div className="p-2 space-y-2 ">
-                                                        {values.serviceType !== 'DRIVER' && values.serviceType !== 'AUTO' && (
+                                                        {values.serviceType !== 'DRIVER' && values.serviceType !== 'AUTO' && values.serviceType !== 'PARCEL' && (
                                                             <div className="grid grid-cols-2 gap-4 mb-4">
                                                                 <div>
                                                                     <Typography className="mb-1 text-sm font-medium text-gray-700">Luggage</Typography>
