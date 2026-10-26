@@ -185,6 +185,7 @@ export function AccountList() {
         const parsed = JSON.parse(stored);
         return {
           currentPage: parsed.currentPage || 1,
+          search: parsed.search || '',
           totalPages: 1,
           totalItems: 0,
           itemsPerPage: 15,
@@ -193,6 +194,7 @@ export function AccountList() {
       } catch {
         return {
           currentPage: 1,
+          search: '',
           totalPages: 1,
           totalItems: 0,
           itemsPerPage: 15,
@@ -202,6 +204,7 @@ export function AccountList() {
     }
     return {
       currentPage: 1,
+      search: '',
       totalPages: 1,
       totalItems: 0,
       itemsPerPage: 15,
@@ -251,11 +254,12 @@ export function AccountList() {
       availableStatusFilter,
       sourceFilter,
       zoneFilter,
-      currentPage: pagination.currentPage
+      currentPage: pagination.currentPage,
+      search: pagination.search || ''
     };
 
     setItemSafe(ACCOUNT_VIEW_FILTERS_KEY, JSON.stringify(data));
-  }, [filtersLoaded, pagination.currentPage, statusFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, sourceFilter, zoneFilter]);
+  }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, sourceFilter, zoneFilter]);
 
   const fetchAccounts = async (page = 1, searchQuery = '', showLoader = true) => {
     const normalizedSearchQuery = (searchQuery ?? '').trim();

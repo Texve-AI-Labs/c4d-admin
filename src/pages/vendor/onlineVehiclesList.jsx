@@ -22,14 +22,6 @@ import moment from 'moment';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
-
 export function OnlineVehiclesList({ id = 0 }) {
   const [vehicleList, setVehicleList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -151,15 +143,14 @@ export function OnlineVehiclesList({ id = 0 }) {
 
   const handleIntervalChange = (value) => {
     setSelectedInterval(value);
-      if (intervalRef.current) {
+      if (intervalRef.current) 
         clearInterval(intervalRef.current);
       intervalRef.current = null;
-      }
+
     if (value) {
-      const intervalSeconds = parseInt(value);
       intervalRef.current = setInterval(() => {
         fetchCabList(pagination.currentPage, pagination.search, false);
-      }, intervalSeconds * 1000);
+      }, Number(value) * 1000);
     }
   };
 
@@ -179,13 +170,9 @@ export function OnlineVehiclesList({ id = 0 }) {
     fetchCabList(pagination.currentPage, pagination.search, !searchChanged);
   }, [id, pagination.currentPage, pagination.search, typeFilter]);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => () => 
+    clearInterval(intervalRef.current),
+  []);
 
   const filteredVehicles = vehicleList.filter((v) => {
     if (typeFilter[0] === 'All') return true;
@@ -283,16 +270,13 @@ export function OnlineVehiclesList({ id = 0 }) {
     setVehicleList(sorted);
   };
 
-  const debouncedFetchCabList = useRef(
-    debounce((searchTerm) => {
-      setPagination(prev => ({ ...prev, currentPage: 1, search: searchTerm.trim() }));
-    }, 600)
-  ).current;
-
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    debouncedFetchCabList(value);
+  };
+
+  const submitSearch = () => {
+    setPagination((prev) => ({ ...prev, currentPage: 1, search: searchQuery.trim() }));
   };
 
   return (
@@ -310,12 +294,14 @@ export function OnlineVehiclesList({ id = 0 }) {
             ))}
           </Select>
         </div>
-        <div className="relative w-full sm:max-w-md">
+        <div className="flex w-full sm:max-w-md">
+          <div className="relative flex-1">
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full py-2 pl-10 pr-10 border rounded-xl text-sm bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+            onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
+            className="w-full py-2 pl-10 pr-10 border rounded-l-xl text-sm bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Search by Driver Name"
           />
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
@@ -331,6 +317,14 @@ export function OnlineVehiclesList({ id = 0 }) {
               ×
             </button>
           )}
+          </div>
+          <button
+            type="button"
+            onClick={submitSearch}
+            className="px-4 py-2 rounded-r-xl bg-primary text-white text-sm font-semibold hover:opacity-90"
+          >
+            Search
+          </button>
         </div>
       </div>
       <Card>
