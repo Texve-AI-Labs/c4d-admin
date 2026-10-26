@@ -1,5 +1,7 @@
-import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useState, useEffect, useRef } from "react";
+import useBillingListSearch from "../components/useBillingListSearch.js";
+import BillingListSearch from "../components/BillingListSearch.jsx";
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from "react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import {
@@ -18,9 +20,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaFilter } from 'react-icons/fa';
 import moment from 'moment';
 
+const formatStatusLabel = (status) => {
+    const text = String(status || "").trim();
+    if (!text) return "-";
+    return text.toLowerCase().split(/[_\s]+/).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+};
+
 export function InvoiceList() {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
+    const { searchQuery, setSearchQuery, pagination, setPagination, requestVersion, runSearch, clearSearch } = useBillingListSearch('invoiceBillingSearch', { pageSize: 20 });
     const [invoiceList, setInvoiceList] = useState([]);
     const [allAccounts, setAllAccounts] = useState([]);
     const [invoiceTypeFilter, setInvoiceTypeFilter] = useState(
@@ -30,80 +38,44 @@ export function InvoiceList() {
         () => sessionStorage.getItem('paymentStatusFilter') || 'ALL'
     );
     const [loading, setLoading] = useState(false);
-    const inFlightRequestRef = useRef(null);
-
-    const [pagination, setPagination] = useState({
-        currentPage: Number(sessionStorage.getItem('invoiceCurrentPage')) || 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 20,
-         search: searchQuery.trim(),
-        //   forSearch:false
-    });
-
-    const fetchInvoices = async (page = 1, showLoader = false, invoiceType = invoiceTypeFilter) => {
-        const requestKey = JSON.stringify({
-            page,
-            limit: pagination.itemsPerPage,
-            search: searchQuery.trim(),
-            invoiceType,
-            paymentStatus: paymentStatusFilter,
-        });
-
-        if (inFlightRequestRef.current === requestKey) return;
-        inFlightRequestRef.current = requestKey;
-        if (showLoader) setLoading(true);
-        try {
-            const params = {
-                page: page,
-                limit: pagination.itemsPerPage,
-                search: searchQuery.trim(),
-                ...(invoiceType !== 'ALL' && { invoiceType }),
-                ...(paymentStatusFilter !== 'ALL' && { status: paymentStatusFilter }),
-            };
-            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_INVOICE_LIST, params);
-
-            if (data) {
-                setInvoiceList(data?.data || []);
-                setAllAccounts(data?.data || []);
-                setPagination((prev) => ({
-                    ...prev,
-                    currentPage: page,
-                    totalPages: data?.pagination?.totalPages || 1,
-                    totalItems: data?.pagination?.totalItems || 0,
-                    itemsPerPage: data?.pagination?.itemsPerPage || 15,
-                    search: searchQuery.trim()
-                }));
-            }
-        } catch (error) {
-            console.error("Error fetching invoice data:", error);
-        } finally {
-            if (inFlightRequestRef.current === requestKey) {
-                inFlightRequestRef.current = null;
-            }
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
         sessionStorage.setItem('invoiceTypeFilter', invoiceTypeFilter);
-    }, [invoiceTypeFilter]);
-
-    useEffect(() => {
         sessionStorage.setItem('paymentStatusFilter', paymentStatusFilter);
-    }, [paymentStatusFilter]);
+    }, [invoiceTypeFilter, paymentStatusFilter]);
 
     useEffect(() => {
-        sessionStorage.setItem('invoiceCurrentPage', String(pagination.currentPage));
-    }, [pagination.currentPage]);
-    
-    useEffect(() => {
-        const requestTimer = setTimeout(() => {
-            fetchInvoices(pagination.currentPage, true);
-        }, searchQuery.trim() ? 500 : 0);
-
-        return () => clearTimeout(requestTimer);
-    }, [pagination.currentPage, invoiceTypeFilter, paymentStatusFilter, searchQuery]);
+        let active = true;
+        setLoading(true);
+        const fetchInvoices = async () => {
+            try {
+                const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_INVOICE_LIST, {
+                    page: pagination.currentPage,
+                    limit: pagination.itemsPerPage,
+                    search: pagination.search,
+                    ...(invoiceTypeFilter !== 'ALL' && { invoiceType: invoiceTypeFilter }),
+                    ...(paymentStatusFilter !== 'ALL' && { status: paymentStatusFilter }),
+                });
+                if (!active) return;
+                setInvoiceList(data?.data || []);
+                setAllAccounts(data?.data || []);
+                setPagination((previous) => ({
+                    ...previous,
+                    totalPages: data?.pagination?.totalPages || 1,
+                    totalItems: data?.pagination?.totalItems || 0,
+                    itemsPerPage: data?.pagination?.itemsPerPage || previous.itemsPerPage,
+                }));
+            } catch (error) {
+                if (active) {
+                    console.error("Error fetching invoice data:", error);
+                    setInvoiceList([]);
+                }
+            } finally {
+                if (active) setLoading(false);
+            }
+        };
+        fetchInvoices();
+        return () => { active = false; };
+    }, [pagination.currentPage, pagination.search, invoiceTypeFilter, paymentStatusFilter, requestVersion]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= pagination.totalPages) {
@@ -152,7 +124,7 @@ export function InvoiceList() {
         sessionStorage.removeItem('invoiceTypeFilter');
         sessionStorage.removeItem('paymentStatusFilter');
         sessionStorage.removeItem('invoiceCurrentPage');
-        setSearchQuery('');
+        clearSearch();
         setInvoiceTypeFilter('ALL');
         setPaymentStatusFilter('ALL');
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -190,22 +162,14 @@ export function InvoiceList() {
     return (
         <div className="mb-8 flex flex-col gap-12">
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div className="relative flex-grow max-w-[500px]">
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="Search Invoice Number"
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setPagination((prev) => ({ ...prev, currentPage: 1 }));
-                            }}
-                        />
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
-                        </div>
-                    </div>
-                </div>
+                <BillingListSearch
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onSearch={runSearch}
+                    onClear={clearSearch}
+                    canClear={Boolean(searchQuery || pagination.search)}
+                    placeholder="Search Invoice Number"
+                />
             </div>
 
             <Card>
@@ -287,7 +251,7 @@ export function InvoiceList() {
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{moment(invoice?.created_at).format('DD-MM-YYYY')}</td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.Subscription?.Plan?.name}</td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">₹ {invoice?.amount}</td>
-                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.status}</td>
+                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">{formatStatusLabel(invoice?.status)}</td>
                                                 </tr>
                                             )) : (
                                                 <tr>
