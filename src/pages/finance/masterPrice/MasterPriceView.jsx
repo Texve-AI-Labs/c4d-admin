@@ -1647,7 +1647,7 @@ export function MasterPriceView() {
                                         "Expand",
                                         "Zone",
                                         "Category",
-                                        "Vehicle Type",
+                                        // "Vehicle Type",
                                         "Base KM",
                                         "Base Fare",
                                         "KM Price",
@@ -1711,11 +1711,11 @@ export function MasterPriceView() {
                                                     </Link>
                                                 </Typography>
                                             </td>
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {formatCarTypes(carTypes)}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {formatValue(pricing.baseKm)}
