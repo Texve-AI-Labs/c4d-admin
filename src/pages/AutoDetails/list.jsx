@@ -11,17 +11,9 @@ import {
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { useNavigate } from 'react-router-dom';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import moment from "moment";
 import { safeText } from "@/utils/text";
-
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
 
 export function AutoDetailsList({ id = 0 }) {
   const [vehicleList, setVehicleList] = useState([]);
@@ -78,16 +70,8 @@ export function AutoDetailsList({ id = 0 }) {
     }
   };
 
-  const getVehicles = useCallback(
-    debounce((searchQuery) => {
-      setPagination((prev) => ({
-        ...prev,
-        currentPage:1,
-        search:searchQuery,
-      }))
-    },1000),
-    []
-  )
+  const submitSearch = () => setPagination((prev) => ({ ...prev, currentPage: 1, search: searchQuery.trim() }));
+  const clearSearch = () => { setSearchQuery(''); setPagination((prev) => ({ ...prev, currentPage: 1, search: '' })); };
 
   useEffect(() => {
     const searchChanged = prevSearchRef.current !== (pagination.search || '');
@@ -129,27 +113,27 @@ export function AutoDetailsList({ id = 0 }) {
 
   return (
     <div className="mb-8 flex flex-col gap-12">
-      <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
+      <form onSubmit={(e) => { e.preventDefault(); submitSearch(); }} className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm">
         <div className="relative flex-grow max-w-[500px]">
           <input
             type="text"
             className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Search vehicle"
             value={searchQuery}
-            onChange={(e) => {setSearchQuery(e.target.value);
-                              getVehicles(e.target.value);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
           </div>
+          {searchQuery && <button type="button" onClick={clearSearch} className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-800" aria-label="Clear search"><XMarkIcon className="w-5 h-5" /></button>}
         </div>
-      </div>
+        <button type="submit" className={`ml-4 px-4 py-2 rounded-2xl ${ColorStyles.searchButtonColor}`}>Search</button>
+      </form>
 
       <Card>
         {vehicleList.length > 0 ? (
           <>
-            <CardHeader variant="gradient" color="blue" className="mb-8 p-6 flex justify-between items-center">
+            <CardHeader variant="gradient" className={`mb-8 p-6 flex justify-between items-center ${ColorStyles.bgColor}`}>
               <Typography variant="h6" color="white">Autos List</Typography>
               <Typography variant="h6" color="white">{pagination.totalItems} Auto{pagination.totalItems !== 1 ? 's' : ''} found</Typography>
             </CardHeader>
@@ -157,7 +141,7 @@ export function AutoDetailsList({ id = 0 }) {
               <table className="w-full min-w-[640px] table-auto">
                 <thead className="whitespace-nowrap">
                   <tr>
-                    {["Driver Name", "Auto Name", "Phone Number", "Auto Number", "Address","Registration Date", "Available Status", "Subscription Status"].map((el) => (
+                    {["Driver Name", "Auto Name", "Phone Number", "Auto Number", "Current Address","Registration Date", "Available Status", "Subscription Status"].map((el) => (
                       <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                         <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
                             {el}
@@ -254,7 +238,7 @@ export function AutoDetailsList({ id = 0 }) {
             </CardBody>
           </>
         ) : (
-          <CardHeader variant="gradient" color="blue" className="mb-8 p-6">
+          <CardHeader variant="gradient" className={`mb-8 p-6 ${ColorStyles.bgColor}`}>
             <Typography variant="h6" color="white">No Vehicles Available</Typography>
           </CardHeader>
         )}

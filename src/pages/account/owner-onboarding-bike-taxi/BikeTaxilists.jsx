@@ -10,17 +10,10 @@ import {
 } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import moment from "moment";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
-
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
+import { safeText } from "@/utils/text";
 
 export function BikeTaxiLists({ id = 0 }) {
   const navigate = useNavigate();
@@ -65,16 +58,8 @@ export function BikeTaxiLists({ id = 0 }) {
     }
   };
 
-  const debouncedSearch = useCallback(
-    debounce((value) => {
-      setPagination((prev) => ({
-        ...prev,
-        currentPage: 1,
-        search: value,
-      }));
-    }, 700),
-    []
-  );
+  const submitSearch = () => setPagination((prev) => ({ ...prev, currentPage: 1, search: searchQuery.trim() }));
+  const clearSearch = () => { setSearchQuery(''); setPagination((prev) => ({ ...prev, currentPage: 1, search: '' })); };
 
   useEffect(() => {
     const searchChanged = prevSearchRef.current !== (pagination.search || "");
@@ -116,7 +101,7 @@ export function BikeTaxiLists({ id = 0 }) {
 
   return (
     <div className="mb-8 flex flex-col gap-12">
-      <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
+      <form onSubmit={(e) => { e.preventDefault(); submitSearch(); }} className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg shadow-sm">
         <div className="relative w-full max-w-md">
           <input
             type="text"
@@ -125,14 +110,15 @@ export function BikeTaxiLists({ id = 0 }) {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              debouncedSearch(e.target.value);
             }}
           />
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
           </div>
+          {searchQuery && <button type="button" onClick={clearSearch} className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-800" aria-label="Clear search"><XMarkIcon className="h-5 w-5" /></button>}
         </div>
-      </div>
+        <button type="submit" className={`ml-4 px-4 py-2 rounded-2xl ${ColorStyles.searchButtonColor}`}>Search</button>
+      </form>
 
       <Card>
         {loading ? (
@@ -156,10 +142,10 @@ export function BikeTaxiLists({ id = 0 }) {
               </div>
             </CardHeader>
             <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
-              <table className="w-full min-w-[640px] table-auto">
+              <table className="w-full min-w-[640px] table-auto whitespace-nowrap">
                 <thead>
                   <tr>
-                    {["Name", "Company", "Vehicle Number", "Registration Date", "Available Status"].map((el) => (
+                    {["Name", "Company", "Vehicle Number", "Current Address", "Registration Date", "Available Status"].map((el) => (
                       <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                         <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
                           {el}
@@ -170,23 +156,28 @@ export function BikeTaxiLists({ id = 0 }) {
                 </thead>
                 <tbody>
                   {bikeList.length > 0 ? (
-                    bikeList.map(({ id, name, company, bikeNumber, created_at, status, subscriptionStatus }, index) => {
+                    bikeList.map(({ id, name, company, bikeNumber, created_at, status, subscriptionStatus, Drivers }, index) => {
                       const className = `py-3 px-5 ${index === bikeList.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                       return (
                         <tr key={id}>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                              {name || "-"}
+                              {safeText(name)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                              {company || "-"}
+                              {safeText(company)}
                             </Typography>
                           </td>
                           <td className={className}>
                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                              {bikeNumber || "-"}
+                              {safeText(bikeNumber)}
+                            </Typography>
+                          </td>
+                          <td className={className}>
+                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                              {safeText(Drivers?.[0]?.curAddress)}
                             </Typography>
                           </td>
                           <td className={className}>
@@ -199,7 +190,7 @@ export function BikeTaxiLists({ id = 0 }) {
                               <Chip
                                 variant="ghost"
                                 color={status === "ACTIVE" ? "green" : "blue-gray"}
-                                value={status === "ACTIVE" ? "Active" : "In_Active"}
+                                value={status === "ACTIVE" ? "ACTIVE" : "IN ACTIVE"}
                                 className="py-0.5 px-2 text-[11px] font-medium w-fit"
                               />
                             </div>
@@ -209,9 +200,9 @@ export function BikeTaxiLists({ id = 0 }) {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-6 px-5 text-center">
-                        <Typography variant="h6" color="gray">
-                          No bike taxi records found
+                      <td colSpan={6} className="py-6 px-5 text-center">
+                        <Typography variant="h6" color="white" className={`rounded-lg p-4 ${ColorStyles.bgColor}`}>
+                          No Vehicles Available
                         </Typography>
                       </td>
                     </tr>
