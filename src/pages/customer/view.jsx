@@ -6,40 +6,62 @@ import {
   Typography,
   Button,
   Alert,
-  Spinner
+  Spinner,
+  Popover,
+  PopoverHandler,
+  PopoverContent,
+  Checkbox
 } from "@material-tailwind/react";
 import CustomerSearch from "@/components/CustomerSearch";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDownIcon, ChevronUpIcon, StarIcon } from '@heroicons/react/24/solid';
+import { FaFilter } from 'react-icons/fa';
 
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
+const CUSTOMER_LIST_FILTERS_KEY = 'customerListFilters';
+
+const getStoredCustomerFilters = () => {
+  if (typeof window === 'undefined') return { search: '', zone: 'All' };
+
+  try {
+    const storedFilters = sessionStorage.getItem(CUSTOMER_LIST_FILTERS_KEY);
+    return storedFilters ? JSON.parse(storedFilters) : { search: '', zone: 'All' };
+  } catch (error) {
+    return { search: '', zone: 'All' };
+  }
 };
 
 export function CustomerView() {
   const navigate = useNavigate();
+  const storedFilters = getStoredCustomerFilters();
   const [customers, setCustomers] = useState([]);
   const [alert, setAlert] = useState(false);
   const [sortOrder, setSortOrder] = useState('asc');
   const [loading, setLoading] = useState(false);
-  const [zoneFilter, setZoneFilter] = useState('All');
+  const [zoneFilter, setZoneFilter] = useState(storedFilters.zone || 'All');
   const [serviceAreas, setServiceAreas] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: 10,
-    search: '',
+    search: storedFilters.search || '',
     forSearch:false
   });
 
   const location = useLocation();
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CUSTOMER_LIST_FILTERS_KEY, JSON.stringify({
+        search: pagination.search,
+        zone: zoneFilter
+      }));
+    } catch (error) {
+      console.error('Unable to store customer filters:', error);
+    }
+  }, [pagination.search, zoneFilter]);
 
   useEffect(() => {
     const fetchGeoData = async () => {
@@ -109,16 +131,13 @@ export function CustomerView() {
   // };
 
 
-  const getCustomers = useCallback(
-    debounce((searchQuery) => {
+  const getCustomers = useCallback((searchQuery) => {
       setPagination((prev) => ({
         ...prev,
         currentPage: 1,
         search: searchQuery
       }));
-    }, 1000),
-    [pagination.itemsPerPage] 
-  );
+    }, []);
 
   useEffect(() => {
     fetchCustomers(pagination.currentPage, pagination.search, true);
@@ -196,25 +215,9 @@ export function CustomerView() {
           {alert.message}
         </Alert>
       </div>)}
-      <CustomerSearch onSearch={getCustomers} />
-      <div className="flex justify-end">
-        <div className="w-full sm:w-72">
-          <label htmlFor="zoneFilter" className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
-          <select
-            id="zoneFilter"
-            value={zoneFilter}
-            onChange={handleZoneFilterChange}
-            className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-200"
-          >
-            <option value="All">All</option>
-            {serviceAreas.map((area) => (
-              <option key={area?.id || area?.name} value={area?.name || ''}>
-                {area?.name || ''}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <Card className="p-4 bg-gray-50">
+        <CustomerSearch onSearch={getCustomers} initialSearch={pagination.search} />
+      </Card>
       <Card>
         {customers.length > 0 ? (
           <>
@@ -223,14 +226,6 @@ export function CustomerView() {
                 <Typography variant="h6" color="white">
                   Customers List
                 </Typography>
-                {/* <Button
-                  size="sm"
-                  className='bg-red-500 text-white'
-                  onClick={handleExportExcel}
-                  disabled={loading}
-                >
-                  {loading ? 'Exporting...' : 'Export to Excel'}
-                </Button> */}
               </div>
             </CardHeader>
             <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
@@ -240,8 +235,8 @@ export function CustomerView() {
                     {["ID","Name", "Phone Number","Rating","Zone", ""].map((el) => (
                       <th
                         key={el}
-                        className="border-b border-blue-gray-50 py-3 px-5 text-left cursor-pointer"
-                        onClick={() => {
+                        className={`border-b border-blue-gray-50 py-3 px-5 text-left ${el === 'Rating' ? 'cursor-pointer' : ''}`}
+                        onClick={el === 'Rating' ? () => {
                           setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
                           const sorted = [...customers].sort((a, b) => {
                             const aRating = a.rating ?? 0;
@@ -249,7 +244,7 @@ export function CustomerView() {
                             return sortOrder === 'asc' ? aRating - bRating : bRating - aRating;
                           });
                           setCustomers(sorted);
-                        }}
+                        } : undefined}
 
                       >
                         <div className="flex items-center">
@@ -257,7 +252,35 @@ export function CustomerView() {
                             variant="small"
                             className="text-[11px] font-bold uppercase text-black"
                           >
-                            {el}
+                            {el === 'Zone' ? (
+                              <Popover placement="bottom-start">
+                                <PopoverHandler>
+                                  <div className="flex items-center cursor-pointer">
+                                    <Typography variant="small" className="text-[11px] font-bold uppercase mr-1 text-black">
+                                      {zoneFilter === 'All' ? 'Zone' : `Zone: ${zoneFilter}`}
+                                    </Typography>
+                                    <FaFilter className="text-black text-xs" />
+                                  </div>
+                                </PopoverHandler>
+                                <PopoverContent className="p-2 z-10 max-h-[540px] overflow-y-auto">
+                                  {[{ value: 'All', label: 'All' }, ...serviceAreas.map((area) => ({ value: area?.name, label: area?.name }))].map((option) => (
+                                    <div key={option.value} className="flex items-center mb-2">
+                                      <Checkbox
+                                        color="blue"
+                                        checked={zoneFilter === option.value}
+                                        onChange={() => {
+                                          setZoneFilter(option.value);
+                                          setPagination((prev) => ({ ...prev, currentPage: 1 }));
+                                        }}
+                                      />
+                                      <Typography color="blue-gray" className="font-medium ml-2">
+                                        {option.label}
+                                      </Typography>
+                                    </div>
+                                  ))}
+                                </PopoverContent>
+                              </Popover>
+                            ) : el}
                           </Typography>
                           {el === 'Rating' && (
                             sortOrder === 'asc' ? (
@@ -385,10 +408,39 @@ export function CustomerView() {
                     </div>
             </CardBody>
           </>) : (
-          <CardHeader variant="gradient"  className={`mb-8 p-6 ${ColorStyles.bgColor}`}>
-            <Typography variant="h6" color="white">
-              No Customers
-            </Typography>
+          <CardHeader variant="gradient" className={`mb-8 p-6 rounded-xl ${ColorStyles.bgColor}`}>
+            <div className="flex justify-between items-center">
+              <Typography variant="h6" color="white">
+                No Customers
+              </Typography>
+              <Popover placement="bottom-start">
+                <PopoverHandler>
+                  <div className="flex items-center cursor-pointer">
+                    <Typography variant="small" className="text-[11px] font-bold uppercase mr-1 text-white">
+                      {zoneFilter === 'All' ? 'Zone' : `Zone: ${zoneFilter}`}
+                    </Typography>
+                    <FaFilter className="text-white text-xs" />
+                  </div>
+                </PopoverHandler>
+                <PopoverContent className="p-2 z-10 max-h-[540px] overflow-y-auto">
+                  {[{ value: 'All', label: 'All' }, ...serviceAreas.map((area) => ({ value: area?.name, label: area?.name }))].map((option) => (
+                    <div key={option.value} className="flex items-center mb-2">
+                      <Checkbox
+                        color="blue"
+                        checked={zoneFilter === option.value}
+                        onChange={() => {
+                          setZoneFilter(option.value);
+                          setPagination((prev) => ({ ...prev, currentPage: 1 }));
+                        }}
+                      />
+                      <Typography color="blue-gray" className="font-medium ml-2">
+                        {option.label}
+                      </Typography>
+                    </div>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </div>
           </CardHeader>
         )}
       </Card>
