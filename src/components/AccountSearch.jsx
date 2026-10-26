@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { ColorStyles } from '@/utils/constants';
 
@@ -11,14 +11,11 @@ const AccountSearch = ({ onSearch, initialValue = '' }) => {
     setSearchQuery(initialValue || '');
   }, [initialValue]);
 
-  useEffect(() => {
-    const trimmed = searchQuery.trim();
-    const debounceTimer = setTimeout(() => {
-      onSearch(trimmed);
-    }, 2000); // Debounce for 300ms
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, onSearch]);
+  const handleSearch = () => onSearch(searchQuery.trim());
+  const handleClear = () => {
+    setSearchQuery("");
+    onSearch("");
+  };
   
   return (
     <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
@@ -34,8 +31,10 @@ const AccountSearch = ({ onSearch, initialValue = '' }) => {
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
           </div>
+          {searchQuery && <button type="button" onClick={handleClear} className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-800" aria-label="Clear search"><XMarkIcon className="w-5 h-5" /></button>}
         </div>
-        <button 
+        <button type="button" onClick={handleSearch} className={`ml-4 px-4 py-2 rounded-2xl ${ColorStyles.searchButtonColor}`}>Search</button>
+        <button type="button"
           onClick={() => navigate(`/dashboard/vendors/account/owner-onboarding-cab/add`)}
           className={`ml-4 px-4 py-2  rounded-2xl hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
             ColorStyles.addButtonColor

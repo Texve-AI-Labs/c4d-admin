@@ -1530,6 +1530,7 @@ export const ColorStyles = {
     PopoverHandlerText: "text-black",
     bgStatusColor: " bg-primary text-white",
     addButtonColor: "bg-primary text-white",
+    searchButtonColor: "bg-blue-gray-400 text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2",
     continueButtonColor: " bg-primary text-white",
     backButton: " text-black border-gray-400 border-2 rounded-xl bg-white",
     editButton: "bg-primary text-white",
