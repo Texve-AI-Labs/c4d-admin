@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Card, CardBody, CardHeader, Chip, Spinner, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, CardHeader, Chip, Spinner, Typography, Checkbox, Popover, PopoverHandler, PopoverContent } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -45,6 +46,29 @@ const formatCreatedAt = (value) => {
 
 const getNotes = (row = {}) => row?.metadata?.notes || row?.notes || "";
 const getRowId = (row = {}) => row?.id || row?.configId || row?._id || "";
+
+function ColumnFilter({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+      <PopoverHandler>
+        <button type="button" aria-label={`Filter by ${label}`} className="flex items-center cursor-pointer">
+          <Typography variant="small" className={`text-[11px] font-bold uppercase mr-1 ${ColorStyles.PopoverHandlerText}`}>
+            {label}
+          </Typography>
+          <FaFilter className="text-black text-xs" />
+        </button>
+      </PopoverHandler>
+      <PopoverContent className="p-2">
+        {[{ value: "ALL", label: "All" }, ...options].map((option) => (
+          <div key={option.value} className="flex items-center mb-2">
+            <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+            <Typography color="blue-gray" className="font-medium ml-2">{option.label}</Typography>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default function DriverRadiusBonusList() {
   const navigate = useNavigate();
@@ -110,51 +134,6 @@ export default function DriverRadiusBonusList() {
 
   return (
     <div className="mb-8 flex flex-col gap-6 mt-8 bg-white pb-2 rounded-xl">
-      <div className="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Zone</label>
-          <select
-            value={zoneFilter}
-            onChange={(e) => setZoneFilter(e.target.value)}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
-          >
-            <option value="ALL">All</option>
-            {zoneOptions.map((zone) => (
-              <option key={zone.value} value={zone.value}>
-                {zone.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Service Type</label>
-          <select
-            value={serviceFilter}
-            onChange={(e) => setServiceFilter(e.target.value)}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
-          >
-            <option value="ALL">All</option>
-            {["RIDES", "RENTAL", "AUTO", "BIKE"].map((value) => (
-              <option key={value} value={value}>
-                {SERVICE_TYPE_LABELS[value]}
-              </option>
-            ))}
-              </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200"
-          >
-            <option value="ALL">All</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
-        </div>
-      </div>
-
       <Card>
         <CardHeader variant="gradient" className={`mb-8 mt-2 p-6 rounded-xl ${ColorStyles.bgColor}`}>
           <div className="flex items-center justify-between">
@@ -183,9 +162,19 @@ export default function DriverRadiusBonusList() {
                 <tr>
                 {["Zone", "Service Type", "First Radius", "Max Radius", "Increment", "Threshold", "Bonus Type", "Bonus Amount", "Bonus Rate", "Status", "Created At", "Actions","Notes"].map((el) => (
                     <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap">
-                      <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
-                        {el}
-                      </Typography>
+                      {el === "Zone" ? (
+                        <ColumnFilter label={el} value={zoneFilter} options={zoneOptions} onChange={setZoneFilter} />
+                      ) : el === "Service Type" ? (
+                        <ColumnFilter label={el} value={serviceFilter}
+                          options={["RIDES", "RENTAL", "AUTO", "BIKE"].map((value) => ({ value, label: SERVICE_TYPE_LABELS[value] }))}
+                          onChange={setServiceFilter} />
+                      ) : el === "Status" ? (
+                        <ColumnFilter label={el} value={statusFilter}
+                          options={[{ value: "ACTIVE", label: "Active" }, { value: "INACTIVE", label: "Inactive" }]}
+                          onChange={setStatusFilter} />
+                      ) : (
+                        <Typography variant="small" className="text-[11px] font-bold uppercase text-black">{el}</Typography>
+                      )}
                     </th>
                   ))}
                 </tr>
