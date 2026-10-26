@@ -14,7 +14,7 @@ const getIsOnline = () => {
 const getStatusMessage = (status, message) => {
   if (message) return message;
   if (status === "restored") return "Connection restored. Refreshing the page...";
-  if (status === "server-unreachable") return "Unable to reach the server. Please check the API server or CORS configuration.";
+  if (status === "server-unreachable") return "Unable to reach the server. Please try again later.";
   return "Network connection lost. Please check your internet connection.";
 };
 
@@ -122,7 +122,7 @@ export default function NetworkStatusModal() {
 
   return (
     <Dialog open={modalState.open} handler={handleClose} size="sm">
-      <DialogHeader className="text-red-700">Connection Issue</DialogHeader>
+      <DialogHeader className="text-red-700">Alert !</DialogHeader>
       <DialogBody divider>
         <Typography className="text-sm font-medium text-gray-800">
           {modalState.message}

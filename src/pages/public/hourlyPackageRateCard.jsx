@@ -45,10 +45,17 @@ export function HourlyPackageRateCard() {
   const [tariffs, setTariffs] = useState([]);
   const [selectedZone, setSelectedZone] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [serviceAreas, setServiceAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadTariffs = useCallback(async (zone, category) => {
+    if (!zone) {
+      setTariffs([]);
+      setError('');
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const response = await ApiRequestUtils.getWithQueryParam(
@@ -68,9 +75,23 @@ export function HourlyPackageRateCard() {
     }
   }, []);
 
+  useEffect(() => {
+    const loadServiceAreas = async () => {
+      try {
+        const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, { type: 'Service Area' });
+        setServiceAreas(Array.isArray(response?.data)
+          ? response.data.filter((area) => area?.type === 'Service Area')
+          : []);
+      } catch (err) {
+        console.error('Failed to fetch service areas', err);
+      }
+    };
+    loadServiceAreas();
+  }, []);
+
   useEffect(() => { loadTariffs(selectedZone, selectedCategory); }, [selectedZone, selectedCategory, loadTariffs]);
 
-  const zoneOptions = useMemo(() => [...new Set(tariffs.flatMap((row) => asArray(row?.zone)).filter(Boolean))], [tariffs]);
+  const zoneOptions = useMemo(() => [...new Set(serviceAreas.map((area) => area?.name).filter(Boolean))], [serviceAreas]);
   const categoryOptions = useMemo(() => ['ALL', ...new Set(tariffs.flatMap((row) => asArray(row?.categories).map((category) => (
     typeof category === 'string' ? category : category?.category
   )).filter(Boolean)))], [tariffs]);
@@ -126,7 +147,10 @@ export function HourlyPackageRateCard() {
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
           {loading && <div className="p-6 text-center text-sm text-blue-gray-500">Loading rate card...</div>}
           {error && !loading && <div className="p-6 text-center text-sm text-red-500">{error}</div>}
-          {!loading && !error && !rows.length && (
+          {!loading && !error && !selectedZone && (
+            <div className="p-6 text-center text-sm text-blue-gray-500">Select a zone to view local rental tariffs.</div>
+          )}
+          {!loading && !error && selectedZone && !rows.length && (
             <div className="p-6 text-center text-sm text-blue-gray-500">No local rental tariff data available.</div>
           )}
           {!loading && !error && rows.length > 0 && (

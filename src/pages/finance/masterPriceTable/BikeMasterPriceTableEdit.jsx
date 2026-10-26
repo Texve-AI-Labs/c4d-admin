@@ -34,7 +34,6 @@ const numberField = (label) => Yup.number()
 
 const categoryPricingSchema = Yup.object().shape({
     category: Yup.string().required('Category is required'),
-    carTypes: Yup.array().of(Yup.string().required('Car Type is required')).length(1, 'Select one Car Type').required('Car Type is required'),
     pricing: Yup.object().shape({
         baseKm: numberField('Base Km'),
         baseFare: numberField('Base Fare'),
@@ -134,7 +133,7 @@ const cloneCategoryPricing = () => JSON.parse(JSON.stringify(emptyCategoryPricin
 const cloneBikeCategoryPricing = () => ({
     ...cloneCategoryPricing(),
     category: 'BIKE',
-    carTypes: ['BIKE'],
+    carTypes: ['Bike'],
 });
 const toNumber = (value) => Number(value || 0);
 const toTimeValue = (timeString) => timeString ? String(timeString).slice(0, 5) : '';
@@ -183,7 +182,7 @@ const normalizeCategoryPricings = (priceData = {}) => {
     if (Array.isArray(priceData.categoryPricings) && priceData.categoryPricings.length > 0) {
         return priceData.categoryPricings.map((item) => ({
             category: item.category || '',
-            carTypes: parseMaybeJson(item.carTypes, []).map(normalizeCarType),
+            carTypes: ['Bike'],
             pricing: normalizePricing(parseMaybeJson(item.pricing, {})),
         }));
     }
@@ -191,7 +190,7 @@ const normalizeCategoryPricings = (priceData = {}) => {
     if (priceData.category || priceData.pricing) {
         return [{
             category: priceData.category || '',
-            carTypes: parseMaybeJson(priceData.carTypes, []).map(normalizeCarType),
+            carTypes: ['Bike'],
             pricing: normalizePricing(parseMaybeJson(priceData.pricing, {})),
         }];
     }
@@ -201,7 +200,7 @@ const normalizeCategoryPricings = (priceData = {}) => {
 
 const buildCategoryPricingsPayload = (categoryPricings) => categoryPricings.map((categoryPricing) => ({
     category: categoryPricing.category,
-    carTypes: categoryPricing.carTypes,
+    carTypes: ['Bike'],
     pricing: {
         baseKm: toNumber(categoryPricing.pricing.baseKm),
         baseFare: toNumber(categoryPricing.pricing.baseFare),
@@ -390,17 +389,6 @@ const BikeMasterPriceTableEdit = () => {
                                                         className="w-full"
                                                     />
                                                     <ErrorMessage name={`categoryPricings.${index}.category`} component="div" className="text-red-500 text-sm" />
-                                                </div>
-                                                <div>
-                                                    <label className="text-sm font-medium text-gray-700">Car Types</label>
-                                                    <Select
-                                                        options={CAR_TYPE_OPTIONS}
-                                                        value={CAR_TYPE_OPTIONS.find((option) => categoryPricing.carTypes.includes(option.value)) || null}
-                                                        onChange={(selectedOption) => setFieldValue(`categoryPricings.${index}.carTypes`, selectedOption ? [selectedOption.value] : [])}
-                                                        placeholder="Select Car Type"
-                                                        className="w-full"
-                                                    />
-                                                    <ErrorMessage name={`categoryPricings.${index}.carTypes`} component="div" className="text-red-500 text-sm" />
                                                 </div>
                                                 {pricingNumberFields.map(([label, name]) => (
                                                     <div key={name}>

@@ -12,7 +12,7 @@ const getNetworkErrorMessage = () => {
     return "Network connection lost. Please check your internet connection.";
   }
 
-  return "Unable to reach the server. Please check the API server or CORS configuration.";
+  return "Unable to reach the server. Please try again later.";
 };
 
 const getNetworkErrorStatus = () => {
