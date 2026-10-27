@@ -607,7 +607,7 @@ const Booking = (props) => {
         }
     }, [params, navigate, location.pathname]);
 
-const getPackageListDetails = useCallback(async (serviceType, zone) => {
+const getPackageListDetails = useCallback(async (serviceType, zone, requestedPackageType, requestedBookingType) => {
   try {
     if (serviceType === 'DRIVER') setDriverPackageNotice(null);
     // console.log('Fetching packages with:', { serviceType, zone });
@@ -641,7 +641,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
       return;
     }
 
-    const packageType = currentPackageType || 'Local';
+    const packageType = requestedPackageType || currentPackageType || 'Local';
     const isDriverService = mappedServiceType === 'DRIVER';
     if (isDriverService && (!pickupLocation?.lat || !pickupLocation?.lng || !dropLocation?.lat || !dropLocation?.lng)) {
     //   console.log('[DRIVER PACKAGE LOOKUP] skipped, missing coordinates:', {
@@ -653,7 +653,7 @@ const getPackageListDetails = useCallback(async (serviceType, zone) => {
     }
     const driverPackagePayload = {
       serviceType: 'DRIVER',
-      bookingType: packageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY',
+      bookingType: requestedBookingType || (packageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY'),
       packageType: packageType.toUpperCase(),
       pickupLat: pickupLocation?.lat,
       pickupLong: pickupLocation?.lng,
@@ -930,7 +930,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
             : (values?.packageTypeSelected || 'Outstation');
         const driverBookingType = isDriverService
-            ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+            ? (String(values?.tripType || '').toUpperCase().replace(/\s+/g, ' ') === 'ROUND TRIP' ? 'ROUND TRIP' : 'DROP ONLY')
             : (values?.tripType ? values.tripType.toUpperCase() : '');
 
         const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
@@ -1095,7 +1095,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
             ? (val?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
             : (val?.packageTypeSelected || 'Local');
         const driverBookingType = isDriverService
-            ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+            ? (String(val?.tripType || '').toUpperCase().replace(/\s+/g, ' ') === 'ROUND TRIP' ? 'ROUND TRIP' : 'DROP ONLY')
             : (val?.tripType ? val.tripType.toUpperCase() : '');
 
         const selectedCategory = categoryOptions.find((item) => item.id === Number(val?.categoryId));
@@ -2432,6 +2432,7 @@ const priceDetailsCardClass = isPeakHour
                             setBookingData(null);
                             setBookingView(false);
                             setEditBookingView(false);
+                            setDriverPackageNotice(null);
                             setRentalRoundTripEstimatedDurationText('');
                             setRentalRoundTripMinReturnAt('');
                             setIsOpen(true);
@@ -2462,11 +2463,15 @@ const priceDetailsCardClass = isPeakHour
                                             () => {
                                                 setIsOpen(false);
                                                 onConfirmBooking();
+                                                setBookingData(null);
                                                 setSelectedCustomer(0);
                                                 setEditBookingView();
                                                 setEditBooking();
                                                 setQuoteDetails();
                                                 setQuoteMeta(null);
+                                                setDriverPackageNotice(null);
+                                                setRentalRoundTripEstimatedDurationText('');
+                                                setRentalRoundTripMinReturnAt('');
                                                 setSearchBookingId('');
                                                 setShowQuickCreateCustomer(false);
                                             }
@@ -2758,6 +2763,7 @@ const priceDetailsCardClass = isPeakHour
                                                                     setCurrentServiceType(selectedValue);
                                                                     setQuoteDetails(null);
                                                                     setQuoteMeta(null);
+                                                                    setDriverPackageNotice(null);
                                                                     resetPackageValues(setFieldValue, selectedValue);
                                                                     if (selectedValue === 'PARCEL') {
                                                                         setFieldValue('rideTime', moment().format('HH:mm'), false);
@@ -2810,15 +2816,18 @@ const priceDetailsCardClass = isPeakHour
                                                                 color={values.packageTypeSelected === 'Local' ? 'blue' : 'gray'}
                                                                 onClick={() => {
                                                                     if (values.packageTypeSelected !== 'Local') {
+                                                                        setDriverPackageNotice(null);
                                                                         setFieldValue('packageTypeSelected', 'Local');
                                                                         setCurrentPackageType('Local');
+                                                                        const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
+                                                                        getPackageListDetails('DRIVER', selectedArea?.name || '', 'Local', values.tripType === 'Round Trip' ? 'ROUND TRIP' : 'DROP ONLY');
                                                                         setFieldValue('packageSelected', '');
                                                                         setFieldValue('categoryId', '');
                                                                         setFieldValue('category', '');
                                                                         setRange({});
                                                                         setFieldValue('fromDate', '');
                                                                         setFieldValue('toDate', '');
-                                                                        if (values.serviceType === 'DRIVER' && values.packageSelected === 'Local') {
+                                                                        if (values.serviceType === 'DRIVER') {
                                                                             setFieldValue('tripType', 'Drop Only');
                                                                         }
                                                                     }
@@ -2833,15 +2842,18 @@ const priceDetailsCardClass = isPeakHour
                                                                     color={values.packageTypeSelected === 'Outstation' ? 'blue' : 'gray'}
                                                                     onClick={() => {
                                                                         if (values.packageTypeSelected !== 'Outstation') {
+                                                                            setDriverPackageNotice(null);
                                                                             setFieldValue('packageTypeSelected', 'Outstation');
                                                                             setCurrentPackageType('Outstation');
+                                                                        const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
+                                                                        getPackageListDetails('DRIVER', selectedArea?.name || '', 'Outstation', values.tripType === 'Drop Only' ? 'DROP ONLY' : 'ROUND TRIP');
                                                                             setFieldValue('packageSelected', '');
                                                                             setFieldValue('categoryId', '');
                                                                             setFieldValue('category', '');
                                                                             setRange({});
                                                                             setFieldValue('fromDate', '');
                                                                             setFieldValue('toDate', '');
-                                                                            if (values.serviceType === 'DRIVER' && values.packageSelected === 'Outstation') {
+                                                                            if (values.serviceType === 'DRIVER') {
                                                                                 setFieldValue('tripType', 'Round Trip');
                                                                             }
                                                                         }
@@ -2862,7 +2874,10 @@ const priceDetailsCardClass = isPeakHour
                                                                             <Button
                                                                                 color={values.tripType === 'Drop Only' ? 'blue' : 'gray'}
                                                                                 onClick={() => {
+                                                                                    setDriverPackageNotice(null);
                                                                                     setFieldValue('tripType', 'Drop Only');
+                                                                                    const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
+                                                                                    getPackageListDetails('DRIVER', selectedArea?.name || '', values.packageTypeSelected, 'DROP ONLY');
                                                                                     if (values.serviceType === 'RENTAL') {
                                                                                         setFieldValue('categoryId', '');
                                                                                         setFieldValue('category', '');
@@ -2877,7 +2892,10 @@ const priceDetailsCardClass = isPeakHour
                                                                         <Button
                                                                             color={values.tripType === 'Round Trip' ? 'blue' : 'gray'}
                                                                             onClick={() => {
+                                                                                setDriverPackageNotice(null);
                                                                                 setFieldValue('tripType', 'Round Trip');
+                                                                                const selectedArea = serviceAreas.find((area) => area.id === parseInt(selectedAreaId));
+                                                                                getPackageListDetails('DRIVER', selectedArea?.name || '', values.packageTypeSelected, 'ROUND TRIP');
                                                                                 if (values.serviceType === 'RENTAL') {
                                                                                     setFieldValue('categoryId', '');
                                                                                     setFieldValue('category', '');

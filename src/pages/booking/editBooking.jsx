@@ -565,7 +565,7 @@ const EditBooking = (props) => {
         }
     };
 
-    const getPackageListDetails = useCallback(async (serviceType, zone) => {
+    const getPackageListDetails = useCallback(async (serviceType, zone, requestedPackageType, requestedBookingType) => {
         try {
             if (serviceType === 'DRIVER') setDriverPackageNotice(null);
             setPackagesLoading(true);
@@ -592,7 +592,7 @@ const EditBooking = (props) => {
             }
 
             const isDriverService = mappedServiceType === 'DRIVER';
-            const packageType = currentPackageType || bookingData?.packageType || 'Local';
+            const packageType = requestedPackageType || currentPackageType || bookingData?.packageType || 'Local';
             const pickupLat = pickupLocation?.lat || bookingData?.pickupLat;
             const pickupLong = pickupLocation?.lng || bookingData?.pickupLong;
             const dropLat = dropLocation?.lat || bookingData?.dropLat;
@@ -610,7 +610,7 @@ const EditBooking = (props) => {
 
             const driverPackagePayload = {
                 serviceType: 'DRIVER',
-                bookingType: packageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY',
+                bookingType: requestedBookingType || (packageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY'),
                 packageType: packageType.toUpperCase(),
                 pickupLat,
                 pickupLong,
@@ -795,7 +795,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
         ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
         : (values?.packageTypeSelected || 'Outstation');
     const driverBookingType = isDriverService
-        ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+        ? (String(values?.tripType || '').toUpperCase().replace(/\s+/g, ' ') === 'ROUND TRIP' ? 'ROUND TRIP' : 'DROP ONLY')
         : (values?.tripType ? values.tripType.toUpperCase() : '');
 
     const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
@@ -991,7 +991,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                 ? (values?.packageTypeSelected === 'Outstation' ? 'Outstation' : 'Local')
                 : (values?.packageTypeSelected || 'Local');
             const driverBookingType = isDriverService
-                ? (driverPackageType === 'Outstation' ? 'ROUND TRIP' : 'DROP ONLY')
+                ? (String(values?.tripType || '').toUpperCase().replace(/\s+/g, ' ') === 'ROUND TRIP' ? 'ROUND TRIP' : 'DROP ONLY')
                 : (values?.tripType ? values.tripType.toUpperCase() : '');
 
             const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
@@ -1721,6 +1721,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                         if (values.packageTypeSelected !== 'Local') {
                                                             setFieldValue('packageTypeSelected', 'Local');
                                                             setCurrentPackageType('Local');
+                                                            const zone = bookingData?.zone || '';
+                                                            getPackageListDetails('DRIVER', zone, 'Local', values.tripType === 'Round Trip' ? 'ROUND TRIP' : 'DROP ONLY');
                                                             setFieldValue('packageSelected', '');
                                                             setFieldValue('categoryId', '');
                                                             setFieldValue('category', '');
@@ -1739,6 +1741,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                         if (values.packageTypeSelected !== 'Outstation') {
                                                             setFieldValue('packageTypeSelected', 'Outstation');
                                                             setCurrentPackageType('Outstation');
+                                                            const zone = bookingData?.zone || '';
+                                                            getPackageListDetails('DRIVER', zone, 'Outstation', values.tripType === 'Drop Only' ? 'DROP ONLY' : 'ROUND TRIP');
                                                             setFieldValue('packageSelected', '');
                                                             setFieldValue('categoryId', '');
                                                             setFieldValue('category', '');
@@ -1757,7 +1761,10 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                                     {(values?.serviceType !== 'RENTAL') && (<Button
                                                         color={values.tripType === 'Drop Only' ? 'blue' : 'gray'}
-                                                        onClick={() => setFieldValue('tripType', 'Drop Only')}
+                                                        onClick={() => {
+                                                            setFieldValue('tripType', 'Drop Only');
+                                                            getPackageListDetails('DRIVER', bookingData?.zone || '', values.packageTypeSelected, 'DROP ONLY');
+                                                        }}
                                                         variant={values?.tripType === 'Drop Only' ? 'filled' : 'outlined'}
                                                         disabled={values.serviceType !== 'DRIVER'}
                                                     >
@@ -1765,7 +1772,10 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                     </Button>)}
                                                     <Button
                                                         color={values.tripType === 'Round Trip' ? 'blue' : 'gray'}
-                                                        onClick={() => setFieldValue('tripType', 'Round Trip')}
+                                                        onClick={() => {
+                                                            setFieldValue('tripType', 'Round Trip');
+                                                            getPackageListDetails('DRIVER', bookingData?.zone || '', values.packageTypeSelected, 'ROUND TRIP');
+                                                        }}
                                                         variant={values?.tripType === 'Round Trip' ? 'filled' : 'outlined'}
                                                         disabled={values.serviceType !== 'DRIVER'}
                                                     >
