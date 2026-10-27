@@ -2,10 +2,35 @@ import React, { useEffect, useMemo, useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Card, CardBody, CardHeader, Spinner, Typography } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
+import { Checkbox, Popover, PopoverHandler, PopoverContent } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import FinanceSubscriptionTabs from "@/pages/finance/components/FinanceSubscriptionTabs";
 
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+    <PopoverHandler>
+      <button type="button" className="flex items-center cursor-pointer">
+        <Typography variant="small" className="mr-1 text-[11px] font-bold uppercase text-black">{label}</Typography>
+        <FaFilter className="text-black text-xs" />
+      </button>
+    </PopoverHandler>
+    <PopoverContent className="p-2">
+      {options.map((option) => (
+        <div key={option.value} className="mb-2 flex items-center">
+          <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+          <Typography color="blue-gray" className="ml-2 font-medium">
+            {option.label}
+          </Typography>
+        </div>
+      ))}
+    </PopoverContent>
+    </Popover>
+  );
+}
 const SERVICE_TYPE_LABELS = {
   DRIVER: "Driver",
   RIDES_RENTAL_CABS: "Rides/Rental Cabs",
@@ -17,10 +42,15 @@ export default function JoiningBonusView() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [allRows, setAllRows] = useState([]);
-  const [serviceFilter, setServiceFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [serviceFilter, setServiceFilter] = useState(() => sessionStorage.getItem("joiningBonusServiceFilter") || "");
+  const [statusFilter, setStatusFilter] = useState(() => sessionStorage.getItem("joiningBonusStatusFilter") || "");
   const [tabLoadingPath, setTabLoadingPath] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem("joiningBonusServiceFilter", serviceFilter);
+    sessionStorage.setItem("joiningBonusStatusFilter", statusFilter);
+  }, [serviceFilter, statusFilter]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,50 +104,6 @@ export default function JoiningBonusView() {
     <div className="p-4 bg-white rounded-xl sm:p-6 lg:p-8">
       <div className="mb-8 flex flex-col gap-12">
         <FinanceSubscriptionTabs activePath="/dashboard/finance/joining-bonus" loadingPath={tabLoadingPath} onTabClick={handleTabClick} />
-        <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-grow">
-              <div className="relative flex-grow max-w-[320px]">
-                <input
-                  type="text"
-                  className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Search Joining Bonus..."
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
-                </div>
-              </div>
-              <select
-                value={serviceFilter}
-                onChange={(e) => setServiceFilter(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">All Service Types</option>
-                <option value="DRIVER">Driver</option>
-                <option value="RIDES_RENTAL_CABS">Rides/Rental Cabs</option>
-                <option value="AUTO">Autos</option>
-                <option value="BIKE">Bikes</option>
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="">All Status</option>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">In Active</option>
-              </select>
-            </div>
-            <button
-              onClick={() => navigate("/dashboard/finance/joining-bonus/add")}
-              className={`ml-4 px-4 py-2 rounded-xl hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${ColorStyles.addButtonColor}`}
-            >
-              Add new
-            </button>
-          </div>
-        </div>
-
         <Card>
           {loading ? (
             <div className="flex min-h-[240px] items-center justify-center">
@@ -128,10 +114,11 @@ export default function JoiningBonusView() {
             </div>
           ) : (
             <>
-              <CardHeader variant="gradient" className={`mb-8 p-6 flex-1 justify-between items-center ${ColorStyles.bgColor}`}>
-                <Typography variant="h6" color="white">
-                  Joining Bonus List
-                </Typography>
+              <CardHeader variant="gradient" className={`mb-8 rounded-xl p-6 ${ColorStyles.bgColor}`}>
+                <div className="flex items-center justify-between gap-4">
+                  <Typography variant="h6" color="white">Joining Bonus List</Typography>
+                  <button onClick={() => navigate("/dashboard/finance/joining-bonus/add")} className="rounded-xl bg-white px-4 py-2 text-black">Add new</button>
+                </div>
               </CardHeader>
               <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
                 <table className="w-full min-w-full table-auto">
@@ -139,9 +126,29 @@ export default function JoiningBonusView() {
                     <tr>
                       {["Service Type", "Plan Group", "Zone", "Status", "Actions"].map((el) => (
                         <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap">
-                          <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
+                          {el === "Service Type" ? 
+                          <FilterPopover label={el} 
+                          value={serviceFilter} 
+                          options={[
+                            {value:"",label:"All Service Types"},
+                            {value:"DRIVER",label:"Driver"},
+                            {value:"RIDES_RENTAL_CABS",label:"Rides/Rental Cabs"},
+                            {value:"AUTO",label:"Auto"},{value:"BIKE",label:"Bike"}]} 
+                            onChange={setServiceFilter} 
+                            /> : 
+                            el === "Status" ? 
+                            <FilterPopover label={el} 
+                            value={statusFilter} 
+                            options={[
+                              {value:"",label:"All Status"},
+                              {value:"ACTIVE",label:"Active"},
+                              {value:"INACTIVE",label:"Inactive"}]} 
+                              onChange={setStatusFilter} 
+                              /> : 
+                              <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
                             {el}
                           </Typography>
+                          }
                         </th>
                       ))}
                     </tr>

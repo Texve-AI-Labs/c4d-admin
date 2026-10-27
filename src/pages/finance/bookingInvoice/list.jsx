@@ -1,4 +1,5 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import useBillingListSearch from "../components/useBillingListSearch.js";
+import BillingListSearch from "../components/BillingListSearch.jsx";
 import { useState, useEffect } from "react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles, BOOKING_STATUS } from "@/utils/constants";
@@ -20,92 +21,44 @@ import { FaFilter } from 'react-icons/fa';
 
 export function BookingInvoiceList() {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
+    const { searchQuery, setSearchQuery, pagination, setPagination, requestVersion, runSearch, clearSearch } = useBillingListSearch('bookingInvoiceBillingSearch', { pageSize: 15 });
     const [invoicesList, setInvoicesList] = useState([]);
     const [loading, setLoading] = useState(false);
-     const [bookingNumber, setBookingNumber] = useState('');
 
 
-    const [pagination, setPagination] = useState({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 15,
-        bookingNumber: '',
-    });
 
-   
-    const fetchEndedBookingsForInvoice = async (page = 1, search = '', showLoader = false) => {
-        if (showLoader) setLoading(true);
-
-        try {
-            const filterType = {
-                status: [BOOKING_STATUS.ENDED],    
-            };
-
-            const queryParams = {
-                page,
-                limit: pagination.itemsPerPage,
-                bookingNumber: search.trim(),
-                filterType: JSON.stringify(filterType),
-               
-            };
-
-            const response = await ApiRequestUtils.getWithQueryParam(
-                API_ROUTES.GET_BOOKINGS,
-                queryParams
-            );
-
-            if (response?.success) {
-                
-                const endedBookings = (response.data || []).filter(booking =>
-                    booking.status === BOOKING_STATUS.ENDED ||
-                    booking.status === 'COMPLETED'
-                    
-
-                );
-
-                setInvoicesList(endedBookings);
-                setPagination(prev => ({
-                    ...prev,
-                    currentPage: page,
+    useEffect(() => {
+        let active = true;
+        setLoading(true);
+        const fetchBookings = async () => {
+            try {
+                const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_BOOKINGS, {
+                    page: pagination.currentPage,
+                    limit: pagination.itemsPerPage,
+                    bookingNumber: pagination.search,
+                    filterType: JSON.stringify({ status: [BOOKING_STATUS.ENDED] }),
+                });
+                if (!active) return;
+                const rows = response?.success ? (response.data || []).filter((booking) => booking.status === BOOKING_STATUS.ENDED || booking.status === 'COMPLETED') : [];
+                setInvoicesList(rows);
+                setPagination((previous) => ({
+                    ...previous,
                     totalPages: response?.pagination?.totalPages || 1,
                     totalItems: response?.pagination?.totalItems || 0,
-                    itemsPerPage: response?.pagination?.itemsPerPage || 15,
-                    bookingNumber: search.trim(),
+                    itemsPerPage: response?.pagination?.itemsPerPage || previous.itemsPerPage,
                 }));
-            } else {
-                setInvoicesList([]);
+            } catch (error) {
+                if (active) {
+                    console.error("Error fetching bookings for invoice:", error);
+                    setInvoicesList([]);
+                }
+            } finally {
+                if (active) setLoading(false);
             }
-        } catch (error) {
-            console.error("Error fetching ended bookings for invoice:", error);
-            setInvoicesList([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Debounced search
-    const debounce = (func, delay) => {
-        let timeoutId;
-        return (...args) => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => func(...args), delay);
         };
-    };
-
-    const debouncedFetch = debounce((search) => {
-        setPagination(prev => ({ ...prev, currentPage: 1, search }));
-        fetchEndedBookingsForInvoice(1, search, true);
-    }, 600);
-
-    useEffect(() => {
-        fetchEndedBookingsForInvoice(pagination.currentPage, pagination.search, true);
-    }, [pagination.currentPage]);
-
-    useEffect(() => {
-        debouncedFetch(bookingNumber);
-    }, [bookingNumber]);
+        fetchBookings();
+        return () => { active = false; };
+    }, [pagination.currentPage, pagination.search, requestVersion]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= pagination.totalPages) {
@@ -142,20 +95,14 @@ export function BookingInvoiceList() {
     return (
         <div className="mb-8 mt-2 flex flex-col gap-12">
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div className="relative flex-grow max-w-[500px]">
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="Search Booking Number"
-                            value={bookingNumber}
-                           onChange={(e) => setBookingNumber(e.target.value)}
-                        />
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
-                        </div>
-                    </div>
-                </div>
+                <BillingListSearch
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onSearch={runSearch}
+                    onClear={clearSearch}
+                    canClear={Boolean(searchQuery || pagination.search)}
+                    placeholder="Search Booking Number"
+                />
             </div>
 
             <Card>

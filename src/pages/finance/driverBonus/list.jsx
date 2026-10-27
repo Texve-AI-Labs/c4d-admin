@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, CardHeader, Typography, Button, Spinner, Chip } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
+import { Checkbox, Popover, PopoverHandler, PopoverContent } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import moment from "moment";
 import Swal from "sweetalert2";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -8,17 +10,40 @@ import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { fetchZoneOptions } from "@/pages/marketing/DriverIncentive/zoneOptions";
 import { getPriorityLabel, RATE_TYPES, SERVICE_TYPES } from "./utils";
 
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+      <PopoverHandler>
+        <button type="button" className="flex items-center cursor-pointer">
+          <Typography variant="small" className="mr-1 text-[11px] font-bold uppercase text-black">
+            {label}
+          </Typography>
+          <FaFilter className="text-black text-xs" />
+        </button>
+      </PopoverHandler>
+      <PopoverContent className="p-2">
+        {options.map((option) => (
+          <div key={option.value} className="mb-2 flex items-center">
+            <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+            <Typography color="blue-gray" className="ml-2 font-medium">{option.label}</Typography>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
 const getRuleId = (item = {}) => item?.ruleId || item?.id || item?._id;
 
 const DriverBonusList = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [serviceTypeFilter, setServiceTypeFilter] = useState("ALL");
-  const [zoneFilter, setZoneFilter] = useState("");
-  const [rateTypeFilter, setRateTypeFilter] = useState("ALL");
-    const [labelFilter, setLabelFilter] = useState("ALL");
-  const [isActiveFilter, setIsActiveFilter] = useState("true");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState(() => sessionStorage.getItem("driverBonusServiceFilter") || "ALL");
+  const [zoneFilter, setZoneFilter] = useState(() => sessionStorage.getItem("driverBonusZoneFilter") || "");
+  const [rateTypeFilter, setRateTypeFilter] = useState(() => sessionStorage.getItem("driverBonusRateFilter") || "ALL");
+  const [labelFilter, setLabelFilter] = useState(() => sessionStorage.getItem("driverBonusLabelFilter") || "ALL");
+  const [isActiveFilter, setIsActiveFilter] = useState(() => sessionStorage.getItem("driverBonusStatusFilter") || "true");
   const [zoneOptions, setZoneOptions] = useState([{ label: "ALL", value: "" }]);
 
   const fetchRules = async () => {
@@ -45,6 +70,14 @@ const DriverBonusList = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    sessionStorage.setItem("driverBonusServiceFilter", serviceTypeFilter);
+    sessionStorage.setItem("driverBonusZoneFilter", zoneFilter);
+    sessionStorage.setItem("driverBonusRateFilter", rateTypeFilter);
+    sessionStorage.setItem("driverBonusLabelFilter", labelFilter);
+    sessionStorage.setItem("driverBonusStatusFilter", isActiveFilter);
+  }, [serviceTypeFilter, zoneFilter, rateTypeFilter, labelFilter, isActiveFilter]);
 
   useEffect(() => {
     fetchRules();
@@ -113,90 +146,12 @@ const DriverBonusList = () => {
 
   return (
     <div className="mb-8 mt-8 flex flex-col gap-6">
-      <div className="rounded-2xl border border-blue-gray-50 bg-white p-4 shadow-sm mb-2">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
-            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-              Service Type
-              <select
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
-                value={serviceTypeFilter}
-                onChange={(e) => setServiceTypeFilter(e.target.value)}
-              >
-            {SERVICE_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-              Zone
-              <select
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
-                value={zoneFilter}
-                onChange={(e) => setZoneFilter(e.target.value)}
-              >
-            {zoneOptions.map((zone) => (
-              <option key={zone.label} value={zone.value}>{zone.label}</option>
-            ))}
-          </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-              Rate Type
-              <select
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
-                value={rateTypeFilter}
-                onChange={(e) => setRateTypeFilter(e.target.value)}
-              >
-            <option value="ALL">ALL</option>
-            {RATE_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-              Label
-              <select
-                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-primary"
-                value={labelFilter}
-                onChange={(e) => setLabelFilter(e.target.value)}
-              >
-                <option value="ALL">ALL</option>
-                {["High", "Medium", "Low", "Custom"].map((label) => (
-                  <option key={label} value={label.toUpperCase()}>{label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="flex flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-              Status
-              <div className="inline-flex overflow-hidden rounded-lg border border-gray-300 bg-white">
-                <button
-                  type="button"
-                  className={`px-4 py-2 text-sm font-semibold transition-colors ${isActiveFilter === "true" ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-                  onClick={() => setIsActiveFilter("true")}
-                >
-                  Active
-                </button>
-                <button
-                  type="button"
-                  className={`border-l border-gray-300 px-4 py-2 text-sm font-semibold transition-colors ${isActiveFilter === "false" ? "bg-primary text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
-                  onClick={() => setIsActiveFilter("false")}
-                >
-                  Inactive
-                </button>
-              </div>
-            </div>
-            <Button size="sm" className={`rounded-xl px-5 py-3 ${ColorStyles.continueButtonColor}`} onClick={() => navigate("/dashboard/finance/driver-bonus/add")}>
-              Add Rule
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <Card>
         <CardHeader variant="gradient" className={`mb-4 rounded-xl p-6 ${ColorStyles.bgColor}`}>
-          <Typography variant="h6" color="white">Driver KM Incentive Rules</Typography>
+          <div className="flex items-center justify-between gap-4">
+            <Typography variant="h6" color="white">Driver KM Incentive Rules</Typography>
+            <Button size="sm" className="rounded-xl bg-white px-4 py-2 text-black shadow-none hover:shadow-none" onClick={() => navigate("/dashboard/finance/driver-bonus/add")}>Add Rule</Button>
+          </div>
         </CardHeader>
         <CardBody className="px-0 pt-0">
           {loading ? (
@@ -206,15 +161,15 @@ const DriverBonusList = () => {
               <table className="w-full min-w-[1300px] table-auto">
                 <thead>
                   <tr>
-                    <th className="px-5 py-3 text-left">Service</th>
-                    <th className="px-5 py-3 text-left">Zone</th>
+                    <th className="px-5 py-3 text-left"><FilterPopover label="Service" value={serviceTypeFilter} options={SERVICE_TYPES.map((value) => ({ value, label: value }))} onChange={setServiceTypeFilter} /></th>
+                    <th className="px-5 py-3 text-left"><FilterPopover label="Zone" value={zoneFilter} options={zoneOptions} onChange={setZoneFilter} /></th>
                     <th className="px-5 py-3 text-left">Rate Type</th>
                     <th className="px-5 py-3 text-left">Rate / Amount</th>
                     <th className="px-5 py-3 text-left">KM Range</th>
                     <th className="px-5 py-3 text-left">Start</th>
                     <th className="px-5 py-3 text-left">End</th>
                     <th className="px-5 py-3 text-left">Priority</th>
-                    <th className="px-5 py-3 text-left">Status</th>
+                    <th className="px-5 py-3 text-left"><FilterPopover label="Status" value={isActiveFilter} options={[{value:"true",label:"Active"},{value:"false",label:"Inactive"}]} onChange={setIsActiveFilter} /></th>
                     <th className="px-5 py-3 text-left">Actions</th>
                   </tr>
                 </thead>

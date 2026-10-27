@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES, ColorStyles } from '@/utils/constants';
 import { useNavigate } from 'react-router-dom';
 
-const CustomerSearch = ({ onSearch }) => {
+const CustomerSearch = ({ onSearch, initialSearch = '' }) => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -21,7 +21,7 @@ const CustomerSearch = ({ onSearch }) => {
     fuelType: '',
     transmissionType: ''
   });
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
 
 
   const handleInputChange = (e) => {
@@ -71,22 +71,51 @@ const CustomerSearch = ({ onSearch }) => {
     }
   };
 
-  useEffect(() => {
+  const handleSearch = () => {
     onSearch(searchQuery.trim());
-  }, [searchQuery]);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    onSearch('');
+  };
+
   return (
-    <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
+    <div className="p-0">
       <div className="flex items-center justify-between">
-        <div className="relative flex-grow max-w-[500px]">
+        <div className="flex w-full max-w-[620px] items-center gap-2">
+          <div className="relative flex-grow">
           <input
             type="text"
             className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-transparent"
             placeholder="Search Customer"
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearch();
+            }}
+            value={searchQuery}
           />
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
           </div>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-700"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          )}
+          </div>
+          <button
+            type="button"
+            onClick={handleSearch}
+            className={`px-4 py-2 font-normal rounded-2xl ${ColorStyles.searchButtonColor} text-white`}
+          >
+            Search
+          </button>
         </div>
         <button
           onClick={() => navigate(`/dashboard/customers/add`)}
