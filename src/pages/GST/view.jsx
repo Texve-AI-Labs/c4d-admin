@@ -101,8 +101,10 @@ const GstView = () => {
   }, [location.state, activeTab]);
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <div className="flex items-center justify-end">
+    <div className="mt-8 flex flex-col gap-12">
+      <Card>
+        <CardHeader className="mb-8 p-6 flex justify-between items-center bg-primary">
+          <Typography variant="h6" color="white">Settings List</Typography>
         {!isLuggagePolicy && (!isDistanceRule || gstList.length === 0) && (!isAcceptWindow || (!loading && !listError && activeTab.key === ACCEPT_WINDOW_TYPE && gstList.length === 0)) && (
         <button
           onClick={() =>
@@ -113,21 +115,14 @@ const GstView = () => {
                 ? "/dashboard/finance/driver-feedback/add"
                 : isDistanceRule
                   ? "/dashboard/finance/distance-rule/add"
-                // : isLuggagePolicy
-                //   ? "/dashboard/finance/luggage-policy/add"
                 : "/dashboard/finance/GST/add"
             )
           }
-          className="ml-4 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-700"
+          className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-gray-100"
         >
           Add new
         </button>
         )}
-      </div>
-
-      <Card>
-  <CardHeader className="mb-8 p-6 flex justify-between items-center bg-primary">
-          <Typography variant="h6" color="white">Settings  List</Typography>
         </CardHeader>
 
         <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
@@ -165,8 +160,8 @@ const GstView = () => {
             <table className="w-full table-auto text-sm">
               <thead>
                 <tr className="bg-primary text-white">
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Service Type</th>
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Name</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Service Type</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Name</th>
                   {/* {!isDriverFeedback && !isLuggagePolicy && !isAcceptWindow && (
                   <th className='py-3 px-3 align-top text-left'>Customer</th>
                   )}
@@ -174,24 +169,24 @@ const GstView = () => {
                   <th className='py-3 px-3 align-top text-left'>Driver</th>
                   )} */}
                   {!isDistanceRule && (
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Description</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Description</th>
                   )}
                   {isDistanceRule ? (
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Default Threshold</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Default Threshold</th>
                   ) : !isDriverFeedback && !isLuggagePolicy && !isAcceptWindow && (
                   <th className="py-3 px-3 text-left align-top whitespace-normal">Total TAX (%)</th>
                   )}
                   {isDistanceRule && (
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Service Area Rules</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Service Area Rules</th>
                   )}
                   {isLuggagePolicy && POLICY_CATEGORIES.map(({ category }) => (
-                    <th key={category} className="py-3 px-3 text-left align-top whitespace-normal">{category}<span className="block text-xs font-normal">Seats / Luggage</span></th>
+                    <th key={category} className="py-3 px-3 text-left align-top whitespace-nowrap">{category}<span className="block text-xs font-normal">Seats / Luggage</span></th>
                   ))}
                   {isAcceptWindow && ["Default Minutes", "Service Type Minutes"].map((label) => (
-                    <th key={label} className="py-3 px-3 text-left align-top whitespace-normal">{label}</th>
+                    <th key={label} className="py-3 px-3 text-left align-top whitespace-nowrap">{label}</th>
                   ))}
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Status</th>
-                  <th className="py-3 px-3 text-left align-top whitespace-normal">Actions</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Status</th>
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Actions</th>
 
                 </tr>
               </thead>

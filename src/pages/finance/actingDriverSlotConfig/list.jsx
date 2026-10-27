@@ -6,11 +6,16 @@ import {
   CardBody,
   CardHeader,
   Chip,
+  Checkbox,
+  Popover,
+  PopoverContent,
+  PopoverHandler,
   Option,
   Select,
   Spinner,
   Typography,
 } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -24,16 +29,57 @@ const DEFAULT_PAGINATION = {
   itemsPerPage: 10,
 };
 
+const RULE_TYPE_FILTER_OPTIONS = [
+  { value: "ALL", label: "All" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "SPECIAL_DATE", label: "Special Date" },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "ALL", label: "All" },
+  { value: "true", label: "Active" },
+  { value: "false", label: "Inactive" },
+];
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+      <PopoverHandler>
+        <button type="button" className="flex items-center cursor-pointer">
+          <Typography variant="small" className="mr-1 text-sm font-bold text-blue-gray-700">{label}</Typography>
+          <FaFilter className="text-blue-gray-700 text-xs" />
+        </button>
+      </PopoverHandler>
+      <PopoverContent className="p-2">
+        {options.map((option) => (
+          <div key={option.value} className="mb-2 flex items-center">
+            <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+            <Typography color="blue-gray" className="ml-2 font-medium">{option.label}</Typography>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ActingDriverSlotConfigList() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [zones, setZones] = useState([]);
-  const [zoneFilter, setZoneFilter] = useState("");
-  const [zoneIdFilter, setZoneIdFilter] = useState("");
-  const [ruleTypeFilter, setRuleTypeFilter] = useState("ALL");
-  const [isActiveFilter, setIsActiveFilter] = useState("ALL");
-  const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
+  const [zoneFilter, setZoneFilter] = useState(() => sessionStorage.getItem("actingDriverSlotZoneFilter") || "");
+  const [zoneIdFilter, setZoneIdFilter] = useState(() => sessionStorage.getItem("actingDriverSlotZoneIdFilter") || "");
+  const [ruleTypeFilter, setRuleTypeFilter] = useState(() => sessionStorage.getItem("actingDriverSlotRuleTypeFilter") || "ALL");
+  const [isActiveFilter, setIsActiveFilter] = useState(() => sessionStorage.getItem("actingDriverSlotStatusFilter") || "ALL");
+  const [pagination, setPagination] = useState(() => ({ ...DEFAULT_PAGINATION, currentPage: Number(sessionStorage.getItem("actingDriverSlotCurrentPage")) || 1 }));
+
+  useEffect(() => {
+    sessionStorage.setItem("actingDriverSlotZoneFilter", zoneFilter);
+    sessionStorage.setItem("actingDriverSlotZoneIdFilter", zoneIdFilter);
+    sessionStorage.setItem("actingDriverSlotRuleTypeFilter", ruleTypeFilter);
+    sessionStorage.setItem("actingDriverSlotStatusFilter", isActiveFilter);
+    sessionStorage.setItem("actingDriverSlotCurrentPage", String(pagination.currentPage));
+  }, [zoneFilter, zoneIdFilter, ruleTypeFilter, isActiveFilter, pagination.currentPage]);
 
   useEffect(() => {
     const fetchZones = async () => {
@@ -177,61 +223,12 @@ function ActingDriverSlotConfigList() {
 
   return (
     <div className="mb-8 mt-5 flex flex-col gap-6">
-      <div className="bg-white  mb-2 p-4 rounded-xl border flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <label className="flex min-w-[220px] flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-            <span className="cursor-pointer font-medium">Zone</span>
-            <Select
-              value={zoneIdFilter}
-              selected={() => zones.find((zone) => String(zone.id) === String(zoneIdFilter))?.label || "All Zones"}
-              onChange={(value) => {
-                const selected = zones.find((zone) => String(zone.id) === String(value));
-                setZoneIdFilter(value || "");
-                setZoneFilter(selected?.label || "");
-              }}
-            >
-              <Option value="">All Zones</Option>
-              {zones.map((zone) => (
-                <Option key={zone.id || zone.value} value={zone.id || zone.value}>
-                  {zone.label}
-                </Option>
-              ))}
-            </Select>
-          </label>
-
-          <label className="flex min-w-[220px] flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-            <span className="cursor-pointer font-medium">Rule Type</span>
-            <Select value={ruleTypeFilter} onChange={(value) => setRuleTypeFilter(value || "ALL")}>
-              <Option value="ALL">All</Option>
-              <Option value="WEEKLY">Weekly</Option>
-              <Option value="SPECIAL_DATE">Special Date</Option>
-            </Select>
-          </label>
-
-          <label className="flex min-w-[220px] flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-            Status
-            <Select value={isActiveFilter} onChange={(value) => setIsActiveFilter(value || "ALL")}>
-              <Option value="ALL">All</Option>
-              <Option value="true">Active</Option>
-              <Option value="false">Inactive</Option>
-            </Select>
-          </label>
-        </div>
-
-        <Button
-          size="sm"
-          className={`rounded-xl px-5 py-3 ${ColorStyles.editButton}`}
-          onClick={() => navigate("/dashboard/finance/acting-driver-slot-config/add")}
-        >
-          Add New Slot
-        </Button>
-      </div>
-
       <Card>
         <CardHeader variant="gradient" className={`mb-5 p-5 ${ColorStyles.bgColor}`}>
-          <Typography variant="h6" color="white">
-            Acting Driver Slot Config
-          </Typography>
+          <div className="flex items-center justify-between gap-4">
+            <Typography variant="h6" color="white">Acting Driver Slot Config</Typography>
+            <Button size="sm" className="rounded-xl bg-white px-5 py-3 text-black shadow-none hover:shadow-none" onClick={() => navigate("/dashboard/finance/acting-driver-slot-config/add")}>Add New Slot</Button>
+          </div>
         </CardHeader>
         <CardBody className="pt-0 px-0">
           {loading ? (
@@ -244,13 +241,37 @@ function ActingDriverSlotConfigList() {
                 <table className="w-full min-w-[1200px] table-auto">
                   <thead>
                     <tr>
-                      <th className="px-5 py-3 text-left whitespace-nowrap">Zone</th>
-                      {/* <th className="px-5 py-3 text-left whitespace-nowrap">Rule Type</th> */}
-                      <th className="px-5 py-3 text-left whitespace-nowrap">Rule Type</th>
+                      <th className="px-5 py-3 text-left whitespace-nowrap">
+                        <FilterPopover
+                          label="Zone"
+                          value={zoneFilter || "ALL"}
+                          options={[{ value: "ALL", label: "All Zones" }, ...zones.map((zone) => ({ value: zone.label, label: zone.label }))]}
+                          onChange={(value) => {
+                            const selected = zones.find((zone) => zone.label === value);
+                            setZoneFilter(value === "ALL" ? "" : value);
+                            setZoneIdFilter(value === "ALL" ? "" : selected?.id || "");
+                          }}
+                        />
+                      </th>
+                      <th className="px-5 py-3 text-left whitespace-nowrap">
+                        <FilterPopover
+                          label="Rule Type"
+                          value={ruleTypeFilter}
+                          options={RULE_TYPE_FILTER_OPTIONS}
+                          onChange={setRuleTypeFilter}
+                        />
+                      </th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Date Range</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Days / Slots</th>
                       {/* <th className="px-5 py-3 text-left whitespace-nowrap">Priority</th> */}
-                      <th className="px-5 py-3 text-left whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-left whitespace-nowrap">
+                        <FilterPopover
+                          label="Status"
+                          value={isActiveFilter}
+                          options={STATUS_FILTER_OPTIONS}
+                          onChange={setIsActiveFilter}
+                        />
+                      </th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Notes</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Created At</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Action</th>
