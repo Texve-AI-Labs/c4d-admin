@@ -114,6 +114,9 @@ export const Utils = {
 
     generateBookingTimesForDay: (date) => {
         const selectedDate = new Date(date);
+        if (Number.isNaN(selectedDate.getTime())) {
+            return [];
+        }
         const today = new Date();
 
         // Normalize dates to remove time part for comparison
@@ -624,9 +627,7 @@ export const Utils = {
                     ? 'Start date is required'
                     : moment(rideDateTime).format('YYYY-MM-DD') !== moment().format('YYYY-MM-DD')
                         ? 'Parcel pickup must be booked for today.'
-                        : moment(rideDateTime).isBefore(moment().seconds(0).milliseconds(0))
-                            ? 'Parcel pickup date & time cannot be in the past.'
-                            : undefined,
+                        : undefined,
             }
             : Utils.validateDateTimeRange({
                 startDate: rideDateTime,
