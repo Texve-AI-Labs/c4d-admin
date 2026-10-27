@@ -16,7 +16,7 @@ export const FULL_NAME_SCHEMA = Yup.string()
     .transform((value) => (typeof value === 'string' ? value.trim() : value))
     .required('Name is required')
     .min(2, 'Full Name must be at least 2 characters.')
-    .max(100, 'Full Name cannot exceed 100 characters.')
+    .max(40, 'Full Name cannot exceed 40 characters.')
     .matches(FULL_NAME_REGEX, 'Please enter a valid name');
 
 export const PASSWORD_SCHEMA = PASSWORD_RULES_SCHEMA.required('Password is required');
