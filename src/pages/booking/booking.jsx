@@ -198,6 +198,16 @@ const makeAddressPayload = (name, placeId) => ({
     ...(placeId ? { placeId } : {}),
 });
 
+const getBookingErrorStatus = (response, fallback) => {
+    const existingBookingId = response?.duplicateBooking
+        ? response?.data?.existingBooking?.id
+        : null;
+    return {
+        submit: response?.message || fallback,
+        duplicateBookingId: existingBookingId || null,
+    };
+};
+
 const getSuggestionTitle = (suggestion) => {
     if (typeof suggestion === 'string') {
         const [firstPart] = suggestion.split(',');
@@ -1487,7 +1497,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 if (refreshFn) refreshFn();
                 return true;
             } else {
-                formikBag.setStatus({ submit: data?.message || 'Failed to create parcel booking. Please try again.' });
+                formikBag.setStatus(getBookingErrorStatus(data, 'Failed to create parcel booking. Please try again.'));
                 return false;
             }
         } catch (error) {
@@ -1583,7 +1593,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             return true;
         } else {
             // console.log("Error in creating new booking");
-            formikBag.setStatus({ submit: data?.message || 'Failed to create booking. Please try again.' });
+            formikBag.setStatus(getBookingErrorStatus(data, 'Failed to create booking. Please try again.'));
             return false;
         }
     } catch (err) {
@@ -1660,7 +1670,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
                 return true;
             } else {
                 formikBag?.setStatus({
-                    submit: data?.message || 'Failed to create AUTO booking. Please check pickup date/time and try again.',
+                    ...getBookingErrorStatus(data, 'Failed to create AUTO booking. Please check pickup date/time and try again.'),
                 });
                 return false;
             }
@@ -1852,9 +1862,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             }
             return true;
         } else {
-            const submitMessage = data?.message || 'Failed to create booking. Please check pickup date/time and try again.';
+            const submitStatus = getBookingErrorStatus(data, 'Failed to create booking. Please check pickup date/time and try again.');
             formikBag?.setStatus({
-                submit: submitMessage,
+                ...submitStatus,
             });
             return false;
         }
@@ -4671,6 +4681,11 @@ const priceDetailsCardClass = isPeakHour
                                                     <div className="mt-3 p-3 rounded-xl border border-red-200 bg-red-50">
                                                         <Typography className="text-sm text-red-700">
                                                             {status?.submit || errors?.submit}
+                                                            {status?.duplicateBookingId && (
+                                                                <span className="ml-1 font-bold">
+                                                                    Existing Booking ID: {status.duplicateBookingId}.
+                                                                </span>
+                                                            )}
                                                         </Typography>
                                                     </div>
                                                 )}
