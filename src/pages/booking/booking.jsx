@@ -1986,6 +1986,9 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
             setFieldValue('packageTypeSelected', 'Outstation');
             setFieldValue('tripType', 'Drop Only');
             setFieldValue('acType', 'Ac');
+        } else if (newServiceType === 'PARCEL') {
+            // Parcel hides the time input but keeps the current time for the existing payload.
+            setFieldValue('rideTime', moment().format('HH:mm'), false);
         } else {
             setFieldValue('packageTypeSelected', '');
         }
@@ -2756,6 +2759,9 @@ const priceDetailsCardClass = isPeakHour
                                                                     setQuoteDetails(null);
                                                                     setQuoteMeta(null);
                                                                     resetPackageValues(setFieldValue, selectedValue);
+                                                                    if (selectedValue === 'PARCEL') {
+                                                                        setFieldValue('rideTime', moment().format('HH:mm'), false);
+                                                                    }
                                                                     setFieldValue('serviceType', selectedValue, true);
                                                                 }}
                                                                 disabled={!selectedAreaId}
@@ -3022,20 +3028,30 @@ const priceDetailsCardClass = isPeakHour
                                                                 Pickup Date & Time <span className='text-red-500 text-sm'>*</span>
                                                             </Typography>
                                                             <Field
-                                                                type="datetime-local"
+                                                                type={values.serviceType === 'PARCEL' ? 'date' : 'datetime-local'}
                                                                 name="rideDateTime"
                                                                 disabled={bookingStage === 1}
                                                                 className="p-2 w-full rounded-xl border-2 border-gray-300"
-                                                                value={values.rideDate && values.rideTime  ? `${values.rideDate}T${values.rideTime}` : ''}
-                                                                min={Utils.getNowDateTimeLocalInput()}
-                                                                max={values.serviceType === 'PARCEL' ? `${Utils.getTodayDateInput()}T23:59` : undefined}
+                                                                value={values.serviceType === 'PARCEL'
+                                                                    ? (values.rideDate || '')
+                                                                    : (values.rideDate && values.rideTime ? `${values.rideDate}T${values.rideTime}` : '')}
+                                                                min={values.serviceType === 'PARCEL'
+                                                                    ? Utils.getTodayDateInput()
+                                                                    : Utils.getNowDateTimeLocalInput()}
+                                                                max={values.serviceType === 'PARCEL'
+                                                                    ? Utils.getTodayDateInput()
+                                                                    : undefined}
                                                                  onClick={(e) => {
                                                                 if (e.target.showPicker) e.target.showPicker();
                                                                     }}
                                                                 onChange={(e) => {
                                                                     const selectedDateTime = e.target.value;
-                                                                    const formattedDate = moment(selectedDateTime).format('YYYY-MM-DD');
-                                                                    const formattedTime = moment(selectedDateTime).format('HH:mm');
+                                                                    const formattedDate = values.serviceType === 'PARCEL'
+                                                                        ? selectedDateTime
+                                                                        : moment(selectedDateTime).format('YYYY-MM-DD');
+                                                                    const formattedTime = values.serviceType === 'PARCEL'
+                                                                        ? moment().format('HH:mm')
+                                                                        : moment(selectedDateTime).format('HH:mm');
 
                                                                     setFieldValue('rideDate', formattedDate);
                                                                     setFieldValue('rideTime', formattedTime);
