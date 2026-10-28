@@ -739,6 +739,10 @@ const DriverAdd = () => {
                                                 <Field type="radio" disabled={!isEditable} name="transmissionType" value="Manual" className="form-radio" />
                                                 <span className="ml-2">Manual</span>
                                             </label>
+                                            <label className="inline-flex items-center">
+                                                <Field type="radio" disabled={!isEditable} name="transmissionType" value="Both" className="form-radio" />
+                                                <span className="ml-2">Both</span>
+                                            </label>
                                         </div>
                                         <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm" />
                                     </div>
