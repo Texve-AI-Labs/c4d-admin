@@ -2552,7 +2552,7 @@ const priceDetailsCardClass = isPeakHour
                                         validateOnMount={true}
                                         enableReinitialize={true}
                                     >
-                                       {({ handleSubmit, values, setFieldValue, setFieldError, isValid, dirty, handleChange, errors, status }) => {
+                                       {({ handleSubmit, values, setFieldValue, setFieldError, isValid, dirty, handleChange, errors, status, isSubmitting }) => {
                                             const getCurrentPremiumOptions = () => {
                                                 return premiumServicesMap[values?.serviceType] || [];
                                             };
@@ -4705,10 +4705,10 @@ const priceDetailsCardClass = isPeakHour
                                                         setFieldValue("submitType", "default");
                                                         handleSubmit();
                                                     }}
-                                                    disabled={!continueReady || driverContinueDisabled}
+                                                    disabled={isSubmitting || !continueReady || driverContinueDisabled}
                                                     className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                 >
-                                                    Continue
+                                                    {isSubmitting ? "Processing..." : "Continue"}
                                                 </Button>}
                                                 {(values.serviceType == 'RIDES') &&
                                                     <Button
@@ -4718,10 +4718,10 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "rides");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!continueReady || ridesContinueDisabled}
+                                                        disabled={isSubmitting || !continueReady || ridesContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
-                                                        Continue
+                                                        {isSubmitting ? "Processing..." : "Continue"}
                                                     </Button>
                                                 }
                                                 {(values.serviceType == 'AUTO') &&
@@ -4732,10 +4732,10 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "auto");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!continueReady || autoContinueDisabled}
+                                                        disabled={isSubmitting || !continueReady || autoContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
-                                                        Continue
+                                                        {isSubmitting ? "Processing..." : "Continue"}
                                                     </Button>
                                                 }
                                                 {(values.serviceType == 'PARCEL') &&
@@ -4746,10 +4746,10 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "parcel");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!continueReady || parcelContinueDisabled}
+                                                        disabled={isSubmitting || !continueReady || parcelContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
-                                                        Continue
+                                                        {isSubmitting ? "Processing..." : "Continue"}
                                                     </Button>
                                                 }
                                                 <div className='p-3'>
@@ -4761,10 +4761,10 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={!continueReady || rentalContinueDisabled}
+                                                            disabled={isSubmitting || !continueReady || rentalContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
-                                                            Continue
+                                                            {isSubmitting ? "Processing..." : "Continue"}
                                                         </Button>
                                                     }
                                                     {values.serviceType == 'RENTAL_HOURLY_PACKAGE' &&
@@ -4775,10 +4775,10 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={!continueReady || hourlyContinueDisabled}
+                                                            disabled={isSubmitting || !continueReady || hourlyContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
-                                                            Continue
+                                                            {isSubmitting ? "Processing..." : "Continue"}
                                                         </Button>
                                                     }
                                                     {values.serviceType == 'RENTAL_DROP_TAXI' &&
@@ -4789,10 +4789,10 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={!continueReady || dropTaxiContinueDisabled}
+                                                            disabled={isSubmitting || !continueReady || dropTaxiContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
-                                                            Continue
+                                                            {isSubmitting ? "Processing..." : "Continue"}
                                                         </Button>
                                                     }
                                                 </div>

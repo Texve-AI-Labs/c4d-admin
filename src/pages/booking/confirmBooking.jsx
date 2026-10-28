@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Card,
     CardBody,
@@ -180,6 +180,8 @@ const ConfirmBooking = (props) => {
     };
 
     const [loading, setLoading] = useState(true);
+    const [bookingActionLoading, setBookingActionLoading] = useState(false);
+    const bookingActionRef = useRef(false);
     const [adminStatusRefreshing, setAdminStatusRefreshing] = useState(false);
     const [adminDiscountMeta, setAdminDiscountMeta] = useState(null);
     const [vehicleImageFolder, setVehicleImageFolder] = useState(null);
@@ -745,7 +747,11 @@ const handleSaveDriverEndLocation = async () => {
 };
 
     const handleBookingAction = async (actionType) => {
+        if (bookingActionRef.current) return;
         if (actionType === BOOKING_STATUS.CANCELLED && !cancelData.cancelReason.trim()) return;
+
+        bookingActionRef.current = true;
+        setBookingActionLoading(true);
 
         const reqBody = {
             status: actionType,
@@ -768,17 +774,21 @@ const handleSaveDriverEndLocation = async () => {
                 isCancelChargeApplicable: cancelData.cancelCharge,
             }),
         };
-        const data = await ApiRequestUtils.update(
-            actionType === BOOKING_STATUS.CANCELLED
-                ? API_ROUTES.CANCEL_ADMIN_BOOKING
-                : API_ROUTES.CONFIRM_ADMIN_BOOKING,
-            reqBody
-        );
-        // console.log("CANCELBOKING", data);
+        try {
+            const data = await ApiRequestUtils.update(
+                actionType === BOOKING_STATUS.CANCELLED
+                    ? API_ROUTES.CANCEL_ADMIN_BOOKING
+                    : API_ROUTES.CONFIRM_ADMIN_BOOKING,
+                reqBody
+            );
 
-        if (data?.success) {
-            triggerParentRefresh();
-            closeOrNavigateBack();
+            if (data?.success) {
+                triggerParentRefresh();
+                closeOrNavigateBack();
+            }
+        } finally {
+            bookingActionRef.current = false;
+            setBookingActionLoading(false);
         }
     };
     const categoryPackageContext = getCategoryPackageContext(bookingDetails);
@@ -1312,8 +1322,9 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                         onClick={() => {
                             handleBookingAction(BOOKING_STATUS.CONFIRMED);
                         }}
+                        disabled={bookingActionLoading}
                     >
-                        Confirm
+                        {bookingActionLoading ? "Confirming..." : "Confirm"}
                     </Button>
                 )}
 
@@ -1589,12 +1600,13 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
         className="w-full sm:w-auto"
         onClick={() => handleBookingAction(BOOKING_STATUS.CANCELLED)}
         disabled={
+          bookingActionLoading ||
           !cancelData.cancelBy ||
           !cancelData.cancelReason?.trim() ||
           !cancelData.cancelCharge || (cancelData.cancelBy === "SUPPORT_CANCELLED" && cancelData.cancelReason === "Other Reason" && !cancelData.customReason?.trim())
         }
                         >
-                            Confirm Cancel
+                            {bookingActionLoading ? "Cancelling..." : "Confirm Cancel"}
                         </Button>
                         <Button
                             color="gray"
