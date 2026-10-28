@@ -2605,7 +2605,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                 </span>
                             </div>
                             <div className="flex flex-col-2 gap-2">
-                                <span className="text-gray-500 font-semibold">End Address:</span>
+                                <span className="text-gray-500 font-semibold">Trip End:</span>
                                 <span className="text-gray-900 font-medium">
                                     {bookingDetails?.endAddress?.name?.trim() 
                                     || bookingDetails?.endFormatAddress?.name?.trim() 
