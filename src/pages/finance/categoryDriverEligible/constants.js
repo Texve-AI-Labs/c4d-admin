@@ -117,6 +117,41 @@ export const BOOKING_TYPE_OPTIONS = [
   { value: "ROUND TRIP", label: "Round Trip" },
 ];
 
+export const RENTAL_LOCAL_CATEGORY_METADATA = {
+  ECONOMY_GO: {
+    ac: true,
+    bags: 1,
+    seats: 4,
+    models: ["Alto", "WagonR", "Celerio"],
+    bestFor: "Budget friendly rides",
+    comfort: "Comfortable",
+  },
+  COMFORT: {
+    ac: true,
+    bags: 2,
+    seats: 4,
+    models: ["Dzire", "Etios", "Aura", "Xcent"],
+    bestFor: "Small families and office travel",
+    comfort: "Comfortable",
+  },
+  PREMIUM: {
+    ac: true,
+    bags: 3,
+    seats: 5,
+    models: ["Brezza", "Creta", "Venue", "Seltos"],
+    bestFor: "Families and long-distance travel",
+    comfort: "Premium Comfort",
+  },
+  PREMIUM_XL: {
+    ac: true,
+    bags: 4,
+    seats: 6,
+    models: ["Ertiga", "Innova", "Innova Crysta"],
+    bestFor: "Large families and group travel",
+    comfort: "Spacious",
+  },
+};
+
 export const STATUS_OPTIONS = [
   { value: "ACTIVE", label: "Active" },
   { value: "INACTIVE", label: "Inactive" },
@@ -135,6 +170,7 @@ export const emptyCategoryDriverEligible = {
   label:"",
   packageType: "",
   bookingType: "",
+  metadata: {},
   displayOrder: "",
   isVisible: true,
   status: "ACTIVE",
