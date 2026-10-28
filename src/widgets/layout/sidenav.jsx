@@ -49,7 +49,7 @@ const menuItems = [
   { type: "item", name: "Calls", path: "/dashboard/exotel-calls/list", permission: "Calls" },
   { type: "item", name: "All Inquiries", path: "/dashboard/booking/list", permission: "All bookings" },
   { type: "item", name: "Vendors", path: "/dashboard/vendors/account/owner-onboarding-cab", permission: "Vendors" },
-  { type: "item", name: "Driver List", path: "/dashboard/vendors/vehicleList", permission: "Vendors" },
+  { type: "item", name: "Vehicle List", path: "/dashboard/vendors/vehicleList", permission: "Vendors" },
   { type: "item", name: "Customers", path: "/dashboard/customers", permission: "Customers" },
   { type: "item", name: "Finance", path: "/dashboard/finance/invoice", permission: "Finance"},
   { type: "item", name: "Driver Engagement", path: "/dashboard/driverengagement", permission: "Driver Engagement" },
@@ -256,7 +256,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
           currentPath.startsWith("/dashboard/doc-verification") || 
           currentPath.startsWith("/dashboard/vendors/driver-return-trips")
         );
-      case "Driver List":
+      case "Vehicle List":
         return (
           currentPath.startsWith("/dashboard/vendors/vehiclelist") ||
           currentPath.startsWith("/dashboard/vendors/account/allvehicles") ||
@@ -444,7 +444,7 @@ export function Sidenav({ brandImg, brandName, routes, permissions = [] }) {
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
                         ) : null}
-                        {name === "Driver List" ? (
+                        {name === "Vehicle List" ? (
                           <FaCar
                             className={`${NAV_UI.iconSizes.sidebar} ${menuTextColor}`}
                           />
