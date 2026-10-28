@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     Card,
     CardHeader,
@@ -26,6 +26,7 @@ export function SearchDrivers(props) {
     const [sortField, setSortField] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
     const [loading, setLoading] = useState(false);
+    const assignInFlightRef = useRef(false);
     const [loadingRides, setLoadingRides] = useState(false);
     const [statusCheckedDriverIds, setStatusCheckedDriverIds] = useState([]);
     const [checkingStatusDriverIds, setCheckingStatusDriverIds] = useState([]);
@@ -604,7 +605,7 @@ export function SearchDrivers(props) {
         }
     }, [props.bookingData]);
 
-    const onAssignDriver = async (service, driverId, cabDriverId, fullData) => {
+    const performAssignDriver = async (service, driverId, cabDriverId, fullData) => {
         if (service == "RENTAL" && props?.bookingData?.requestType == 'REQUEST_ALL') {
             const reqBody = {
                 bookingId: fullData.BookingId,
@@ -764,6 +765,18 @@ export function SearchDrivers(props) {
                     // console.log("No drivers found.");
                 }
             }
+        }
+    };
+
+    const onAssignDriver = async (service, driverId, cabDriverId, fullData) => {
+        if (assignInFlightRef.current) return;
+        assignInFlightRef.current = true;
+        setLoading(true);
+        try {
+            await performAssignDriver(service, driverId, cabDriverId, fullData);
+        } finally {
+            assignInFlightRef.current = false;
+            setLoading(false);
         }
     };
 

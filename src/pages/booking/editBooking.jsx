@@ -190,6 +190,7 @@ const EditBooking = (props) => {
     const [dropTaxiModalContent, setDropTaxiModalContent] = useState("Booking not available for the selected route. Try outstation service.");
     const [driverPickUpLocation, setDriverPickUpLocation] = useState(null);
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+    const [estimationLoading, setEstimationLoading] = useState(false);
     const [serviceAreaLoading, setServiceAreaLoading] = useState(false);
     const [packagesLoading, setPackagesLoading] = useState(false);
     const [premiumServicesMap, setPremiumServicesMap] = useState({});
@@ -939,6 +940,16 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
 
 
 
+    const runEstimation = async (estimator, ...args) => {
+        if (estimationLoading) return;
+        setEstimationLoading(true);
+        try {
+            await estimator(...args);
+        } finally {
+            setEstimationLoading(false);
+        }
+    };
+
     const getQuoteRides = async (values, setFieldValue) => {
             let checkDistance = true;
             let checkCityLimit = true;
@@ -1525,7 +1536,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                         validationSchema={EDIT_BOOKING_SCHEMA}
                         enableReinitialize
                     >
-                        {({ handleSubmit, setFieldValue, values, dirty, isValid }) => {
+                        {({ handleSubmit, setFieldValue, values, dirty, isValid, isSubmitting }) => {
                             const getCurrentPremiumOptions = () => {
                                 if (values?.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation' && values?.tripType === 'Drop Only') {
                                     return premiumServicesMap['RENTAL_DROP_TAXI'] || [];
@@ -2614,20 +2625,20 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
 
 
                                         {values.packageTypeSelected == 'Outstation' && values.serviceType === 'RENTAL' &&
-                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable || Boolean(rentalRoundTripReturnError)} onClick={() => getQuoteOutstationDetails(values, setFieldValue)}>
-                                    Check Estimated Price
+                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={estimationLoading || categorySelectionUnavailable || Boolean(rentalRoundTripReturnError)} onClick={() => runEstimation(getQuoteOutstationDetails, values, setFieldValue)}>
+                                    {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                             </Button>
                                         }
 
 
                                         {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Outstation' &&
-                    <Button fullWidth className='my-6 mx-2 bg-primary' disabled={Boolean(driverPackageNotice)} onClick={() => getQuoteOutstationDetails(values)}>
-                        Check Estimated Price
+                    <Button fullWidth className='my-6 mx-2 bg-primary' disabled={estimationLoading || Boolean(driverPackageNotice)} onClick={() => runEstimation(getQuoteOutstationDetails, values)}>
+                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                             </Button>
                                         }
                                          {(values.serviceType == 'DRIVER' || values?.serviceType =="RENTAL") && values.packageTypeSelected == 'Local' &&
-                    <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable || Boolean(driverPackageNotice)} onClick={() => getQuoteRides(values)}>
-                        Check Estimated Price
+                    <Button fullWidth className='my-6 mx-2 bg-primary' disabled={estimationLoading || categorySelectionUnavailable || Boolean(driverPackageNotice)} onClick={() => runEstimation(getQuoteRides, values)}>
+                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                             </Button>
                                         }
                                         <div className="flex justify-center my-6 gap-4">
@@ -2644,10 +2655,10 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                     setFieldValue("submitType", "default");
                                         handleSubmit()
                                                 }}
-                                    disabled={!hasEstimatedPrice || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
+                                    disabled={isSubmitting || !hasEstimatedPrice || !isValid || (!values.rideDate && !values.toDate) || (!values.pickupAddress && !values.dropAddress)}
                                                 className='my-6 mx-2'
                                             >
-                                    Continue
+                                    {isSubmitting ? "Processing..." : "Continue"}
                                             </Button>
                                         </div>
                                     </>}
@@ -3057,8 +3068,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                             }
 
                                             {bookingData?.serviceType == 'RIDES' &&
-                                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable} onClick={() => getQuoteRides(values, setFieldValue)}>
-                                                    Check Estimated Price
+                                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={estimationLoading || categorySelectionUnavailable} onClick={() => runEstimation(getQuoteRides, values, setFieldValue)}>
+                                                    {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                 </Button>
                                             }
                                             <div className="flex justify-center my-6 gap-4">
@@ -3075,10 +3086,10 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                         setFieldValue("submitType", "rides");
                                                         handleSubmit()
                                                     }}
-                                                    disabled={!(values.pickupAddress && values.dropAddress) || isButtonDisabled || !hasEstimatedPrice}
+                                                    disabled={isSubmitting || !(values.pickupAddress && values.dropAddress) || isButtonDisabled || !hasEstimatedPrice}
                                                     className='my-6 mx-2'
                                                 >
-                                        Continue
+                                        {isSubmitting ? "Processing..." : "Continue"}
                                                 </Button>
                                             </div>
                                         </>
@@ -3411,8 +3422,8 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                         </Card>
                                     }
                                     {bookingData?.serviceType == 'AUTO' &&
-                                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={categorySelectionUnavailable} onClick={() => getQuoteRides(values, setFieldValue)}>
-                                                    Check Estimated Price
+                                                <Button fullWidth className='my-6 mx-2 bg-primary' disabled={estimationLoading || categorySelectionUnavailable} onClick={() => runEstimation(getQuoteRides, values, setFieldValue)}>
+                                                    {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                         </Button>
                                     }
                                 {bookingData?.serviceType == "AUTO" &&                                 <div className="flex justify-center my-6 gap-4">
@@ -3429,10 +3440,10 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                 setFieldValue("submitType", "auto");
                                                 handleSubmit()
                                             }}
-                                    disabled={!hasEstimatedPrice || !isValid || (!values.pickupAddress && !values.dropAddress)}
+                                    disabled={isSubmitting || !hasEstimatedPrice || !isValid || (!values.pickupAddress && !values.dropAddress)}
                                             className='my-6 mx-2'
                                         >
-                                    Continue
+                                    {isSubmitting ? "Processing..." : "Continue"}
                                         </Button>
                                     </div>}
                                 </>

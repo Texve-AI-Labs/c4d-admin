@@ -315,6 +315,7 @@ const Booking = (props) => {
     const [cityLimitExceedModal, setCityLimitExceedModal] = useState(false);
     const [zoneErrorModal, setZoneErrorModal] = useState({ show: false, text: '', title: '' });
     const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+    const [estimationLoading, setEstimationLoading] = useState(false);
     const [formikActions, setFormikActions] = useState({});
     const [serviceAreas, setServiceAreas] = useState([]);
     const [premiumServicesMap, setPremiumServicesMap] = useState({})
@@ -877,6 +878,16 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         setMinimumReturnAt?.(minimumReturnAt);
         return values;
     };
+
+  const runEstimation = async (estimator, ...args) => {
+    if (estimationLoading) return;
+    setEstimationLoading(true);
+    try {
+      await estimator(...args);
+    } finally {
+      setEstimationLoading(false);
+    }
+  };
 
   const getQuoteOutstationDetails = async (values, setFieldValue, setFieldError) => {
         const isRentalOutstationRoundTrip =
@@ -2552,7 +2563,7 @@ const priceDetailsCardClass = isPeakHour
                                         validateOnMount={true}
                                         enableReinitialize={true}
                                     >
-                                       {({ handleSubmit, values, setFieldValue, setFieldError, isValid, dirty, handleChange, errors, status }) => {
+                                       {({ handleSubmit, values, setFieldValue, setFieldError, isValid, dirty, handleChange, errors, status, isSubmitting }) => {
                                             const getCurrentPremiumOptions = () => {
                                                 return premiumServicesMap[values?.serviceType] || [];
                                             };
@@ -4579,45 +4590,45 @@ const priceDetailsCardClass = isPeakHour
                                                 {/* <div>Form Errors (Debug):</div><div>{JSON.stringify(errors, null, 2)}</div> */}
 
                                                 {(values?.serviceType=="RENTAL" && values.packageTypeSelected == 'Outstation') &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady || Boolean(errors.returnDateTime)} onClick={() => getQuoteOutstationDetails(values, setFieldValue, setFieldError)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || categorySelectionUnavailable || !estimationReady || Boolean(errors.returnDateTime)} onClick={() => runEstimation(getQuoteOutstationDetails, values, setFieldValue, setFieldError)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
                                                  {(values?.serviceType=="DRIVER" && values.packageTypeSelected == 'Outstation') &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady || Boolean(driverPackageNotice)} onClick={() => getQuoteOutstationDetails(values)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || !estimationReady || Boolean(driverPackageNotice)} onClick={() => runEstimation(getQuoteOutstationDetails, values)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
                                                  {values.serviceType == 'RENTAL_DROP_TAXI' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteOutstationDetails(values)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || categorySelectionUnavailable || !estimationReady} onClick={() => runEstimation(getQuoteOutstationDetails, values)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
 
                                                 {values.serviceType == 'RIDES' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || categorySelectionUnavailable || !estimationReady} onClick={() => runEstimation(getQuoteRides, values, setFieldValue)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
 
                                                 {values.serviceType == 'RENTAL_HOURLY_PACKAGE' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || categorySelectionUnavailable || !estimationReady} onClick={() => runEstimation(getQuoteRides, values, setFieldValue)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
                                                 {values.serviceType == 'DRIVER' && values.packageTypeSelected == 'Local' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady || Boolean(driverPackageNotice)} onClick={() => getQuoteRides(values, setFieldValue)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || !estimationReady || Boolean(driverPackageNotice)} onClick={() => runEstimation(getQuoteRides, values, setFieldValue)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
                                                  {values.serviceType == 'AUTO' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={categorySelectionUnavailable || !estimationReady} onClick={() => getQuoteRides(values, setFieldValue)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || categorySelectionUnavailable || !estimationReady} onClick={() => runEstimation(getQuoteRides, values, setFieldValue)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
                                                 {values.serviceType == 'PARCEL' &&
-                                                    <Button fullWidth className='my-6 mx-2' disabled={!estimationReady} onClick={() => getQuoteParcel(values, setFieldValue)}>
-                                                        Check Estimated Price
+                                                    <Button fullWidth className='my-6 mx-2' disabled={estimationLoading || !estimationReady} onClick={() => runEstimation(getQuoteParcel, values, setFieldValue)}>
+                                                        {estimationLoading ? "Checking..." : "Check Estimated Price"}
                                                     </Button>
                                                 }
                                                 {quoteMeta?.quoteRef && (
@@ -4705,10 +4716,10 @@ const priceDetailsCardClass = isPeakHour
                                                         setFieldValue("submitType", "default");
                                                         handleSubmit();
                                                     }}
-                                                    disabled={!continueReady || driverContinueDisabled}
+                                                    disabled={isSubmitting || !continueReady || driverContinueDisabled}
                                                     className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                 >
-                                                    Continue
+                                                    {isSubmitting ? "Processing..." : "Continue"}
                                                 </Button>}
                                                 {(values.serviceType == 'RIDES') &&
                                                     <Button
@@ -4718,10 +4729,10 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "rides");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!continueReady || ridesContinueDisabled}
+                                                        disabled={isSubmitting || !continueReady || ridesContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
-                                                        Continue
+                                                        {isSubmitting ? "Processing..." : "Continue"}
                                                     </Button>
                                                 }
                                                 {(values.serviceType == 'AUTO') &&
@@ -4732,10 +4743,10 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "auto");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!continueReady || autoContinueDisabled}
+                                                        disabled={isSubmitting || !continueReady || autoContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
-                                                        Continue
+                                                        {isSubmitting ? "Processing..." : "Continue"}
                                                     </Button>
                                                 }
                                                 {(values.serviceType == 'PARCEL') &&
@@ -4746,10 +4757,10 @@ const priceDetailsCardClass = isPeakHour
                                                             setFieldValue("submitType", "parcel");
                                                             handleSubmit();
                                                         }}
-                                                        disabled={!continueReady || parcelContinueDisabled}
+                                                        disabled={isSubmitting || !continueReady || parcelContinueDisabled}
                                                         className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                     >
-                                                        Continue
+                                                        {isSubmitting ? "Processing..." : "Continue"}
                                                     </Button>
                                                 }
                                                 <div className='p-3'>
@@ -4761,10 +4772,10 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={!continueReady || rentalContinueDisabled}
+                                                            disabled={isSubmitting || !continueReady || rentalContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
-                                                            Continue
+                                                            {isSubmitting ? "Processing..." : "Continue"}
                                                         </Button>
                                                     }
                                                     {values.serviceType == 'RENTAL_HOURLY_PACKAGE' &&
@@ -4775,10 +4786,10 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={!continueReady || hourlyContinueDisabled}
+                                                            disabled={isSubmitting || !continueReady || hourlyContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
-                                                            Continue
+                                                            {isSubmitting ? "Processing..." : "Continue"}
                                                         </Button>
                                                     }
                                                     {values.serviceType == 'RENTAL_DROP_TAXI' &&
@@ -4789,10 +4800,10 @@ const priceDetailsCardClass = isPeakHour
                                                                 setFieldValue("submitType", "rental");
                                                                 handleSubmit();
                                                             }}
-                                                            disabled={!continueReady || dropTaxiContinueDisabled}
+                                                            disabled={isSubmitting || !continueReady || dropTaxiContinueDisabled}
                                                             className={`my-6 mx-2 ${ColorStyles.continueButtonColor}`}
                                                         >
-                                                            Continue
+                                                            {isSubmitting ? "Processing..." : "Continue"}
                                                         </Button>
                                                     }
                                                 </div>
