@@ -25,6 +25,7 @@ import { PencilIcon, FolderOpenIcon } from "@heroicons/react/24/solid";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import {fetchAdminDiscountStatusSafe,getQuoteRefSafe,normalizeBookingIdSafe,normalizeQuoteRefSafe} from "./utils/confirmBookingSafe";
 import { shouldAutoFetchAdminDiscountStatus } from "./utils/adminDiscountFetch";
+import { getAdminDiscountAmount } from "./utils/adminDiscountDisplay";
 
 const ADMIN_PENDING_STATUS = "PENDING";
 const ADMIN_EFFECTIVE_STATUSES = ["APPROVED", "AUTO_APPROVED"];
@@ -847,9 +848,13 @@ const handleSaveDriverEndLocation = async () => {
     const visibleAdminDiscountType = String(visibleAdminDiscount?.discountType || "").toUpperCase();
     const visibleAdminDiscountValue = Number(visibleAdminDiscount?.discountValue || 0);
     const visibleAdminDiscountAmount = Number(visibleAdminDiscount?.discountAmount || 0);
-    const adminDiscountBaseAmount = Number(bookingDetails?.value?.fareBreakdown?.total ?? bookingDetails?.estimatedFareBreakdown?.total ?? bookingDetails?.value?.estimatedPrice ?? quoteEstimatedPrice ?? 0);
-    const adminDiscountAmountFallback = visibleAdminDiscountType === "PERCENTAGE" && visibleAdminDiscountValue > 0 ? adminDiscountBaseAmount * (visibleAdminDiscountValue / 100) : 0;
-    const adminDiscountAmountOnQuoteTotal = visibleAdminDiscountAmount > 0 ? visibleAdminDiscountAmount : adminDiscountAmountFallback;
+    const adminDiscountAmountOnQuoteTotal = getAdminDiscountAmount({
+        discount: visibleAdminDiscount,
+        booking: bookingDetails,
+        quoteAmount: quoteEstimatedPrice,
+        systemDiscountAmount,
+        walletAmount: Number(bookingDetails?.walletAmount || 0),
+    });
     const finalEstimatedFareAfterAdminDiscount = Math.max(
         0,
         totalEstimatedFareAfterSystemDiscount - adminDiscountAmountOnQuoteTotal
@@ -891,8 +896,35 @@ const handleSaveDriverEndLocation = async () => {
     const displayWalletAmount = Number(bookingDetails?.walletAmount || 0);
     const hideWalletForStatuses = [BOOKING_STATUS.END_OTP, BOOKING_STATUS.PAYMENT_REQUESTED, BOOKING_STATUS.ENDED,BOOKING_STATUS.COMPLETED];
     const showWalletForStatus = !hideWalletForStatuses.includes(normalizedBookingStatus);
-    const displayQuoteBaseAmount = Number(bookingDetails?.value?.fareBreakdown?.total ?? bookingDetails?.estimatedFareBreakdown?.total ?? bookingDetails?.value?.estimatedPrice ?? 0);
+    const displayQuoteBaseCandidates = [
+        bookingDetails?.estimatedFareBreakdown?.total,
+        bookingDetails?.value?.fareBreakdown?.total,
+        bookingDetails?.value?.estimatedPrice,
+    ].map(Number);
+    const displayQuoteBaseAmount = displayQuoteBaseCandidates.find(
+        (amount) => Number.isFinite(amount) && amount > 0
+    ) || 0;
     const displayQuoteTotalAfterWallet = Math.max(0, displayQuoteBaseAmount - displayWalletAmount);
+    const finalDiscountBaseAmount = displayQuoteBaseAmount > 0
+        ? displayQuoteTotalAfterWallet
+        : Math.max(0, quoteEstimatedPrice - displayWalletAmount);
+    const isFinalFareStatus = [
+        BOOKING_STATUS.END_OTP,
+        BOOKING_STATUS.PAYMENT_REQUESTED,
+        BOOKING_STATUS.ENDED,
+        BOOKING_STATUS.COMPLETED,
+    ].includes(normalizedBookingStatus);
+    const finalAmountAfterWalletAndAdminDiscount = Math.max(
+        0,
+        isFinalFareStatus && displayCollectedAmount > 0
+            ? Number(displayCollectedAmount)
+            : Math.round(
+                finalDiscountBaseAmount -
+                Number(systemDiscountAmount || 0) -
+                (adminDiscountEffective ? Number(adminDiscountAmountOnQuoteTotal || 0) : 0)
+            )
+    );
+    const roundedAdminDiscountAmount = Math.round(adminDiscountAmountOnQuoteTotal);
         //hidden swal.fire
     // const lastAdminStatusToastKeyRef = React.useRef("");
     // const shouldShowAdminDiscountStatusToast =
@@ -1111,7 +1143,9 @@ const hasAdditionalCharges = Object.values(additionalCharges || {}).some((value)
     const hasExtraHours = extraHoursMinutes > 0;
     const extraHoursRate = Number(bookingDetails?.finalFareBreakdown?.extraHours?.rate || bookingDetails?.extraHourPrice || 0);
     const extraHoursCharge = Number(bookingDetails?.finalFareBreakdown?.extraHours?.charge || bookingDetails?.extraPrice || 0);
-    const isDropTaxiBooking = (booking) => (booking?.serviceType === 'RENTAL' && booking?.bookingType === 'DROP ONLY' && booking?.packageType ==='Outstation') || booking?.serviceType === 'RENTAL_DROP_TAXI';
+    const isDropTaxiBooking = (booking) =>
+        (booking?.serviceType === 'RENTAL' && booking?.bookingType === 'DROP ONLY') ||
+        booking?.serviceType === 'RENTAL_DROP_TAXI';
     const isOutstationBooking = (booking) => booking?.serviceType === 'RENTAL' && booking?.packageType === 'Outstation' && booking?.bookingType === 'ROUND TRIP';
     const isHourlyShowingPrice = (booking) => booking?.serviceType === 'RENTAL' && booking?.packageType === 'Local';
     const shouldHideDashFallback = (bookingDetails?.status === BOOKING_STATUS.QUOTED && String(bookingDetails?.source) === "Mobile App" && (bookingDetails?.category === null));
@@ -2253,7 +2287,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                 </div>
                             )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
-                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && ((isDropTaxiBooking(bookingDetails) && [BOOKING_STATUS.QUOTED, BOOKING_STATUS.REQUEST_DRIVER, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.BOOKING_ACCEPTED].includes(bookingDetails?.status)) || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
+                             {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && ((isDropTaxiBooking(bookingDetails) && [BOOKING_STATUS.QUOTED, BOOKING_STATUS.REQUEST_DRIVER, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.BOOKING_ACCEPTED, BOOKING_STATUS.SUPPORT_CANCELLED].includes(bookingDetails?.status)) || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
                             )  && (
                                 <div className="flex flex-col-2 gap-2">
                                     <span className="text-gray-500 font-semibold">Estimated Price{inclTaxLabel}:</span>
@@ -2433,8 +2467,8 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                                     <span className="text-gray-500 font-semibold">Admin Discount Applied</span>
                                                     <span className="text-gray-900 font-medium">
                                                         {shouldHideDashFallback ? "-" : `(${visibleAdminDiscountType === "PERCENTAGE"
-                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Math.round(Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2))}`
-                                                            : `₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${roundedAdminDiscountAmount}`
+                                                            : `₹ ${roundedAdminDiscountAmount}`
                                                         })`}
                                                     </span>
                                                 </div>
@@ -2456,6 +2490,17 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                                     </>
                                                 )}
                                             </>
+                                        )}
+                                        {showQuoteSummary &&
+                                            (displayQuoteTotalAfterWallet > 0 || adminDiscountAmountOnQuoteTotal > 0) && (
+                                            <div className="flex flex-col-2 gap-2">
+                                                <span className="text-gray-500 font-semibold">Final Total After Discounts:</span>
+                                                <span className="text-gray-900 font-semibold">
+                                                    {shouldHideDashFallback
+                                                        ? "-"
+                                                        : `₹ ${finalAmountAfterWalletAndAdminDiscount}`}
+                                                </span>
+                                            </div>
                                         )}
                                         {quoteCancelChargeApplicable && (
                                             <div className="flex flex-col-2 gap-2">
@@ -3025,8 +3070,8 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                                     <Typography color="gray" variant="sm" className="text-sm text-gray-500 font-semibold">Admin Discount Percentage:</Typography>
                                                     <Typography className="text-sm text-black font-medium">
                                                         {visibleAdminDiscountType === "PERCENTAGE"
-                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
-                                                            : `₹ ${Number(adminDiscountAmountOnQuoteTotal || 0).toFixed(2)}`
+                                                            ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${roundedAdminDiscountAmount}`
+                                                            : `₹ ${roundedAdminDiscountAmount}`
                                                         }
                                                     </Typography>
                                                 </div>
