@@ -22,7 +22,7 @@ const GstView = () => {
     { key: "DRIVER_FEEDBACK", label: "Driver Feedback" },
     { key: "LUGGAGE_POLICY", label: "Luggage Policy" },
     { key: "DISTANCE_RULE", label: "Distance Rule"},
-    { key: ACCEPT_WINDOW_TYPE, label: "Future Booking Accept Window" },
+    { key: ACCEPT_WINDOW_TYPE, label: "Future Booking Start Window" },
   ];
   const isAcceptWindow = selectedType === ACCEPT_WINDOW_TYPE;
   const isDriverFeedback = selectedType === "DRIVER_FEEDBACK";
