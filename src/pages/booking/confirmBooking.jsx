@@ -1874,7 +1874,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                             </span>
                             <Typography variant="h6" color="green"><a target="_blank" href={Utils.generateWhatsAppMessage(bookingDetails)}>Share on Whatsapp</a></Typography>
                         </div>
-                        <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                        <div className="grid sm:grid-cols-2 gap-6 text-sm">
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Service Type:</span>
                                 <span className="text-gray-900 font-medium">{bookingDetails.serviceType === 'DRIVER' ? 'ACTING DRIVER' : bookingDetails.serviceType == "RIDES" ? 'Local Rides' : bookingDetails?.packageType == "Local" ? 'Hourly Package' : (bookingDetails?.serviceType == "RENTAL" && bookingDetails?.bookingType == "DROP ONLY") ? 'Drop Taxi' : bookingDetails?.serviceType == 'AUTO' ? 'Auto' : bookingDetails?.serviceType == 'BIKE' ? 'Bike' : bookingDetails?.serviceType == "PARCEL" ? 'Parcel' : 'Outstation'}</span>
@@ -2280,12 +2280,6 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     </span>
                                 </div>
                             )}
-                            {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
-                                <div className="flex flex-col-2 gap-2">
-                                    <span className="text-gray-500 font-semibold">Wallet Amount:</span>
-                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayWalletAmount.toFixed(2)}`}</span>
-                                </div>
-                            )}
                             {/* offerPrice use case for drop taxi and outstation estimated price no gst added */}
                              {bookingDetails?.serviceType !== 'AUTO' && bookingDetails?.serviceType !== 'RIDES'&& bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && ((isDropTaxiBooking(bookingDetails) && [BOOKING_STATUS.QUOTED, BOOKING_STATUS.REQUEST_DRIVER, BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.BOOKING_ACCEPTED, BOOKING_STATUS.SUPPORT_CANCELLED].includes(bookingDetails?.status)) || bookingDetails?.status === BOOKING_STATUS.END_OTP || (bookingDetails?.status === BOOKING_STATUS.ENDED &&(isDropTaxiBooking(bookingDetails) || isOutstationBooking(bookingDetails))) 
                             )  && (
@@ -2294,6 +2288,12 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                     <span className="text-gray-900 font-medium">
                                         {shouldHideDashFallback ? "-" : `₹ ${getSafePremiumEstimatedPrice(Number(bookingDetails?.estimatedFareBreakdown?.total || bookingDetails?.value?.fareBreakdown?.total || 0)).toFixed(2)}`}
                                     </span>
+                                </div>
+                            )}
+                            {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
+                                <div className="flex flex-col-2 gap-2">
+                                    <span className="text-gray-500 font-semibold">Wallet Amount:</span>
+                                    <span className="text-gray-900 font-medium">{shouldHideDashFallback ? "-" : `₹ ${displayWalletAmount.toFixed(2)}`}</span>
                                 </div>
                             )}
                             {showWalletForStatus && displayWalletApplicable && displayWalletAmount > 0 && (
@@ -2464,8 +2464,8 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                             visibleAdminDiscountValue > 0 && (
                                             <>
                                                 <div className="flex flex-col-2 gap-2">
-                                                    <span className="text-gray-500 font-semibold">Admin Discount Applied</span>
-                                                    <span className="text-gray-900 font-medium">
+                                                    <span className="text-gray-500 font-semibold whitespace-nowrap">Admin Discount Applied</span>
+                                                    <span className="text-gray-900 font-medium whitespace-nowrap">
                                                         {shouldHideDashFallback ? "-" : `(${visibleAdminDiscountType === "PERCENTAGE"
                                                             ? `${Number(visibleAdminDiscountValue || 0).toFixed(2)} % : ₹ ${roundedAdminDiscountAmount}`
                                                             : `₹ ${roundedAdminDiscountAmount}`
