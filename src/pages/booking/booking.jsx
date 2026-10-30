@@ -388,12 +388,8 @@ const Booking = (props) => {
     }
 
     const storedSearchId = sessionStorage.getItem(bookingSearchKey) || sessionStorage.getItem(LEGACY_BOOKING_SEARCH_KEY) || '';
-    const storedCustomerId = Number(sessionStorage.getItem(bookingCustomerKey) || 0);
     if (storedSearchId) {
       sessionStorage.setItem(bookingSearchKey, storedSearchId);
-    }
-    if (storedCustomerId > 0) {
-      setSelectedCustomer((prev) => Number(prev || 0) || storedCustomerId);
     }
     if (storedSearchId) {
       setSearchBookingId((prev) => prev || storedSearchId);
@@ -1953,15 +1949,6 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         //console.log("LIST", bookingStage);
     };
     const onCancelBookingView = () => { }
-    const clearListSearch = useCallback(() => {
-        setSearchText('');
-        setSearchResults([]);
-        setSearchBookingId('');
-        setSelectedCustomer(0);
-        sessionStorage.removeItem(bookingSearchKey);
-        sessionStorage.removeItem(bookingCustomerKey);
-        sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
-    }, [bookingSearchKey, bookingCustomerKey]);
 
     const resetPackageValues = (setFieldValue, newServiceType) => {
         // Clear location-related fields
@@ -2164,7 +2151,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_PROD,
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_KEY_SIT,
     });
 
     const validationCheckForDriver = (val) => {
@@ -2486,7 +2473,10 @@ const priceDetailsCardClass = isPeakHour
             </div>
             <div>
                 {isOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 w-full" onClick={(e) => e.stopPropagation()}>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 w-full" 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                    }}>
                         <div className="bg-black-gray-500 rounded-2xl  h-screen p-2 w-[75%]  shadow-lg relative" onClick={(e) => e.stopPropagation()}>
                                 <div className='justify-end items-end  absolute -right-6'>
                                     <button
