@@ -533,7 +533,7 @@ const fetchZones = async () => {
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
               <table className="w-full min-w-[640px] table-auto">
-                <thead>
+                <thead className='whitespace-nowrap'>
                   <tr>
                     <th onClick={() => handleSort('created_at')} className="border-b border-blue-gray-50 py-3 px-5 text-left cursor-pointer">
                       <div className="flex items-center gap-1">
@@ -553,7 +553,7 @@ const fetchZones = async () => {
                       <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">Driver Name</Typography>
                       {sortConfig.key === 'firstName' && (sortConfig.direction === 'ascending' ? <ChevronUpIcon className="w-5 h-5 ml-1" /> : <ChevronDownIcon className="w-5 h-5 ml-1" />)}
                     </th> */}
-                    {["Driver Name","Phone Number", "Local", "Outstation","Zone", "Source", "Service Type", "Available Status", "subscription Status", "KYC Status","Last Online Date and Time"].map((el) => (
+                    {["Driver Name","Phone Number", "Local", "Outstation","Zone", "Source", "Service Type", "Status", "subscription Status", "KYC Status","Last Online Date and Time"].map((el) => (
                       <th
                       key={el}
                       className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -563,8 +563,8 @@ const fetchZones = async () => {
                           title={el}
                           options={[
                             { value: "All", label: "All" },
-                            { value: "ACTIVE", label: "Online" },
-                            { value: "IN_ACTIVE", label: "Offline" }
+                            { value: "ACTIVE", label: "Active" },
+                            { value: "IN_ACTIVE", label: "In-Active" }
                           ]}
                           selectedFilters={statusFilter}
                           onFilterChange={(value) => handleFilterChange("availableStatus", value)}
@@ -578,6 +578,7 @@ const fetchZones = async () => {
                           {value: "Walk In", label:"walk in"},
                           {value: "Call", label:"call"},
                           {value: "Website", label:"web site"},
+                          {value: "RootCabs Website", label: "Root Cabs Website" },
                         ]}
                         selectedFilters={sourceFilter}
                         onFilterChange={(value) => handleFilterChange("source", value)}
@@ -586,8 +587,8 @@ const fetchZones = async () => {
                       <FilterPopover title={el}
                         options={[
                           { value: "All", label: "All" },
-                          { value: "IN_ACTIVE", label: "Offline" },
-                          { value: "ACTIVE", label: "Online" }
+                          { value: "IN_ACTIVE", label: "In-Active" },
+                          { value: "ACTIVE", label: "Active" }
                         ]}
                         selectedFilters={subscriptionStatusFilter}
                         onFilterChange={(value) => handleFilterChange("subscriptionStatus", value)}
@@ -605,7 +606,7 @@ const fetchZones = async () => {
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="whitespace-nowrap">
                   {loading ? (
                       <tr>
                         <td colSpan={13} className="py-3 px-5">
@@ -693,7 +694,7 @@ const fetchZones = async () => {
                               <Chip
                                 variant="ghost"
                                 color={status == "ACTIVE" ? "green" : "black"}
-                                value={status == "ACTIVE" ? "online" : "offline"}
+                                value={status == "ACTIVE" ? "Active" : "In-Active"}
                                 className="py-0.5 px-2 text-[11px] font-medium w-fit"
                               />
                             </td>

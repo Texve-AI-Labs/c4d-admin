@@ -8,9 +8,7 @@ const ProtectedRoute = ({ element, permission, permissions, permissionsAny = [],
   }
 
   // Frontend safe mode: deny route access if permission metadata is missing.
-  const hasAnyPermissionRequirement = Array.isArray(permissionsAny) && permissionsAny.length > 0;
-
-  if (requirePermission && !permission && !hasAnyPermissionRequirement) {
+  if (requirePermission && !permission && !permissionsAny?.length) {
     return <Navigate to="/dashboard/unauthorized" replace />;
   }
 
@@ -24,15 +22,15 @@ const ProtectedRoute = ({ element, permission, permissions, permissionsAny = [],
     String(item || "").trim().toLowerCase()
   );
   const requiredPermission = String(permission || "").trim().toLowerCase();
-  const requiredAnyPermissions = hasAnyPermissionRequirement
-    ? permissionsAny.map((item) => String(item || "").trim().toLowerCase()).filter(Boolean)
-    : [];
+  const requiredAnyPermissions = permissionsAny
+    .map((item) => String(item || "").trim().toLowerCase())
+    .filter(Boolean);
 
-  if (requiredAnyPermissions.length > 0) {
-    if (!requiredAnyPermissions.some((item) => normalizedPermissions.includes(item))) {
-      return <Navigate to="/dashboard/unauthorized" replace />;
-    }
-  } else if (permission && !normalizedPermissions.includes(requiredPermission)) {
+  if (
+    requiredAnyPermissions.length > 0
+      ? !requiredAnyPermissions.some((item) => normalizedPermissions.includes(item))
+      : permission && !normalizedPermissions.includes(requiredPermission)
+  ) {
     return <Navigate to="/dashboard/unauthorized" replace />;
   }
 

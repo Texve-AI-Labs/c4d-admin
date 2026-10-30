@@ -4,10 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles, DISTRICT_LIST, STATE_LIST, THALUK_LIST } from "@/utils/constants";
+import { saveDocumentFile } from '@/utils/downloadUtils';
 import { parseAddressParts } from "@/utils/addressUtils";
 import AccountCreationTabs from "./AccountCreationTabs";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
 import LocationInput from "./LocationInput";
+import { getDocumentRequirement, isSingleFileDocument, MAX_DOCUMENT_SIZE } from "./documentRequirements";
 const toTitle = (value) => {
   if (!value) return "-";
   return String(value)
@@ -40,6 +42,13 @@ const getStatusLabel = (status) => {
 const getReviewStatus = (status) => {
   const normalized = String(status || "").toUpperCase();
   if (["UPLOADED","PENDING", "PENDING UPLOAD"].includes(normalized)) return "PENDING VERIFICATION";
+  return normalized;
+};
+
+const normalizeDocumentStatus = (status) => {
+  const normalized = String(status || "").trim().toUpperCase().replace(/\s+/g, "_");
+  if (normalized === "PENDING_UPLOAD") return "PENDING UPLOAD";
+  if (normalized === "PENDING_VERIFICATION") return "PENDING VERIFICATION";
   return normalized;
 };
 
@@ -130,6 +139,7 @@ const AccountDocuments = () => {
   const [requiredDocs, setRequiredDocs] = useState([]);
   const [account, setAccount] = useState(null);
   const [modalData, setModalData] = useState(null);
+  const [uploadError, setUploadError] = useState("");
   const [uploadingByType, setUploadingByType] = useState({});
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [isSameAddress, setIsSameAddress] = useState(false);
@@ -206,7 +216,7 @@ const AccountDocuments = () => {
         docType,
         proof,
         type: item?.displayName || item?.label || docType,
-        status: proof?.status || (proof?.image1 ? "UPLOADED" : "PENDING UPLOAD"),
+        status: normalizeDocumentStatus(proof?.status || (proof?.image1 ? "UPLOADED" : "PENDING UPLOAD")),
         createdAt: proof?.created_at ? moment(proof.created_at).format("DD-MM-YYYY") : "-",
       };
     });
@@ -247,7 +257,7 @@ const AccountDocuments = () => {
   const subjectType = "ACCOUNT";
   const serviceType = account?.type || "Individual";
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
+  const isSingleFileDocType = (docType) => isSingleFileDocument(docType);
   const getZoomKey = (docType, imageIndex) => `${docType || "UNKNOWN"}_${imageIndex}`;
   const getZoomValue = (docType, imageIndex) => previewZoom[getZoomKey(docType, imageIndex)] || 1;
   const updateZoom = (docType, imageIndex, direction) => {
@@ -373,6 +383,7 @@ const AccountDocuments = () => {
         street: String(addressForm.street || "").trim(),
         thaluk: String(addressForm.thaluk || "").trim(),
         district: String(addressForm.district || "").trim(),
+        zone: String(addressForm.district || "").trim(),
         accountDistrict: String(addressForm.accountDistrict || "").trim(),
         state: String(addressForm.state || "").trim(),
         pincode: String(addressForm.pincode || "").trim(),
@@ -397,26 +408,22 @@ const AccountDocuments = () => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    const maxSize = 10 * 1024 * 1024;
     const singleFile = isSingleFileDocType(row.docType);
+    const requiredCount = getDocumentRequirement(row.docType);
+    const allowedTypes = ["image/jpeg", "image/png"];
 
-    if (singleFile && files.length > 1) {
-      window.alert("Only one document is allowed for this type.");
-      return;
-    }
-    if (!singleFile && files.length > 2) {
-      window.alert("You can upload a maximum of two documents.");
+    if (files.length !== requiredCount) {
+      setUploadError(`${toTitle(row.docType)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
       return;
     }
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type)) {
-        window.alert("Invalid file type. Please upload JPG, PNG, or PDF.");
+      if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
+        setUploadError("PDF files are not allowed. Please upload JPG or PNG.");
         return;
       }
-      if (file.size > maxSize) {
-        window.alert("File size exceeds 10MB limit.");
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        setUploadError("File size exceeds 10MB limit.");
         return;
       }
     }
@@ -456,6 +463,7 @@ const AccountDocuments = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
+      {uploadError && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"><div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"><h2 className="text-lg font-semibold text-red-900">Alert !</h2><p className="mt-3 text-sm text-gray-700">{uploadError}</p><div className="mt-6 flex justify-end"><Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button></div></div></div>}
       <AccountCreationTabs activeStage={2} />
       <div className="mb-4">
         {/* <h2 className="text-2xl font-bold">Account Documents</h2> */}
@@ -520,7 +528,9 @@ const AccountDocuments = () => {
                           onClick={() =>
                             setModalData({
                               id: row.proof?.id,
+                              documentId: row.proof?.id,
                               image1: row.proof?.image1,
+                              type: row.type || row.docType,
                               image2: row.proof?.image2,
                               status: getReviewStatus(row.status),
                             })
@@ -550,7 +560,7 @@ const AccountDocuments = () => {
                         type="file"
                         id={`upload-${row.key}`}
                         className="hidden"
-                        accept="image/*,application/pdf"
+                        accept="image/jpeg,image/png"
                         multiple={!isSingleFileDocType(row.docType)}
                         onChange={(e) => handleUploadDocument(e, row)}
                         disabled={Boolean(uploadingByType[row.docType])}
@@ -807,26 +817,10 @@ const AccountDocuments = () => {
             </div>
             <div className="flex justify-center mt-4">
               {modalData.image1 && (
-                <a
-                  href={modalData.image1}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                >
-                  Download Image 1
-                </a>
+                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 1</button>
               )}
               {modalData.image2 && (
-                <a
-                  href={modalData.image2}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                >
-                  Download Image 2
-                </a>
+                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 2</button>
               )}
             </div>
             {["PENDING VERIFICATION"].includes(String(modalData?.status || "").toUpperCase()) ? (

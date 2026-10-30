@@ -82,6 +82,12 @@ const makeAddressPayload = (name, placeId) => ({
   ...(placeId ? { placeId } : {}),
 });
 
+const getExistingAddressPlaceId = (cabResult) =>
+  cabResult?.curAddress?.placeId ||
+  cabResult?.curAddress?.place_id ||
+  cabResult?.curAddress?.placeID ||
+  cabResult?.curAddressPlaceId ||
+  "";
 const normalizeServiceType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
   return normalized === "auto" ? "Auto" : "Parcel";
@@ -119,10 +125,7 @@ const formatVehicleTypeValue = (value) => {
   const raw = String(value).trim();
   if (!raw) return "-";
   const normalized = raw.toUpperCase();
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
   return raw
     .toLowerCase()
     .split(/\s+/)
@@ -196,7 +199,7 @@ const CompletedOnboardingDetails = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [id, location?.state]);
+  }, [id]);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -232,47 +235,8 @@ const CompletedOnboardingDetails = () => {
       const res = await ApiRequestUtils.get(API_ROUTES.ADMIN_ONBOARDING_BY_ID + id);
       const payload = res?.data || res?.result || null;
       const base = normalizeOnboardingPayload(payload);
-      const serviceType = normalizeServiceType(base?.type);
       const stateCabs = Array.isArray(location?.state?.prefetchedCabs) ? location.state.prefetchedCabs : [];
       let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : base;
-
-      // Try to enrich `cabs` from onboarding list API shape when available.
-      try {
-        let page = 1;
-        const limit = 50;
-        let totalPages = 1;
-        let matched = null;
-
-        do {
-          const listRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
-            page,
-            limit,
-            accountId: id,
-            serviceType,
-          });
-
-          const listRows = Array.isArray(listRes?.data) ? listRes.data : [];
-          matched = listRows.find((row) => String(row?.id) === String(id)) || null;
-          totalPages = Number(listRes?.pagination?.totalPages || 1);
-
-          if (matched || listRows.length === 0) break;
-          page += 1;
-        } while (page <= totalPages);
-
-        if (matched && Array.isArray(matched?.autos)) {
-          const strictCabs = matched.autos.filter(
-            (auto) =>
-              auto &&
-              auto.id !== null &&
-              auto.id !== undefined &&
-              String(auto?.accountId ?? auto?.AccountId) === String(id)
-          );
-          const baseCabs = Array.isArray(base?.cabs) ? base.cabs : [];
-          nextData = { ...base, cabs: strictCabs.length > 0 ? strictCabs : baseCabs };
-        }
-      } catch (_err) {
-        // Ignore list enrichment failure; base details are already loaded.
-      }
 
       setOnboardingData(nextData);
     } catch (err) {
@@ -489,6 +453,8 @@ const CompletedOnboardingDetails = () => {
         creditLogRows,
         rawValues: {
           carType: cabResult?.carType || "",
+          curAddress: cabResult?.curAddress || "",
+          curAddressPlaceId: getExistingAddressPlaceId(cabResult),
         },
       };
     });
@@ -606,6 +572,7 @@ const CompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        zone: accountDraft?.district || "",
         accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
@@ -729,6 +696,8 @@ const CompletedOnboardingDetails = () => {
 
     try {
       setVehicleDetailsSavingId(sectionId);
+      const existingAddressPlaceId = getExistingAddressPlaceId(cabResult);
+      const selectedAddressPlaceId = draftValues?.AddressPlaceId || "";
       const autoDetails = {
         accountId: cabResult?.Account?.id || cabResult?.AccountId || "",
         name: draftValues?.["Vehicle Name"] || cabResult?.name || "",
@@ -740,7 +709,7 @@ const CompletedOnboardingDetails = () => {
           "",
         curAddress: makeAddressPayload(
           draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
-          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+          selectedAddressPlaceId || existingAddressPlaceId
         ),
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "",
@@ -1017,8 +986,8 @@ const CompletedOnboardingDetails = () => {
                             }
                             setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                           }}
-                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                          disabled={key === "type"}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                          disabled={key === "type" || key === "phoneNumber"}
                           maxLength={key === "phoneNumber" ? 10 : undefined}
                         />
                       )}

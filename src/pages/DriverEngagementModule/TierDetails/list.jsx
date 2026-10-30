@@ -15,18 +15,77 @@ import {
   getTierDisplay,
   getTierList,
 } from "./listFormatters";
+const FILTER_STORAGE_KEY = "driverEngagementTierFilters";
 
 function TierDetailsList() {
-  const [typeFilter, setTypeFilter] = useState("ALL");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [partnerTypeFilter, setPartnerTypeFilter] = useState("CAB");
-  const [parcelVehicleTypeFilter, setParcelVehicleTypeFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem(FILTER_STORAGE_KEY);
+      if (!stored) return "ALL";
+      const parsed = JSON.parse(stored);
+      return parsed?.typeFilter || "ALL";
+    } catch {
+      return "ALL";
+    }
+  });
+  const [statusFilter, setStatusFilter] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem(FILTER_STORAGE_KEY);
+      if (!stored) return "ALL";
+      const parsed = JSON.parse(stored);
+      return parsed?.statusFilter || "ALL";
+    } catch {
+      return "ALL";
+    }
+  });
+  const [partnerTypeFilter, setPartnerTypeFilter] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem(FILTER_STORAGE_KEY);
+      if (!stored) return "ALL";
+      const parsed = JSON.parse(stored);
+      return parsed?.partnerTypeFilter || "ALL";
+    } catch {
+      return "ALL";
+    }
+  });
+  const [parcelVehicleTypeFilter, setParcelVehicleTypeFilter] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem(FILTER_STORAGE_KEY);
+      if (!stored) return "ALL";
+      const parsed = JSON.parse(stored);
+      return parsed?.parcelVehicleTypeFilter || "ALL";
+    } catch {
+      return "ALL";
+    }
+  });
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedRowIds, setExpandedRowIds] = useState({});
+  useEffect(() => {
+    sessionStorage.setItem(
+      FILTER_STORAGE_KEY,
+      JSON.stringify({
+        typeFilter,
+        statusFilter,
+        partnerTypeFilter,
+        parcelVehicleTypeFilter,
+      })
+    );
+  }, [typeFilter, statusFilter, partnerTypeFilter, parcelVehicleTypeFilter]);
 
   const toggleExpand = (rowId) => {
     setExpandedRowIds((prev) => ({ ...prev, [rowId]: !prev[rowId] }));
+  };
+
+  const clearFilters = () => {
+    sessionStorage.removeItem(FILTER_STORAGE_KEY);
+    setIsRefreshing(true);
+    setTypeFilter("ALL");
+    setStatusFilter("ALL");
+    setPartnerTypeFilter("ALL");
+    setParcelVehicleTypeFilter("ALL");
+    setExpandedRowIds({});
   };
 
   useEffect(() => {
@@ -51,6 +110,7 @@ function TierDetailsList() {
         setRows([]);
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
     };
 
@@ -81,6 +141,12 @@ function TierDetailsList() {
     });
   }, [rows, typeFilter, statusFilter, partnerTypeFilter, parcelVehicleTypeFilter]);
 
+  const hasActiveFilters =
+    typeFilter !== "ALL" ||
+    statusFilter !== "ALL" ||
+    partnerTypeFilter !== "ALL" ||
+    parcelVehicleTypeFilter !== "ALL";
+
   return (
     <div className="mt-5 mb-10 bg-white p-2 px-4 shadow-sm">
       <div className="mb-5 flex items-center justify-between">
@@ -107,6 +173,9 @@ function TierDetailsList() {
         onStatusFilterChange={setStatusFilter}
         onPartnerTypeFilterChange={setPartnerTypeFilter}
         onParcelVehicleTypeFilterChange={setParcelVehicleTypeFilter}
+        isRefreshing={isRefreshing}
+        hasActiveFilters={hasActiveFilters}
+        onRefresh={clearFilters}
       />
 
       <Card>
@@ -115,7 +184,7 @@ function TierDetailsList() {
             <thead>
               <tr>
                 {["Type", "Rule Name", "Tier", "Status",  "Zone","Created At", "Updated At", "Action", "Expand"].map((head) => (
-                  <th key={head} className="bg-primary border-b border-blue-gray-50 px-5 py-3 text-left">
+                  <th key={head} className="bg-primary border-b border-blue-gray-50 px-5 py-3 text-left whitespace-nowrap">
                     <Typography variant="small" color="white" className="font-semibold">
                       {head}
                     </Typography>
@@ -126,7 +195,7 @@ function TierDetailsList() {
             <tbody>
               {filteredRows.map((row, index) => {
                 const isLast = index === filteredRows.length - 1;
-                const cellClass = isLast ? "p-4" : "border-b border-blue-gray-50 p-4";
+                const cellClass = isLast ? "p-4" : "border-b border-blue-gray-50 p-4 whitespace-nowrap";
                 const isExpanded = Boolean(expandedRowIds[row.id]);
                 const createdAtRaw = row?.raw?.created_at || row?.raw?.createdAt;
                 const updatedAtRaw = row?.raw?.updated_at || row?.raw?.updatedAt;
@@ -155,7 +224,7 @@ function TierDetailsList() {
                             );
                           }
                           return (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex gap-1">
                               {tierList.map((tier) => (
                                 <span
                                   key={`${row.id}-${tier}`}

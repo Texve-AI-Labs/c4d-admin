@@ -7,6 +7,12 @@ import { Utils } from "@/utils/utils";
 
 const MasterPriceLogParcel = ({ id }) => {
   const [documentslogs, setDocumentLogs] = useState([]);
+  const sortedLogs = [...documentslogs].sort((a, b) => {
+    const aTime = new Date(a?.created_at || 0).getTime();
+    const bTime = new Date(b?.created_at || 0).getTime();
+    if (aTime !== bTime) return bTime - aTime;
+    return Number(b?.id || 0) - Number(a?.id || 0);
+  });
 
   const masterPriceTableLogParcel = async (id) => {
     try {
@@ -23,12 +29,16 @@ const MasterPriceLogParcel = ({ id }) => {
 
   const fieldMappings = {
     zone: "Zone",
+    serviceType: "Service Type",
+    type: "Type",
+    period: "Period",
     subZoneId: "Sub Zone",
     parcelType: "Parcel Type",
     baseFare: "Base Fare",
     baseKm: "Base Km",
     kilometerPrice: "Kilometer Price",
     peakHour: "Peak Hour",
+    peakHours: "Peak Hours",
     parcelPricing: "Parcel Pricing",
     pickupFreeKm: "Pickup Free Km",
     nightCharge: "Night Charge",
@@ -53,6 +63,44 @@ const MasterPriceLogParcel = ({ id }) => {
     driver_cancellation_charge: "Driver Cancellation Charge",
     demandRules: "Demand Rules",
     demand_rules: "Demand Rules",
+  };
+
+  const canonicalField = (field) => {
+    const key = String(field || "");
+    const lower = key.toLowerCase();
+    const aliasMap = {
+      servicetype: "serviceType",
+      service_type: "serviceType",
+      base_fare: "baseFare",
+      basefare: "baseFare",
+      base_km: "baseKm",
+      basekm: "baseKm",
+      kilometer_price: "kilometerPrice",
+      kilometerprice: "kilometerPrice",
+      peak_hour: "peakHour",
+      peakhours: "peakHours",
+      peak_hours: "peakHours",
+      parcel_pricing: "parcelPricing",
+      parcelpricing: "parcelPricing",
+      weight_surcharge: "weightSurcharge",
+      weathersurcharge: "weatherSurcharge",
+      weather_surcharge: "weatherSurcharge",
+      handlingsurcharge: "handlingSurcharge",
+      handling_surcharge: "handlingSurcharge",
+      nightsurcharge: "nightSurcharge",
+      night_surcharge: "nightSurcharge",
+      outsidedropsurcharge: "outsideDropSurcharge",
+      outside_drop_surcharge: "outsideDropSurcharge",
+      driver_cancel_mins: "driverCancelMins",
+      drivercancelmins: "driverCancelMins",
+      driver_free_cancellations_per_day: "driverFreeCancellationsPerDay",
+      driverfreecancellationsperday: "driverFreeCancellationsPerDay",
+      driver_cancellation_charge: "driverCancellationCharge",
+      drivercancellationcharge: "driverCancellationCharge",
+      demand_rules: "demandRules",
+      demandrules: "demandRules",
+    };
+    return aliasMap[lower] || key;
   };
 
 
@@ -92,7 +140,19 @@ const MasterPriceLogParcel = ({ id }) => {
   const formatPeakHour = (arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return "-";
     return arr
-      .map((p) => `${p?.start || "00:00"}-${p?.end || "00:00"}: ${Number(p?.kilometerPrice ?? 0)}`)
+      .map((p) => {
+        const mini = p?.kilometerPrice ?? p?.kilometerPriceMini ?? p?.price ?? 0;
+        const muv = p?.kilometerPriceMVP ?? p?.kilometerPriceMuv ?? p?.kilometerPriceMVP ?? null;
+        const suv = p?.kilometerPriceSuv ?? null;
+        const sedan = p?.kilometerPriceSedan ?? null;
+        const extra = [
+          `Mini: ${Number(mini ?? 0)}`,
+          muv !== null && muv !== undefined ? `MUV: ${Number(muv)}` : null,
+          suv !== null && suv !== undefined ? `SUV: ${Number(suv)}` : null,
+          sedan !== null && sedan !== undefined ? `Sedan: ${Number(sedan)}` : null,
+        ].filter(Boolean).join(", ");
+        return `${p?.start || "00:00"}-${p?.end || "00:00"} (${extra})`;
+      })
       .join(" | ");
   };
 
@@ -140,6 +200,11 @@ const MasterPriceLogParcel = ({ id }) => {
     ].join(" | ");
   };
 
+  const formatPeakHours = (value) => {
+    if (!Array.isArray(value) || !value.length) return "-";
+    return formatPeakHour(value);
+  };
+
   const formatPeakSurcharge = (arr) => formatArray(arr);
   const formatWeatherSurcharge = (arr) => Array.isArray(arr) ? formatArray(arr) : formatSurchargeObject(arr);
   const formatHandlingSurcharge = (arr) => Array.isArray(arr) ? formatArray(arr) : formatSurchargeObject(arr);
@@ -161,7 +226,8 @@ const MasterPriceLogParcel = ({ id }) => {
   const formatValue = (field, value) => {
     if (value === null || value === undefined || value === "") return "-";
 
-    const lower = field.toLowerCase();
+    const canonical = canonicalField(field);
+    const lower = canonical.toLowerCase();
 
     if (lower.includes("distanceslabs")) return formatDistanceSlabs(value);
     if (lower.includes("weightsurcharge")) return formatWeightSurcharge(value);
@@ -177,6 +243,7 @@ const MasterPriceLogParcel = ({ id }) => {
     if (lower === "drivercancelmins" || lower === "driver_cancel_mins") {
       return Utils.convertTimeFormatToMinutes(value);
     }
+    if (lower === "serviceType".toLowerCase()) return String(value);
 
     if (Array.isArray(value)) return formatArray(value);
     if (typeof value === "object") return JSON.stringify(value);
@@ -192,7 +259,7 @@ const MasterPriceLogParcel = ({ id }) => {
       </div>
 
       <Card>
-        {documentslogs.length > 0 ? (
+        {sortedLogs.length > 0 ? (
           <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
             <table className="w-full min-w-[640px] table-auto">
               <thead>
@@ -221,10 +288,10 @@ const MasterPriceLogParcel = ({ id }) => {
               </thead>
 
               <tbody>
-                {documentslogs.map(
-                  ({ id, created_at, oldData, newData, UserId, User }, logIdx) => {
+                {sortedLogs.map(
+                  ({ id, created_at, oldData, newData, UserId, userId, user_id, User }, logIdx) => {
                     const className = `py-3 px-5 ${
-                      logIdx === documentslogs.length - 1
+                      logIdx === sortedLogs.length - 1
                         ? ""
                         : "border-b border-blue-gray-50"
                     }`;
@@ -235,8 +302,9 @@ const MasterPriceLogParcel = ({ id }) => {
                         ...Object.keys(newData ?? {}),
                       ])
                     ).filter((field) => {
-                      const oldVal = oldData?.[field];
-                      const newVal = newData?.[field];
+                      const canonical = canonicalField(field);
+                      const oldVal = oldData?.[field] ?? oldData?.[canonical];
+                      const newVal = newData?.[field] ?? newData?.[canonical];
                       return JSON.stringify(oldVal ?? null) !== JSON.stringify(newVal ?? null);
                     });
 
@@ -256,25 +324,25 @@ const MasterPriceLogParcel = ({ id }) => {
 
                         <td className={className}>
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {fieldMappings[field] || field}
+                            {fieldMappings[field] || fieldMappings[canonicalField(field)] || canonicalField(field)}
                           </Typography>
                         </td>
 
                         <td className={className}>
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {formatValue(field, oldData?.[field])}
+                            {formatValue(field, oldData?.[field] ?? oldData?.[canonicalField(field)])}
                           </Typography>
                         </td>
 
                         <td className={className}>
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {formatValue(field, newData?.[field])}
+                            {formatValue(field, newData?.[field] ?? newData?.[canonicalField(field)])}
                           </Typography>
                         </td>
 
                         <td className={className}>
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {User?.name ?? UserId}
+                            {User?.name ?? UserId ?? userId ?? user_id ?? "-"}
                           </Typography>
                         </td>
                       </tr>

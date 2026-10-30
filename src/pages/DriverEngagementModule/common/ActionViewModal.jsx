@@ -1,6 +1,7 @@
 import React from "react";
 import { Dialog, DialogHeader, DialogBody, Typography, Button } from "@material-tailwind/react";
 import moment from "moment";
+import { formatReasonText } from "../AuditLogs/auditLogUtils";
 
 const safeText = (value, fallback = "-") => {
   if (value === null || value === undefined) return fallback;
@@ -26,10 +27,6 @@ const safeText = (value, fallback = "-") => {
 };
 
 
-const getReasonText = (reason) => {
-  return safeText(reason, "-");
-};
-
 const HistoryTable = ({ history = [] }) => {
   if (!Array.isArray(history) || history.length === 0) {
     return (
@@ -50,7 +47,7 @@ const HistoryTable = ({ history = [] }) => {
               "Action",
               "Reason",
               "Evaluated At"].map((head) => (
-                <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 px-3 py-2">
+                <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 px-3 py-2 whitespace-nowrap">
                   <Typography variant="small" className="font-semibold text-blue-gray-700">{head}</Typography>
                 </th>
               ))}
@@ -61,11 +58,11 @@ const HistoryTable = ({ history = [] }) => {
             const cellClass = index === history.length - 1 ? "px-3 py-2" : "border-b border-blue-gray-50 px-3 py-2";
             return (
               <tr key={`${row?.id || row?.partnerId || "history"}-${index}`}>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.previousTier)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.evaluatedTier)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.action)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{getReasonText(row?.reason)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{moment(row?.evaluatedAt).format('DD MMM YYYY, hh:mm A')}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.previousTier)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.evaluatedTier)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.action)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{formatReasonText(row?.reason)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{moment(row?.evaluatedAt).format('DD MMM YYYY, hh:mm A')}</Typography></td>
               </tr>
             );
           })}
@@ -100,7 +97,7 @@ const IncentiveTable = ({ rows = [] }) => {
               "Payout Mode",
               "Updated At",
             ].map((head) => (
-              <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 px-3 py-2">
+              <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 px-3 py-2 whitespace-nowrap">
                 <Typography variant="small" className="font-semibold text-blue-gray-700">{head}</Typography>
               </th>
             ))}
@@ -111,15 +108,15 @@ const IncentiveTable = ({ rows = [] }) => {
             const cellClass = index === rows.length - 1 ? "px-3 py-2" : "border-b border-blue-gray-50 px-3 py-2";
             return (
               <tr key={`${row?.id || row?.partnerId || "incentive"}-${index}`}>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.tier)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{moment(row?.weekStart).format('DD MMM YYYY, hh:mm A')}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{moment(row?.weekEnd).format('DD MMM YYYY, hh:mm A')}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.onlineIncentive)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.weeklyIncentive)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="font-semibold text-blue-gray-700">{safeText(row?.totalIncentive)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.status)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.payoutMode)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{moment(row?.updated_at || row?.updatedAt).format('DD MMM YYYY, hh:mm A')}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.tier)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{moment(row?.weekStart).format('DD MMM YYYY, hh:mm A')}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{moment(row?.weekEnd).format('DD MMM YYYY, hh:mm A')}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.onlineIncentive)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.weeklyIncentive)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="font-semibold text-blue-gray-700 whitespace-nowrap">{safeText(row?.totalIncentive)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.status)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.payoutMode)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{moment(row?.updated_at || row?.updatedAt).format('DD MMM YYYY, hh:mm A')}</Typography></td>
               </tr>
             );
           })}
@@ -144,7 +141,7 @@ const AuditTable = ({ rows = [] }) => {
         <thead>
           <tr>
             {["Previous", "Evaluated", "Action", "Reason", "Evaluated At"].map((head) => (
-              <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 px-3 py-2">
+              <th key={head} className="border-b border-blue-gray-100 bg-blue-gray-50 px-3 py-2 whitespace-nowrap">
                 <Typography variant="small" className="font-semibold text-blue-gray-700">{head}</Typography>
               </th>
             ))}
@@ -156,11 +153,11 @@ const AuditTable = ({ rows = [] }) => {
             return (
               <tr key={`${row?.id || row?.partnerId || "audit"}-${index}`}>
 
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.previousTier)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.evaluatedTier)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row?.action)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{getReasonText(row?.reason)}</Typography></td>
-                <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{moment(row?.evaluatedAt).format('DD MMM YYYY, hh:mm A')}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.previousTier)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.evaluatedTier)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{safeText(row?.action)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{formatReasonText(row?.reason)}</Typography></td>
+                <td className={`${cellClass} whitespace-nowrap`}><Typography variant="small" className="text-blue-gray-700 whitespace-nowrap">{moment(row?.evaluatedAt).format('DD MMM YYYY, hh:mm A')}</Typography></td>
               </tr>
             );
           })}

@@ -75,6 +75,7 @@ export const mapAuditRows = (rows = []) => {
         row?.partnerRelation?.partner?.vehicleType,
         row?.vehicleType
       ),
+      partnerType: toUpper(row?.partnerType || row?.partner_type || row?.partnerRelation?.partner?.type || ""),
       changeType,
       changeTypeDisplay: changeType.replaceAll("_", " "),
       tierChange: pickDisplay(

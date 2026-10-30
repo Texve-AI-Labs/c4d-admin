@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   Input,
@@ -8,7 +8,7 @@ import {
 } from '@material-tailwind/react';
 import Select from 'react-select';
 
-const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaId }) => {
+const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaId, isEditing = false, onDescriptionChange }) => {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -24,6 +24,18 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
   const [nameError, setNameError] = useState(null);
   const [descriptionError, setDescriptionError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
+  const effectiveCoordinates = Array.isArray(coordinates) && coordinates.length >= 3
+    ? coordinates
+    : Array.isArray(initialData?.coordinates) && initialData.coordinates.length >= 3
+      ? initialData.coordinates
+      : coordinates;
+
+  useEffect(() => {
+    if (typeof onDescriptionChange === 'function') {
+      onDescriptionChange(formData.description || 'Zone');
+    }
+  }, [formData.description, onDescriptionChange]);
 
   const handleConfigChange = (field, value) => {
     // Convert to number and validate
@@ -45,6 +57,16 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     setError(null);
     setNameError(null);
     setDescriptionError(null);
+    setSaveStatus('');
+    // console.log('[ZoneForm] submit', {
+    //   isEditing,
+    //   serviceAreaId,
+    //   coordinatesLength: Array.isArray(coordinates) ? coordinates.length : 0,
+    //   effectiveCoordinatesLength: Array.isArray(effectiveCoordinates) ? effectiveCoordinates.length : 0,
+    //   coordinates,
+    //   effectiveCoordinates,
+    //   formData,
+    // });
 
     let hasError = false;
 
@@ -57,12 +79,6 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
       setDescriptionError('Description is required');
       hasError = true;
     }
-
-      if (!coordinates || coordinates.length < 3) {
-      const msg = 'Please draw a valid polygon with at least 3 points';
-      setError(msg);
-      hasError = true;
-      }
 
       // Validate percentage fields are between 0 and 100
       const percentageFields = [
@@ -93,17 +109,26 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
     }
 
     setIsSubmitting(true);
+    setSaveStatus('Saving zone...');
 
     try {
-      onSave({
+      // console.log('[ZoneForm] sending save payload', {
+      //   name: formData.name,
+      //   description: formData.description,
+      //   coordinatesLength: Array.isArray(effectiveCoordinates) ? effectiveCoordinates.length : 0,
+      //   coordinates: effectiveCoordinates,
+      // });
+      await onSave({
         ...formData,
-        coordinates,
+        coordinates: effectiveCoordinates,
         parent_id: serviceAreaId,
         type: 'Zone'
       });
+      setSaveStatus('Zone updated successfully');
     } catch (err) {
       console.log(err);
-      setError(err.message);
+      setError(err?.message || 'Failed to save zone');
+      setSaveStatus('');
     } finally {
       setIsSubmitting(false);
     }
@@ -114,9 +139,19 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
       <Typography variant="h6" color="blue-gray" className="mb-4">
         Zone Details
       </Typography>
+      <Typography variant="small" color="gray" className="mb-3 block">
+        {isEditing
+          ? 'Edit the polygon on the map, then save this zone.'
+          : 'Draw the polygon on the map, click Finish Drawing, then save this zone.'}
+      </Typography>
       {error && (
         <Alert color="red" className="mb-4">
           {error}
+        </Alert>
+      )}
+      {saveStatus && !error && (
+        <Alert color="blue" className="mb-4">
+          {saveStatus}
         </Alert>
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -159,10 +194,14 @@ const ZoneForm = ({ onSave, initialData = null, coordinates = null, serviceAreaI
                 : null
             }
             onChange={(selected) => {
+              const nextDescription = selected ? selected.value : '';
               setFormData({
                 ...formData,
-                description: selected ? selected.value : '',
+                description: nextDescription,
               });
+              if (typeof onDescriptionChange === 'function') {
+                onDescriptionChange(nextDescription || 'Zone');
+              }
               if (selected && descriptionError) {
                 setDescriptionError(null);
               }

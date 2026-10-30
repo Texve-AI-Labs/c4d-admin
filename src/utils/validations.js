@@ -1,5 +1,29 @@
 import * as Yup from 'yup'
 
+const FULL_NAME_REGEX = /^[A-Za-z ]+$/;
+const DRIVING_LICENSE_REGEX = /^[A-Za-z]{2}[0-9]{2}[A-Za-z ]?[0-9]{11}$/;
+const DRIVING_LICENSE_ERROR = "Invalid Driving License. Example: TN07X19990000286 or TN07 19990000286";
+const PASSWORD_RULES_SCHEMA = Yup.string()
+    .min(8, 'Password must be at least 8 characters.')
+    .max(64, 'Password cannot exceed 64 characters.')
+    .test('no-leading-trailing-spaces', 'Password cannot start or end with spaces.', (value) => !value || value === value.trim())
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter.')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter.')
+    .matches(/[0-9]/, 'Password must contain at least one number.')
+    .matches(/[^A-Za-z0-9\s]/, 'Password must contain at least one special character.');
+
+export const FULL_NAME_SCHEMA = Yup.string()
+    .transform((value) => (typeof value === 'string' ? value.trim() : value))
+    .required('Name is required')
+    .min(2, 'Full Name must be at least 2 characters.')
+    .max(40, 'Full Name cannot exceed 40 characters.')
+    .matches(FULL_NAME_REGEX, 'Please enter a valid name');
+
+export const PASSWORD_SCHEMA = PASSWORD_RULES_SCHEMA.required('Password is required');
+export const OPTIONAL_PASSWORD_SCHEMA = Yup.lazy((value) =>
+    !value ? Yup.string().notRequired() : PASSWORD_RULES_SCHEMA
+);
+
 export const PERSONALINFO_SCHEMA = Yup.object().shape({
     salutation: Yup.string().required('Salutation is required'),
     firstName: Yup.string().required('Your Name is required'),
@@ -33,11 +57,11 @@ export const VEHICLEINFO_SCHEMA = Yup.object().shape({
 });
 
 export const ADD_USER_SCHEMA = Yup.object({
-    name: Yup.string().required('Name is required'),
+    name: FULL_NAME_SCHEMA,
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
     email: Yup.string().email('Invalid email address').matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,4}$/, 'Invalid email address').required('Email address is required'),
     role: Yup.string().required('Role is required'),
-    password: Yup.string().required('Password is required'),
+    password: PASSWORD_SCHEMA,
     permission: Yup.array()
         .of(Yup.string().required('Each permission must be selected'))
         .required('At least one permission must be selected')
@@ -46,7 +70,7 @@ export const ADD_USER_SCHEMA = Yup.object({
 });
 
 export const EDIT_USER_SCHEMA = Yup.object({
-    name: Yup.string().required('Name is required'),
+    name: FULL_NAME_SCHEMA,
     phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid 10-digit number').required('Phone number is required'),
     email: Yup.string().email('Invalid email address').matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,4}$/, 'Invalid email address').required('Email address is required'),
     role: Yup.string().required('Role is required'),
@@ -54,10 +78,7 @@ export const EDIT_USER_SCHEMA = Yup.object({
         .of(Yup.string().required('Each permission must be selected'))
         .required('At least one permission must be selected')
         .min(1, 'At least one permission must be selected'),
-    password: Yup.lazy((value) =>
-        !value
-            ? Yup.string().notRequired()
-            : Yup.string().min(3, 'Password must be at least 3 characters')),
+    password: OPTIONAL_PASSWORD_SCHEMA,
     status: Yup.string().required('Status is required')
 });
 
@@ -85,15 +106,15 @@ export const BOOKING_DETAILS_SCHEMA = Yup.object().shape({
         }),
 
     carType: Yup.string().when('serviceType', {
-        is: (val) =>['RIDES', 'RENTAL', 'RENTAL_HOURLY_PACKAGE', 'RENTAL_DROP_TAXI'].includes(val),
+        is: (val) => ['DRIVER'].includes(val),
         then: () => Yup.string().required('Please select a car type'),
         otherwise: () => Yup.string().nullable(),
     }),
-    // transmissionType: Yup.string().when('serviceType', {
-    //     is: (val) => val === 'DRIVER',
-    //     then: () => Yup.string().required('Transmission Type is required'),
-    //     otherwise: () => Yup.string(),
-    // }),
+    transmissionType: Yup.string().when('serviceType', {
+        is: (val) => val === 'DRIVER',
+        then: () => Yup.string().required('Transmission Type is required'),
+        otherwise: () => Yup.string().nullable(),
+    }),
     tripType: Yup.string().when('serviceType', {
         is: (val) => val == 'DRIVER',
         then: () => Yup.string().required('Trip Type is required'),
@@ -145,7 +166,7 @@ export const PERSONAL_INFO_DETAILS_EDIT_SCHEMA = Yup.object().shape({
 
 export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
     type: Yup.string().required('Service Type is required'),
-    name: Yup.string().required('Full Name/Company Name is required'),
+    name: Yup.string().required('Full Name/Company Name/Owner Name is required'),
     phoneNumber: Yup.string()
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
@@ -166,12 +187,11 @@ export const ACCOUNT_ADD_SCHEMA = Yup.object().shape({
 
 export const ACCOUNT_EDIT_SCHEMA = Yup.object().shape({
     type: Yup.string().required('Service Type is required'),
-    name: Yup.string().required('Full Name/Company Name is required'),
+    name: Yup.string().required('Full Name/Company Name/Owner Name is required'),
     phoneNumber: Yup.string()
         .matches(/^\d{10}$/, 'Phone Number must be exactly 10 digits')
         .required('Phone Number is required'),
     source: Yup.string().required('Source is required'),
-    // email: Yup.string().email('Invalid email format').required('Email is required'),
     address: Yup.string().required('Current Address is required'),
     street: Yup.string().required('Street Name is required'),
     thaluk: Yup.string().required('Thaluk is required'),
@@ -185,8 +205,9 @@ export const ACCOUNT_EDIT_SCHEMA = Yup.object().shape({
 export const DRIVER_ADD_SCHEMA = Yup.object({
     salutation: Yup.string().required('Salutation is required'),
     firstName: Yup.string().required('Name is required'),
-    fatherName: Yup.string().optional(),
+    fatherName: Yup.string().required('Father\'s Name is required'),
     dateOfBirth: Yup.date()
+    .required('Date of birth is required')
         .max(new Date(), 'Date of birth cannot be in the future')
         .test('age', 'Driver must be at least 18 years old', function (value) {
             if (!value) return true;
@@ -194,8 +215,8 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
             cutoff.setFullYear(cutoff.getFullYear() - 18);
             return value <= cutoff;
         }),
-    phoneNumber: Yup.string().matches(/^[6-9]{1}[0-9]{9}/, 'Must be a valid mobile number').required('Phone number is required'),
-    license: Yup.string().matches('^[a-zA-Z]{2}[0-9]{13}$', 'Invalid Driver\'s License').required('Driving License is required'),
+    phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid mobile number').required('Phone number is required'),
+    license: Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
     licenseType: Yup.string().required('License Type is required'),
     licenseExpiryDate: Yup.date()
         .min(new Date(), 'License expiry date must be in the future')
@@ -207,10 +228,6 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
     address: Yup.string()
         .required('Address is required')
         .min(5, 'Address must be at least 5 characters')
-        // .matches(
-        //     /^[a-zA-Z0-9\s,.-/#]+$/,
-        //     'Address can only contain letters, numbers, spaces, and common symbols (,./#-)'
-        // )
         .test(
             'no-multiple-spaces',
             'Address should not contain multiple consecutive spaces',
@@ -224,11 +241,15 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
         .trim(),
     streetName: Yup.string().required('Street is required').min(3, 'Street name must be atleast 3 characters'),
     thaluk: Yup.string().required('Thaluk is required'),
-    district: Yup.string().required('District is required'),
+    district: Yup.string().required('Zone is required'),
+    accountDistrict: Yup.string().required('Account District is required'),
     state: Yup.string().required('State is required'),
-    pinCode: Yup.string()
+    pincode: Yup.string()
         .required('Pincode is required')
-        .matches(/^[1-9][0-9]{5}$/, 'Must be a valid 6-digit pincode'),
+        .test('pincode-format', 'Pincode must be exactly 6 digits', (value) => {
+            if (!value) return true;
+            return /^\d{6}$/.test(value);
+        }),
     reference1: Yup.string()
         .required('Reference 1 is required')
         .min(2, 'Reference name must be at least 2 characters')
@@ -244,48 +265,16 @@ export const DRIVER_ADD_SCHEMA = Yup.object({
         .required('Phone number 2 is required')
         .matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
     transmissionType: Yup.string().required('Transmission Type is required'),
-    // packages: Yup.array().when(['jobType'], {
-    //     is: (jobType) => jobType === 'CAB',
-    //     then: () =>
-    //         Yup.array()
-    //             .of(Yup.string().required('Each package must be selected'))
-    //             .required('At least one package must be selected'),
-    //     otherwise: () => Yup.array().nullable(),
-    // }),
-    // prices: Yup.array().when(['jobType'], {
-    //     is: (jobType) => jobType !== 'CAB',
-    //     then: () =>
-    //         Yup.array()
-    //             .of(
-    //                 Yup.object().shape({
-    //                     price: Yup.number().required('Price is required'),
-    //                     extraPrice: Yup.number().required('Extra price is required'),
-    //                     extraKmPrice: Yup.number().required('Extra KM price is required'),
-    //                     nightCharge: Yup.number().required('Night charge is required'),
-    //                     cancelCharge: Yup.number().required('Cancel charge is required'),
-    //                     extraCabType: Yup.string().required('Cab type is required'),
-    //                 })
-    //             )
-    //             .test(
-    //                 'at-least-one-price',
-    //                 'At least one price must be added',
-    //                 function (prices) {
-    //                     return prices && prices.some(price =>
-    //                         price.price || price.extraPrice || price.extraKmPrice ||
-    //                         price.nightCharge || price.cancelCharge || price.extraCabType
-    //                     );
-    //                 }
-    //             )
-    //             .required('At least one price must be added'),
-    //     otherwise: () => Yup.array().nullable(),
-    // })
+    maritalStatus: Yup.string().required('Marital Status is required'),
+    alternateNumber: Yup.string().required('Alternate Number is required').matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
 });
 
 export const DRIVER_SCHEMA = Yup.object({
     salutation: Yup.string().required('Salutation is required'),
     firstName: Yup.string().required('Name is required'),
-    fatherName: Yup.string().optional(),
+    fatherName: Yup.string().required('Father\'s Name is required'),
     dateOfBirth: Yup.date()
+    .required('Date of birth is required')
         .max(new Date(), 'Date of birth cannot be in the future')
         .test('age', 'Driver must be at least 18 years old', function (value) {
             if (!value) return true;
@@ -293,8 +282,14 @@ export const DRIVER_SCHEMA = Yup.object({
             cutoff.setFullYear(cutoff.getFullYear() - 18);
             return value <= cutoff;
         }),
-    phoneNumber: Yup.string().matches(/^[6-9]{1}[0-9]{9}/, 'Must be a valid mobile number').required('Phone number is required'),
-    license: Yup.string().matches('^[a-zA-Z]{2}[0-9]{13}$', 'Invalid Driver\'s License').required('Driving License is required'),
+    phoneNumber: Yup.string().matches(/^[6-9][0-9]{9}$/, 'Must be a valid mobile number').required('Phone number is required'),
+    status: Yup.string().required("Driver status is required"),
+    blockedReason: Yup.string().when("status", {
+        is: "BLOCKED",
+        then: (schema) => schema.trim().required("Block reason is required"),
+        otherwise: (schema) => schema.notRequired(),
+    }),
+    license: Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
     licenseType: Yup.string().required('License Type is required'),
     licenseExpiryDate: Yup.date()
         .min(new Date(), 'License expiry date must be in the future')
@@ -306,10 +301,6 @@ export const DRIVER_SCHEMA = Yup.object({
     address: Yup.string()
         .required('Address is required')
         .min(5, 'Address must be at least 5 characters')
-        // .matches(
-        //     /^[a-zA-Z0-9\s,.-/#]+$/,
-        //     'Address can only contain letters, numbers, spaces, and common symbols (,./#-)'
-        // )
         .test(
             'no-multiple-spaces',
             'Address should not contain multiple consecutive spaces',
@@ -323,42 +314,32 @@ export const DRIVER_SCHEMA = Yup.object({
         .trim(),
     streetName: Yup.string().required('Street is required').min(3, 'Street name must be atleast 3 characters'),
     thaluk: Yup.string().required('Thaluk is required'),
-    district: Yup.string().required('District is required'),
+    district: Yup.string().required('Zone is required'),
+    accountDistrict: Yup.string().required('Account District is required'),
     state: Yup.string().required('State is required'),
-    pinCode: Yup.string()
+    pincode: Yup.string()
         .required('Pincode is required')
-        .matches(/^[1-9][0-9]{5}$/, 'Must be a valid 6-digit pincode'),
+        .test('pincode-format', 'Pincode must be exactly 6 digits', (value) => {
+            if (!value) return true;
+            return /^\d{6}$/.test(value);
+        }),
     reference1: Yup.string()
+        .required('Reference 1 is required')
         .min(2, 'Reference name must be at least 2 characters')
         .matches(/^[a-zA-Z\s]*$/, 'Reference name can only contain letters'),
     phoneNumber1: Yup.string()
+        .required('Phone number 1 is required')
         .matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
     reference2: Yup.string()
+        .required('Reference 2 is required')
         .min(2, 'Reference name must be at least 2 characters')
         .matches(/^[a-zA-Z\s]*$/, 'Reference name can only contain letters'),
     phoneNumber2: Yup.string()
+        .required('Phone number 2 is required')
         .matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
     transmissionType: Yup.string().required('Transmission Type is required'),
-    // packages: Yup.array()
-    //     .of(Yup.string().required('Each package must be selected'))
-    //     .required('At least one package must be selected')
-    //     .min(1, 'At least one package must be selected'),
-    //wallet: Yup.string().required('Wallet is required'),
-    // prices: Yup.array().of(
-    //     Yup.object().shape({
-    //         price: Yup.number().required('Price is required'),
-    //         extraPrice: Yup.number().required('Extra price is required'),
-    //         extraKmPrice: Yup.number().required('Extra KM price is required'),
-    //         nightCharge: Yup.number().required('Night charge is required'),
-    //         cancelCharge: Yup.number().required('Cancel charge is required'),
-    //         extraCabType: Yup.string().required('Cab type is required'),
-    //     })
-    // ).test('at-least-one-price', 'At least one price must be added', function (prices) {
-    //     return prices.some(price =>
-    //         price.price || price.extraPrice || price.extraKmPrice ||
-    //         price.nightCharge || price.cancelCharge || price.extraCabType
-    //     );
-    // })
+    maritalStatus: Yup.string().required('Marital Status is required'),
+    alternateNumber: Yup.string().required('Alternate Number is required').matches(/^[6-9]{1}[0-9]{9}$/, 'Must be a valid mobile number'),
 });
 
 export const CAB_SCHEMA = Yup.object({
@@ -425,22 +406,12 @@ export const CAB_SCHEMA = Yup.object({
     }),
     licenseNumber: Yup.string().when(['assignOrAddDriver'], {
         is: (assignOrAddDriver) => assignOrAddDriver === 'Add',
-        then: () => Yup.string().required('Driving License is required'),
+        then: () => Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
         otherwise: () => Yup.string()
     }),
     // notify: Yup.string().required('Notification Recipients is required'),
     // carType: Yup.string().required('Car Type is required'),
     vehicleType: Yup.string().required('Vehicle Type is required'),
-    seater: Yup.string()
-        .required('Seater is required')
-        .oneOf(['4', '5', '6', '7', '8', '9', '10', '12', '14'],
-            'Seater must be 4, 5, 6, 7, 8, 9, 10, 12, or 14'),
-    luggage: Yup.number()
-        .typeError('Luggage must be a number')
-        .required('Luggage capacity is required')
-        .integer('Must be a whole number (e.g., 1, 2, 3)')
-        .min(0, 'Luggage cannot be negative')
-        .max(10, 'Maximum luggage capacity is 10'),
     modelYear: Yup.string()
         .required('Year of Model is required')
         .test(
@@ -456,60 +427,6 @@ export const CAB_SCHEMA = Yup.object({
         .of(Yup.string().required('Each package must be selected'))
         .required('At least one package must be selected'),
 
-    //wallet: Yup.string().required('Wallet is required'),
-    type: Yup.string()
-        .oneOf(["RENTAL"], "Rides"),
-
-    prices: Yup.array().of(
-        Yup.object().shape({
-              kilometer: Yup.number()
-                .typeError("Kilometer must be a number")
-                .positive("Kilometer must be greater than zero")
-                .required("Kilometer is required")
-                .when("type", {
-                    is:"RENTAL",
-                    then: (schema) => schema.required("Kilometer is required."),
-                    otherwise: (schema) => schema.notRequired(),
-                }),
-                
-
-            baseFare: Yup.number()
-                .typeError("Base Fare must be a number")
-                .positive("Base Fare must be greater than zero")
-                .required("Base Fare is required"),
-
-            kilometerPrice: Yup.number()
-                .typeError("Kilometer Price must be a number")
-                .positive("Kilometer Price must be greater than zero")
-                .required("Kilometer Price is required"),
-
-            additionalMinCharge: Yup.number()
-                .typeError("Additional Mins Charge must be a number")
-                .positive("Additional Mins Charge must be greater than zero")
-                .required("Additional Mins Charge  is required")
-                .when("type", {
-                    is:"RENTAL",
-                    then: (schema) => schema.required("Additional Mins Charge is required"),
-                    otherwise: (schema) => schema.notRequired(),
-                }),
-
-            minCharge: Yup.number()
-                .typeError("Mins Charge must be a number")
-                .positive("Mins Charge  must be greater than zero")
-                .required("Mins Charge  is required")
-                .when("type", {
-                    is: "Rides",
-                    then: (schema) => schema.required("Mins Charge is required."),
-                    otherwise: (schema) => schema.notRequired(),
-                }),
-        })
-
-    ).test('at-least-one-price', 'At least one price must be added', function (prices) {
-        return prices.some(price =>
-            price.price || price.kilometer || price.baseFare ||
-            price.kilometerPrice || price.additionalMinCharge || price.minCharge
-        );
-    })
 });
 
 export const REASSIGN_DRIVER = Yup.object({
@@ -554,7 +471,7 @@ export const REASSIGN_DRIVER = Yup.object({
     }),
     licenseNumber: Yup.string().when(['assignOrAddDriver'], {
         is: (assignOrAddDriver) => assignOrAddDriver === 'Add',
-        then: () => Yup.string().required('Driving License is required'),
+        then: () => Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
         otherwise: () => Yup.string()
     }),
 })
@@ -623,22 +540,12 @@ export const CAB_ADD_SCHEMA = Yup.object({
     }),
     licenseNumber: Yup.string().when(['assignOrAddDriver'], {
         is: (assignOrAddDriver) => assignOrAddDriver === 'Add',
-        then: () => Yup.string().required('Driving License is required'),
+        then: () => Yup.string().matches(DRIVING_LICENSE_REGEX, DRIVING_LICENSE_ERROR).required('Driving License is required'),
         otherwise: () => Yup.string()
     }),
     carNumber:Yup.string().required('Car Number is requried'),
     carType: Yup.string().required('Car Type is required'),
     vehicleType: Yup.string().required('Vehicle Type is required'),
-    seater: Yup.string()
-        .required('Seater is required')
-        .oneOf(['4', '5', '6', '7', '8', '9', '10', '12', '14'],
-            'Seater must be 4, 5, 6, 7, 8, 9, 10, 12, or 14'),
-    luggage: Yup.number()
-        .typeError('Luggage must be a number')
-        .required('Luggage capacity is required')
-        .integer('Must be a whole number (e.g., 1, 2, 3)')
-        .min(0, 'Luggage cannot be negative')
-        .max(10, 'Maximum luggage capacity is 10'),
     modelYear: Yup.string()
         .required('Year of Model is required')
         .test(
@@ -653,63 +560,6 @@ export const CAB_ADD_SCHEMA = Yup.object({
     packages: Yup.array()
         .of(Yup.string().required('Each package must be selected'))
         .required('At least one package must be selected'),
-
-    type: Yup.string()
-                .oneOf(["RENTAL"], "Rides"),
-
-    prices: Yup.array().of(
-        Yup.object().shape({
-            
-           kilometer: Yup.number()
-                .typeError("Kilometer must be a number")
-                .positive("Kilometer must be greater than zero")
-                .required("Kilometer is required")
-                .when("type", {
-                    is: "RENTAL",
-                    then: (schema) => schema.required("Kilometer  is required."),
-                    otherwise: (schema) => schema.notRequired(),
-                }),
-                
-
-            baseFare: Yup.number()
-                .typeError("Base Fare must be a number")
-                .positive("Base Fare must be greater than zero")
-                .required("Base Fare is required"),
-
-            kilometerPrice: Yup.number()
-                .typeError("Kilometer Price must be a number")
-                .positive("Kilometer Price must be greater than zero")
-                .required("Kilometer Price is required"),
-
-            additionalMinCharge: Yup.number()
-                .typeError("Additional Mins Charge must be a number")
-                .positive("Additional Mins Charge  must be greater than zero")
-                .required("Additional Mins Charge  is required")
-                .when("type", {
-                    is: "RENTAL",
-                    then: (schema) => schema.required("Additional Mins Charge  is required"),
-                    otherwise: (schema) => schema.notRequired(),
-
-                }),
-
-            minCharge: Yup.number()
-                .typeError("Mins Charge must be a number")
-                .positive("Mins Charge  must be greater than zero")
-                .required("Mins Charge  is required")
-                .when("type", {
-                    is: "Rides",
-                    then: (schema) => schema.required("Mins Charge is required."),
-                    otherwise: (schema) => schema.notRequired(),
-                }),
-
-        })
-
-    ).test('at-least-one-price', 'At least one price must be added', function (prices) {
-        return prices.some(price =>
-            price.price || price.kilometer || price.baseFare ||
-            price.kilometerPrice || price.additionalMinCharge || price.minCharge
-        );
-    })
 });
 
 export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
@@ -724,8 +574,17 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
         .required("Service Type is required"),
     packagePrice: Yup.number()
         .typeError("Package Price Amount must be a number")
-
-        .required("Package Price Amount is required"),
+        .when("type", {
+            is: "FREE",
+            then: (schema) =>
+                schema
+                    .oneOf([0], "Package Price must be 0 when Type is Free")
+                    .required("Package Price Amount is required"),
+            otherwise: (schema) =>
+                schema
+                    .moreThan(0, "Package Price must be greater than 0 when Type is Paid")
+                    .required("Package Price Amount is required"),
+        }),
     price: Yup.number()
         .typeError("Price must be a number")
 
@@ -743,14 +602,21 @@ export const SUBSCRIPTION_ADD_SCHEME = Yup.object().shape({
     totalPrice: Yup.number()
         .typeError("Total Price must be a number")
         .notRequired("Total Price is not required"),
-
-    // validityDays: Yup.number()
-    //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-    //     .when("type", {
-    //         is: (type) => type !== "PAID",
-    //         then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
-    //         otherwise: (schema) => schema.notRequired(),
-    //     }),
+    earningStrategy: Yup.string().oneOf(["UNLIMITED", "CREDIT"]).required("Earning Strategy is required"),
+    earningWindowDays: Yup.number()
+        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .when("earningStrategy", {
+      is: "UNLIMITED",
+      then: (schema) => schema.required("Earning Window Days is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+        
+    zone: Yup.string().required("zone is required"),
+    carType: Yup.string().when("serviceType", {
+        is: "RIDES_RENTAL_CABS",
+        then: (schema) => schema.required("Car Type is required"),
+        otherwise: (schema) => schema.notRequired(),
+    }),
 
 });
 export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
@@ -765,8 +631,17 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
         .required("Service Type is required"),
     packagePrice: Yup.number()
         .typeError("Package Price Amount must be a number")
-
-        .required("Package Price Amount is required"),
+        .when("type", {
+            is: "FREE",
+            then: (schema) =>
+                schema
+                    .oneOf([0], "Package Price must be 0 when Type is Free")
+                    .required("Package Price Amount is required"),
+            otherwise: (schema) =>
+                schema
+                    .moreThan(0, "Package Price must be greater than 0 when Type is Paid")
+                    .required("Package Price Amount is required"),
+        }),
     price: Yup.number()
         .typeError("Price must be a number")
 
@@ -785,29 +660,29 @@ export const SUBSCRIPTION_EDIT_SCHEME = Yup.object().shape({
     totalPrice: Yup.number()
         .typeError("Total Price must be a number")
         .notRequired("Total Price is not required"),
-
-    // validityDays: Yup.number()
-    //     .transform((value, originalValue) => (originalValue === "" ? undefined : value))
-    //     .when("type", {
-    //         is: (type) => type !== "PAID",
-    //         then: (schema) => schema.typeError("validityDays  must be a number").required("validityDays  is required"),
-    //         otherwise: (schema) => schema.notRequired(),
-    //     }),
+    earningStrategy: Yup.string().oneOf(["UNLIMITED", "CREDIT"]).required("Earning Strategy is required"),
+    earningWindowDays: Yup.number()
+        .transform((value, originalValue) => (originalValue === "" ? undefined : value))
+    .when("earningStrategy", {
+      is: "UNLIMITED",
+      then: (schema) => schema.required("Earning Window Days is required"),
+      otherwise: (schema) => schema.notRequired(),
+    }),        
+    zone: Yup.string().required("zone is required"),
+    carType: Yup.string().when("serviceType", {
+        is: "RIDES_RENTAL_CABS",
+        then: (schema) => schema.required("Car Type is required"),
+        otherwise: (schema) => schema.notRequired(),
+    }),
 });
 export const MASTERPRICE_ADD_SCHEME = Yup.object().shape({
     serviceType: Yup.string().required('Service Type is required'),
     type: Yup.string().required('Type is required'),
     period: Yup.number().required('Period is required'),
-    price: Yup.number().required('Price is required'),
-    // priceMVP: Yup.number().required('Price MUV is required'),
-    dropPrice: Yup.number().required('Drop Price is required'),
     nightCharge: Yup.number().required('Night Charge is required'),
-    // cancelCharge: Yup.number().required('Cancel Charge is required'),
     status: Yup.string().required('Status is required'),
     zone: Yup.string().required('Zone is required'),
-    // extraPrice: Yup.number().required('Extra Price is required'),
-    // nightHoursFrom:Yup.time().required('Night Hours From Start 22:00 PM.'),
-    // nightHoursFrom:Yup.time().required('Night Hours To End 06:00 AM.')
+    bookingType:Yup.string().required('Booking Type is required')
 });
 
 export const VERSION_CONTROL_EDIT=Yup.object({
@@ -841,35 +716,9 @@ export const DISCOUNT_ADD_SCHEMA = Yup.object({
         then: (schema) => schema.typeError('Maximum completed trips must be a number').required('Maximum completed trips is required'),
         otherwise: (schema) => schema.notRequired(),
     }),
-    couponCode: Yup.string().when(['offerType', 'targetMode'], {
-        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
-        then: (schema) => schema.notRequired(),
-        otherwise: (schema) => schema.required('Coupon code is required'),
-    }),  
+    couponCode: Yup.string().nullable().notRequired(),  
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
-    cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === false &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'PARCEL' &&
-            serviceType !== 'BIKE' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
-    premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === true &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'BIKE' &&
-            serviceType !== 'PARCEL' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
     parcelVehicleType: Yup.string().when(['serviceType'], {
         is: (serviceType) => serviceType === 'PARCEL',
         then: (schema) => schema.oneOf(['BIKE', 'AUTO'], 'Invalid Parcel Vehicle Type').required('Parcel Vehicle Type is required'),
@@ -936,35 +785,9 @@ export const DISCOUNT_EDIT_SCHEMA=  Yup.object({
         then: (schema) => schema.typeError('Maximum completed trips must be a number').required('Maximum completed trips is required'),
         otherwise: (schema) => schema.notRequired(),
     }),
-    couponCode: Yup.string().when(['offerType', 'targetMode'], {
-        is: (offerType, targetMode) => offerType === 'CUSTOM' && targetMode === 'SEGMENT',
-        then: (schema) => schema.notRequired(),
-        otherwise: (schema) => schema.required('Coupon code is required'),
-    }),
+    couponCode: Yup.string().nullable().notRequired(),
     percentage: Yup.mixed().notRequired(),
     amount: Yup.mixed().notRequired(),
-    cabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === false &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'BIKE' &&
-            serviceType !== 'PARCEL' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
-    premiumCabType: Yup.string().when(['isPremium', 'serviceType', 'offerType'], {
-        is: (isPremium, serviceType, offerType) =>
-            isPremium === true &&
-            serviceType !== 'DRIVER' &&
-            serviceType !== 'AUTO' &&
-            serviceType !== 'BIKE' &&
-            serviceType !== 'PARCEL' &&
-            !(offerType === 'GENERAL' && serviceType === 'PARCEL'),
-        then: (schema) => schema.required('Car Type is required'),
-        otherwise: (schema) => schema.nullable(),
-    }),
     parcelVehicleType: Yup.string().when(['serviceType'], {
         is: (serviceType) => serviceType === 'PARCEL',
         then: (schema) => schema.oneOf(['BIKE', 'AUTO'], 'Invalid Parcel Vehicle Type').required('Parcel Vehicle Type is required'),
@@ -1034,6 +857,31 @@ export const GST_EDIT_SCHEMA = Yup.object().shape({
       gstNo: Yup.string().required('GST No is required'),
       isActive: Yup.boolean().required('Status is required'),
     });
+
+export const DISTANCE_RULE_SCHEMA = Yup.object({
+  serviceType: Yup.string().required('Service type is required'),
+  config: Yup.object({
+    reason: Yup.string().required('Default reason is required'),
+    thresholdKm: Yup.number()
+      .typeError('Default threshold must be a number')
+      .positive('Default threshold must be greater than 0')
+      .required('Default threshold is required'),
+    serviceAreaRules: Yup.array()
+      .of(
+        Yup.object({
+          serviceAreaName: Yup.string().required('Service area name is required'),
+          reason: Yup.string().required('Reason is required'),
+          thresholdKm: Yup.number()
+            .typeError('Threshold must be a number')
+            .positive('Threshold must be greater than 0')
+            .required('Threshold is required'),
+        })
+      )
+      .min(1, 'At least one service area rule is required'),
+  }),
+  isActive: Yup.boolean().required('Status is required'),
+});
+
 export const DriverOfferSchema = Yup.object({
   title: Yup.string().required("Title is required"),
 //   serviceType: Yup.string().required("Service type is required"),
@@ -1073,6 +921,8 @@ export const CASH_BACK_SCHEMA = Yup.object().shape({
         .required("Zones are required"),
       cashbackDiscount: Yup.number()
         .typeError("Cashback discount must be a number")
+        .min(1, "Cashback discount must be between 1% and 100%")
+        .max(100, "Cashback discount must be between 1% and 100%")
         .required("Cashback discount is required"),
       parcelVehicleType: Yup.string().nullable(),
       subZoneId: Yup.string().nullable(),

@@ -190,6 +190,7 @@ const ParcelDailySlotsList = () => {
           <Typography variant="h6" color="white">
             Daily Slot History
           </Typography>
+          <div className="flex items-center gap-2">
           {hasAnyAppliedFilter ? (
             <Button
               size="sm"
@@ -200,6 +201,14 @@ const ParcelDailySlotsList = () => {
               {exportLoading ? "Exporting..." : "Export"}
             </Button>
           ) : null}
+            <Button
+              size="sm"
+              className="rounded-lg bg-white px-4 py-2 text-blue-700 shadow-sm hover:bg-blue-gray-50"
+              onClick={() => navigate("/dashboard/finance/parcel-daily-slots/add")}
+            >
+              Add New
+            </Button>
+          </div>
         </CardHeader>
         <CardBody className="pt-0 px-0">
           {loading ? (
@@ -220,7 +229,7 @@ const ParcelDailySlotsList = () => {
                     <th className="px-5 py-3 text-left whitespace-nowrap">Max Bookings</th>
                     <th className="px-5 py-3 text-left whitespace-nowrap">Booked Count</th>
                     <th className="px-5 py-3 text-left whitespace-nowrap">State</th>
-                    <th className="px-5 py-3 text-left whitespace-nowrap">Source Rule</th>
+                    {/* <th className="px-5 py-3 text-left whitespace-nowrap">Source Rule</th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -260,9 +269,9 @@ const ParcelDailySlotsList = () => {
                           <td className="px-5 py-3 whitespace-nowrap">
                             <Chip value={stateChip.label} className={stateChip.className} />
                           </td>
-                          <td className="px-5 py-3 whitespace-nowrap">
+                          {/* <td className="px-5 py-3 whitespace-nowrap">
                             {row.sourceRuleType || "-"}{row.sourceRuleId ? ` #${row.sourceRuleId}` : ""}
-                          </td>
+                          </td> */}
                         </tr>
                       );
                     })

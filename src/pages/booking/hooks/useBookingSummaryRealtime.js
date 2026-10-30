@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRealtimeEvents } from "@/context/realtimeEvents";
 
 const PAGE_SUMMARY_DEBOUNCE_MS = 800;
@@ -18,6 +18,7 @@ export const useBookingSummaryRealtime = ({
   activeTab,
   customDateFrom,
   customDateTo,
+  customDateRangeValid = true,
   buildSummaryQueryParams,
   fetchBookingSummary,
   customerId,
@@ -44,8 +45,7 @@ export const useBookingSummaryRealtime = ({
     },
   });
 
-  const refreshSummary = useMemo(
-    () => async ({ dedupeMs = SAME_QUERY_DEDUPE_MS, force = false } = {}) => {
+  const refreshSummary = useCallback(async ({ dedupeMs = SAME_QUERY_DEDUPE_MS, force = false } = {}) => {
       const queryParams = buildSummaryQueryParams();
       const queryKey = JSON.stringify(queryParams || {});
       const state = scheduleRef.current;
@@ -63,8 +63,7 @@ export const useBookingSummaryRealtime = ({
     [buildSummaryQueryParams, fetchBookingSummary]
   );
 
-  const requestSummaryRefresh = useMemo(
-    () =>
+  const requestSummaryRefresh = useCallback(
       ({
         immediate = false,
         dedupeMs = SAME_QUERY_DEDUPE_MS,
@@ -102,8 +101,9 @@ export const useBookingSummaryRealtime = ({
 
   useEffect(() => {
     if (!filtersLoaded) return;
+    if (!customDateRangeValid) return;
     if (activeTab === "CUSTOM_DATE" && (!customDateFrom || !customDateTo)) return;
-    requestSummaryRefresh({ immediate: true });
+    requestSummaryRefresh({ immediate: true, force: false });
   }, [
     customerId,
     effectiveSearchId,
@@ -115,12 +115,14 @@ export const useBookingSummaryRealtime = ({
     zoneFilter,
     customDateFrom,
     customDateTo,
+    customDateRangeValid,
     filtersLoaded,
     requestSummaryRefresh,
   ]);
 
   useEffect(() => {
     if (!filtersLoaded) return;
+    if (!customDateRangeValid) return;
     if (activeTab === "CUSTOM_DATE" && (!customDateFrom || !customDateTo)) return;
     if (!lastEvent) return;
 
@@ -144,6 +146,7 @@ export const useBookingSummaryRealtime = ({
     activeTab,
     customDateFrom,
     customDateTo,
+    customDateRangeValid,
     requestSummaryRefresh,
   ]);
 

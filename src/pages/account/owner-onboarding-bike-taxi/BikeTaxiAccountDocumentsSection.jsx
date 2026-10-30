@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button, Card, CardBody, Chip, Dialog, DialogBody, DialogHeader, Typography } from "@material-tailwind/react";
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
+import { saveDocumentFile } from '@/utils/downloadUtils';
 
 const BikeTaxiAccountDocumentsSection = ({ rows, getStatusTextClass, getStatusBgClass, accountId }) => {
   const [modalData, setModalData] = useState(null);
@@ -54,9 +55,11 @@ const BikeTaxiAccountDocumentsSection = ({ rows, getStatusTextClass, getStatusBg
                           className="text-blue-700 underline text-sm font-medium"
                           onClick={() =>
                             setModalData({
+                              documentId: row.documentId || row.id,
                               image1: row.image1,
                               image2: row.image2,
                               status: row.status,
+                              type: row.type,
                             })
                           }
                         >
@@ -109,14 +112,10 @@ const BikeTaxiAccountDocumentsSection = ({ rows, getStatusTextClass, getStatusBg
               </div>
               <div className="flex justify-center gap-3 mt-4">
                 {modalData.image1 ? (
-                  <a href={modalData.image1} download target="_blank" rel="noreferrer">
-                    <Button size="sm" className="normal-case bg-primary">Download Image 1</Button>
-                  </a>
+                  <Button size="sm" className="normal-case bg-primary" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 1 })}>Download Image 1</Button>
                 ) : null}
                 {modalData.image2 ? (
-                  <a href={modalData.image2} download target="_blank" rel="noreferrer">
-                    <Button size="sm" className="normal-case bg-primary">Download Image 2</Button>
-                  </a>
+                  <Button size="sm" className="normal-case bg-primary" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 2 })}>Download Image 2</Button>
                 ) : null}
               </div>
             </DialogBody>

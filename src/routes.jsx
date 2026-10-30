@@ -9,6 +9,7 @@ import { SignIn, SignUp } from "@/pages/auth";
 import { DeleteAccount } from "@/pages/public/DeleteAccount";
 import { PriceList } from "@/pages/public/price";
 import { RentalTariffRateCard } from "@/pages/public/rentalRateCard";
+import { HourlyPackageRateCard } from "@/pages/public/hourlyPackageRateCard";
 
 import { CustomerView } from "@/pages/customer";
 import { AccountView } from "@/pages/account";
@@ -19,6 +20,7 @@ import UserAdd from "./pages/users/add";
 import CustomerAdd from "./pages/customer/add";
 
 import { HomeModernIcon } from "@heroicons/react/24/outline";
+import EditBanner from "./pages/bannerImage/edit";
 import Booking from "./pages/booking/booking";
 import ConfirmBooking from "./pages/booking/confirmBooking";
 import SelectLocation from "./pages/booking/selectLocation";
@@ -47,6 +49,9 @@ import { BOOKING_FEATURES, BOOKING_SERVICE_TYPE } from "./utils/constants";
 import { AllVehicles } from "./pages/vendor";
 import { CabSubscriptionView } from "./pages/finance/subscription/cab-subscription-view";
 import CabSubscriptionAdd from "./pages/finance/subscription/cab-subscription-add";
+import DriverSubscriptionList from "./pages/finance/driverSubscription/list";
+import DriverSubscriptionForm from "./pages/finance/driverSubscription/form";
+import DriverSubscriptionDetails from "./pages/finance/driverSubscription/details";
 import ReassignDriver from "./components/ReassignDriver";
 import PayableView from "./pages/finance/payable/view";
 import PayableDetails from "./pages/finance/payable/details";
@@ -58,6 +63,9 @@ import { MasterSubscriptionView } from "./pages/finance/masterSubscription/Maste
 import MasterSubscriptionAdd from "./pages/finance/masterSubscription/MasterSubscriptionAdd";
 import MasterSubscriptionDetails from "./pages/finance/masterSubscription/MasterSubscriptionDetails";
 import MasterSubscriptionEdit from "./pages/finance/masterSubscription/MasterSubscriptionEdit";
+import JoiningBonusView from "./pages/finance/joiningBonus/JoiningBonusView";
+import JoiningBonusAdd from "./pages/finance/joiningBonus/JoiningBonusAdd";
+import JoiningBonusEdit from "./pages/finance/joiningBonus/JoiningBonusEdit";
 import { MasterPriceView } from "./pages/finance/masterPrice/MasterPriceView";
 import { MasterPriceAdd } from "./pages/finance/masterPrice/MasterPriceAdd";
 import { ReceiptList } from "./pages/finance/receipt/ReceiptList";
@@ -87,24 +95,66 @@ import DynamicTextList from "./pages/marketing/dynamicText/listDynamicText";
 import DynamicTextAdd from "./pages/marketing/dynamicText/addDynamicText";
 import DynamicTextEdit from "./pages/marketing/dynamicText/editDynamicText";
 import SkipLogs from "./pages/marketing/skipLogs";
+import ExternalPromotionsList from "./pages/marketing/externalPromotions/list";
+import ExternalPromotionsAdd from "./pages/marketing/externalPromotions/add";
+import ExternalPromotionsEdit from "./pages/marketing/externalPromotions/edit";
+import CustomerWhatsappPage from "./pages/customerWhatsapp";
 import InstantReward from "./pages/vendor/instantReward";
+import ReferralRuleList from "./pages/finance/referralRules/list";
+import ReferralRuleAdd from "./pages/finance/referralRules/add";
+import ReferralRuleEdit from "./pages/finance/referralRules/edit";
+import ReferralCreditLogsList from "./pages/finance/referralRules/logs";
+import ServiceContentList from "./pages/admin/serviceContents/list";
+import ServiceContentAdd from "./pages/admin/serviceContents/add";
+import ServiceContentEdit from "./pages/admin/serviceContents/edit";
 import { VehiclesList } from "./pages/vendor/vehiclesList";
 import DriverNotificationList from "./pages/vendor/driverNotificationList";
 import DriverNotificationListAdd from "./pages/vendor/driverNotificationAdd";
 import DriverNotificationListEdit from "./pages/vendor/driverNotificationEdit";
 import DriverReturnTripsList from "./pages/vendor/driverReturnTripsList";
+import RootWebRegistrationList from "./pages/vendor/rootWebRegistrationList";
+import { VendorManagementVendors } from "./pages/vendorManagement/vendors/list";
+import { VendorManagementVendorsAdd } from "./pages/vendorManagement/vendors/add";
+import { VendorManagementVendorsEdit } from "./pages/vendorManagement/vendors/edit";
+import { VendorManagementVendorsDetails } from "./pages/vendorManagement/vendors/details";
+import { VendorManagementCategories } from "./pages/vendorManagement/categories/list";
+import { VendorManagementCategoriesAdd } from "./pages/vendorManagement/categories/add";
+import { VendorManagementCategoriesEdit } from "./pages/vendorManagement/categories/edit";
+import { VendorManagementCategoriesDetails } from "./pages/vendorManagement/categories/details";
+import { VendorManagementProducts } from "./pages/vendorManagement/products/list";
+import { VendorManagementProductsAdd } from "./pages/vendorManagement/products/add";
+import { VendorManagementProductsEdit } from "./pages/vendorManagement/products/edit";
+import { VendorManagementProductsDetails } from "./pages/vendorManagement/products/details";
+import { VendorManagementOrders } from "./pages/vendorManagement/orders/list";
+import { VendorManagementOrdersDetails } from "./pages/vendorManagement/orders/details";
+import { VendorManagementCatalogMapping } from "./pages/vendorManagement/catalogMapping/list";
+import { VendorManagementCatalogMappingAdd } from "./pages/vendorManagement/catalogMapping/add";
+import { VendorManagementCatalogMappingEdit } from "./pages/vendorManagement/catalogMapping/edit";
+import { VendorManagementCatalogMappingDetails } from "./pages/vendorManagement/catalogMapping/details";
+import { VendorManagementInventory } from "./pages/vendorManagement/inventory/list";
+import { VendorManagementInventoryAdd } from "./pages/vendorManagement/inventory/add";
+import { VendorManagementInventoryEdit } from "./pages/vendorManagement/inventory/edit";
+import { VendorManagementInventoryDetails } from "./pages/vendorManagement/inventory/details";
+import { VendorManagementPricing } from "./pages/vendorManagement/pricing/list";
+import { VendorManagementPricingAdd } from "./pages/vendorManagement/pricing/add";
+import { VendorManagementPricingEdit } from "./pages/vendorManagement/pricing/edit";
+import { VendorManagementPricingDetails } from "./pages/vendorManagement/pricing/details";
 import VersionControlList from "./pages/versionControl/VersionControlList";
 import VersionControlEdit from "./pages/versionControl/VersionControlEdit";
 import DiscountView from "./pages/discountModule/view";
 import DiscountEdit from "./pages/discountModule/edit";
 import DiscountAdd from "./pages/discountModule/add";
 import GstView from "./pages/GST/view";
+import FutureBookingAcceptWindowAdd from "./pages/GST/futureBookingAcceptWindowAdd.jsx";
+import FutureBookingAcceptWindowEdit from "./pages/GST/futureBookingAcceptWindowEdit.jsx";
 import GstAdd from "./pages/GST/add";
 import GstEdit from "./pages/GST/edit";
 import DriverFeedbackAdd from "./pages/GST/driverFeedbackAdd";
 import DriverFeedbackEdit from "./pages/GST/driverFeedbackEdit";
 import LuggagePolicyAdd from "./pages/GST/luggagePolicyAdd";
 import LuggagePolicyEdit from "./pages/GST/luggagePolicyEdit";
+import DistanceRuleAdd from "./pages/GST/distanceRuleAdd";
+import DistanceRuleEdit from "./pages/GST/distanceRuleEdit";
 import BannerView from "./pages/bannerImage/view ";
 import AddBanner from "./pages/bannerImage/add";
 import TestimoinalView from "./pages/testimoinal/view";
@@ -150,6 +200,10 @@ import DriverBonusList from "./pages/finance/driverBonus/list";
 import DriverBonusAdd from "./pages/finance/driverBonus/add";
 import DriverBonusEdit from "./pages/finance/driverBonus/edit";
 import DriverBonusDetails from "./pages/finance/driverBonus/details";
+import DriverRadiusBonusList from "./pages/finance/driverRadiusBonus/list";
+import DriverRadiusBonusAdd from "./pages/finance/driverRadiusBonus/add";
+import DriverRadiusBonusEdit from "./pages/finance/driverRadiusBonus/edit";
+import DriverRadiusBonusDetails from "./pages/finance/driverRadiusBonus/details";
 import DriverOpsView from "./pages/DriverOps/view";
 import BookingInvoiceList from "./pages/finance/bookingInvoice/list";
 import BookingInvoiceDetails from "./pages/finance/bookingInvoice/details";
@@ -162,7 +216,19 @@ import SlotRuleForm from "./pages/finance/parcelSlotConfig/SlotRuleForm";
 import ParcelSlotConfigEdit from "./pages/finance/parcelSlotConfig/edit";
 import ParcelSlotConfigDetails from "./pages/finance/parcelSlotConfig/details";
 import ParcelDailySlotsList from "./pages/finance/parcelDailySlots/list";
+import ParcelDailySlotsAdd from "./pages/finance/parcelDailySlots/add";
 import ParcelDailySlotsDetails from "./pages/finance/parcelDailySlots/details";
+import ActingDriverSlotConfigList from "./pages/finance/actingDriverSlotConfig/list";
+import ActingDriverSlotRuleForm from "./pages/finance/actingDriverSlotConfig/SlotRuleForm";
+import ActingDriverSlotConfigEdit from "./pages/finance/actingDriverSlotConfig/edit";
+import ActingDriverSlotConfigDetails from "./pages/finance/actingDriverSlotConfig/details";
+import ActingDriverDailySlotsList from "./pages/finance/actingDriverDailySlots/list";
+import ActingDriverDailySlotsAdd from "./pages/finance/actingDriverDailySlots/add";
+import ActingDriverDailySlotsDetails from "./pages/finance/actingDriverDailySlots/details";
+import CategoryDriverEligibleList from "./pages/finance/categoryDriverEligible/list";
+import CategoryDriverEligibleAdd from "./pages/finance/categoryDriverEligible/add";
+import CategoryDriverEligibleEdit from "./pages/finance/categoryDriverEligible/edit";
+import CategoryDriverEligibleDetails from "./pages/finance/categoryDriverEligible/details";
 import TierDetailsList from "./pages/DriverEngagementModule/TierDetails/list";
 import TierDetailsAdd from "./pages/DriverEngagementModule/TierDetails/add";
 import TierDetailsEdit from "./pages/DriverEngagementModule/TierDetails/edit";
@@ -209,14 +275,23 @@ import ReturnTripDriverSubscriptionAdd from "./pages/finance/masterSubscription/
 import ReturnTripDriverSubscriptionDetails from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionDetails";
 import ReturnTripDriverSubscriptionEdit from "./pages/finance/masterSubscription/return-trip-driver/ReturnTripDriverSubscriptionEdit";
 import SupportReviewRewardManagement from "./pages/support/SupportReviewRewardManagement";
+import ComplianceManagement from "./pages/support/ComplianceManagement";
+import PaymentFailedRecords from "./pages/support/PaymentFailedRecords";
+import SubscriptionExtendList from "./pages/support/subscriptionExtend/list";
+import SubscriptionExtendEdit from "./pages/support/subscriptionExtend/edit";
 import CustomerCancellationChargeLogs from "./pages/support/CustomerCancellationChargeLogs";
+import ActingDriverCancellationLogs from "./pages/support/ActingDriverCancellationLogs";
 import DriverAdsList from "./pages/support/driverAdsList";
+import DriverAdsRegList from "./pages/support/driverAdsRegList";
+import DriverAdsRegistrationDetails from "./pages/support/driverAdsRegistrationDetails";
 import DriverAdsCreate from "./pages/support/driverAdsCreate";
 import DriverAdsDetail from "./pages/support/driverAdsDetail";
 import DriverAdsEdit from "./pages/support/driverAdsEdit";
 import OwnVehicle from "./pages/support/OwnVehicle";
 import OwnVehicleForm from "./pages/support/OwnVehicleForm";
 import OwnVehicleDetails from "./pages/support/OwnVehicleDetails";
+import GeoIntelligence from "./pages/geoIntelligence";
+import WhatsAppDriverPage from "./pages/whatsappDriver/WhatsAppDriverPage";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -408,6 +483,47 @@ export const routes = [
         path: "/vendors/skip-logs",
         element: <SkipLogs />,
         display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "external promotions",
+        path: "/vendors/external-promotions",
+        element: <ExternalPromotionsList />,
+        display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "external promotions add",
+        path: "/vendors/external-promotions/add",
+        element: <ExternalPromotionsAdd />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "external promotions edit",
+        path: "/vendors/external-promotions/edit/:id",
+        element: <ExternalPromotionsEdit />,
+        display: false,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "customer whatsapp",
+        path: "/customer-whatsapp",
+        element: <CustomerWhatsappPage />,
+        display: true,
+        permission: "Marketing",
+        permissionsAny: ["Support", "Marketing"],
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "whatsapp conversation",
+        path: "/whatsapp-conversation",
+        element: <CustomerWhatsappPage />,
+        display: false,
         permission: "Marketing",
       },
       {
@@ -631,6 +747,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Future booking accept window add",
+        path: "/finance/future-booking-accept-window/add",
+        element: <FutureBookingAcceptWindowAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future booking accept window edit",
+        path: "/finance/future-booking-accept-window/edit/:id",
+        element: <FutureBookingAcceptWindowEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Distance rule add",
+        path: "/finance/distance-rule/add",
+        element: <DistanceRuleAdd />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Distance rule edit",
+        path: "/finance/distance-rule/edit/:id",
+        element: <DistanceRuleEdit />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Banner image view",
         path: "/user/bannerimgView",
         element: <BannerView />,
@@ -643,6 +791,14 @@ export const routes = [
         path: "/user/bannerimg/add",
         element: <AddBanner />,
         display: true,
+        permission: "Marketing",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Banner image edit",
+        path: "/user/bannerimg/edit/:id",
+        element: <EditBanner />,
+        display: false,
         permission: "Marketing",
       },
       {
@@ -785,6 +941,222 @@ export const routes = [
         element: <AccountList />,
         display: true,
         permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Root Web Reg",
+        path: "/vendors/root-web-reg",
+        element: <RootWebRegistrationList />,
+        display: true,
+        permission: "Vendors",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors",
+        path: "/vendor-management/vendors",
+        element: <VendorManagementVendors />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors Add",
+        path: "/vendor-management/vendors/add",
+        element: <VendorManagementVendorsAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors Edit",
+        path: "/vendor-management/vendors/edit/:id",
+        element: <VendorManagementVendorsEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Vendors Details",
+        path: "/vendor-management/vendors/details/:id",
+        element: <VendorManagementVendorsDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories",
+        path: "/vendor-management/categories",
+        element: <VendorManagementCategories />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories Add",
+        path: "/vendor-management/categories/add",
+        element: <VendorManagementCategoriesAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories Edit",
+        path: "/vendor-management/categories/edit/:id",
+        element: <VendorManagementCategoriesEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Categories Details",
+        path: "/vendor-management/categories/details/:id",
+        element: <VendorManagementCategoriesDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products",
+        path: "/vendor-management/products",
+        element: <VendorManagementProducts />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products Add",
+        path: "/vendor-management/products/add",
+        element: <VendorManagementProductsAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products Edit",
+        path: "/vendor-management/products/edit/:id",
+        element: <VendorManagementProductsEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Products Details",
+        path: "/vendor-management/products/details/:id",
+        element: <VendorManagementProductsDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Orders",
+        path: "/vendor-management/orders",
+        element: <VendorManagementOrders />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Orders Details",
+        path: "/vendor-management/orders/details/:id",
+        element: <VendorManagementOrdersDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping",
+        path: "/vendor-management/catalog-mapping",
+        element: <VendorManagementCatalogMapping />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping Add",
+        path: "/vendor-management/catalog-mapping/add",
+        element: <VendorManagementCatalogMappingAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping Edit",
+        path: "/vendor-management/catalog-mapping/edit/:id",
+        element: <VendorManagementCatalogMappingEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Catalog Mapping Details",
+        path: "/vendor-management/catalog-mapping/details/:id",
+        element: <VendorManagementCatalogMappingDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory",
+        path: "/vendor-management/inventory",
+        element: <VendorManagementInventory />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory Add",
+        path: "/vendor-management/inventory/add",
+        element: <VendorManagementInventoryAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory Edit",
+        path: "/vendor-management/inventory/edit/:id",
+        element: <VendorManagementInventoryEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Inventory Details",
+        path: "/vendor-management/inventory/details/:id",
+        element: <VendorManagementInventoryDetails />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing",
+        path: "/vendor-management/pricing",
+        element: <VendorManagementPricing />,
+        display: true,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing Add",
+        path: "/vendor-management/pricing/add",
+        element: <VendorManagementPricingAdd />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing Edit",
+        path: "/vendor-management/pricing/edit/:id",
+        element: <VendorManagementPricingEdit />,
+        display: false,
+        permission: "Vendor Management",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Vendor Management Pricing Details",
+        path: "/vendor-management/pricing/details/:id",
+        element: <VendorManagementPricingDetails />,
+        display: false,
+        permission: "Vendor Management",
       },
       {
         icon: <UserIcon {...icon} />,
@@ -1213,6 +1585,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver Subscription",
+        path: "/finance/driver-subscription-feedback",
+        element: <DriverSubscriptionList />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Add",
+        path: "/finance/driver-subscription-feedback/add",
+        element: <DriverSubscriptionForm />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Details",
+        path: "/finance/driver-subscription-feedback/details/:id",
+        element: <DriverSubscriptionDetails />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Subscription Edit",
+        path: "/finance/driver-subscription-feedback/edit/:id",
+        element: <DriverSubscriptionForm />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Add Subscription",
         path: "/finance/cab-subscription/add",
         element: <CabSubscriptionAdd />,
@@ -1224,6 +1628,30 @@ export const routes = [
         name: "Receipt",
         path: "/finance/master-subscription",
         element: <MasterSubscriptionView />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Joining Bonus",
+        path: "/finance/joining-bonus",
+        element: <JoiningBonusView />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Joining Bonus Add",
+        path: "/finance/joining-bonus/add",
+        element: <JoiningBonusAdd />,
+        display: false,
+        permission: "Finance",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Joining Bonus Edit",
+        path: "/finance/joining-bonus/edit/:planId",
+        element: <JoiningBonusEdit />,
         display: false,
         permission: "Finance",
       },
@@ -1273,6 +1701,38 @@ export const routes = [
         path: "/finance/instant-reward",
         element: <InstantReward />,
         display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule List",
+        path: "/finance/referral-rules/list",
+        element: <ReferralRuleList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule Add",
+        path: "/finance/referral-rules/add",
+        element: <ReferralRuleAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Rule Edit",
+        path: "/finance/referral-rules/edit/:settingId",
+        element: <ReferralRuleEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Referral Credit Logs",
+        path: "/finance/referral-rules/logs",
+        element: <ReferralCreditLogsList />,
+        display: false,
         permission: "Users",
       },
       {
@@ -1328,6 +1788,38 @@ export const routes = [
         name: "Driver Bonus Details",
         path: "/finance/driver-bonus/details/:id",
         element: <DriverBonusDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus List",
+        path: "/finance/driver-radius-bonus",
+        element: <DriverRadiusBonusList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Add",
+        path: "/finance/driver-radius-bonus/add",
+        element: <DriverRadiusBonusAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Edit",
+        path: "/finance/driver-radius-bonus/edit/:id",
+        element: <DriverRadiusBonusEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Radius Bonus Details",
+        path: "/finance/driver-radius-bonus/details/:id",
+        element: <DriverRadiusBonusDetails />,
         display: false,
         permission: "Users",
       },
@@ -1413,6 +1905,38 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver Estimation & Request control",
+        path: "/finance/category-driver-eligible",
+        element: <CategoryDriverEligibleList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Estimation & Request control Add",
+        path: "/finance/category-driver-eligible/add",
+        element: <CategoryDriverEligibleAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Estimation & Request control Edit",
+        path: "/finance/category-driver-eligible/edit/:id",
+        element: <CategoryDriverEligibleEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Estimation & Request control Details",
+        path: "/finance/category-driver-eligible/details/:id",
+        element: <CategoryDriverEligibleDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Assign Driver",
         path: "/vendors/account/allVehicles/assignDriver/:id",
         element: <ReassignDriver />,
@@ -1485,9 +2009,73 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Parcel Daily Slot Add",
+        path: "/finance/parcel-daily-slots/add",
+        element: <ParcelDailySlotsAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Parcel Daily Slot Details",
         path: "/finance/parcel-daily-slots/details/:id",
         element: <ParcelDailySlotsDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config",
+        path: "/finance/acting-driver-slot-config",
+        element: <ActingDriverSlotConfigList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Add",
+        path: "/finance/acting-driver-slot-config/add",
+        element: <ActingDriverSlotRuleForm mode="add" />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Edit",
+        path: "/finance/acting-driver-slot-config/edit/:id",
+        element: <ActingDriverSlotConfigEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Slot Config Details",
+        path: "/finance/acting-driver-slot-config/details/:id",
+        element: <ActingDriverSlotConfigDetails />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slots",
+        path: "/finance/acting-driver-daily-slots",
+        element: <ActingDriverDailySlotsList />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slot Add",
+        path: "/finance/acting-driver-daily-slots/add",
+        element: <ActingDriverDailySlotsAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Acting Driver Daily Slot Details",
+        path: "/finance/acting-driver-daily-slots/details/:id",
+        element: <ActingDriverDailySlotsDetails />,
         display: false,
         permission: "Users",
       },
@@ -1578,6 +2166,38 @@ export const routes = [
         element: <GeoMarkings />,
         display: true,
         permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents",
+        path: "/admin/service-contents",
+        element: <ServiceContentList />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents add",
+        path: "/admin/service-contents/add",
+        element: <ServiceContentAdd />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "service contents edit",
+        path: "/admin/service-contents/edit/:id",
+        element: <ServiceContentEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "geo-intelligence",
+        path: "/geo-intelligence",
+        element: <GeoIntelligence />,
+        display: true,
+        permission: 'Users',
       },
       {
         icon: <UserIcon {...icon} />,
@@ -1824,6 +2444,22 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Driver Ads Reg",
+        path: "/support/driver-ads-reg",
+        element: <DriverAdsRegList />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver Ads Reg Detail",
+        path: "/support/driver-ads-reg/details/:id",
+        element: <DriverAdsRegistrationDetails />,
+        display: false,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Driver Ads Create",
         path: "/support/driver-ads/create",
         element: <DriverAdsCreate />,
@@ -1888,11 +2524,27 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Hourly Package Rate Card",
+        path: "/hourly-package-rate-card",
+        element: <HourlyPackageRateCard />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Support Review & Reward Management",
         path: "/support/review-reward-management",
         element: <SupportReviewRewardManagement />,
         display: true,
         permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Compliance Management",
+        path: "/support/compliance-management",
+        element: <ComplianceManagement />,
+        display: true,
+        permission: "Users"
       },
       {
         icon: <UserIcon {...icon} />,
@@ -1904,11 +2556,43 @@ export const routes = [
       },
       {
         icon: <UserIcon {...icon} />,
+        name: "Acting Driver Cancellation Logs",
+        path: "/support/acting-driver-cancellation-logs",
+        element: <ActingDriverCancellationLogs />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
         name: "Leads",
         path: "/leads",
         element: <LeadsView/>,
         display: true,
         permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Payment Failed Records",
+        path: "/support/payment-failed-records",
+        element: <PaymentFailedRecords />,
+        display: true,
+        permission: "Support"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Subscription Extend",
+        path: "/support/subscription-extend",
+        element: <SubscriptionExtendList />,
+        display: true,
+        permission: "Users"
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Extend Subscription",
+        path: "/support/subscription-extend/edit/:id",
+        element: <SubscriptionExtendEdit />,
+        display: false,
+        permission: "Users"
       },
       ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
         ? [{
@@ -1984,6 +2668,15 @@ export const routes = [
         display: false,
         permission: "Driver Engagement",
       },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Driver WhatsApp",
+        path: "/whatsapp-driver",
+        element: <WhatsAppDriverPage />,
+        display: true,
+        permission: "Marketing",
+        permissionsAny: ["Support", "Marketing"],
+      },
        {
         icon: <UserIcon {...icon} />,
         name: "Booking Invoice List",
@@ -2035,6 +2728,11 @@ export const routes = [
       {
         path: "/rate-card",
         element: <RentalTariffRateCard />,
+        display: false
+      },
+      {
+        path: "/hourly-package-rate-card",
+        element: <HourlyPackageRateCard />,
         display: false
       },
     ],

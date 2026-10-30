@@ -213,9 +213,9 @@ function OwnVehicle() {
       <Card>
         <CardBody className="flex flex-col gap-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <Typography variant="h6" color="black">
-                Own Vehicle
-              </Typography>
+            <Typography variant="h6" color="black">
+              Own Vehicle
+            </Typography>
             <Button className={`${ColorStyles.bgColor} text-white`} onClick={() => goToMode("add")}>
               Add New
             </Button>

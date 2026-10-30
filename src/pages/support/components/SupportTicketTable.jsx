@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Typography } from "@material-tailwind/react";
 
-function SupportTicketTable({ rows, selectedId, onSelectTicket, formatBadgeText, getStatusTone, formatCurrency, formatDateTime }) {
+function SupportTicketTable({ rows, selectedId, onSelectTicket, onOpenBooking, onOpenHistory, canOpenHistory, formatBadgeText, getStatusTone, formatCurrency, formatDateTime }) {
   return (
     <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -27,7 +27,13 @@ function SupportTicketTable({ rows, selectedId, onSelectTicket, formatBadgeText,
               return (
                 <tr key={`${id || "row"}-${index}`} className={`border-b border-slate-100 align-top transition ${isSelected ? "bg-sky-50" : "hover:bg-slate-50"}`}>
                   <td className="p-3 text-sm whitespace-nowrap">
-                    <div className="font-semibold text-black-950">{item?.booking?.bookingNumber || "-"}</div>
+                    <button
+                      type="button"
+                      onClick={() => onOpenBooking?.(item)}
+                      className="font-semibold text-blue-600 underline underline-offset-4 hover:text-blue-700"
+                    >
+                      {item?.booking?.bookingNumber || "-"}
+                    </button>
                   </td>
                 
                   <td className="p-3 text-sm whitespace-nowrap">
@@ -54,6 +60,16 @@ function SupportTicketTable({ rows, selectedId, onSelectTicket, formatBadgeText,
                     <Button size="sm" onClick={() => onSelectTicket(item)} className="rounded-full bg-gradient-to-r from-sky-600 to-cyan-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:shadow-md">
                       Review
                     </Button>
+                  {canOpenHistory ? (
+                    <Button
+                      size="sm"
+                      variant="outlined"
+                      onClick={() => onOpenHistory?.(item)}
+                      className="ml-2 rounded-full border-black bg-pink-400 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800"
+                    >
+                      History
+                    </Button>
+                  ) : null}
                   </td>
                 </tr>
               );

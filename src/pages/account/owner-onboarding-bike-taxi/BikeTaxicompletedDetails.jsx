@@ -27,10 +27,16 @@ const toDisplayCase = (value) =>
 
 const formatBikeTaxiVehicleType = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
-  if (normalized === "ev") return "EV";
-  if (normalized === "petrol") return "Petrol";
+  if (normalized === "BIKE") return "Bike";
+  if (normalized === "SCOOTY") return "Scooty";
   return toDisplayCase(value);
 };
+
+const getExistingAddressPlaceId = (cabResult) =>
+  cabResult?.curAddress?.placeId || 
+  cabResult?.curAddress?.place_id || 
+  cabResult?.curAddress?.placeID || 
+  cabResult?.curAddressPlaceId || "";
 
 const getStatusTextClass = (status) => {
   const normalized = String(status || "").toUpperCase();
@@ -187,7 +193,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [id, location?.state]);
+  }, [id]);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -226,44 +232,6 @@ const BikeTaxiCompletedOnboardingDetails = () => {
       const serviceType = normalizeServiceType(base?.type);
       const stateCabs = Array.isArray(location?.state?.prefetchedCabs) ? location.state.prefetchedCabs : [];
       let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : base;
-
-      // Try to enrich `cabs` from onboarding list API shape when available.
-      try {
-        let page = 1;
-        const limit = 50;
-        let totalPages = 1;
-        let matched = null;
-
-        do {
-          const listRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
-            page,
-            limit,
-            accountId: id,
-            serviceType,
-          });
-
-          const listRows = Array.isArray(listRes?.data) ? listRes.data : [];
-          matched = listRows.find((row) => String(row?.id) === String(id)) || null;
-          totalPages = Number(listRes?.pagination?.totalPages || 1);
-
-          if (matched || listRows.length === 0) break;
-          page += 1;
-        } while (page <= totalPages);
-
-        if (matched && Array.isArray(matched?.bikes)) {
-          const strictCabs = matched.bikes.filter(
-            (bike) =>
-              bike &&
-              bike.id !== null &&
-              bike.id !== undefined &&
-              String(bike?.accountId ?? bike?.AccountId) === String(id)
-          );
-          const baseCabs = Array.isArray(base?.cabs) ? base.cabs : [];
-          nextData = { ...base, cabs: strictCabs.length > 0 ? strictCabs : baseCabs };
-        }
-      } catch (_err) {
-        // Ignore list enrichment failure; base details are already loaded.
-      }
 
       setOnboardingData(nextData);
     } catch (err) {
@@ -396,6 +364,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
       .map(([key, value]) => {
         const label = toLabel(key);
         const displayLabel =
+          key === "name" ? "Owner Name" :
           key === "district" ? "Zone" :
           key === "accountDistrict" ? "Account District" :
           label === "Has Vehicle" ? "Isvehicle" : label;
@@ -478,6 +447,9 @@ const BikeTaxiCompletedOnboardingDetails = () => {
         creditLogRows,
         rawValues: {
           carType: cabResult?.carType || "",
+          vehicleType: cabResult?.vehicleType || "",
+          curAddress: cabResult?.curAddress || null,
+          curAddressPlaceId: getExistingAddressPlaceId(cabResult),
         },
       };
     });
@@ -487,7 +459,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
     const preferredLeftOrder = [
       "Id",
       "Type",
-      "Name",
+      "Owner Name",
       "Phone Number",
       "Email",
       "Source",
@@ -595,6 +567,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        zone: accountDraft?.district || "",
         accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
@@ -729,7 +702,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
           "",
         curAddress: makeAddressPayload(
           draftValues?.Address || cabResult?.curAddress?.name || cabResult?.curAddress || "",
-          draftValues?.AddressPlaceId || cabResult?.curAddress?.placeId || cabResult?.curAddress?.place_id || ""
+          draftValues?.AddressPlaceId || getExistingAddressPlaceId(cabResult)
         ),
         insurance: draftValues?.["Insurance Expiry Date"] || cabResult?.insurance || "",
         vehicleType: draftValues?.["Vehicle Type"] || cabResult?.vehicleType || "",
@@ -885,7 +858,7 @@ const BikeTaxiCompletedOnboardingDetails = () => {
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                   {[
                     ["type", "Service Type"],
-                    ["name", "Name"],
+                    ["name", "Owner Name"],
                     ["phoneNumber", "Phone Number"],
                     ["email", "Email"],
                     ["source", "Source"],
@@ -1015,8 +988,8 @@ const BikeTaxiCompletedOnboardingDetails = () => {
                             }
                             setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                           }}
-                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                          disabled={key === "type"}
+                          className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                          disabled={key === "type" || key === "phoneNumber"}
                           maxLength={key === "phoneNumber" ? 10 : undefined}
                         />
                       )}

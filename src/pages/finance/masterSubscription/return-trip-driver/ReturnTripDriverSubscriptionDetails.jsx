@@ -8,6 +8,15 @@ export default function ReturnTripDriverSubscriptionDetails() {
   const { id } = useParams();
   const [row, setRow] = useState(null);
 
+  const normalizePlanName = (value) => {
+  if (!value) return "";
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "premium") return "Premium";
+  if (normalized === "standard") return "Standard";
+  if (normalized === "regular") return "Basic";
+  return value;
+};
+
   useEffect(() => {
     const fetchData = async () => {
       const response = await ApiRequestUtils.get(API_ROUTES.GET_RETURN_TRIP_ELIGIBILITY);
@@ -25,7 +34,7 @@ export default function ReturnTripDriverSubscriptionDetails() {
         </div>
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
           <FieldRow label="Tier" value={row?.tier} />
-          <FieldRow label="Plan Name" value={row?.planName} />
+          <FieldRow label="Plan Name" value={normalizePlanName(row?.planName)} />
           <FieldRow label="Service Type" value={row?.serviceType} />
           <FieldRow label="Zone" value={row?.zone} />
           <div className="rounded-md border p-3">
@@ -38,7 +47,7 @@ export default function ReturnTripDriverSubscriptionDetails() {
               <span className="text-sm text-gray-600">Yes</span>
             </div>
           </div>
-          <div className="rounded-md border p-3">
+          {/* <div className="rounded-md border p-3">
             <div className="text-xs font-semibold uppercase text-gray-500">Status</div>
             <div className="mt-2 flex items-center gap-3">
               <span className="text-sm text-gray-600">Inactive</span>
@@ -47,7 +56,7 @@ export default function ReturnTripDriverSubscriptionDetails() {
               </div>
               <span className="text-sm text-gray-600">Active</span>
             </div>
-          </div>
+          </div> */}
           <FieldRow label="Notes" value={row?.notes} />
           <div className="col-span-1 flex justify-center gap-3 pt-2 sm:col-span-2">
             <button

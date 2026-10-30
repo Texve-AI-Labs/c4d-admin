@@ -16,7 +16,16 @@ export const constants = {
 export const getBaseUrl = () => {
     return import.meta.env.VITE_URL_PROD + '/api/customer/dev';
 }
+
+export const isNgrokSkipEnabled = () =>
+    String(import.meta.env.VITE_ENABLE_NGROK_SKIP || "false").toLowerCase() === "true";
+
+export const getNgrokSkipHeaders = () =>
+    isNgrokSkipEnabled() ? { "ngrok-skip-browser-warning": "69420" } : {};
+
 export const DISABLE_GLOBAL_AUTOCOMPLETE = true; // true -> off false -> on
+
+export const PLAN_GROUP_CAR_TYPES = ['Mini', 'Sedan', 'SUV', 'MUV'];
 
 
 export const FUTURE_FLAG = {
@@ -53,12 +62,12 @@ export const DISTRICT_LIST = [
     { label: 'Erode', value: 'Erode' },
     { label: 'Kallakurichi', value: 'Kallakurichi' },
     { label: 'Kancheepuram', value: 'Kancheepuram' },
+    { label: 'Kanniyakumari', value: 'Kanniyakumari' },
     { label: 'Karur', value: 'Karur' },
     { label: 'Krishnagiri', value: 'Krishnagiri' },
     { label: 'Madurai', value: 'Madurai' },
     { label: 'Mayiladuthurai', value: 'Mayiladuthurai' },
     { label: 'Nagapattinam', value: 'Nagapattinam' },
-    { label: 'Kanniyakumari', value: 'Kanniyakumari' },
     { label: 'Namakkal', value: 'Namakkal' },
     { label: 'Perambalur', value: 'Perambalur' },
     { label: 'Pudukottai', value: 'Pudukottai' },
@@ -67,19 +76,21 @@ export const DISTRICT_LIST = [
     { label: 'Salem', value: 'Salem' },
     { label: 'Sivagangai', value: 'Sivagangai' },
     { label: 'Tenkasi', value: 'Tenkasi' },
+    { label: 'Thanjavur', value: 'Thanjavur' },
+    { label: 'Theni', value: 'Theni' },
     { label: 'Thiruvallur', value: 'Thiruvallur' },
     { label: 'Thanjavur', value: 'Thanjavur' },
     { label: 'kumbakkonam', value: 'kumbakkonam'},
     { label: 'Thiruvarur', value: 'Thiruvarur' },
     { label: 'Thoothukudi', value: 'Thoothukudi' },
-    { label: 'Trichirappalli', value: 'Trichirapalli' },
-    { label: 'Thirunelveli', value: 'Thirunelveli' },
+    { label: 'Tiruchirappalli', value: 'Tiruchirappalli' },
+    { label: 'Tirunelveli', value: 'Tirunelveli' },
     { label: 'Tirupathur', value: 'Tirupathur' },
     { label: 'Tiruppur', value: 'Tiruppur' },
     { label: 'Tiruvannamalai', value: 'Tiruvannamalai' },
     { label: 'The Nilgiris', value: 'The Nilgiris' },
     { label: 'Vellore', value: 'Vellore' },
-    { label: 'Villupuram', value: 'Villupuram' },
+    { label: 'Viluppuram', value: 'Viluppuram' },
     { label: 'Virudhunagar', value: 'Virudhunagar' }
 ]
 
@@ -851,12 +862,18 @@ export const API_ROUTES = {
     'GET_DRIVERS_ADMIN': '/admin/driver/',
     'GET_DOCUMENT_DETAILS_LIST': '/admin/documents',
     'GET_DOCUMENT_DETAILS': '/admin/user/documents',
+    'DOCUMENT_DOWNLOAD': '/documents',
     'GET_ONLINE_REGISTER_DETAILS': '/online-register',
     'GET_CREATE_DRIVER': '/register/driver/',
     'GET_CREATE_OWNER': '/register/account',
     'GET_SUBCRIPTION_PLAN': '/admin/plan',
     'GET_SUBSCRIPTION_LIST': '/admin/subscription',
     'CREATE_SUBSCRIPTION': '/admin/subscription/create',
+    'EXPIRED_SUBSCRIPTIONS': '/admin/subscription/expired',
+    'ADMIN_SUBSCRIPTION': '/admin/subscription',
+    'GET_DRIVER_SUBSCRIPTIONS_FEEDBACK': '/admin/marketing-feedbacks',
+    'CREATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
+    'UPDATE_DRIVER_SUBSCRIPTION_FEEDBACK': '/admin/marketing-feedbacks',
     'GET_ACCOUNTS': '/admin/accounts',
     'GET_DRIVERS_FOR_SUBSCRIPTION': '/admin/subscription/drivers',
     'GET_ACCOUNT_CABS': '/account/cabs/',
@@ -880,6 +897,7 @@ export const API_ROUTES = {
     'ACTING_DRIVER_EDIT_LOCAL_PACKAGE': '/update-package',
     'ACTING_DRIVER_ADD_OUTSTAION_PACKAGE': '/add-outstation-package',
     'ACTING_DRIVER_EDIT_OUTSTATION_PACKAGE': '/update-outstation-package',
+    'POST_ACTING_DRIVER_ZONE_PACKAGES': '/acting-driver/zone-packages',
     'GET_PACKAGE_DETAIL': '/package-list/',
     'GET_RECEIPT_LIST': '/admin/receipt',
     'GET_INVOICE_LIST': '/admin/list-invoices',
@@ -904,7 +922,9 @@ export const API_ROUTES = {
     'CONFIRM_RENTAL_BOOKING': '/confirm-rental-booking',
     'GEO_MARKINGS': '/geo-markings',
     'GEO_MARKINGS_LIST': '/geo-markings/filter',
+    'SERVICE_CATEGORY_CATALOG': '/service-category-catalog',
     'RENTAL_OUTSTATION_TARIFFS': '/rental/outstation/tariffs',
+    'RENTAL_LOCAL_TARIFFS': '/rental/local/tariffs',
     'GEO_MARKINGS_DELETE': '/geo-markings',
     'GET_CAR_TYPE': '/car-type/',
     'POST_NOTIFICATION_ADD': '/send-notification',
@@ -944,6 +964,7 @@ export const API_ROUTES = {
     'GET_AUTO_LIST':"/admin/autos",
     'ADD_NEW_AUTO_BOOKING':'/add-auto-booking',
     'POST_AUTO_SEARCH':'/search/auto',
+    'POST_PARCEL_SEARCH':'/search/parcel',
     'ADD_NEW_AUTO_DETAILS':'/register/admin/auto',
     'CREATE_PARCEL_ADMIN' :'/register/admin/parcel',
     'GET_ALL_PARCEL': '/admin/parcel',
@@ -1018,6 +1039,7 @@ export const API_ROUTES = {
     'UPDATE_CASH_BACK':'/cashback-rules/:settingId',
     'GET_CASH_BACK':'/cashback-rules',
     'DRIVER_KM_INCENTIVE_RULES':'/admin/driver-km-incentive/rules',
+    'DRIVER_DISPATCH_ZONE_CONFIGS':'/driver-dispatch-zone-configs',
     "GET_TRANSACTIONS_LIST":'/transactions',
     "GET_TRANSACTIONS_CHART":'/transactions/chart',
     "GET_BOOKING_FUNNEL": '/admin/booking-funnel',
@@ -1037,7 +1059,7 @@ export const API_ROUTES = {
     'ADD_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
     'UPDATE_RETURN_TRIP_ELIGIBILITY': '/admin/return-trip-eligibility',
     'SUPPORT_TICKETS': '/admin/support-tickets',
-    'SUPPORT_TICKET_BY_ID': '/admin/support-tickets/:id',
+    'SUPPORT_TICKET_BY_ID': '/support-tickets/:ticketId',
     'UPDATE_SUPPORT_TICKET_STATUS': '/admin/support-tickets/:id/status',
     'CUSTOMER_CANCELLATION_CHARGE_LOGS': '/admin/customer-cancellation-charge-logs',
     'ADD_NEW_BIKE_TAXI':'/register/admin/bike',
@@ -1059,11 +1081,90 @@ export const API_ROUTES = {
     'UPDATE_ADMIN_PARCEL_SLOT_RULES':'/admin/parcel-slot-rules',
     'GET_ADMIN_PARCEL_DALIY_SLOTS':'/admin/parcel/daily-slots',
     'EXPORT_DALIY_SLOT':'/admin/daily/slot/export',
+    'GET_ADMIN_ACTING_DRIVER_SLOT_RULES':'/acting-driver/slot-rules',
+    'POST_ADMIN_ACTING_DRIVER_SLOT_RULES':'/acting-driver/slot-rules',
+    'UPDATE_ADMIN_ACTING_DRIVER_SLOT_RULES':'/acting-driver/slot-rules',
+    'GET_ADMIN_ACTING_DRIVER_DAILY_SLOTS':'/admin/acting-driver/daily-slots',
+    'POST_ADMIN_ACTING_DRIVER_DAILY_SLOTS':'/acting-driver/daily-slots/process',
     'GET_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'POST_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'GET_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
     'UPDATE_BY_ID_DRIVER_ADVERISEMENT':'/admin/driver-advertisements',
+    'GET_DRIVER_ADS_LIST':'/admin/driver-advertisement-registrations',
+    'GET_DRIVER_ADS_REGISTRATION_BY_ID':'/admin/driver-advertisement-registrations/:registrationId',
+    'UPDATE_DRIVER_ADS_REGISTRATION_STATUS':'/admin/driver-advertisement-registrations/:registrationId/status',
+    'UPDATE_DRIVER_ADS_REGISTRATION_NOTES':'/admin/driver-advertisement-registrations/:registrationId/notes',
+    'POST_FOLLOW_UP':'/admin/driver-advertisement-registrations/:registrationId/follow-up',
+    'STATUS_COMPLETE_REMARKS':'/admin/driver-advertisement-registrations/:registrationId/complete',
+    'DRIVER_ADS_REG_ACTIVITY_LOG':'/admin/driver-advertisement-registrations/:registrationId/activity',
+    'GET_DRIVER_ADS_REGISTRATION_CYCLE_BY_ID':'/admin/driver-advertisement-registration-cycles/:cycleId',
+    'UPDATE_DRIVER_ADS_REGISTRATION_CYCLE_STATUS':'/admin/driver-advertisement-registration-cycles/:cycleId/status',
+    'GET_DRIVER_ADS_REGISTRATION_WALLET_HISTORY':'/admin/driver-advertisement-registrations/:registrationId/wallet-history',
+    'MASTER_JOINS_BOUNCE':'/admin/free-plan',
+    'ADD_MASTER_JOINS_BOUNCE':'/admin/free-plan',
+    'UPDATE_MASTER_JOINS_BOUNCE':'/admin/free-plan',
+    'GET_REFERRAL_RULE': '/referral-rules',
+    'POST_REFERRAL_RULE': '/referral-rules',
+    'UPDATE_REFERRAL_RULE': '/referral-rules/:settingId',
+    'GET_REFERRAL_CREDIT_LOGS': '/getReferralCreditLogs',
+    'GET_ROOTCABS_WEBSITE_REGISTRATIONS': '/admin/rootcabs-website/registrations',
+    'GET_EXTERNAL_PROMOTIONS':'/external-promotions',
+    'ADD_EXTERNAL_PROMOTIONS':'/external-promotions/add',
+    'UPDATE_EXTERNAL_PROMOTIONS':'/external-promotions/update',
+    'DELETE_EXTERNAL_PROMOTIONS':'/external-promotions/:id',
 
+    // Vendor Management
+    'GET_VENDORS': '/vendors',
+    'ADD_VENDOR': '/vendors/add',
+    'UPDATE_VENDOR': '/vendors/update',
+    'GET_VENDOR_BY_ID': '/vendors/:id',
+
+    'GET_CATEGORIES': '/categories',
+    'ADD_CATEGORY': '/categories/add',
+    'UPDATE_CATEGORY': '/categories/update',
+    'GET_CATEGORY_BY_ID': '/categories/:id',
+    
+    'GET_PRODUCTS': '/products',
+    'ADD_PRODUCT': '/products/add',
+    'UPDATE_PRODUCT': '/products/update',
+    'GET_PRODUCT_BY_ID': '/products/:id',
+    
+    'GET_VENDOR_CATALOG': '/vendors/:vendorId/catalog',
+    'ADD_CATALOG_MAPPING': '/catalog-mappings/add',
+    'UPDATE_CATALOG_MAPPING': '/catalog-mappings/update',
+    'GET_CATALOG_MAPPING_BY_ID': '/catalog-mappings/:id',
+    
+    'GET_VENDOR_INVENTORY': '/vendors/:vendorId/inventory',
+    'ADD_INVENTORY': '/inventory/add',
+    'UPDATE_INVENTORY': '/inventory/update',
+    'GET_INVENTORY_BY_ID': '/inventory/:id',
+    
+    'GET_VENDOR_PRICING': '/vendors/:vendorId/pricing',
+    'ADD_PRICING': '/pricing/add',
+    'UPDATE_PRICING': '/pricing/update',
+    'GET_PRICING_BY_ID': '/pricing/:id',
+    
+    'GET_VENDOR_ORDERS': '/orders',
+    // 'ADD_ORDER': '/orders/add',
+    // 'UPDATE_ORDER': '/orders/update',
+    'GET_ORDER_BY_ID': '/orders/:id',
+    'BOOKING_QUOTE_EXPIRE':'/booking/expire-quote',
+
+    //service-contents
+    'GET_SERVICE_CONTENTS': '/admin/service-contents',
+    'GET_SERVICE_CONTENT_BY_ID': '/admin/service-contents',
+    'POST_SERVICE_CONTENT': '/admin/service-contents',
+    'PUT_SERVICE_CONTENT': '/admin/service-contents',
+    'DELETE_SERVICE_CONTENT': '/admin/service-contents',
+
+    'POST_OUTSTATION_ROUND_TRIP_ESTIMATE': '/outstation/round-trip/estimate',
+    'PROCESS_PARCEL_DAILY_SLOTS': '/process-parcel-daily-slots',
+    'GET_ACTING_DRIVER_PENALTIES': '/admin/acting-driver/penalties',
+    'COMPLIANCE-ESCALATIONS':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATIONS_LIST':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATIONS_ACTIVE_COUNT':'/admin/compliance-escalations/active-count',
+    'COMPLIANCE_ESCALATIONS_STATUS':'/admin/compliance-escalations',
+    'COMPLIANCE_ESCALATION_DETAILS':'/admin/compliance-escalations',
 };
 
 export const ADMIN_BOOKINGS_EVENTS_CANDIDATES = [
@@ -1109,12 +1210,14 @@ export const BOOKING_STATUS = {
     DRIVER_REACHED: "DRIVER_REACHED",
     CONFIRMED: 'CONFIRMED',
     IN_PROGRESS: 'IN PROGRESS',
+    DRIVER_NOT_AVAILABLE : 'DRIVER_NOT_AVAILABLE',
     STARTED: 'STARTED',
     ASSIGNED_TO_SUPPORT: 'ASSIGNED_TO_SUPPORT',
     END_OTP:'END_OTP',
     PAYMENT_REQUESTED:'PAYMENT_REQUESTED',
     ENDED: 'ENDED',
     TRIP_ENDED: 'TRIP_ENDED',
+    QUOTE_EXPIRED:'QUOTE_EXPIRED',
 };
 
 export const BOOKING_SERVICE_TYPE = {
@@ -1173,7 +1276,7 @@ export const USER_ROLE = [
 
 // Role-based permissions for main modules (side/top nav)
 export const ROLE_PERMISSIONS = {
-    'SUPER_USER': ['Home','Support','Driver Ops',"Calls", 'All bookings', 'Customers', 'Vendors', 'Trip Master','Finance', 'Document verification','Marketing', 'Users','Driver Engagement','Autos'],
+    'SUPER_USER': ['Home','Support','Driver Ops',"Calls", 'All bookings', 'Customers', 'Vendors', 'Trip Master','Finance', 'Document verification','Marketing','Vendor Management', 'Users','Driver Engagement','Autos'],
     'SALES': ['Home','Support','Driver Ops','All bookings', 'Customers', 'Vendors', 'Document verification','Autos'],
     'SUPPORT': ['Home','Support','Calls','All bookings', 'Customers', 'Vendors','Autos'],
     'FINANCE': ['Home','Support','Driver Ops','All bookings', 'Customers', 'Vendors', 'Finance','Document verification','Autos'],
@@ -1239,6 +1342,7 @@ export const PERMISSION_OPTIONS = [
     { name: 'Finance', id: 'Finance' },
     { name: 'Document verification', id: 'Document verification' },
     { name: 'Marketing', id: 'Marketing' },
+    { name: 'Vendor Management', id: 'Vendor Management'},
     { name: 'Users', id: 'Users' },
 ];
 
@@ -1425,6 +1529,7 @@ export const ColorStyles = {
     PopoverHandlerText: "text-black",
     bgStatusColor: " bg-primary text-white",
     addButtonColor: "bg-primary text-white",
+    searchButtonColor: "bg-blue-gray-400 text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2",
     continueButtonColor: " bg-primary text-white",
     backButton: " text-black border-gray-400 border-2 rounded-xl bg-white",
     editButton: "bg-primary text-white",

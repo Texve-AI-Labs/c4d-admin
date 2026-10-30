@@ -12,7 +12,7 @@ import {
     IconButton,
     Spinner,
 } from "@material-tailwind/react";
-import { FaArrowRight, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser } from 'react-icons/fa';
+import { FaArrowRight, FaArrowUp, FaArrowDown, FaFilter, FaChartBar, FaClipboardList,FaExclamationTriangle, FaCheckCircle, FaTimesCircle, FaCalendarAlt, FaUsers, FaSync, FaPhone, FaUser, FaEdit } from 'react-icons/fa';
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, BOOKING_STATUS, ColorStyles } from "@/utils/constants";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -33,12 +33,21 @@ const toStorageScope = (pathname = '') => {
 
 const getBookingFiltersKey = (pathname) => `bookingFilters_${toStorageScope(pathname)}`;
 const getBookingSearchKey = (pathname) => `bookingSearchId_${toStorageScope(pathname)}`;
-const getBookingCustomerKey = (pathname) => `bookingCustomerId_${toStorageScope(pathname)}`;
+const getBookingSearchContextKey = (pathname) => `bookingSearchContext_${toStorageScope(pathname)}`;
 const LEGACY_BOOKING_FILTERS_KEY = 'bookingListFilters';
 const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 const getDateFilterFromTab = (tab) =>
     tab === 'TODAY' ? 'Today' : tab === 'REMAINING' ? 'Future' : tab === 'CUSTOM_DATE' ? 'Custom date' : 'All';
-const isBookingNumberSearch = (value = '') => /^C4D/i.test(String(value || '').trim());
+
+const getCustomDateRangeError = (startDate, endDate) => {
+    const today = moment().format('YYYY-MM-DD');
+    if (startDate && startDate > today) return 'Start date cannot be a future date.';
+    if (endDate && endDate > today) return 'End date cannot be a future date.';
+    if (startDate && endDate && endDate < startDate) {
+        return 'End date cannot be earlier than the start date.';
+    }
+    return '';
+};
 
 const DEFAULT_BOOKING_COUNTS = {
     endedCount: "0",
@@ -63,7 +72,7 @@ const normalizeBookingListState = (state = {}) => {
         customDateTo: state.customDateTo || '',
         currentPage: typeof state.currentPage === 'number' ? state.currentPage : 1,
         searchBookingId: state.searchBookingId || '',
-        customerId: Number(state.customerId || 0),
+        customerId: toPositiveNumber(state.customerId),
     };
 };
 
@@ -86,6 +95,22 @@ const setItemSafe = (key, value) => {
     }
 };
 
+const parseStoredJsonSafe = (key) => {
+    const raw = getItemSafe(key);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (error) {
+        console.error(`Error parsing sessionStorage key "${key}":`, error);
+        return null;
+    }
+};
+
+const toPositiveNumber = (value) => {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0;
+};
+
 const getLocalItemSafe = (key) => {
     if (!isBrowser()) return null;
     try {
@@ -96,7 +121,7 @@ const getLocalItemSafe = (key) => {
     }
 };
 
-const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServiceTypeFilter, setSourceFilter, setTripCoordinatorFilter, setZoneFilter, setDateFilter, setCustomDateFrom, setCustomDateTo, setPagination, setFiltersLoaded }) => {
+const loadBookingFilters = ({ filtersKey, searchKey, setActiveTab, setStatusFilter, setServiceTypeFilter, setSourceFilter, setTripCoordinatorFilter, setZoneFilter, setDateFilter, setCustomDateFrom, setCustomDateTo, setPagination, setRestoredCustomerId, setFiltersLoaded }) => {
     try {
         let storedFilters = getItemSafe(filtersKey);
         if (!storedFilters) {
@@ -113,19 +138,27 @@ const loadBookingFilters = ({ filtersKey, setActiveTab, setStatusFilter, setServ
 
         const parsed = normalizeBookingListState(JSON.parse(storedFilters));
 
-        setActiveTab(parsed.activeTab);
-        setStatusFilter(parsed.statusFilter);
-        setServiceTypeFilter(parsed.serviceTypeFilter);
-        setSourceFilter(parsed.sourceFilter);
-        setTripCoordinatorFilter(parsed.tripCoordinatorFilter);
-        setZoneFilter(parsed.zoneFilter);
-        setDateFilter(parsed.dateFilter);
-        setCustomDateFrom(parsed.customDateFrom);
-        setCustomDateTo(parsed.customDateTo);
-        setPagination((prev) => ({
-            ...prev,
-            currentPage: parsed.currentPage,
-        }));
+        const restoredActiveTab = parsed.activeTab || 'ALL_BOOKINGS';
+        setActiveTab(restoredActiveTab);
+        if (Array.isArray(parsed.statusFilter)) setStatusFilter(parsed.statusFilter);
+        if (Array.isArray(parsed.serviceTypeFilter)) setServiceTypeFilter(parsed.serviceTypeFilter);
+        if (Array.isArray(parsed.sourceFilter)) setSourceFilter(parsed.sourceFilter);
+        if (Array.isArray(parsed.tripCoordinatorFilter)) setTripCoordinatorFilter(parsed.tripCoordinatorFilter);
+        if (Array.isArray(parsed.zoneFilter)) setZoneFilter(parsed.zoneFilter);
+        // Keep date filter strictly derived from active tab to avoid UI/API mismatch.
+        setDateFilter(getDateFilterFromTab(restoredActiveTab));
+        if (parsed.customDateFrom) setCustomDateFrom(parsed.customDateFrom);
+        if (parsed.customDateTo) setCustomDateTo(parsed.customDateTo);
+        if (typeof parsed.currentPage === 'number') {
+            setPagination((prev) => ({
+                ...prev,
+                currentPage: parsed.currentPage,
+            }));
+        }
+        setRestoredCustomerId?.(parsed.customerId);
+        if (searchKey) {
+            setItemSafe(searchKey, parsed.searchBookingId || '');
+        }
     } catch (error) {
         console.error('Error loading booking list filters from sessionStorage:', error);
     } finally {
@@ -170,7 +203,7 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const hasFeature = (feature) => bookingFeatures.includes(feature);
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
-    const bookingCustomerKey = getBookingCustomerKey(location.pathname);
+    const bookingSearchContextKey = getBookingSearchContextKey(location.pathname);
     const [bookingsList, setBookingsList] = useState([]);
     const [selectedBookingId, setSelectedBookingId] = useState(null);
     const [activeTab, setActiveTab] = useState(() => getInitialActiveTab(bookingFiltersKey));
@@ -197,14 +230,19 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [selectedBookingForSupportApproval, setSelectedBookingForSupportApproval] = useState(null);
     const [supportApprovalDecision, setSupportApprovalDecision] = useState('END_TRIP');
     const [supportApprovalReasonDetails, setSupportApprovalReasonDetails] = useState('');
+    const [showQuoteExpireModal, setShowQuoteExpireModal] = useState(false);
+    const [selectedBookingForQuoteExpire, setSelectedBookingForQuoteExpire] = useState(null);
+    const [quoteExpireReason, setQuoteExpireReason] = useState('');
     const [counts, setCounts] = useState(DEFAULT_BOOKING_COUNTS);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [dateFilter, setDateFilter] = useState('All');
     const [customDateFrom, setCustomDateFrom] = useState('');
     const [customDateTo, setCustomDateTo] = useState('');
+    const [customDateError, setCustomDateError] = useState('');
     const [isManualDateFilter, setIsManualDateFilter] = useState(false);
     const [filtersLoaded, setFiltersLoaded] = useState(false);
     const [effectiveSearchId, setEffectiveSearchId] = useState(searchBookingId);
+    const [restoredCustomerId, setRestoredCustomerId] = useState(0);
     const previousSearchBookingIdRef = useRef(searchBookingId || '');
     const [searchResetPending, setSearchResetPending] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
@@ -219,8 +257,45 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
     const [followupLoading, setFollowupLoading] = useState({});
     const [allUsers, setAllUsers] = useState([]); 
     const latestRequestRef = useRef(0);
-    const summaryRequestRef = useRef(0);
+    const summaryRequestRef = useRef({
+        requestId: 0,
+        inFlight: null,
+        lastQueryKey: "",
+        lastQueryAt: 0,
+        lastResult: null,
+    });
+    const previousCustomerIdRef = useRef(customerId);
     const { updateHomeTotalPendings, updateInquiryTotalPendings } = useRealtimeEvents();
+
+    const getResetPagination = (page = 1) => ({
+        currentPage: page,
+        totalPages: 1,
+        totalItems: 0,
+        itemsPerPage: pagination.itemsPerPage,
+    });
+
+    const isBookingNumberSearch = (value = '') => /^C4D/i.test(String(value || '').trim());
+
+    const getResolvedBookingNumber = (value = effectiveSearchId) => {
+        const searchValue = String(value || '').trim();
+        return isBookingNumberSearch(searchValue) ? searchValue : '';
+    };
+
+    const getResolvedCustomerId = (bookingNumber = effectiveSearchId) => {
+        if (isBookingNumberSearch(bookingNumber)) {
+            return 0;
+        }
+
+        const propCustomerId = toPositiveNumber(customerId);
+        if (String(bookingNumber || '').trim()) {
+            return propCustomerId || toPositiveNumber(restoredCustomerId);
+        }
+
+        // The parent owns the active customer filter. A zero value explicitly
+        // means the list must show all customers; do not resurrect stale
+        // customer IDs from sessionStorage after the booking modal closes.
+        return propCustomerId;
+    };
 
     const getInquiryTypeFromPath = (pathname = "") => {
         const path = String(pathname || "").toLowerCase();
@@ -339,13 +414,16 @@ useEffect(() => {
             setDateFilter(restoredState.dateFilter);
             setCustomDateFrom(restoredState.customDateFrom);
             setCustomDateTo(restoredState.customDateTo);
+            setRestoredCustomerId(restoredState.customerId);
             setPagination((prev) => ({ ...prev, currentPage: restoredState.currentPage }));
             setItemSafe(bookingFiltersKey, JSON.stringify(restoredState));
+            setItemSafe(bookingSearchKey, restoredState.searchBookingId || '');
             setFiltersLoaded(true);
             return;
         }
         loadBookingFilters({
             filtersKey: bookingFiltersKey,
+            searchKey: bookingSearchKey,
             setActiveTab,
             setStatusFilter,
             setServiceTypeFilter,
@@ -356,18 +434,33 @@ useEffect(() => {
             setCustomDateFrom,
             setCustomDateTo,
             setPagination,
+            setRestoredCustomerId,
             setFiltersLoaded,
         });
-    }, [bookingFiltersKey, location.state, location.pathname, navigate]);
+    }, [bookingFiltersKey, bookingSearchKey, location.state]);
 
     useEffect(() => {
         if (!filtersLoaded) return;
         try {
-            setItemSafe(bookingFiltersKey, JSON.stringify(getCurrentListState()));
+            const filtersToStore = {
+                activeTab,
+                statusFilter,
+                serviceTypeFilter,
+                sourceFilter,
+                tripCoordinatorFilter,
+                zoneFilter,
+                dateFilter,
+                customDateFrom,
+                customDateTo,
+                currentPage: pagination.currentPage,
+                searchBookingId: String(effectiveSearchId || '').trim(),
+                customerId: getResolvedCustomerId(effectiveSearchId),
+            };
+            setItemSafe(bookingFiltersKey, JSON.stringify(filtersToStore));
         } catch (error) {
             console.error('Error saving booking list filters to sessionStorage:', error);
         }
-    }, [filtersLoaded, bookingFiltersKey, activeTab, statusFilter, serviceTypeFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, pagination.currentPage]);
+    }, [filtersLoaded, bookingFiltersKey, activeTab, statusFilter, serviceTypeFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, pagination.currentPage, effectiveSearchId, customerId, restoredCustomerId]);
 
     useEffect(() => {
         const stored = getItemSafe(bookingSearchKey) || getItemSafe(LEGACY_BOOKING_SEARCH_KEY) || '';
@@ -400,15 +493,7 @@ useEffect(() => {
   setShowDriverHours(false); // Hide the popup after selection
 };
 
-const resolvedCustomerId = useMemo(() => {
-    const numericCustomerId = Number(customerId || 0);
-    if (numericCustomerId > 0) return numericCustomerId;
-    const storedCustomerId = Number(getItemSafe(bookingCustomerKey) || 0);
-    return storedCustomerId > 0 ? storedCustomerId : 0;
-}, [customerId, bookingCustomerKey]);
-const resolvedBookingNumber = resolvedCustomerId > 0 ? '' : (isBookingNumberSearch(effectiveSearchId) ? effectiveSearchId : '');
-
-const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId: resolvedBookingNumber,activeTab,customDateFrom,customDateTo,customerId: resolvedCustomerId,type,summaryRequestRef,DEFAULT_COUNTS: DEFAULT_BOOKING_COUNTS,setCounts,setSummaryLoading,});
+const {fetchBookingSummary,buildSummaryQueryParams} = useBookingQuerySummary({statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter,effectiveSearchId: getResolvedBookingNumber(effectiveSearchId),activeTab,customDateFrom,customDateTo,customerId: getResolvedCustomerId(effectiveSearchId),type,summaryRequestRef,DEFAULT_COUNTS: DEFAULT_BOOKING_COUNTS,setCounts,setSummaryLoading,});
 const fetchServiceAreas = async () => {
         try {
             const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GEO_MARKINGS_LIST, {});
@@ -454,6 +539,7 @@ const handleTabChange = (value) => {
         setZoneFilter(resetZoneFilter);
                 setCustomDateFrom('');
                 setCustomDateTo('');
+                setCustomDateError('');
         setDateFilter(getDateFilterFromTab(value));
 
             if (value === 'CUSTOM_DATE') {
@@ -462,6 +548,16 @@ const handleTabChange = (value) => {
                 setIsCustomDatePopoverOpen(false);
             }
         }
+    };
+
+    const handleCustomDateFromChange = (value) => {
+        setCustomDateFrom(value);
+        setCustomDateError(getCustomDateRangeError(value, customDateTo));
+    };
+
+    const handleCustomDateToChange = (value) => {
+        setCustomDateTo(value);
+        setCustomDateError(getCustomDateRangeError(customDateFrom, value));
     };
 
     const handleFilterChange = (filterType, value) => {
@@ -567,6 +663,7 @@ const handleTabChange = (value) => {
     const getBookingsList = async (page = 1) => {
         // For custom date tab, only hit API when both dates are selected
         if (activeTab === 'CUSTOM_DATE' && (!customDateFrom || !customDateTo)) {return;}
+        if (activeTab === 'CUSTOM_DATE' && getCustomDateRangeError(customDateFrom, customDateTo)) {return;}
         const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
     try {
@@ -607,12 +704,12 @@ if (!statusFilter.includes('All')) {
         }
         
         const queryParams = {
-            "customerId": resolvedCustomerId,
+            "customerId": getResolvedCustomerId(effectiveSearchId),
             'type': type ? type : '',
             'page': page,
             'limit': pagination.itemsPerPage,
             'filterType': JSON.stringify(filterType),
-            'bookingNumber': resolvedBookingNumber,
+            'bookingNumber': getResolvedBookingNumber(effectiveSearchId),
         };
         
         // Add date parameters if they exist
@@ -643,17 +740,20 @@ if (!statusFilter.includes('All')) {
             else {
                 setBookingsList([]);
                 setOnlineDrivers([]);
+                setPagination(getResetPagination(page));
             }
         } 
         else {
             console.error('API request failed:', data?.message);
             setBookingsList([]);
             setOnlineDrivers([]);
+            setPagination(getResetPagination(page));
         }
     } catch (error) {
         console.error('Error fetching bookings:', error);
         setBookingsList([]);
         setOnlineDrivers([]);
+        setPagination(getResetPagination(page));
     } finally {
         if (currentRequestId !== latestRequestRef.current) {
             return;
@@ -715,9 +815,9 @@ if (!statusFilter.includes('All')) {
         // }, 10000);
 
         // return () => clearInterval(intervalId);
-    }, [resolvedCustomerId, resolvedBookingNumber, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
+    }, [customerId, effectiveSearchId, bookingStage, type, pagination.currentPage, activeTab, statusFilter, sourceFilter, tripCoordinatorFilter, zoneFilter, dateFilter, customDateFrom, customDateTo, filtersLoaded]);
 
-    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,buildSummaryQueryParams,fetchBookingSummary,customerId: resolvedCustomerId,effectiveSearchId: resolvedBookingNumber,type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter});
+    useBookingSummaryRealtime({filtersLoaded,activeTab,customDateFrom,customDateTo,customDateRangeValid: !getCustomDateRangeError(customDateFrom, customDateTo),buildSummaryQueryParams,fetchBookingSummary,customerId: getResolvedCustomerId(effectiveSearchId),effectiveSearchId: getResolvedBookingNumber(effectiveSearchId),type,statusFilter,sourceFilter,tripCoordinatorFilter,zoneFilter});
 
     useEffect(() => {
         const totalPendings = Number(counts?.totalPendings || 0);
@@ -822,6 +922,12 @@ if (!statusFilter.includes('All')) {
         setShowSupportApprovalModal(true);
     };
 
+    const onQuoteExpireEditHandler = (data) => {
+        setSelectedBookingForQuoteExpire(data);
+        setQuoteExpireReason('');
+        setShowQuoteExpireModal(true);
+    };
+
     const submitSupportApproval = async () => {
         if (!selectedBookingForSupportApproval?.id) return;
 
@@ -851,6 +957,32 @@ if (!statusFilter.includes('All')) {
         }
     };
 
+    const submitQuoteExpireUpdate = async () => {
+        if (!selectedBookingForQuoteExpire?.id) return;
+
+        const payload = {
+            bookingId: selectedBookingForQuoteExpire.id,
+            expiryReason: quoteExpireReason?.trim() || '',
+        };
+        // console.log("payload:- ",payload)
+        try {
+            setLoading(true);
+            const response = await ApiRequestUtils.update(API_ROUTES.BOOKING_QUOTE_EXPIRE, payload);
+            if (response?.success) {
+                setShowQuoteExpireModal(false);
+                setSelectedBookingForQuoteExpire(null);
+                setQuoteExpireReason('');
+                await getBookingsList(pagination.currentPage);
+            } else {
+                console.error('Quote expire update failed:', response?.message);
+            }
+        } catch (error) {
+            console.error('Error submitting quote expire update:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const getCurrentListState = () => ({
         activeTab,
         statusFilter,
@@ -862,18 +994,12 @@ if (!statusFilter.includes('All')) {
         customDateFrom,
         customDateTo,
         currentPage: pagination.currentPage,
-        searchBookingId: resolvedBookingNumber,
-        customerId: resolvedCustomerId,
+        searchBookingId: String(effectiveSearchId || '').trim(),
+        customerId: getResolvedCustomerId(effectiveSearchId),
     });
 
-    const persistCurrentListState = () => {
-        const listState = getCurrentListState();
-        setItemSafe(bookingFiltersKey, JSON.stringify(listState));
-        return listState;
-    };
-
     const handleBookingSelect = (data, event) => {
-        persistCurrentListState();
+        setItemSafe(bookingFiltersKey, JSON.stringify(getCurrentListState()));
         setSelectedBookingId(data.id);
         if (onSelectBooking) {
             event?.preventDefault?.();
@@ -953,15 +1079,6 @@ if (!statusFilter.includes('All')) {
         [bookingFeatures, allTabLabel, isCompactFeatureList]
     );
     const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
-    const renderTabsSkeleton = () => (
-        <div className="flex w-full p-1 animate-pulse" aria-hidden="true">
-            {tabs.map(({ value }) => (
-                <div key={value} className="flex-1 px-3 py-1">
-                    <div className="h-7 rounded-md bg-gray-100" />
-                </div>
-            ))}
-        </div>
-    );
 
     useEffect(() => {
         if (!tabValues.includes(activeTab)) {
@@ -992,6 +1109,7 @@ if (!statusFilter.includes('All')) {
     const handleRefresh = () => {
         // Set manual filter flag to prevent useEffect conflicts
         setIsManualDateFilter(true);
+        onClearSearch?.();
         const refreshedTab = isCompactFeatureList ? 'TODAY' : 'ALL_BOOKINGS';
         
         // Reset all filters to their default state
@@ -1004,13 +1122,13 @@ if (!statusFilter.includes('All')) {
         setDateFilter(getDateFilterFromTab(refreshedTab));
         setCustomDateFrom('');
         setCustomDateTo('');
+        setCustomDateError('');
         setIsCustomDatePopoverOpen(false);
         setPagination((prev) => ({ ...prev, currentPage: 1 }));
         setEffectiveSearchId('');
-        onClearSearch?.();
         sessionStorage.removeItem(bookingSearchKey);
-        sessionStorage.removeItem(bookingCustomerKey);
         sessionStorage.removeItem(LEGACY_BOOKING_SEARCH_KEY);
+        sessionStorage.removeItem(bookingSearchContextKey);
         const today = moment().format('YYYY-MM-DD');
         const startDate = refreshedTab === 'TODAY' ? today : '';
         const endDate = refreshedTab === 'TODAY' ? today : '';
@@ -1048,7 +1166,7 @@ if (!statusFilter.includes('All')) {
 // };
 
     // Function to trigger API call with specific dates (bypasses state timing issues)
-   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = resolvedBookingNumber, activeTabParam = activeTab, customerIdParam = resolvedCustomerId) => {
+   const triggerFilteredAPICall = async (startDate, endDate, page = 1, statusFilterParam = statusFilter, sourceFilterParam = sourceFilter, tripCoordinatorFilterParam = tripCoordinatorFilter, serviceTypeFilterParam = serviceTypeFilter, zoneFilterParam = zoneFilter, effectiveSearchIdParam = effectiveSearchId, activeTabParam = activeTab, customerIdOverride = null) => {
         const currentRequestId = ++latestRequestRef.current;
         setLoading(true);
         
@@ -1074,12 +1192,12 @@ if (!statusFilter.includes('All')) {
             }
             
             const queryParams = {
-                "customerId": customerIdParam,
+                "customerId": customerIdOverride ?? getResolvedCustomerId(effectiveSearchIdParam),
                 'type': type ? type : '',
                 'page': page,
                 'limit': pagination.itemsPerPage,
                 'filterType': JSON.stringify(filterType),
-                'bookingNumber': effectiveSearchIdParam,
+                'bookingNumber': getResolvedBookingNumber(effectiveSearchIdParam),
             };
             
             // Add date parameters
@@ -1108,14 +1226,17 @@ if (!statusFilter.includes('All')) {
                     setSelectedBookingId(null);
                 } else {
                     setBookingsList([]);
+                    setPagination(getResetPagination(page));
                 }
             } else {
                 console.error('API request failed:', data?.message);
                 setBookingsList([]);
+                setPagination(getResetPagination(page));
             }
         } catch (error) {
             console.error('Error fetching bookings:', error);
             setBookingsList([]);
+            setPagination(getResetPagination(page));
         } finally {
             if (currentRequestId !== latestRequestRef.current) {
                 return;
@@ -1177,9 +1298,9 @@ if (!statusFilter.includes('All')) {
                     </div>
                 
                     {/* Status Cards Grid */}
-                        <div className="grid grid-cols-1 py-12 sm:grid-cols-2 md:grid-cols-7 gap-2">
+                        <div className="grid grid-cols-1 py-12 sm:grid-cols-2 md:grid-cols-8 gap-2">
                             {[
-                                // { key: 'totalBookingCount', label: 'Total Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', chipColor: 'bg-blue-600 text-white' },
+                                { key: 'totalBookingCount', label: 'Total Enquiry', icon: FaChartBar, color: 'bg-blue-gray-50 text-orange', spinnerColor: 'text-orange', chipColor: 'bg-orange-200 text-orange' },
                                 { key: 'uniqueCustomerPerDayBookingCount', label: 'Total Unique Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', spinnerColor: 'text-blue-900', chipColor: 'bg-blue-600 text-white' },
                                 { key: 'quotedCount', label: 'Quoted', icon: FaClipboardList, color: 'bg-yellow-50 text-yellow-900', spinnerColor: 'text-yellow-900', chipColor: 'bg-yellow-600 text-white' },
                                 { key: 'confirmedCount', label: 'Confirmed', icon: FaCalendarAlt, color: 'bg-purple-50 text-purple-900', spinnerColor: 'text-purple-900', chipColor: 'bg-purple-600 text-white' },
@@ -1308,9 +1429,14 @@ if (!statusFilter.includes('All')) {
                 <CardBody className='pt-0'>
                     <div className="bg-gray-300 z-0 mb-4 rounded-lg">
                     <div className="flex w-full items-center">
-                        {loading ? renderTabsSkeleton() : (
                         <div className="flex w-full p-1" role="tablist" aria-label="Booking date tabs">
-                            {tabs.map(({ label, value }) => (
+                                {loading ? (
+                                    <div className="flex w-full animate-pulse gap-1" aria-label="Loading booking tabs">
+                                        {Array.from({ length: tabs.length }).map((_, index) => (
+                                            <div key={index} className="h-8 flex-1 rounded-md bg-gray-100 opacity-100 " />
+                                        ))}
+                                    </div>
+                                ) : tabs.map(({ label, value }) => (
                                 <button
                                     key={value}
                                     type="button"
@@ -1344,10 +1470,10 @@ if (!statusFilter.includes('All')) {
                                             <input
                                                 type="date"
                                                 value={customDateFrom}
-                                                onChange={(e) => setCustomDateFrom(e.target.value)}
+                                                onChange={(e) => handleCustomDateFromChange(e.target.value)}
                                                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                                 className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                                                // max={customDateTo || undefined}
+                                                max={moment().format('YYYY-MM-DD')}
                                             />
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -1357,17 +1483,23 @@ if (!statusFilter.includes('All')) {
                                            <input
                                                 type="date"
                                                 value={customDateTo}
-                                                onChange={(e) => setCustomDateTo(e.target.value)}
+                                                onChange={(e) => handleCustomDateToChange(e.target.value)}
                                                 onBlur={() => {
-                                                    if (customDateFrom && customDateTo) {
+                                                    if (customDateFrom && customDateTo && !customDateError) {
                                                     setIsCustomDatePopoverOpen(false);
                                                     }
                                                 }}
                                                 onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                                 className="px-3 py-1 ml-4 border border-gray-300 rounded-md text-sm"
-                                                // min={customDateFrom || undefined}
+                                                min={customDateFrom || undefined}
+                                                max={moment().format('YYYY-MM-DD')}
                                                 />
                                         </div>
+                                        {customDateError && (
+                                            <Typography className="text-sm font-medium text-red-600">
+                                                {customDateError}
+                                            </Typography>
+                                        )}
                                         {/* <Button
                                             size="sm"
                                             className="bg-primary text-white hover:bg-primary-600 flex items-center gap-2"
@@ -1385,7 +1517,6 @@ if (!statusFilter.includes('All')) {
                 </button>
             ))}
         </div>
-                        )}
                             </div>
                         </div>
                         <div className='overflow-x-scroll px-0 pt-0 pb-2'>
@@ -1406,7 +1537,7 @@ if (!statusFilter.includes('All')) {
 
                                                 <th
                                                     key={el}
-                                                    className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}
+                                                    className={`border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap ${ColorStyles.bgColor}`}
                                                 >
                                                     {el === "Service Type" && type === "" ? (
                                                         <FilterPopover
@@ -1423,7 +1554,7 @@ if (!statusFilter.includes('All')) {
                                                     ) : el === "Created Date" ? (
                                                         <th
                                                             onClick={() => handleSort('created_at')}
-                                                            className="border-blue-gray-50 py-3 text-left cursor-pointer flex items-center"
+                                                            className="border-blue-gray-50 py-3 text-left cursor-pointer flex items-center whitespace-nowrap"
                                                         >
                                                             <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
                                                                 Created Date
@@ -1455,6 +1586,7 @@ if (!statusFilter.includes('All')) {
                                                             options={[
                                                                 { value: 'All', label: 'All' },
                                                                 { value: 'QUOTED', label: 'Quoted' },
+                                                                { value: 'QUOTE_EXPIRED', label: 'Quote Expired'},
                                                                 { value: 'BOOKING_ACCEPTED', label: 'Driver Accepted' },
                                                                 { value: 'CONFIRMED', label: 'Booking Confirmed' },
                                                                 { value: 'REQUEST_DRIVER', label: 'Request Driver' },
@@ -1462,7 +1594,9 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'TRIP_ENDED', label: 'Trip Ended' },
                                                                 { value: 'END_OTP', label: 'End OTP' },
                                                                 { value: 'ENDED', label: 'Ended' },
+                                                                { value: 'DRIVER_NOT_AVAILABLE', label: 'Driver Not Available'},
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
+                                                                { value: 'DRIVER_CANCELLED', label: 'Driver Cancelled' },
                                                                 { value: 'SUPPORT_CANCELLED', label: 'Support Cancelled' },
                                                                 { value: 'COMPLETED', label: 'Completed' },
                                                             ]}
@@ -1478,6 +1612,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'Mobile App', label: 'Mobile App' },
                                                                 { value: 'Website', label: 'Website' },
                                                                 { value: 'Call', label: 'Call' },
+                                                                { value: 'RootCabs Website', label: 'Root Cabs Website' },
                                                             ]}
                                                             selectedFilters={sourceFilter}
                                                             onFilterChange={(value) => handleFilterChange('source', value)}
@@ -1648,6 +1783,48 @@ if (!statusFilter.includes('All')) {
                                                 </div>
                                             </div>
                                         )}
+                                        {showQuoteExpireModal && (
+                                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                                <div className="bg-white/95 p-6 rounded-lg max-w-lg w-full">
+                                                    <Typography className="text-2xl font-extrabold text-center mb-4">
+                                                        Update Quote Status
+                                                    </Typography>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <Typography className="text-sm font-semibold mb-2">
+                                                                Expiry Reason
+                                                            </Typography>
+                                                            <textarea
+                                                                value={quoteExpireReason}
+                                                                onChange={(e) => setQuoteExpireReason(e.target.value)}
+                                                                placeholder="Enter expiry reason"
+                                                                className="border border-gray-300 px-4 py-2 rounded-md w-full min-h-[110px]"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex justify-center gap-3 mt-6">
+                                                        <Button
+                                                            className="bg-orange-600 text-white w-32"
+                                                            onClick={submitQuoteExpireUpdate}
+                                                            disabled={!quoteExpireReason?.trim()}
+                                                        >
+                                                            Update Status
+                                                        </Button>
+                                                        <Button
+                                                            variant="outlined"
+                                                            className="bg-red-600 text-white w-32"
+                                                            onClick={() => {
+                                                                setShowQuoteExpireModal(false);
+                                                                setSelectedBookingForQuoteExpire(null);
+                                                                setQuoteExpireReason('');
+                                                            }}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         {bookingsList
                                             .filter(booking =>
                                                 (statusFilter.includes('All') ||
@@ -1674,6 +1851,20 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedVehicle = Boolean(data?.Cab?.id || data?.cabId || data?.Auto?.id || data?.autoId || data?.Parcel?.id || data?.parcelId);
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
+                                                    const isBikeService = String(data?.serviceType || '').toUpperCase() === 'BIKE';
+                                                    const displayBookingStatus = data?.status === "CONFIRMED" && data?.assignmentStatus === "ASSIGNED"
+                                                        ? "DRIVER_ACCEPTED"
+                                                        : data?.status === "CONFIRMED"
+                                                            ? "BOOKING CONFIRMED"
+                                                            : data?.status === "BOOKING_ACCEPTED"
+                                                                ? "DRIVER_ACCEPTED"
+                                                                : data?.status === "ENDED" && data?.tripStatus === true
+                                                                    ? "Completed"
+                                                                    : data?.status === "QUOTED" && data?.followup === "FOLLOWUP"
+                                                                        ? "Follow Up"
+                                                                        : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED"
+                                                                            ? "Call Back Completed"
+                                                                            : data?.status;
                                                     // if (data?.status === 'REQUEST_DRIVER' && Number(data?.returnTripId) > 0) {
                                                     //     console.log('Return trip row debug:', {
                                                     //         id: data?.id,
@@ -1742,9 +1933,9 @@ if (!statusFilter.includes('All')) {
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.Customer?.firstName ? data?.Customer?.firstName : '-'}
                                                                 </Typography>
-                                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                                {/* <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.Customer?.phoneNumber ? data?.Customer?.phoneNumber : '-'}
-                                                                </Typography>
+                                                                </Typography> */}
                                                             </div>
                                                             </td>
                                                         {/* <td className={className}>
@@ -1767,13 +1958,13 @@ if (!statusFilter.includes('All')) {
                                                                 {data?.sourceType ? data?.sourceType : '-'}
                                                             </Typography>
                                                         </td> */}
-                                                        <td className={className}>
+                                                        <td className={`${className} whitespace-nowrap`}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {/* {formatDate(data?.fromDate) HH:mm:ss.SSSZ} */}
                                                                 {moment(data?.fromDate).format('DD-MM-YYYY / hh:mm A')}
                                                             </Typography>
                                                         </td>
-                                                        <td className={className}>
+                                                        <td className={`${className} whitespace-nowrap`}>
                                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {moment(data?.created_at).format('DD-MM-YYYY / hh:mm A')}
                                                             </Typography>
@@ -1830,10 +2021,11 @@ if (!statusFilter.includes('All')) {
                                                             }
                                                         </td> */}
                                                         <td>
+                                                            <div className="flex items-center gap-2">                                                         
                                                             <Chip
                                                                 variant="ghost"
                                                                 // color={"blue"}
-                                                              value={data?.status == "CONFIRMED" ? "BOOKING CONFIRMED" : data?.status === "BOOKING_ACCEPTED" ? "DRIVER_ACCEPTED" : data?.status === "ENDED" && data?.tripStatus === true ? "Completed" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP" ? "Follow Up" : data?.status === "QUOTED" && data?.followup === "FOLLOWUP_COMPLETED" ? "Call Back Completed" : data?.status}
+                                                              value={displayBookingStatus}
                                                                 className={`py-0.5 px-2 text-[11px] font-medium w-fit ${
                                                                     data?.status === "QUOTED" ? "bg-yellow-600 text-white ":
                                                                     data?.status === "REQUEST_DRIVER" ? "bg-orange-600 text-white" :
@@ -1847,17 +2039,49 @@ if (!statusFilter.includes('All')) {
                                                                     data?.status ===  "DRIVER_ON_THE_WAY" ? "bg-primary   text-white":
                                                                     data?.status === "DRIVER_REACHED" ? "bg-yellow-600  text-white":
                                                                     data?.status === "PAYMENT_REQUESTED" ? "bg-green-600  text-white":
+                                                                    data?.status === "DRIVER_NOT_AVAILABLE" ? "bg-red-600  text-white":
                                                                     "bg-primary  text-white"
                                                                     
                                                                 }`}
                                                             />
+                                                            {data?.status === 'QUOTED' && data?.userId !== null ? (
+                                                            <FaEdit
+                                                                className="text-red-700 text-sm cursor-pointer"
+                                                                title="Edit quote status"
+                                                                onClick={(event) => {
+                                                                    event.preventDefault();
+                                                                    event.stopPropagation();
+                                                                    onQuoteExpireEditHandler(data);
+                                                                }}
+                                                            />
+                                                                ) : ""}
+                                                            </div>
                                                         </td>
                                                        {!isCompactFeatureList && (
                                                     <td className={className}>
-                                                            {data?.userId ? (
+                                                        {data?.userId ? (
+                                                        <div className="flex items-center justify-center gap-1">
                                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                                 {data?.User?.name}
                                                                 </Typography>
+                                                            {String(data?.supportSlaStatus || '').toUpperCase() === 'SLA_MET' &&
+                                                            data?.supportAssignmentSlaBreached === false ? (
+                                                                <div className="flex items-center">
+                                                                    <FaArrowUp className="text-green-600 text-sm" title="SLA met" />
+                                                                    {/* <FaArrowUp className="text-green-600 text-sm" title="SLA met" /> */}
+                                                                </div>
+                                                            ) : String(data?.supportSlaStatus || '').toUpperCase() === 'SLA_BREACHED' &&
+                                                                data?.supportAssignmentSlaBreached === true ? (
+                                                                <div className="flex items-center">
+                                                                    <FaArrowDown className="text-red-600 text-sm" title="SLA breached" />
+                                                                    {/* <FaArrowDown className="text-red-600 text-sm" title="SLA breached" /> */}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center">
+                                                                    <FaArrowDown className="text-gray-400 text-sm" title="SLA unknown" />
+                                                                </div>
+                                                            )}
+                                                        </div>                                                                                                                        
                                                             ) : (
                                                                 <Button
                                                                 fullWidth
@@ -1918,7 +2142,7 @@ if (!statusFilter.includes('All')) {
                                                         )}
                                                         
                                                         {!isCompactFeatureList && (
-                                                        <td className={className}>
+                                                        <td className={`${className} space-y-3`}>
                                                             {/* {data?.status === 'STARTED' &&
                                                                 <Button
                                                                     fullWidth
@@ -1954,7 +2178,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                                {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                                {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['CONFIRMED'].includes(data?.status) || (data?.status == "REQUEST_DRIVER" && (data?.serviceType == "RIDES" || data?.serviceType == "RENTAL" || data?.serviceType == "DRIVER" || data?.serviceType == "AUTO"))) && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}
@@ -1968,7 +2192,7 @@ if (!statusFilter.includes('All')) {
                                                                                 : "Cab"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType !== "PARCEL" && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux
+                                                            {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && (data?.Driver?.id || data?.Cab?.id) && // need to add permission from redux RC-1035 need to clarity {/* {data?.serviceType !== "PARCEL" && !isBikeService && !data?.returnTripId && ((['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status) &&(data?.Driver?.id || data?.Cab?.id)) || data?.status === 'DRIVER_CANCELLED') && */}                                                            
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => {
@@ -1995,7 +2219,7 @@ if (!statusFilter.includes('All')) {
                                                                     Assign {String(data?.parcelVehicleType || "BIKE").toUpperCase() === "AUTO" ? "Auto" : "Bike"}
                                                                 </Button>
                                                             }
-                                                            {data?.serviceType === "PARCEL" && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED'].includes(data?.status)) && hasAssignedDriverOrCab &&
+                                                            {data?.serviceType === "PARCEL" && (['QUOTED', 'CONFIRMED', 'BOOKING_ACCEPTED', 'DRIVER_CANCELLED'].includes(data?.status)) && hasAssignedDriverOrCab &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onReassignParcelVehicleHandler(data, data?.parcelVehicleType === "AUTO" ? "AUTO" : "BIKE")}
@@ -2005,7 +2229,7 @@ if (!statusFilter.includes('All')) {
                                                                     ReAssign {data?.parcelVehicleType === "AUTO" ? "Auto" : "Bike"}
                                                                 </Button>
                                                             }
-                                                            {data?.status === 'ASSIGNED_TO_SUPPORT' && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
+                                                            {data?.status === 'ASSIGNED_TO_SUPPORT' && !isBikeService && data?.pickupLat && data?.pickupLong && (!data?.Driver?.id && !data?.Cab?.id) &&
                                                                 <Button
                                                                     fullWidth
                                                                     onClick={() => onAssignDriverHandler(data)}

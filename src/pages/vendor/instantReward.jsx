@@ -11,12 +11,22 @@ import moment from 'moment';
 const validationSchema = Yup.object({
   phoneNumber: Yup.string().when('selectedType', {
     is: 'Driver',
-    then: (schema) => schema.required('Phone Number is required'),
+    then: (schema) =>
+      schema
+        .trim()
+        .matches(/^[6-9]\d{9}$/, 'Enter a valid 10-digit phone number')
+        .required('Phone Number is required'),
     otherwise: (schema) => schema.notRequired(),
   }),
-  amount: Yup.string()
+  amount: Yup.number()
+    .typeError('Must be a valid amount')
     .required('Amount is required')
-    .matches(/^\d+(\.\d{1,2})?$/, 'Must be a valid amount (e.g., 10 or 10.00)'),
+    .positive('Amount must be greater than 0')
+    .test(
+      'whole-number',
+      'Amount must be a whole number',
+      (value) => value === undefined || /^\d+$/.test(String(value))
+    ),
   customerId: Yup.array().when('selectedType', {
     is: 'Customer',
     then: (schema) =>
@@ -27,29 +37,35 @@ const validationSchema = Yup.object({
   }),
 });
 
+const getRewardSubmissionErrorMessage = (data) => {
+  const statusCode = data?.error?.statusCode || data?.statusCode || data?.code;
+
+  if (Number(statusCode) === 410) {
+    return 'Customer account is deleted so unable process the rewards credit';
+  }
+
+  return data?.message || 'Failed to send reward. Please try again.';
+};
+
 const InstantReward = () => {
   const [customers, setCustomers] = useState([]);
   const [rewardsData, setRewardsData] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [loadingRewards, setLoadingRewards] = useState(false);
+  const [isSubmittingReward, setIsSubmittingReward] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 const itemsPerPage = 10;
-  // const [pagination, setPagination] = useState({
-  // //   currentPage: 1,
-  // //   totalPages: 1,
-  // //   totalItems: 0,
-  // //   itemsPerPage: 10,
-  // // });
   const navigate = useNavigate();
 
   const initialValues = {
     phoneNumber: '',
     amount: '',
     customerId: [],
-    selectedType: '',
+    selectedType: 'Customer',
   };
-const totalPages = Math.ceil(rewardsData.length / itemsPerPage);
+  const totalPages = Math.ceil(rewardsData.length / itemsPerPage);
 
 const paginatedRewards = useMemo(() => {
   const start = (currentPage - 1) * itemsPerPage;
@@ -58,7 +74,7 @@ const paginatedRewards = useMemo(() => {
 }, [rewardsData, currentPage]);
   const getCustomers = async () => {
     try {
-      setIsLoading(true);
+      setLoadingCustomers(true);
       setError(null);
       const customerData = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ALL_CUSTOMERS,{
         forSearch:true
@@ -69,7 +85,7 @@ const paginatedRewards = useMemo(() => {
       console.error('Error fetching customers:', error);
       setError('Failed to load customers. Please try again.');
     } finally {
-      setIsLoading(false);
+      setLoadingCustomers(false);
     }
   };
 const handlePageChange = (page) => {
@@ -78,7 +94,7 @@ const handlePageChange = (page) => {
   }
 };
   const fetchRewards = async (selectedType = initialValues.selectedType) => {
-    setIsLoading(true);
+    setLoadingRewards(true);
     setError(null);
     try {
       const rewardsData = await ApiRequestUtils.get(API_ROUTES.GET_REWARD)
@@ -88,11 +104,14 @@ const handlePageChange = (page) => {
 
       if (rewardsData?.success && rewardsData?.data.length > 0) {
         const filteredRewards = rewardsData.data
+          .filter((reward) => selectedType === 'Customer' || selectedType === 'Driver')
           .filter((reward) => {
             if (selectedType === 'Customer' && reward.customerId?.length > 0) {
-              return reward.customerId.some((id) => customers.find((c) => c.id === id)?.firstName);
+              return reward.customerId.some((id) =>
+                customers.some((customer) => String(customer.id) === String(id))
+              );
             } else if (selectedType === 'Driver' && reward.driverId?.length > 0) {
-              return reward.Drivers?.length > 0;
+              return true;
             }
             return false;
           })
@@ -100,17 +119,19 @@ const handlePageChange = (page) => {
             let name = '-';
             let phoneNumber = '-';
             if (selectedType === 'Customer' && reward.customerId?.length > 0) {
-              const matchedCustomers = customers.filter((c) => reward.customerId.includes(c.id));
-              name = matchedCustomers.map((c) => c.firstName).join(', ');
-              phoneNumber = matchedCustomers.map((c) => c.phoneNumber || '-').join(', ');
+              const matchedCustomers = customers.filter((customer) =>
+                reward.customerId.some((id) => String(id) === String(customer.id))
+              );
+              name = matchedCustomers.map((c) => c.firstName || 'Customer').join(', ') || '-';
+              phoneNumber = matchedCustomers.map((c) => c.phoneNumber || '-').join(', ') || '-';
             } else if (selectedType === 'Driver' && reward.driverId?.length > 0) {
               const matchedDrivers = reward.Drivers || [];
-              name = matchedDrivers.map((d) => d.firstName || 'Driver').join(', ');
-              phoneNumber = matchedDrivers.map((d) => d.phoneNumber || '-').join(', ');
+              name = matchedDrivers.map((d) => d.firstName || 'Driver').join(', ') || 'Driver';
+              phoneNumber = matchedDrivers.map((d) => d.phoneNumber || '-').join(', ') || '-';
             }
 
             return {
-              id: reward.id || `reward-${Math.random()}`,
+              id: reward.id || `${selectedType}-${reward.created_at || 'unknown'}-${reward.amount || '0'}-${name}`,
               name,
               phoneNumber,
               amount: reward.amount || '',
@@ -134,42 +155,54 @@ const handlePageChange = (page) => {
       console.error('Error fetching rewards:', error);
       setError('Failed to load rewards data');
     } finally {
-      setIsLoading(false);
+      setLoadingRewards(false);
     }
   };
 
   useEffect(() => {
     getCustomers();
-    fetchRewards();
     }, []);
-  // }, [pagination.currentPage]);
+
+  useEffect(() => {
+    fetchRewards('Customer');
+  }, [customers]);
 
   const handleSubmit = async (values, { setSubmitting, resetForm }) => {
     try {
-      setIsLoading(true);
+      setIsSubmittingReward(true);
       setError(null);
       const payload = {
         serviceType: values.selectedType.toUpperCase(),
-        amount: values.amount,
-        phoneNumber: values.selectedType === 'Driver' ? values.phoneNumber : undefined,
+        amount: Number(values.amount),
+        phoneNumber: values.selectedType === 'Driver' ? values.phoneNumber.trim() : undefined,
         customerId: values.selectedType === 'Customer' ? values.customerId : undefined,
       };
       // console.log('Submit Payload:', payload);
       const data = await ApiRequestUtils.post(API_ROUTES.INSTANT_REWARD, payload);
       if (data?.success) {
-        setModalData({ message: 'The Reward is sent successfully' });
+        setModalData({ title: 'Success', message: 'The Reward is sent successfully', type: 'success' });
         resetForm();
-        fetchRewards(values.selectedType);
+        await fetchRewards(values.selectedType);
         setTimeout(() => {
           setModalData(null);
           navigate('/dashboard/finance/instant-reward');
         }, 2000);
+      } else {
+        setModalData({
+          title: 'Alert !',
+          message: getRewardSubmissionErrorMessage(data),
+          type: 'error',
+        });
       }
     } catch (error) {
       console.error('Submission error:', error);
-      setError(error.response?.data?.message || 'Failed to send reward. Please try again.');
+      setModalData({
+        title: 'Alert !',
+        message: getRewardSubmissionErrorMessage(error.response?.data),
+        type: 'error',
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmittingReward(false);
       setSubmitting(false);
     }
   };
@@ -183,6 +216,10 @@ const handlePageChange = (page) => {
   const generatePageButtons = () => {
   const buttons = [];
   const maxVisible = 5;
+
+    if (totalPages === 0) {
+      return buttons;
+    }
 
   let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
   let endPage = Math.min(totalPages, startPage + maxVisible - 1);
@@ -222,14 +259,14 @@ const handlePageChange = (page) => {
   };
 
   return (
-    <div className="p-4 mx-auto">
+    <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-7xl">
       <h2 className="text-2xl font-bold mb-4">Add New Reward</h2>
       <Formik
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ isSubmitting, setFieldValue, values }) => {
+        {({ isSubmitting, setFieldValue, setFieldTouched, values }) => {
           // console.log('Form Values:', values);
           return (
             <Form className="space-y-4">
@@ -287,7 +324,7 @@ const handlePageChange = (page) => {
                           const ids = selected ? selected.map((item) => item.value) : [];
                           // console.log('Selected Customer IDs:', ids);
                           setFieldValue('customerId', ids);
-                          setFieldValue('phoneNumber', '');
+                          setFieldTouched('customerId', true, false);
                         }}
                         className="basic-multi-select"
                         classNamePrefix="select"
@@ -346,7 +383,7 @@ const handlePageChange = (page) => {
                   className={`my-6 mx-2 rounded-xl ${ColorStyles.backButton}`}
                   type="button"
                   onClick={() => navigate(`/dashboard`)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isSubmittingReward}
                 >
                   Back
                 </Button>
@@ -356,13 +393,13 @@ const handlePageChange = (page) => {
                   className={`my-6 px-8 border-2 rounded-xl ${ColorStyles.continueButtonColor}`}
                   type="submit"
                   disabled={
-                    isSubmitting ||
+                    isSubmitting || isSubmittingReward ||
                     !values.amount ||
                     (values.selectedType === 'Customer' && values.customerId.length === 0) ||
                     (values.selectedType === 'Driver' && !values.phoneNumber)
                   }
                 >
-                  {isSubmitting ? 'Sending...' : 'Send'}
+                  {isSubmitting || isSubmittingReward ? 'Sending...' : 'Send'}
                 </Button>
               </div>
 
@@ -370,7 +407,7 @@ const handlePageChange = (page) => {
                 <h2 className="text-2xl font-bold mb-4">Rewards Details</h2>
 
 
-                {isLoading ? (
+                {loadingRewards || loadingCustomers ? (
                   <div className="flex justify-center items-center min-h-[200px]">
                     <Spinner className="h-12 w-12" />
                   </div>
@@ -379,13 +416,13 @@ const handlePageChange = (page) => {
                     <table className="w-full border bg-blue-gray-50 py-3 text-sm">
                       <thead className="text-left">
                         <tr>
-                          <th className="p-2 border">
+                          <th className="p-2 border bg-primary text-white font-bold">
                             {values.selectedType === 'Customer' ? 'Customer Name' : 'Driver Name'}
                           </th>
-                          <th className="p-2 border">Phone Number</th>
-                          <th className="p-2 border">Amount</th>
-                          <th className="p-2 border">Created Date</th>
-                          <th className="p-2 border">Service Type</th>
+                          <th className="p-2 border bg-primary text-white font-bold">Phone Number</th>
+                          <th className="p-2 border bg-primary text-white font-bold">Amount</th>
+                          <th className="p-2 border bg-primary text-white font-bold">Created Date</th>
+                          <th className="p-2 border bg-primary text-white font-bold">Service Type</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -397,19 +434,32 @@ const handlePageChange = (page) => {
                           </tr>
                         ) : (
                           paginatedRewards.map((reward) => (
-                            <tr key={reward.id} className="border-t">
+                            <tr key={reward.id} className="border-b bg-white">
                               <td className="p-2 border">{reward.name}</td>
                               <td className="p-2 border">{reward.phoneNumber}</td>
-                              <td className="p-2 border">{reward.amount}</td>
+                              <td className="p-2 border font-bold"> ₹ {reward.amount}</td>
                               <td className="p-2 border">
                                 {moment(reward.created_at).format('DD-MM-YYYY / hh:mm A')}
                               </td>
-                              <td className="p-2 border">{reward.type}</td>
+                              <td className="p-2 border">
+                                <span
+                                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white ${
+                                    reward.type === 'Customer'
+                                      ? 'bg-orange-500'
+                                      : reward.type === 'Driver'
+                                        ? 'bg-gray-500'
+                                        : 'bg-blue-500'
+                                  }`}
+                                >
+                                  {reward.type}
+                                </span>
+                              </td>
                             </tr>
                           ))
                         )}
                       </tbody>
                     </table>
+                  {totalPages > 0 && (
                   <div className="flex items-center justify-center mt-4">
                       <Button
                         size="sm"
@@ -431,6 +481,7 @@ const handlePageChange = (page) => {
                         {">"}
                       </Button>
                     </div>
+                  )}
                   </>
                 )}
               </div>
@@ -445,8 +496,13 @@ const handlePageChange = (page) => {
           aria-labelledby="modal-title"
         >
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 id="modal-title" className="text-lg font-bold mb-4">
-              Success
+            <h3
+              id="modal-title"
+              className={`text-lg font-bold mb-4 ${
+                modalData.type === 'error' ? 'text-red-600' : 'text-gray-900'
+              }`}
+            >
+              {modalData.title}
             </h3>
             <p className="text-gray-600">{modalData.message}</p>
             <div className="mt-4 flex justify-end">

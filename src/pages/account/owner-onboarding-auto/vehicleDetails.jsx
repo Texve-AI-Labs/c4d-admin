@@ -4,8 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
+import { saveDocumentFile } from '@/utils/downloadUtils';
 import AccountCreationTabs from './AccountCreationTabs';
 import DriverAccountBookingNotes from '@/components/DriverAccountBookingNotes';
+import { getDocumentRequirement, isSingleFileDocument, MAX_DOCUMENT_SIZE } from './documentRequirements';
 
 const toTitle = (value) => {
   if (!value) return "-";
@@ -41,12 +43,20 @@ const getReviewStatus = (status) => {
   return normalized;
 };
 
+const normalizeDocumentStatus = (status) => {
+  const normalized = String(status || "").trim().toUpperCase().replace(/\s+/g, "_");
+  if (normalized === "PENDING_UPLOAD") return "PENDING UPLOAD";
+  if (normalized === "PENDING_VERIFICATION") return "PENDING VERIFICATION";
+  return normalized;
+};
+
 const VehicleOnboardingDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [onboardingData, setOnboardingData] = useState(null);
   const [modalData, setModalData] = useState(null);
+  const [uploadError, setUploadError] = useState("");
   const [uploadingByType, setUploadingByType] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
@@ -100,7 +110,7 @@ const VehicleOnboardingDetails = () => {
       return {
         type,
         proof,
-        status: resolvedStatus,
+        status: normalizeDocumentStatus(resolvedStatus),
         createdAt: proof?.created_at ? moment(proof.created_at).format("DD-MM-YYYY") : "-",
       };
     });
@@ -118,32 +128,28 @@ const VehicleOnboardingDetails = () => {
       ? `Approve these vehicle documents: ${blockedVehicleDocuments.join(", ")}.`
       : "";
 
-  const isSingleFileDocType = (docType) => ["PHOTO", "INSURANCE", "PERMIT","VEHICLE_PHOTO"].includes(docType);
+  const isSingleFileDocType = (docType) => isSingleFileDocument(docType);
 
   const handleUploadDocument = async (event, row) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    const maxSize = 10 * 1024 * 1024;
     const singleFile = isSingleFileDocType(row.type);
+    const requiredCount = getDocumentRequirement(row.type);
+    const allowedTypes = ["image/jpeg", "image/png"];
 
-    if (singleFile && files.length > 1) {
-      window.alert("Only one document is allowed for this type.");
-      return;
-    }
-    if (!singleFile && files.length > 2) {
-      window.alert("You can upload a maximum of two documents.");
+    if (files.length !== requiredCount) {
+      setUploadError(`${toTitle(row.type)} requires exactly ${requiredCount} document${requiredCount > 1 ? "s" : ""}.`);
       return;
     }
 
     for (const file of files) {
-      if (!allowedTypes.includes(file.type)) {
-        window.alert("Invalid file type. Please upload JPG, PNG, or PDF.");
+      if (file.type === "application/pdf" || /\.pdf$/i.test(file.name || "") || !allowedTypes.includes(file.type)) {
+        setUploadError("PDF files are not allowed. Please upload JPG or PNG.");
         return;
       }
-      if (file.size > maxSize) {
-        window.alert("File size exceeds 10MB limit.");
+      if (file.size > MAX_DOCUMENT_SIZE) {
+        setUploadError("File size exceeds 10MB limit.");
         return;
       }
     }
@@ -206,6 +212,7 @@ const VehicleOnboardingDetails = () => {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-md">
+      {uploadError && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"><div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"><h2 className="text-lg font-semibold text-red-900">Alert !</h2><p className="mt-3 text-sm text-gray-700">{uploadError}</p><div className="mt-6 flex justify-end"><Button onClick={() => setUploadError("")} className="bg-blue-600">Close</Button></div></div></div>}
       <AccountCreationTabs activeStage={3} />
       <div className="mb-4">
         <Typography variant="h6" color="blue-gray">Vehicle Document Details</Typography>
@@ -269,6 +276,7 @@ const VehicleOnboardingDetails = () => {
                         onClick={() =>
                           setModalData({
                             id: row.proof?.id,
+                              documentId: row.proof?.id,
                             type: row.type,
                             status: getReviewStatus(row.status),
                             image1: row.proof?.image1,
@@ -298,7 +306,7 @@ const VehicleOnboardingDetails = () => {
                           type="file"
                           id={`upload-${row.type}`}
                           className="hidden"
-                          accept="image/*,application/pdf"
+                          accept="image/jpeg,image/png"
                           multiple={!isSingleFileDocType(row.type)}
                           onChange={(e) => handleUploadDocument(e, row)}
                           disabled={Boolean(uploadingByType[row.type])}
@@ -376,26 +384,10 @@ const VehicleOnboardingDetails = () => {
             </div>
             <div className="flex justify-center mt-4">
               {modalData.image1 && (
-                <a
-                  href={modalData.image1}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                >
-                  Download Image 1
-                </a>
+                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 1</button>
               )}
               {modalData.image2 && (
-                <a
-                  href={modalData.image2}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                >
-                  Download Image 2
-                </a>
+                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId || modalData.id, documentType: modalData.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Download Image 2</button>
               )}
             </div>
             {["PENDING VERIFICATION", "NOT_INTERESTED", "NO_RESPONSE", "INVALID", "DECLINED"].includes(vehicleStageStatus) &&

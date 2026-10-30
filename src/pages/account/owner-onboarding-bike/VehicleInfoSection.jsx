@@ -1,6 +1,16 @@
 import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
+import { safeText } from "@/utils/text";
+
+const formatAddressValue = (value) => {
+  if (!value) return "-";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return value.name || value.address || value.fullText || value.label || value.title || "-";
+  }
+  return String(value);
+};
 
 const formatVehicleTypeValue = (value) => {
   if (!value) return "-";
@@ -10,10 +20,7 @@ const formatVehicleTypeValue = (value) => {
 
   if (normalized === "AUTO") return "Auto";
   if (normalized === "BIKE") return "Bike";
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
   return raw
     .toLowerCase()
     .split(/\s+/)
@@ -26,8 +33,7 @@ const normalizeVehicleTypeInput = (value) => {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const normalized = raw.toUpperCase();
-  if (["AUTO", "BIKE", "EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") return normalized;
+  if (["AUTO"].includes(normalized)) return normalized;
   return normalized;
 };
 
@@ -50,6 +56,7 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const getSuggestionText = (suggestion) => {
     if (typeof suggestion === "string") return suggestion;
     if (suggestion && typeof suggestion === "object") {
@@ -137,6 +144,9 @@ const VehicleInfoSection = ({
         rawAddress.id ||
         "";
     }
+    if (!map.AddressPlaceId) {
+      map.AddressPlaceId = section?.rawValues?.curAddressPlaceId || "";
+    }
     if (!map.Address && rawAddress) {
       map.Address = typeof rawAddress === "object" ? rawAddress.name || "" : String(rawAddress);
     }
@@ -191,6 +201,7 @@ const VehicleInfoSection = ({
                         onClick={() => {
                           setEditingSectionId(section.id);
                           setDraftValues(getInitialDraft(section));
+                          setFieldErrors({});
                         }}
                       >
                         <PencilIcon className="h-4 w-4" />
@@ -248,7 +259,6 @@ const VehicleInfoSection = ({
                           row.label === "Vehicle Type" ? (
                             <select
                               value={normalizeVehicleTypeInput(draftValues[row.label])}
-                              disabled
                               onChange={(e) => setDraftValues((prev) => ({ ...prev, [row.label]: e.target.value }))}
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
@@ -317,11 +327,21 @@ const VehicleInfoSection = ({
                                   setDraftValues((prev) => ({
                                     ...prev,
                                     [row.label]: value,
+                                    AddressPlaceId: String(value || "").trim() ? prev.AddressPlaceId || "" : "",
+                                  }));
+                                  setFieldErrors((prev) => ({
+                                    ...prev,
+                                    AddressPlaceId: String(value || "").trim() ? prev.AddressPlaceId || "" : "",
                                   }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
                               />
+                              {fieldErrors.AddressPlaceId ? (
+                                <Typography className="mt-1 text-xs text-red-500">
+                                  {fieldErrors.AddressPlaceId}
+                                </Typography>
+                              ) : null}
                               {(getVehicleAddressSuggestionsBySection?.(section.id) || []).length > 0 ? (
                                 <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
                                   {(getVehicleAddressSuggestionsBySection?.(section.id) || []).map((suggestion, idx) => (
@@ -341,6 +361,7 @@ const VehicleInfoSection = ({
                                             prev.AddressPlaceId ||
                                             "",
                                         }));
+                                        setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "" }));
                                         onVehicleAddressSearch?.(section.id, "");
                                       }}
                                     >
@@ -365,17 +386,17 @@ const VehicleInfoSection = ({
                             />
                           )
                         ) : row.label === "Status" || row.label === "Commission Status" ? (
-                          <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                          <Chip value={safeText(row.value)} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
                         ) : row.label === "Vehicle Type" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
                             {formatVehicleTypeValue(row.value)}
                           </Typography>
                         ) : row.label === "Address" && row.value && typeof row.value === "object" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
-                            {row.value.name || row.value.address || row.value.fullText || "-"}
+                            {formatAddressValue(row.value)}
                           </Typography>
                         ) : (
-                          <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">{safeText(row.value)}</Typography>
                         )}
                       </div>
                     );
@@ -405,9 +426,14 @@ const VehicleInfoSection = ({
                         className="h-8 px-3 text-xs normal-case bg-primary"
                         disabled={vehicleDetailsSavingId === section.id}
                         onClick={() => {
+                          if (!String(draftValues?.AddressPlaceId || "").trim()) {
+                            setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "Address place id is required." }));
+                            return;
+                          }
                           onSaveVehicleDetails?.(section.id, draftValues, () => {
                             setEditingSectionId(null);
                             setDraftValues({});
+                            setFieldErrors({});
                           });
                         }}
                       >

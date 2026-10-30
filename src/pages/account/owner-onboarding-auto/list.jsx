@@ -162,7 +162,7 @@ export function AccountList() {
   const navigate = useNavigate();
   const [accounts, setAccounts] = useState([]);
   const [alert, setAlert] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'descending' });
@@ -177,6 +177,7 @@ export function AccountList() {
   const prevSearchRef = useRef('');
   const lastRequestKeyRef = useRef('');
   const inFlightRequestKeyRef = useRef('');
+  const requestSequenceRef = useRef(0);
 
   const [pagination, setPagination] = useState(() => {
     const stored = getItemSafe(ACCOUNT_VIEW_FILTERS_KEY);
@@ -185,6 +186,7 @@ export function AccountList() {
         const parsed = JSON.parse(stored);
         return {
           currentPage: parsed.currentPage || 1,
+          search: parsed.search || '',
           totalPages: 1,
           totalItems: 0,
           itemsPerPage: 15,
@@ -193,6 +195,7 @@ export function AccountList() {
       } catch {
         return {
           currentPage: 1,
+          search: '',
           totalPages: 1,
           totalItems: 0,
           itemsPerPage: 15,
@@ -202,6 +205,7 @@ export function AccountList() {
     }
     return {
       currentPage: 1,
+      search: '',
       totalPages: 1,
       totalItems: 0,
       itemsPerPage: 15,
@@ -241,10 +245,6 @@ export function AccountList() {
   }, []);
 
   useEffect(() => {
-    setServiceTypeFilter(["Auto"]);
-  }, []);
-
-  useEffect(() => {
     if (!filtersLoaded) return;
 
     const data = {
@@ -255,15 +255,16 @@ export function AccountList() {
       availableStatusFilter,
       sourceFilter,
       zoneFilter,
-      currentPage: pagination.currentPage
+      currentPage: pagination.currentPage,
+      search: pagination.search || ''
     };
 
     setItemSafe(ACCOUNT_VIEW_FILTERS_KEY, JSON.stringify(data));
-  }, [filtersLoaded, pagination.currentPage, statusFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, sourceFilter, zoneFilter]);
+  }, [filtersLoaded, pagination.currentPage, pagination.search, statusFilter, serviceTypeFilter, documentTypeFilter, availableStatusFilter, sourceFilter, zoneFilter]);
 
   const fetchAccounts = async (page = 1, searchQuery = '', showLoader = true) => {
     const normalizedSearchQuery = (searchQuery ?? '').trim();
-    if (showLoader) setLoading(true);
+    let requestSequence = 0;
     try {
       const zoneValue = Array.isArray(zoneFilter)
         ? (zoneFilter.includes('All') ? undefined : zoneFilter)
@@ -287,9 +288,11 @@ export function AccountList() {
       });
 
       // Prevent duplicate concurrent same-parameter hits (common in StrictMode/effect replays).
-      if (requestKey === inFlightRequestKeyRef.current) {
+      if (requestKey === inFlightRequestKeyRef.current || requestKey === lastRequestKeyRef.current) {
         return;
       }
+      requestSequence = ++requestSequenceRef.current;
+      setLoading(true);
 
       inFlightRequestKeyRef.current = requestKey;
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
@@ -309,6 +312,7 @@ export function AccountList() {
         })
       });
       if (data?.success) {
+        lastRequestKeyRef.current = requestKey;
         setAccounts(data?.data);
         setPagination({
           currentPage: page,
@@ -326,7 +330,7 @@ export function AccountList() {
       setKycStatusCounts(EMPTY_KYC_STATUS_COUNTS);
     } finally {
       inFlightRequestKeyRef.current = '';
-      setLoading(false);
+      if (requestSequence === requestSequenceRef.current) setLoading(false);
     }
   };
 
@@ -359,6 +363,8 @@ export function AccountList() {
 
   const handleRefresh = () => {
     sessionStorage.removeItem(ACCOUNT_VIEW_FILTERS_KEY);
+    lastRequestKeyRef.current = '';
+    inFlightRequestKeyRef.current = '';
     setPagination({
       currentPage: 1,
       totalPages: 1,
@@ -685,6 +691,7 @@ export function AccountList() {
                             { value: "Walk In", label: "walk in" },
                             { value: "Call", label: "call" },
                             { value: "Website", label: "web site" },
+                            { value: "RootCabs Website", label: "Root Cabs Website" },
                           ]}
                           selectedFilters={sourceFilter}
                           onFilterChange={(value) => handleFilterChange("source", value)}

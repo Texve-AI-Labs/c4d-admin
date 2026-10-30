@@ -6,11 +6,14 @@ import {
   CardBody,
   CardHeader,
   Chip,
-  Option,
-  Select,
+  Checkbox,
+  Popover,
+  PopoverContent,
+  PopoverHandler,
   Spinner,
   Typography,
 } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
@@ -24,14 +27,68 @@ const DEFAULT_PAGINATION = {
   itemsPerPage: 10,
 };
 
+const RULE_TYPE_FILTER_OPTIONS = [
+  { value: "ALL", label: "All" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "SPECIAL_DATE", label: "Special Date" },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "ALL", label: "All" },
+  { value: "true", label: "Active" },
+  { value: "false", label: "Inactive" },
+];
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+      <PopoverHandler>
+        <button type="button" className="flex items-center cursor-pointer">
+          <Typography variant="small" className="mr-1 text-sm font-bold text-blue-gray-700">
+            {label}
+          </Typography>
+          <FaFilter className="text-blue-gray-700 text-xs" />
+        </button>
+      </PopoverHandler>
+      <PopoverContent className="p-2">
+        {options.map((option) => (
+          <div key={option.value} className="mb-2 flex items-center">
+            <Checkbox
+              color="blue"
+              checked={value === option.value}
+              onChange={() => onChange(option.value)}
+            />
+            <Typography color="blue-gray" className="ml-2 font-medium">
+              {option.label}
+            </Typography>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ParcelSlotConfigList() {
   const navigate = useNavigate();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [subZoneLookup, setSubZoneLookup] = useState({});
-  const [ruleTypeFilter, setRuleTypeFilter] = useState("ALL");
-  const [isActiveFilter, setIsActiveFilter] = useState("ALL");
-  const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
+  const [ruleTypeFilter, setRuleTypeFilter] = useState(
+    () => sessionStorage.getItem("parcelSlotConfigRuleTypeFilter") || "ALL"
+  );
+  const [isActiveFilter, setIsActiveFilter] = useState(
+    () => sessionStorage.getItem("parcelSlotConfigStatusFilter") || "ALL"
+  );
+  const [pagination, setPagination] = useState(() => ({
+    ...DEFAULT_PAGINATION,
+    currentPage: Number(sessionStorage.getItem("parcelSlotConfigCurrentPage")) || 1,
+  }));
+
+  useEffect(() => {
+    sessionStorage.setItem("parcelSlotConfigRuleTypeFilter", ruleTypeFilter);
+    sessionStorage.setItem("parcelSlotConfigStatusFilter", isActiveFilter);
+    sessionStorage.setItem("parcelSlotConfigCurrentPage", String(pagination.currentPage));
+  }, [ruleTypeFilter, isActiveFilter, pagination.currentPage]);
 
   useEffect(() => {
     const fetchGeoLookup = async () => {
@@ -175,41 +232,20 @@ function ParcelSlotConfigList() {
 
   return (
     <div className="mb-8 mt-5 flex flex-col gap-6">
-      <div className="mb-2 p-4 rounded-xl border flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <label className="flex min-w-[220px] flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-            <span className="cursor-pointer font-medium">Rule Type</span>
-            <Select value={ruleTypeFilter} onChange={(value) => setRuleTypeFilter(value || "ALL")}>
-              <Option value="ALL">All</Option>
-              <Option value="WEEKLY">Weekly</Option>
-              <Option value="SPECIAL_DATE">Special Date</Option>
-            </Select>
-          </label>
-
-          <label className="flex min-w-[220px] flex-col gap-1 text-sm font-semibold text-blue-gray-700">
-            Status
-            <Select value={isActiveFilter} onChange={(value) => setIsActiveFilter(value || "ALL")}>
-              <Option value="ALL">All</Option>
-              <Option value="true">Active</Option>
-              <Option value="false">Inactive</Option>
-            </Select>
-          </label>
-        </div>
-
+      <Card>
+        <CardHeader variant="gradient" className={`mb-5 p-5 ${ColorStyles.bgColor}`}>
+          <div className="flex items-center justify-between gap-4">
+            <Typography variant="h6" color="white">
+              Parcel Slot Config
+            </Typography>
         <Button
           size="sm"
-          className={`rounded-xl px-5 py-3 ${ColorStyles.editButton}`}
+          className="rounded-xl bg-white px-5 py-3 text-black shadow-none hover:shadow-none"
           onClick={() => navigate("/dashboard/finance/parcel-slot-config/add")}
         >
           Add New Slot
         </Button>
       </div>
-
-      <Card>
-        <CardHeader variant="gradient" className={`mb-5 p-5 ${ColorStyles.bgColor}`}>
-          <Typography variant="h6" color="white">
-            Parcel Slot Config
-          </Typography>
         </CardHeader>
         <CardBody className="pt-0 px-0">
           {loading ? (
@@ -224,12 +260,25 @@ function ParcelSlotConfigList() {
                     <tr>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Zone</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Sub Zone</th>
-                      {/* <th className="px-5 py-3 text-left whitespace-nowrap">Rule Type</th> */}
-                      <th className="px-5 py-3 text-left whitespace-nowrap">Rule Type</th>
+                      <th className="px-5 py-3 text-left whitespace-nowrap">
+                        <FilterPopover
+                          label="Rule Type"
+                          value={ruleTypeFilter}
+                          options={RULE_TYPE_FILTER_OPTIONS}
+                          onChange={setRuleTypeFilter}
+                        />
+                      </th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Date Range</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Days Of Week</th>
                       {/* <th className="px-5 py-3 text-left whitespace-nowrap">Priority</th> */}
-                      <th className="px-5 py-3 text-left whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-left whitespace-nowrap">
+                        <FilterPopover
+                          label="Status"
+                          value={isActiveFilter}
+                          options={STATUS_FILTER_OPTIONS}
+                          onChange={setIsActiveFilter}
+                        />
+                      </th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Notes</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Created At</th>
                       <th className="px-5 py-3 text-left whitespace-nowrap">Action</th>

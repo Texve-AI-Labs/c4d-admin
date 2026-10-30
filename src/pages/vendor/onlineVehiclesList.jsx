@@ -22,14 +22,6 @@ import moment from 'moment';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-const debounce = (func, delay) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
-
 export function OnlineVehiclesList({ id = 0 }) {
   const [vehicleList, setVehicleList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +30,6 @@ export function OnlineVehiclesList({ id = 0 }) {
    const [typeFilter, setTypeFilter] = useState(['All']);
   const intervalRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [driverIds, setDriverIds] = useState([]);
   const navigate = useNavigate();
   const prevSearchRef = useRef('');
 
@@ -46,36 +37,22 @@ export function OnlineVehiclesList({ id = 0 }) {
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
-    itemsPerPage: 15,
+    itemsPerPage: 50,
     search: '',
   });
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const driverType = typeFilter[0] === 'All' ? "All" : typeFilter[0];
+  const driverType = typeFilter[0] === 'All' ? 'ALL' : typeFilter[0];
 
-  const checkPresence = async (driverId, vehicleId, all) => {
+  const normalizeVehicleType = (type) => {
+    const normalizedType = String(type || '').trim().toUpperCase().replace(/[-\s]/g, '_');
+
+    if (['BIKE', 'BIKE_TAXI', 'BIKETAXI'].includes(normalizedType)) return 'BIKE';
+    if (['PARCEL', 'PARCEL_BIKE', 'PARCELBIKE'].includes(normalizedType)) return 'PARCEL';
+    return normalizedType;
+  };
+
+  const checkPresence = async (driverId, vehicleId) => {
     try {
-      if (all) {
-        const result = await ApiRequestUtils.post(API_ROUTES.CHECK_PRESENCE, { driverId: driverIds });
-        if (result?.success && result?.data?.status) {
-          setVehicleList((prev) =>
-            prev.map((vehicle) =>
-              vehicle.id === vehicleId && vehicle.Drivers?.length > 0
-                ? {
-                    ...vehicle,
-                    Drivers: [
-                      {
-                        ...vehicle.Drivers[0],
-                        status: result.data.status === 'AVAILABLE' ? 'ACTIVE' : 'INACTIVE',
-                      },
-                    ],
-                  }
-                : vehicle
-            )
-          );
-        } else {
-          console.error('Invalid API response:', result?.message);
-        }
-      } else {
       const result = await ApiRequestUtils.post(API_ROUTES.CHECK_PRESENCE, { driverId });
       if (result?.success && result?.data?.status) {
         setVehicleList((prev) =>
@@ -95,7 +72,6 @@ export function OnlineVehiclesList({ id = 0 }) {
         );
       } else {
         console.error('Invalid API response:', result?.message);
-        }
       }
     } catch (error) {
       console.error('Error checking presence:', error);
@@ -110,9 +86,13 @@ export function OnlineVehiclesList({ id = 0 }) {
         vehicle.Drivers?.length > 0 &&
         !statusCheckedDriverIds.includes(vehicle.Drivers[0]?.id)
     );
-    for (const vehicle of vehiclesWithDrivers) {
-      await checkPresence(vehicle.Drivers[0]?.id, vehicle.id, true);
-    }
+    // Check drivers independently. The presence endpoint returns one status
+    // per request, so each response must stay associated with its vehicle.
+    await Promise.all(
+      vehiclesWithDrivers.map((vehicle) =>
+        checkPresence(vehicle.Drivers[0]?.id, vehicle.id)
+      )
+    );
   };
 
   const fetchCabList = async (page = 1, search = '', showLoader = true) => {
@@ -144,7 +124,6 @@ export function OnlineVehiclesList({ id = 0 }) {
         setVehicleList(updatedVehicleList);
         setStatusCheckedDriverIds([]);
         // console.log('Fetched vehicle list:', updatedVehicleList);
-        setDriverIds(data?.driverIds);
         setPagination({
           currentPage: page,
           totalPages: data?.pagination?.totalPages || 1,
@@ -164,21 +143,24 @@ export function OnlineVehiclesList({ id = 0 }) {
 
   const handleIntervalChange = (value) => {
     setSelectedInterval(value);
-      if (intervalRef.current) {
+      if (intervalRef.current) 
         clearInterval(intervalRef.current);
       intervalRef.current = null;
-      }
+
     if (value) {
-      const intervalSeconds = parseInt(value);
       intervalRef.current = setInterval(() => {
         fetchCabList(pagination.currentPage, pagination.search, false);
-      }, intervalSeconds * 1000);
+      }, Number(value) * 1000);
     }
   };
 
   const handleFilterChange = (filterType, value) => {
     if (filterType === 'type') {
       setTypeFilter([value]);
+      setPagination((prev) => ({
+        ...prev,
+        currentPage: 1,
+      }));
     }
   };
 
@@ -188,17 +170,13 @@ export function OnlineVehiclesList({ id = 0 }) {
     fetchCabList(pagination.currentPage, pagination.search, !searchChanged);
   }, [id, pagination.currentPage, pagination.search, typeFilter]);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => () => 
+    clearInterval(intervalRef.current),
+  []);
 
   const filteredVehicles = vehicleList.filter((v) => {
     if (typeFilter[0] === 'All') return true;
-    return (v.type?.toUpperCase() || '') === typeFilter[0];
+    return normalizeVehicleType(v.type) === typeFilter[0];
   });
 
   const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
@@ -292,16 +270,13 @@ export function OnlineVehiclesList({ id = 0 }) {
     setVehicleList(sorted);
   };
 
-  const debouncedFetchCabList = useRef(
-    debounce((searchTerm) => {
-      setPagination(prev => ({ ...prev, currentPage: 1, search: searchTerm.trim() }));
-    }, 600)
-  ).current;
-
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    debouncedFetchCabList(value);
+  };
+
+  const submitSearch = () => {
+    setPagination((prev) => ({ ...prev, currentPage: 1, search: searchQuery.trim() }));
   };
 
   return (
@@ -319,12 +294,14 @@ export function OnlineVehiclesList({ id = 0 }) {
             ))}
           </Select>
         </div>
-        <div className="relative w-full sm:max-w-md">
+        <div className="flex w-full sm:max-w-md">
+          <div className="relative flex-1">
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full py-2 pl-10 pr-10 border rounded-xl text-sm bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+            onKeyDown={(e) => e.key === 'Enter' && submitSearch()}
+            className="w-full py-2 pl-10 pr-10 border rounded-l-xl text-sm bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Search by Driver Name"
           />
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
@@ -340,6 +317,14 @@ export function OnlineVehiclesList({ id = 0 }) {
               ×
             </button>
           )}
+          </div>
+          <button
+            type="button"
+            onClick={submitSearch}
+            className="px-4 py-2 rounded-r-xl bg-primary text-white text-sm font-semibold hover:opacity-90"
+          >
+            Search
+          </button>
         </div>
       </div>
       <Card>
@@ -368,7 +353,7 @@ export function OnlineVehiclesList({ id = 0 }) {
                 <thead>
                   <tr>
                     {[
-                      'Type',
+                      'Type/preference',
                       'Driver Name',
                       'Cab Name',
                       'Phone Number',
@@ -408,7 +393,7 @@ export function OnlineVehiclesList({ id = 0 }) {
                             {el}
                           </Typography>
                         )}
-                        {el === 'Type' && (
+                        {el === 'Type/preference' && (
                       <FilterPopover
                         // title={el}
                         options={[
@@ -488,7 +473,7 @@ export function OnlineVehiclesList({ id = 0 }) {
                             !statusCheckedDriverIds.includes(vehicle.Drivers[0]?.id) && (
                               <Typography
                                 className="text-xs font-semibold text-primary-900 underline cursor-pointer"
-                                onClick={() => checkPresence(vehicle.Drivers[0]?.id, vehicle.id, false)}
+                                onClick={() => checkPresence(vehicle.Drivers[0]?.id, vehicle.id)}
                               >
                                 Check Status
                               </Typography>

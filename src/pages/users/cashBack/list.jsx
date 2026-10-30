@@ -2,9 +2,34 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardHeader, CardBody, Typography, Spinner, Button, Chip } from "@material-tailwind/react";
 import moment from "moment";
 import { useNavigate } from "react-router-dom";
+import { Checkbox, Popover, PopoverHandler, PopoverContent } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+    <PopoverHandler>
+      <button type="button" className="flex items-center cursor-pointer">
+        <Typography variant="small" className="mr-1 text-[11px] font-bold uppercase text-black">{label}</Typography>
+        <FaFilter className="text-black text-xs" />
+      </button>
+    </PopoverHandler>
+    <PopoverContent className="p-2">
+      {options.map((option) => (
+        <div key={option.value} className="mb-2 flex items-center">
+          <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+          <Typography color="blue-gray" className="ml-2 font-medium">
+            {option.label}
+          </Typography>
+        </div>
+      ))}
+    </PopoverContent>
+    </Popover>
+  );
+}
 const SERVICE_TYPE_OPTIONS = [
   { value: "DRIVER", label: "Driver" },
   { value: "RIDES", label: "Local" },
@@ -25,8 +50,8 @@ const CashBackList = () => {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [serviceTypeFilter, setServiceTypeFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("true");
+  const [serviceTypeFilter, setServiceTypeFilter] = useState(() => sessionStorage.getItem("cashBackServiceFilter") || "All");
+  const [statusFilter, setStatusFilter] = useState(() => sessionStorage.getItem("cashBackStatusFilter") || "true");
 
   const fetchCashBackList = async () => {
     try {
@@ -56,6 +81,11 @@ const CashBackList = () => {
     }
   };
 
+  useEffect(() => { 
+    sessionStorage.setItem("cashBackServiceFilter", serviceTypeFilter); 
+    sessionStorage.setItem("cashBackStatusFilter", statusFilter); }, 
+    [serviceTypeFilter, statusFilter]);
+
   useEffect(() => {
     fetchCashBackList();
   }, [serviceTypeFilter, statusFilter]);
@@ -84,51 +114,12 @@ const CashBackList = () => {
 
   return (
     <div className="mb-8 flex flex-col gap-6 mt-8">
-      <div className="flex items-center justify-end mb-2">
-        <div className="mr-auto flex items-center gap-3">
-          <select
-            className="p-2 rounded-md border border-gray-300 text-sm"
-            value={serviceTypeFilter}
-            onChange={(e) => setServiceTypeFilter(e.target.value)}
-          >
-            <option value="All">All Service Types</option>
-            {SERVICE_TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
-            <button
-              type="button"
-              className={`px-3 py-2 text-sm ${statusFilter === "true" ? "bg-primary text-white" : "bg-white text-gray-700"}`}
-              onClick={() => setStatusFilter("true")}
-            >
-              Active
-            </button>
-            <button
-              type="button"
-              className={`px-3 py-2 text-sm border-l border-gray-300 ${statusFilter === "false" ? "bg-primary text-white" : "bg-white text-gray-700"}`}
-              onClick={() => setStatusFilter("false")}
-            >
-              In Active
-            </button>
-          </div>
-        </div>
-        <Button
-          size="sm"
-          className={`rounded-xl p-4 ${ColorStyles.continueButtonColor}`}
-          onClick={() => navigate("/dashboard/finance/cash-back/add")}
-        >
-          Add Cash Back
-        </Button>
-      </div>
-
       <Card>
-        <CardHeader variant="gradient" className={`mb-4 p-6 rounded-xl ${ColorStyles.bgColor}`}>
-          <Typography variant="h6" color="white">
-            Cash Back List
-          </Typography>
+        <CardHeader variant="gradient" className={`mb-4 rounded-xl p-6 ${ColorStyles.bgColor}`}>
+          <div className="flex items-center justify-between gap-4">
+            <Typography variant="h6" color="white">Cash Back List</Typography>
+            <Button size="sm" className="rounded-xl bg-white px-4 py-2 text-black shadow-none hover:shadow-none" onClick={() => navigate("/dashboard/finance/cash-back/add")}>Add Cash Back</Button>
+          </div>
         </CardHeader>
         <CardBody className="pt-0 px-0">
           {loading ? (
@@ -141,10 +132,25 @@ const CashBackList = () => {
                 <thead>
                   <tr>
                     <th className="py-3 px-5 text-left">Name</th>
-                    <th className="py-3 px-5 text-left">Service Type</th>
+                    <th className="py-3 px-5 text-left">
+                      <FilterPopover label="Service Type" 
+                      value={serviceTypeFilter} 
+                      options={[{
+                        value:"All",label:"All Service Types"}, 
+                      ...SERVICE_TYPE_OPTIONS]} 
+                      onChange={setServiceTypeFilter} />
+                      </th>
                     <th className="py-3 px-5 text-left">Zones</th>
                     <th className="py-3 px-5 text-left">Cashback Discount (%)</th>
-                    <th className="py-3 px-5 text-left">Status</th>
+                    <th className="py-3 px-5 text-left">
+                      <FilterPopover 
+                      label="Status" 
+                      value={statusFilter} 
+                      options={[
+                        {value:"true",label:"Active"},
+                        {value:"false",label:"Inactive"}]} 
+                        onChange={setStatusFilter} />
+                        </th>
                     <th className="py-3 px-5 text-left">Created At</th>
                     <th className="py-3 px-5 text-left">Actions</th>
                   </tr>

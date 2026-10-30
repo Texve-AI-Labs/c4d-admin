@@ -82,6 +82,13 @@ const makeAddressPayload = (name, placeId) => ({
   ...(placeId ? { placeId } : {}),
 });
 
+const getExistingAddressPlaceId = (cabResult) =>
+  cabResult?.curAddress?.placeId ||
+  cabResult?.curAddress?.place_id ||
+  cabResult?.curAddress?.placeID ||
+  cabResult?.curAddressPlaceId ||
+  "";
+
 const formatVehicleTypeValue = (value) => {
   if (!value) return "-";
 
@@ -92,10 +99,7 @@ const formatVehicleTypeValue = (value) => {
 
   if (normalized === "AUTO") return "Auto";
   if (normalized === "BIKE") return "Bike";
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
 
   return raw
     .toLowerCase()
@@ -193,7 +197,7 @@ const CompletedOnboardingDetails = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [id, location?.state]);
+  }, [id]);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -251,44 +255,6 @@ const CompletedOnboardingDetails = () => {
       const serviceType = normalizeServiceType(base?.type);
       const stateCabs = Array.isArray(location?.state?.prefetchedCabs) ? location.state.prefetchedCabs : [];
       let nextData = stateCabs.length > 0 ? { ...base, cabs: stateCabs } : base;
-
-      // Try to enrich `cabs` from onboarding list API shape when available.
-      try {
-        let page = 1;
-        const limit = 50;
-        let totalPages = 1;
-        let matched = null;
-
-        do {
-          const listRes = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_ONBOARDING_DETAILS, {
-            page,
-            limit,
-            accountId: id,
-            serviceType,
-          });
-
-          const listRows = Array.isArray(listRes?.data) ? listRes.data : [];
-          matched = listRows.find((row) => String(row?.id) === String(id)) || null;
-          totalPages = Number(listRes?.pagination?.totalPages || 1);
-
-          if (matched || listRows.length === 0) break;
-          page += 1;
-        } while (page <= totalPages);
-
-        if (matched && Array.isArray(matched?.parcels)) {
-          const strictCabs = matched.parcels.filter(
-            (parcel) =>
-              parcel &&
-              parcel.id !== null &&
-              parcel.id !== undefined &&
-              String(parcel?.accountId ?? parcel?.AccountId) === String(id)
-          );
-          const baseCabs = Array.isArray(base?.cabs) ? base.cabs : [];
-          nextData = { ...base, cabs: strictCabs.length > 0 ? strictCabs : baseCabs };
-        }
-      } catch (_err) {
-        // Ignore list enrichment failure; base details are already loaded.
-      }
 
       setOnboardingData(nextData);
     } catch (err) {
@@ -411,6 +377,8 @@ const CompletedOnboardingDetails = () => {
     return Object.entries(account)
       .filter(([key, value]) => {
         if (["requiredDocuments", "uploads", "accountDocumentStatus", "vehicleDocumentStatus", "cab"].includes(key)) return false;
+        // `zone` mirrors `district` in the account payload; display only the canonical Zone row.
+        if (key === "zone") return false;
         if (value === null || value === undefined || value === "") return false;
         if (typeof value === "object") return false;
         return true;
@@ -418,7 +386,9 @@ const CompletedOnboardingDetails = () => {
       .map(([key, value]) => {
         const label = toLabel(key);
         const displayLabel =
-          key === "district"
+          key === "name"
+            ? "Owner Name"
+            : key === "district"
             ? "Zone"
             : key === "accountDistrict"
               ? "Account District"
@@ -468,6 +438,7 @@ const CompletedOnboardingDetails = () => {
           vehicleNumber: cabResult?.vehicleNumber || "",
           vehicleType: cabResult?.vehicleType || "",
           curAddress: cabResult?.curAddress || null,
+          curAddressPlaceId: getExistingAddressPlaceId(cabResult),
         },
       };
     });
@@ -477,7 +448,7 @@ const CompletedOnboardingDetails = () => {
     const preferredLeftOrder = [
       "Id",
       "Type",
-      "Name",
+      "Owner Name",
       "Phone Number",
       "Email",
       "Source",
@@ -584,6 +555,7 @@ const CompletedOnboardingDetails = () => {
         street: accountDraft?.street || "",
         thaluk: accountDraft?.thaluk || "",
         district: accountDraft?.district || "",
+        zone: accountDraft?.district || "",
         accountDistrict: accountDraft?.accountDistrict || "",
         state: accountDraft?.state || "",
         pincode: accountDraft?.pincode || "",
@@ -708,7 +680,7 @@ const CompletedOnboardingDetails = () => {
       const existingAddress = cabResult?.curAddress || {};
       const addressPayload = makeAddressPayload(
         draftValues?.Address || existingAddress?.name || "",
-        draftValues?.AddressPlaceId || existingAddress?.placeId || existingAddress?.place_id || existingAddress?.placeID || ""
+        draftValues?.AddressPlaceId || getExistingAddressPlaceId(cabResult)
       );
       if (!addressPayload?.placeId) {
         window.alert("Please select the address from the suggestions so placeId can be saved.");
@@ -873,7 +845,7 @@ const CompletedOnboardingDetails = () => {
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                     {[
                       ["type", "Service Type"],
-                      ["name", "Name"],
+                      ["name", "Owner Name"],
                       ["phoneNumber", "Phone Number"],
                       ["email", "Email"],
                       ["source", "Source"],
@@ -993,8 +965,8 @@ const CompletedOnboardingDetails = () => {
                               }
                               setAccountDraft((prev) => ({ ...prev, [key]: e.target.value }));
                             }}
-                            className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
-                            disabled={key === "type"}
+                            className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm cursor-not-allowed"
+                            disabled={key === "type" || key === "phoneNumber"}
                             maxLength={key === "phoneNumber" ? 10 : undefined}
                           />
                         )}

@@ -12,6 +12,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -81,7 +82,38 @@ const resolveSubZoneValue = (value) =>
       value
   );
 
-const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "" });
+const normalizeSlotType = (value) => (String(value || "").toUpperCase() === "PEAK" ? "PEAK" : "NORMAL");
+
+const normalizeExpectedEarnings = (value) => {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+};
+
+const emptySlot = () => ({ startTime: "", endTime: "", maxBookings: "", expectedEarnings: "", slotType: "NORMAL" });
+
+const normalizeSlot = (slot = {}) => ({ ...emptySlot(), ...slot, slotType: normalizeSlotType(slot?.slotType) });
+
+const normalizePayloadSlot = (slot = {}) => ({
+  ...normalizeSlot(slot),
+  expectedEarnings: normalizeExpectedEarnings(slot?.expectedEarnings),
+});
+
+const normalizeSlotGroup = (slotGroup = {}) =>
+  Object.entries(slotGroup || {}).reduce((acc, [key, slots]) => {
+    acc[key] = Array.isArray(slots) ? slots.map(normalizeSlot) : [];
+    return acc;
+  }, {});
+
+const normalizePayloadSlotGroup = (slotGroup = {}) =>
+  Object.entries(slotGroup || {}).reduce((acc, [key, slots]) => {
+    acc[key] = Array.isArray(slots) ? slots.map(normalizePayloadSlot) : [];
+    return acc;
+  }, {});
+
+const normalizeConfig = (config = {}) => ({
+  weekly: normalizeSlotGroup(config.weekly),
+  specialDates: normalizeSlotGroup(config.specialDates),
+});
 
 const formatDayLabels = (dayValues = []) =>
   dayValues
@@ -89,6 +121,11 @@ const formatDayLabels = (dayValues = []) =>
     .join(", ");
 
 const RequiredMark = () => <span className="ml-1 text-red-500">*</span>;
+const SlotFieldLabel = ({ children }) => (
+  <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
+    {children}
+  </Typography>
+);
 
 const isSameErrorMap = (left = {}, right = {}) => {
   const leftKeys = Object.keys(left);
@@ -126,7 +163,7 @@ const buildInitialForm = (initialValues = {}) => ({
   priority: initialValues.priority ?? (initialValues.ruleType === "SPECIAL_DATE" ? 1 : 10),
   isActive: initialValues.isActive ?? true,
   notes: initialValues.notes || "",
-  config: initialValues.config || { weekly: {}, specialDates: {} },
+  config: normalizeConfig(initialValues.config || { weekly: {}, specialDates: {} }),
 });
 
 function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
@@ -278,7 +315,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
     setForm((prev) => {
       const next = { ...prev, config: { ...prev.config } };
       const existing = Array.isArray(next.config?.[scope]?.[key]) ? [...next.config[scope][key]] : [];
-      const slot = { ...(existing[index] || emptySlot()), [field]: value };
+      const slot = { ...emptySlot(), ...(existing[index] || {}), [field]: value };
       existing[index] = slot;
       next.config[scope] = { ...(next.config?.[scope] || {}), [key]: existing };
       return next;
@@ -333,7 +370,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
     if (form.ruleType === "WEEKLY") {
       payload.daysOfWeek = form.daysOfWeek;
       payload.config = {
-        weekly: form.config?.weekly || {},
+        weekly: normalizePayloadSlotGroup(form.config?.weekly || {}),
       };
     } else {
       payload.fromDate = form.fromDate;
@@ -341,7 +378,7 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       payload.config = {
         specialDates:
           Object.keys(form.config?.specialDates || {}).length > 0
-            ? form.config.specialDates
+            ? normalizePayloadSlotGroup(form.config.specialDates)
             : form.fromDate
               ? {
                   [form.fromDate]: [],
@@ -367,11 +404,17 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
         const weeklyConfig = form.config?.weekly || {};
         const missingWeeklyDays = form.daysOfWeek.filter((dayKey) => {
           const slots = Array.isArray(weeklyConfig[dayKey]) ? weeklyConfig[dayKey] : [];
-          return !slots.some((slot) => slot?.startTime && slot?.endTime && String(slot?.maxBookings ?? "").trim() !== "");
+          return !slots.some(
+            (slot) =>
+              slot?.startTime &&
+              slot?.endTime &&
+              String(slot?.maxBookings ?? "").trim() !== "" &&
+              String(slot?.expectedEarnings ?? "").trim() !== ""
+          );
         });
 
         if (missingWeeklyDays.length > 0) {
-          nextErrors.weeklyConfig = "Add at least one complete time slot for each selected weekday";
+          nextErrors.weeklyConfig = "Add at least one complete time slot with expected earnings for each selected weekday";
         }
       }
     }
@@ -399,11 +442,17 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
       const specialDatesConfig = form.config?.specialDates || {};
       const missingSlotDates = rangeDates.filter((dateKey) => {
         const slots = Array.isArray(specialDatesConfig[dateKey]) ? specialDatesConfig[dateKey] : [];
-        return !slots.some((slot) => slot?.startTime && slot?.endTime && String(slot?.maxBookings ?? "").trim() !== "");
+        return !slots.some(
+          (slot) =>
+            slot?.startTime &&
+            slot?.endTime &&
+            String(slot?.maxBookings ?? "").trim() !== "" &&
+            String(slot?.expectedEarnings ?? "").trim() !== ""
+        );
       });
 
       if (rangeDates.length > 0 && missingSlotDates.length > 0) {
-        nextErrors.specialDates = "Add at least one complete time slot for each selected special date";
+        nextErrors.specialDates = "Add at least one complete time slot with expected earnings for each selected special date";
       }
     }
 
@@ -639,35 +688,67 @@ function SlotRuleForm({ mode = "add", initialValues, submitLabel }) {
                           <div className="flex flex-col gap-3">
                             {Array.isArray(slots) && slots.length > 0 ? (
                               slots.map((slot, index) => (
-                                <div key={`${dateKey}-${index}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                                  <Input
-                                    type="time"
-                                    value={slot.startTime || ""}
-                                    onChange={(event) => updateSlot("specialDates", dateKey, index, "startTime", event.target.value)}
-                                    disabled={isViewMode}
-                                    label="Start Time"
-                                  />
-                                  <Input
-                                    type="time"
-                                    value={slot.endTime || ""}
-                                    onChange={(event) => updateSlot("specialDates", dateKey, index, "endTime", event.target.value)}
-                                    disabled={isViewMode}
-                                    label="End Time"
-                                  />
-                                  <Input
-                                    type="number"
-                                    value={slot.maxBookings || ""}
-                                    onChange={(event) => updateSlot("specialDates", dateKey, index, "maxBookings", event.target.value)}
-                                    disabled={isViewMode}
-                                    label="Max Bookings"
-                                  />
+                                <div key={`${dateKey}-${index}`} className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                  <div>
+                                    <SlotFieldLabel>Start Time</SlotFieldLabel>
+                                    <Input
+                                      type="time"
+                                      value={slot.startTime || ""}
+                                      onChange={(event) => updateSlot("specialDates", dateKey, index, "startTime", event.target.value)}
+                                      disabled={isViewMode}
+                                    />
+                                  </div>
+                                  <div>
+                                    <SlotFieldLabel>End Time</SlotFieldLabel>
+                                    <Input
+                                      type="time"
+                                      value={slot.endTime || ""}
+                                      onChange={(event) => updateSlot("specialDates", dateKey, index, "endTime", event.target.value)}
+                                      disabled={isViewMode}
+                                    />
+                                  </div>
+                                  <div>
+                                    <SlotFieldLabel>Max Bookings</SlotFieldLabel>
+                                    <Input
+                                      type="number"
+                                      value={slot.maxBookings || ""}
+                                      onChange={(event) => updateSlot("specialDates", dateKey, index, "maxBookings", event.target.value)}
+                                      disabled={isViewMode}
+                                    />
+                                  </div>
+                                  <div>
+                                    <SlotFieldLabel>Expected Earnings</SlotFieldLabel>
+                                    <Input
+                                      type="number"
+                                      value={slot.expectedEarnings || ""}
+                                      onChange={(event) =>
+                                        updateSlot("specialDates", dateKey, index, "expectedEarnings", event.target.value)
+                                      }
+                                      disabled={isViewMode}
+                                    />
+                                  </div>
+                                  <div>
+                                    <SlotFieldLabel>Slot Type</SlotFieldLabel>
+                                    <div className="flex min-h-[40px] items-center rounded-lg border border-blue-gray-100 px-3 py-2">
+                                      <Switch
+                                        checked={normalizeSlotType(slot.slotType) === "PEAK"}
+                                        onChange={(event) =>
+                                          updateSlot("specialDates", dateKey, index, "slotType", event.target.checked ? "PEAK" : "NORMAL")
+                                        }
+                                        label={normalizeSlotType(slot.slotType)}
+                                        disabled={isViewMode}
+                                      />
+                                    </div>
+                                  </div>
                                   <Button
                                     type="button"
-                                    className="w-full md:col-span-2 xl:col-span-1 bg-red-600 text-white hover:bg-red-700"
+                                    size="sm"
+                                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 p-0 text-white hover:bg-red-700"
                                     onClick={() => removeSlot("specialDates", dateKey, index)}
                                     disabled={isViewMode}
+                                    title="Remove slot"
                                   >
-                                    Remove
+                                    <TrashIcon className="h-5 w-5" />
                                   </Button>
                                 </div>
                               ))

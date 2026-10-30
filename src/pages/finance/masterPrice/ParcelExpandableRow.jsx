@@ -9,7 +9,7 @@ export function ParcelExpandableRow({
 }) {
   return (
     <>
-      <tr>
+      <tr className="whitespace-nowrap">
         <td className={className}>
           {hideSubZoneColumn ? (
             <Typography className="text-xs font-semibold text-blue-gray-600">

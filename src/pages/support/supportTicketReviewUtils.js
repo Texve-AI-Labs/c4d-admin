@@ -93,15 +93,19 @@ export const getTicketReviewValidationRules = (selectedStatus) => {
   return {};
 };
 
-export const validateTicketReview = ({ selectedStatus, rewardAmount, rewardReason, adminRemarks }) => {
+export const validateTicketReview = ({ selectedStatus, rewardAmount, rewardReason, adminRemarks, disputedAmount }) => {
   const rules = getTicketReviewValidationRules(selectedStatus);
   const nextErrors = {};
   const normalizedStatus = String(selectedStatus || "").toUpperCase();
 
   if (rules.rewardAmount) {
     const parsedAmount = Number(rewardAmount);
+    const parsedDisputedAmount = Number(disputedAmount);
     if (rewardAmount === "" || Number.isNaN(parsedAmount) || parsedAmount < 0) {
       nextErrors.rewardAmount = rules.rewardAmount;
+    } 
+    if (!Number.isNaN(parsedDisputedAmount) && parsedAmount > parsedDisputedAmount) {
+      nextErrors.rewardAmount = `Reward amount must be less than or equal to disputed amount ${formatCurrency(parsedDisputedAmount)}.`;
     }
   }
 

@@ -1,7 +1,7 @@
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES } from "@/utils/constants";
 
-const PARTNER_TYPES = new Set(["DRIVER", "CAB", "AUTO"]);
+const PARTNER_TYPES = new Set(["DRIVER", "CAB", "AUTO", "BIKE", "PARCEL"]);
 const TIERS = new Set(["SILVER", "GOLD", "ELITE"]);
 const getPartnerTypeForQuery = (value) => {
   const normalized = String(value || "").trim().toUpperCase();
@@ -45,9 +45,17 @@ export const fetchDriverMonitoringData = async ({
 
   const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DRIVER_MONITORING_TIER, query);
   const payload = response?.data && typeof response.data === "object" ? response.data : response || {};
-  const rows = Array.isArray(payload?.rows) ? payload.rows : Array.isArray(payload?.data) ? payload.data : [];
-  const cards = payload?.cards || payload?.summary || response?.cards || response?.summary || null;
-  const pagination = payload?.pagination || response?.pagination || {};
+  const rows = Array.isArray(payload?.rows)
+    ? payload.rows
+    : Array.isArray(payload?.data?.rows)
+      ? payload.data.rows
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(response?.data?.rows)
+          ? response.data.rows
+          : [];
+  const cards = payload?.cards || payload?.summary || payload?.data?.cards || payload?.data?.summary || response?.cards || response?.summary || null;
+  const pagination = payload?.pagination || payload?.data?.pagination || response?.pagination || {};
   const itemsPerPage = Number(pagination.itemsPerPage || pagination.limit || safeLimit);
   const totalItems = Number(pagination.totalItems || pagination.total || rows.length);
   const currentPage = Number(

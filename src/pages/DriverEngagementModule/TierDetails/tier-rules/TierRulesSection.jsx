@@ -48,6 +48,7 @@ const getUiServiceType = (condition = {}) => {
 
 const LOCKED_SERVICE_TYPE_OPTIONS = [{ label: "All", value: "ANY" }];
 const PARCEL_SERVICE_TYPE_OPTIONS = [{ label: "Parcel", value: "PARCEL" }];
+const CAB_SERVICE_TYPE_OPTIONS = SERVICE_TYPE_OPTIONS.filter((option) => !["AUTO", "PARCEL"].includes(option.value));
 
 function TierRulesSection({
   registerBuilder,
@@ -290,7 +291,7 @@ function TierRulesSection({
                               ? PARCEL_SERVICE_TYPE_OPTIONS
                             : isBike
                               ? [{ label: "Bike", value: "BIKE" }]
-                              : SERVICE_TYPE_OPTIONS
+                              : CAB_SERVICE_TYPE_OPTIONS
                         ).map((option) => (
                           <option key={getOptionValue(option)} value={getOptionValue(option)}>{getOptionLabel(option)}</option>
                         ))}

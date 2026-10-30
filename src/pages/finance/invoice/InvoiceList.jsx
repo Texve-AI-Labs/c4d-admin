@@ -1,4 +1,6 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import useBillingListSearch from "../components/useBillingListSearch.js";
+import BillingListSearch from "../components/BillingListSearch.jsx";
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useState, useEffect } from "react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
@@ -18,78 +20,66 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaFilter } from 'react-icons/fa';
 import moment from 'moment';
 
+const formatStatusLabel = (status) => {
+    const text = String(status || "").trim();
+    if (!text) return "-";
+    return text.toLowerCase().split(/[_\s]+/).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+};
+
 export function InvoiceList() {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
+    const { searchQuery, setSearchQuery, pagination, setPagination, requestVersion, runSearch, clearSearch } = useBillingListSearch('invoiceBillingSearch', { pageSize: 20 });
     const [invoiceList, setInvoiceList] = useState([]);
     const [allAccounts, setAllAccounts] = useState([]);
-    const [invoiceTypeFilter, setInvoiceTypeFilter] = useState(['All']);
-    const [paymentStatusFilter, setPaymentStatusFilter] = useState(['All']);
+    const [invoiceTypeFilter, setInvoiceTypeFilter] = useState(
+        () => sessionStorage.getItem('invoiceTypeFilter') || 'ALL'
+    );
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState(
+        () => sessionStorage.getItem('paymentStatusFilter') || 'ALL'
+    );
     const [loading, setLoading] = useState(false);
+    useEffect(() => {
+        sessionStorage.setItem('invoiceTypeFilter', invoiceTypeFilter);
+        sessionStorage.setItem('paymentStatusFilter', paymentStatusFilter);
+    }, [invoiceTypeFilter, paymentStatusFilter]);
 
-    const [pagination, setPagination] = useState({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        itemsPerPage: 15,
-         search: searchQuery.trim(),
-        //   forSearch:false
-    });
-
-    const debounce = (func, delay) => {
-        let timeoutId;
-        return (...args) => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => func(...args), delay);
-        };
-    };
-
-    const fetchInvoices = async (page = 1, showLoader = false) => {
-        if (showLoader) setLoading(true);
-        try {
-            const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_INVOICE_LIST, {
-                page: page,
-                limit: pagination.itemsPerPage,
-                search: searchQuery.trim()
-            });
-
-            if (data) {
+    useEffect(() => {
+        let active = true;
+        setLoading(true);
+        const fetchInvoices = async () => {
+            try {
+                const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_INVOICE_LIST, {
+                    page: pagination.currentPage,
+                    limit: pagination.itemsPerPage,
+                    search: pagination.search,
+                    ...(invoiceTypeFilter !== 'ALL' && { invoiceType: invoiceTypeFilter }),
+                    ...(paymentStatusFilter !== 'ALL' && { status: paymentStatusFilter }),
+                });
+                if (!active) return;
                 setInvoiceList(data?.data || []);
                 setAllAccounts(data?.data || []);
-                setPagination((prev) => ({
-                    ...prev,
-                    currentPage: page,
+                setPagination((previous) => ({
+                    ...previous,
                     totalPages: data?.pagination?.totalPages || 1,
                     totalItems: data?.pagination?.totalItems || 0,
-                    itemsPerPage: data?.pagination?.itemsPerPage || 15,
-                    search: searchQuery.trim()
+                    itemsPerPage: data?.pagination?.itemsPerPage || previous.itemsPerPage,
                 }));
+            } catch (error) {
+                if (active) {
+                    console.error("Error fetching invoice data:", error);
+                    setInvoiceList([]);
+                }
+            } finally {
+                if (active) setLoading(false);
             }
-        } catch (error) {
-            console.error("Error fetching invoice data:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getInvoices = debounce(() => {
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
-        fetchInvoices(1, true);
-    }, 1000);
-
-    useEffect(() => {
-        fetchInvoices(pagination.currentPage,pagination.search, true);
-    }, [pagination.currentPage]);
-    
-
-    useEffect(() => {
-        getInvoices();
-    }, [searchQuery]);
+        };
+        fetchInvoices();
+        return () => { active = false; };
+    }, [pagination.currentPage, pagination.search, invoiceTypeFilter, paymentStatusFilter, requestVersion]);
 
     const handlePageChange = (page) => {
         if (page >= 1 && page <= pagination.totalPages) {
             setPagination((prev) => ({ ...prev, currentPage: page }));
-            fetchInvoices(page, pagination.search, true)
         }
     };
 
@@ -121,19 +111,23 @@ export function InvoiceList() {
     };
 
     const handleFilterChange = (filterType, value) => {
-        const updateFilter = (prev) => {
-            if (value === 'All') return ['All'];
-            const updated = prev.includes(value)
-                ? prev.filter(item => item !== value)
-                : [...prev.filter(item => item !== 'All'), value];
-            return updated.length === 0 ? ['All'] : updated;
-        };
-
         if (filterType === 'status') {
-            setPaymentStatusFilter(updateFilter);
+            setPaymentStatusFilter(value);
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
         } else if (filterType === 'Subscription') {
-            setInvoiceTypeFilter(updateFilter);
+            setInvoiceTypeFilter(value);
+            setPagination((prev) => ({ ...prev, currentPage: 1 }));
         }
+    };
+
+    const handleRefresh = () => {
+        sessionStorage.removeItem('invoiceTypeFilter');
+        sessionStorage.removeItem('paymentStatusFilter');
+        sessionStorage.removeItem('invoiceCurrentPage');
+        clearSearch();
+        setInvoiceTypeFilter('ALL');
+        setPaymentStatusFilter('ALL');
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
     };
 
     const FilterPopover = ({ title, options, selectedFilters, onFilterChange }) => (
@@ -168,58 +162,61 @@ export function InvoiceList() {
     return (
         <div className="mb-8 flex flex-col gap-12">
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div className="relative flex-grow max-w-[500px]">
-                        <input
-                            type="text"
-                            className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                            placeholder="Search Invoice Number"
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
-                        </div>
-                    </div>
-                </div>
+                <BillingListSearch
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onSearch={runSearch}
+                    onClear={clearSearch}
+                    canClear={Boolean(searchQuery || pagination.search)}
+                    placeholder="Search Invoice Number"
+                />
             </div>
 
             <Card>
-                {invoiceList.length > 0 ? (
                     <>
-                        <CardHeader variant="gradient" className={`mb-8 p-6 flex-1 justify-between items-center ${ColorStyles.bgColor}`}>
+                        <CardHeader variant="gradient" className={`mb-8 p-6 flex justify-between items-center ${ColorStyles.bgColor}`}>
                             <Typography variant="h6" color="white">
                                 Invoice List
                             </Typography>
+                            <button
+                                type="button"
+                                onClick={handleRefresh}
+                                aria-label="Refresh invoices and clear filters"
+                                title="Refresh invoices and clear filters"
+                                className="text-white hover:text-gray-200"
+                            >
+                                <ArrowPathIcon className="h-5 w-5" />
+                            </button>
                         </CardHeader>
                         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
                             <table className="w-full min-w-[640px] table-auto">
                                 <thead>
                                     <tr>
-                                        {["Invoice Number", "Created Date", "Invoice Type", "Amount", "Status"].map((el) => (
+                                        {["Invoice Number", "Created Date", "Invoice Type", "Amount (₹)",, "Status"].map((el) => (
                                             <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                                                 {el === "Status" ? (
                                                     <FilterPopover
                                                         title={el}
                                                         options={[
-                                                            { value: "All", label: "All" },
-                                                            { value: "PAYMENT_COMPLETED", label: "Payment Completed" },
+                                                            { value: "ALL", label: "ALL" },
                                                             { value: "PAYMENT_PENDING", label: "Payment Pending" },
+                                                            { value: "PAYMENT_COMPLETED", label: "Payment Completed" },
                                                             { value: "PAYMENT_CANCELLED", label: "Payment Cancelled" }
                                                         ]}
-                                                        selectedFilters={paymentStatusFilter}
+                                                        selectedFilters={[paymentStatusFilter]}
                                                         onFilterChange={(value) => handleFilterChange("status", value)}
                                                     />
                                                 ) : el === "Invoice Type" ? (
                                                     <FilterPopover
                                                         title={el}
                                                         options={[
-                                                            { value: "All", label: "All" },
+                                                            { value: "ALL", label: "ALL" },
                                                             { value: "Free Plan", label: "Free Plan" },
-                                                            { value: "Basic Plan", label: "Basic Plan" },
-                                                            { value: "Standard Plan", label: "Standard Plan" },
-                                                            { value: "Premium Plan", label: "Premium Plan" }
+                                                            { value: "Premium", label: "Premium" },
+                                                            { value: "Standard", label: "Standard" },
+                                                            { value: "Regular", label: "Regular" }
                                                         ]}
-                                                        selectedFilters={invoiceTypeFilter}
+                                                        selectedFilters={[invoiceTypeFilter]}
                                                         onFilterChange={(value) => handleFilterChange("Subscription", value)}
                                                     />
                                                 ) : (
@@ -241,12 +238,7 @@ export function InvoiceList() {
                                                                  </td>
                                         </tr>
                                     ) : (
-                                        invoiceList
-                                            .filter((invoice) =>
-                                                (paymentStatusFilter.includes('All') || paymentStatusFilter.includes(invoice.status)) &&
-                                                (invoiceTypeFilter.includes('All') || invoiceTypeFilter.includes(invoice?.Subscription?.Plan?.name))
-                                            )
-                                            .map((invoice, index) => (
+                                        invoiceList.length > 0 ? invoiceList.map((invoice, index) => (
                                                 <tr key={index} className="text-sm">
                                                     <td className='border-b border-blue-gray-50 py-3 px-5'>
                                                         <Link
@@ -258,10 +250,16 @@ export function InvoiceList() {
                                                     </td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{moment(invoice?.created_at).format('DD-MM-YYYY')}</td>
                                                     <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.Subscription?.Plan?.name}</td>
-                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.amount}</td>
-                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">{invoice?.status}</td>
+                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">₹ {invoice?.amount}</td>
+                                                    <td className="border-b border-blue-gray-50 text-black py-3 px-5">{formatStatusLabel(invoice?.status)}</td>
                                                 </tr>
-                                            ))
+                                            )) : (
+                                                <tr>
+                                                    <td colSpan={5} className="py-6 text-center text-gray-500">
+                                                        No Invoices
+                                                    </td>
+                                                </tr>
+                                            )
                                     )}
                                 </tbody>
                             </table>
@@ -290,13 +288,6 @@ export function InvoiceList() {
                             </div>
                         </CardBody>
                     </>
-                ) : (
-                    <CardHeader variant="gradient" className={`mb-8 p-6 ${ColorStyles.bgColor}`}>
-                        <Typography variant="h6" color="white">
-                            No Invoices
-                        </Typography>
-                    </CardHeader>
-                )}
             </Card>
         </div>
     );

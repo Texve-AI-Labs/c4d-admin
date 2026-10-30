@@ -3,7 +3,7 @@ import {
   Card, CardHeader, CardBody, Typography, Button,
   Spinner,
 } from '@material-tailwind/react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import moment from 'moment';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
@@ -16,6 +16,18 @@ const DiscountView = () => {
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('active');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [expandedImage, setExpandedImage] = useState(null);
+
+  useEffect(() => {
+    if (!expandedImage) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setExpandedImage(null);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [expandedImage]);
 
   useEffect(() => {
     const fetchDiscounts = async () => {
@@ -102,18 +114,14 @@ const DiscountView = () => {
       </div>
 
       <Card>
-  <CardHeader className="mb-8 p-6 flex justify-between items-center bg-primary">
+  <CardHeader className="mb-8 flex items-center justify-between gap-4 bg-primary p-4 sm:p-6">
           <Typography variant="h6" color="white">Discount List</Typography>
-        </CardHeader>
-
-        <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
-          <div className="px-6 pb-4 flex items-center justify-between">
-            <div className="inline-flex rounded-full bg-gray-100 p-1">
+            <div className="inline-flex shrink-0 rounded-full bg-white/20 p-1">
               <button
                 type="button"
                 onClick={() => setStatusTab('active')}
-                className={`px-4 py-1 text-sm font-medium rounded-full transition-colors ${
-                  statusTab === 'active' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'
+                className={`rounded-full px-4 py-1 text-sm font-medium transition-colors ${
+                  statusTab === 'active' ? 'bg-white text-primary' : 'text-white hover:bg-white/10'
                 }`}
               >
                 Active
@@ -121,14 +129,15 @@ const DiscountView = () => {
               <button
                 type="button"
                 onClick={() => setStatusTab('inactive')}
-                className={`px-4 py-1 text-sm font-medium rounded-full transition-colors ${
-                  statusTab === 'inactive' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'
+                className={`rounded-full px-4 py-1 text-sm font-medium transition-colors ${
+                  statusTab === 'inactive' ? 'bg-white text-primary' : 'text-white hover:bg-white/10'
                 }`}
               >
                 Inactive
               </button>
             </div>
-          </div>
+        </CardHeader>
+        <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
           {loading ? (
            <div className="flex justify-center items-center py-10">
            <Spinner className="h-10 w-10" />
@@ -138,11 +147,11 @@ const DiscountView = () => {
               <thead>
                 <tr>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Service Type</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">categorys</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Offer Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Target Mode</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Title</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Coupon Code</th>
-                  <th className="py-3 px-5 text-left whitespace-nowrap">Description</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Discount Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">
                     <button
@@ -169,17 +178,19 @@ const DiscountView = () => {
                   </th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">End Date</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Status</th>
-                  <th className="py-3 px-5 text-left whitespace-nowrap">Image</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Premium</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Cab Type</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">City</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Description</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Image</th>
+                  <th className="py-3 px-5 text-left whitespace-nowrap">Dashboard Image</th>
                   <th className="py-3 px-5 text-left whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {displayedDiscounts.length === 0 ? (
                   <tr>
-                    <td colSpan="14" className="text-center py-4">
+                    <td colSpan="16" className="px-5 py-4 text-center text-sm text-gray-500">
                       {statusTab === 'active'
                         ? 'No Active Discounts Found'
                         : 'No Inactive Discounts Found'}
@@ -187,18 +198,26 @@ const DiscountView = () => {
                   </tr>
                 ) : (
                   displayedDiscounts.map((item, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="py-3 px-5 whitespace-nowrap">{serviceTypeLabels[item.serviceType] || item.serviceType}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.offerType || '-'}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.targetMode || '-'}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.title || '-'}</td>
-                      <td className="py-3 px-5 font-semibold whitespace-nowrap">
+                    <tr key={index} className="border-b border-blue-gray-50 text-sm hover:bg-gray-50">
+                      <td className="whitespace-nowrap px-5 py-3">
+                        <Link
+                          to={`/dashboard/finance/discountModule/edit/${item.id}?mode=view`}
+                          state={{ discount: item }}
+                          className="font-medium text-primary underline decoration-primary underline-offset-2 hover:text-primary-700"
+                        >
+                          {serviceTypeLabels[item.serviceType] || item.serviceType}
+                        </Link>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3">{item.category || '-'}</td>                      
+                      <td className="whitespace-nowrap px-5 py-3">{item.offerType || '-'}</td>
+                      <td className="whitespace-nowrap px-5 py-3">{item.targetMode || '-'}</td>
+                      <td className="whitespace-nowrap px-5 py-3">{item.title || '-'}</td>
+                      <td className="whitespace-nowrap px-5 py-3 font-semibold">
                         <div className=' text-green-600'>
                             {item.couponCode || '-'}
                         </div>
                         </td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.description || '-'}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-5 py-3">
                         {(() => {
                           const normalizedType = (item.discountType || (Number(item.amount) > 0 ? 'IsAmount' : 'percentage'))?.toLowerCase();
                           if (normalizedType === 'isamount' || normalizedType === 'amount' || normalizedType === 'flat') {
@@ -209,29 +228,16 @@ const DiscountView = () => {
                           return percent !== null && percent !== undefined && percent !== '' ? `${percent}%` : '-';
                         })()}
                       </td>
-                      <td className="py-3 px-5 whitespace-nowrap">{moment(item.startDate).format('DD-MM-YYYY ')}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">{moment(item.endDate).format('DD-MM-YYYY ')}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-5 py-3">{moment(item.startDate).format('DD-MM-YYYY ')}</td>
+                      <td className="whitespace-nowrap px-5 py-3">{moment(item.endDate).format('DD-MM-YYYY ')}</td>
+                      <td className="whitespace-nowrap px-5 py-3">
                         {item.isActive
                           ? <span className="text-green-600 font-semibold">Active</span>
                           : <span className="text-red-600 font-semibold">Inactive</span>}
                       </td>
-                      <td className="py-3 px-5 whitespace-nowrap">
-                        {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt="discount"
-                            className="w-32 h-auto rounded-md"
-                          />
-                        ) : (
-                          <div className="w-32  bg-gray-200 border-2 border-dashed rounded-md flex items-center justify-center  h-20">
-                            <span className="text-gray-500 text-xs">No Image</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.isPremium ? 'Premium' : 'Not Premium'}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">{item.cabType || item.parcelVehicleType || '-'}</td>
-                      <td className="py-3 px-5 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-5 py-3">{item.isPremium ? 'Premium' : 'Not Premium'}</td>
+                      <td className="whitespace-nowrap px-5 py-3">{item.cabType || item.parcelVehicleType || '-'}</td>
+                      <td className="whitespace-nowrap px-5 py-3">
                         {item.serviceArea && item.serviceArea.length > 0 ? (
                           item.serviceArea.map((area, index) => (
                             <span key={index} className="mr-2">{area}</span>
@@ -240,7 +246,34 @@ const DiscountView = () => {
                           '-'
                         )}
                       </td>
-                      <td className="py-3 px-5 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-5 py-3">{item.description || '-'}</td>
+                      <td className="whitespace-nowrap px-5 py-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-primary-500 px-4 py-1 text-white rounded hover:bg-primary-600"
+                          onClick={() => setExpandedImage({
+                            src: item.imageUrl || null,
+                            alt: item.title || 'Discount image',
+                          })}
+                        >
+                          View
+                        </Button>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-primary-500 px-4 py-1 text-white rounded hover:bg-primary-600"
+                          onClick={() => setExpandedImage({
+                            src: item.dashboardOfferImg || null,
+                            alt: item.title ? `${item.title} dashboard image` : 'Dashboard offer image',
+                          })}
+                        >
+                          View
+                        </Button>
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3">
                         <Button
                           onClick={() =>
                             navigate(`/dashboard/finance/discountModule/edit/${item.id}`, {
@@ -252,7 +285,7 @@ const DiscountView = () => {
                         >
                           Edit
                         </Button>
-                      </td>
+                      </td>                      
                     </tr>
                   ))
                 )}
@@ -261,6 +294,41 @@ const DiscountView = () => {
           )}
         </CardBody>
       </Card>
+
+      {expandedImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Expanded discount image"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div
+            className="relative max-h-full max-w-full"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              aria-label="Close expanded image"
+              className="absolute -right-3 -top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-2xl leading-none text-gray-700 shadow-lg hover:bg-gray-100"
+              onClick={() => setExpandedImage(null)}
+            >
+              &times;
+            </button>
+            {expandedImage.src ? (
+              <img
+                src={expandedImage.src}
+                alt={expandedImage.alt}
+                className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+              />
+            ) : (
+              <div className="flex h-64 w-80 items-center justify-center rounded-lg bg-gray-200 text-gray-500 shadow-2xl">
+                No Image
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

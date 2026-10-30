@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {Alert,Button,Card,CardBody,CardHeader,Dialog,DialogBody,DialogFooter,DialogHeader,Option,Select,Spinner,Textarea,Typography} from "@material-tailwind/react";
+import {Alert,Button,Card,CardBody,CardHeader,Checkbox,Dialog,DialogBody,DialogFooter,DialogHeader,Option,Popover,PopoverContent,PopoverHandler,Select,Spinner,Textarea,Typography} from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import moment from "moment";
 import {fetchParcelCommissionHistory,fetchParcelCommissionStateList,settleParcelCommission,settleParcelCommissionRow,} from "./parcelCommissionApi";
 import { ColorStyles } from "@/utils/constants";
@@ -13,6 +14,42 @@ const formatAmount = (value) => {
 };
 
 const isPending = (value) => String(value || "").toUpperCase() === "PENDING";
+
+const FILTER_OPTIONS = {
+  status: [
+    { value: "ALL", label: "All" },
+    { value: "ACTIVE", label: "Active" },
+    { value: "INACTIVE", label: "Inactive" },
+  ],
+  parcelVehicleType: [
+    { value: "ALL", label: "All" },
+    { value: "BIKE", label: "Bike" },
+    { value: "AUTO", label: "Auto" },
+  ],
+};
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+      <PopoverHandler>
+        <button type="button" className="flex items-center cursor-pointer">
+          <Typography variant="small" className="mr-1 text-[11px] font-bold uppercase text-black">
+            {label}
+          </Typography>
+          <FaFilter className="text-black text-xs" />
+        </button>
+      </PopoverHandler>
+      <PopoverContent className="p-2">
+        {options.map((option) => (
+          <div key={option.value} className="mb-2 flex items-center">
+            <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+            <Typography color="blue-gray" className="ml-2 font-medium">{option.label}</Typography>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function ParcelCommissionList() {
   const [rows, setRows] = useState([]);
@@ -123,27 +160,25 @@ function ParcelCommissionList() {
     loadStateList(activeFilters, true);
   }, []);
 
-  const handleFilterSearch = async () => {
-    const nextFilters = { ...filters };
-    setActiveFilters(nextFilters);
-    await loadStateList(nextFilters, true);
-  };
-
-  const handleResetFilters = async () => {
-    const nextFilters = {
-      status: "ALL",
-      parcelVehicleType: "ALL",
-    };
-    setFilters(nextFilters);
-    setActiveFilters(nextFilters);
-    await loadStateList(nextFilters, true);
-  };
-
   const refreshAfterSettlement = async (stateId) => {
     await loadStateList(activeFilters, false);
     if (historyDialog.open && Number(historyDialog.stateId) === Number(stateId)) {
       await loadHistory(stateId);
     }
+  };
+
+  const updateStatusFilter = async (value) => {
+    const nextFilters = { ...filters, status: value };
+    setFilters(nextFilters);
+    setActiveFilters(nextFilters);
+    await loadStateList(nextFilters, true);
+  };
+
+  const updateVehicleTypeFilter = async (value) => {
+    const nextFilters = { ...filters, parcelVehicleType: value };
+    setFilters(nextFilters);
+    setActiveFilters(nextFilters);
+    await loadStateList(nextFilters, true);
   };
 
   const handleSettleOne = async () => {
@@ -236,54 +271,11 @@ function ParcelCommissionList() {
       ) : null}
 
       <Card>
-        <CardHeader variant="gradient" className={`mb-5 p-4 ${ColorStyles.bgColor}`}>
+        <CardHeader variant="gradient" className={`mb-5 rounded-xl p-4 ${ColorStyles.bgColor}`}>
           <Typography variant="h6" color="white">
             Parcel Commission Settlement
           </Typography>
         </CardHeader>
-        <CardBody className="pt-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <Typography variant="small" className="mb-1 font-semibold text-blue-gray-700">
-                Status
-              </Typography>
-              <Select
-                value={filters.status}
-                onChange={(value) => setFilters((prev) => ({ ...prev, status: value || "ALL" }))}
-              >
-                <Option value="ALL">All</Option>
-                <Option value="ACTIVE">Active</Option>
-                <Option value="INACTIVE">In Active</Option>
-              </Select>
-            </div>
-
-            <div>
-              <Typography variant="small" className="mb-1 font-semibold text-blue-gray-700">
-                Parcel Vehicle Type
-              </Typography>
-              <Select
-                value={filters.parcelVehicleType}
-                onChange={(value) => setFilters((prev) => ({ ...prev, parcelVehicleType: value || "ALL" }))}
-              >
-                <Option value="ALL">All</Option>
-                <Option value="BIKE">Bike</Option>
-                <Option value="AUTO">Auto</Option>
-              </Select>
-            </div>
-
-            <div className="flex flex-wrap items-end gap-2 md:justify-end">
-              <Button className={ColorStyles.bgColor} onClick={handleFilterSearch}>
-                Search
-              </Button>
-              <Button variant="outlined" color="blue-gray" onClick={handleResetFilters}>
-                Reset
-              </Button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card>
         <CardBody className="p-0">
           <div className="md:hidden space-y-3 p-3">
             {loading ? (
@@ -364,10 +356,16 @@ function ParcelCommissionList() {
                     "Updated",
                     "Actions",
                   ].map((head) => (
-                    <th key={head} className="border-b border-blue-gray-100 py-3 px-4 text-left">
-                      <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-500">
-                        {head}
-                      </Typography>
+                    <th key={head} className={`border-b border-blue-gray-50 px-5 py-3 text-left whitespace-nowrap`}>
+                      {head === "Status" ? (
+                        <FilterPopover label={head} value={filters.status} options={FILTER_OPTIONS.status} onChange={updateStatusFilter} />
+                      ) : head === "Type" ? (
+                        <FilterPopover label="Parcel Vehicle Type" value={filters.parcelVehicleType} options={FILTER_OPTIONS.parcelVehicleType} onChange={updateVehicleTypeFilter} />
+                      ) : (
+                        <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
+                          {head}
+                        </Typography>
+                      )}
                     </th>
                   ))}
                 </tr>

@@ -25,6 +25,12 @@ const emptyForm = {
   notes: "",
 };
 
+const requiredLabel = (label) => (
+  <span>
+    {label} <span className="text-red-600">*</span>
+  </span>
+);
+
 const toInputDateTime = (value) => {
   if (!value) return "";
   const parsed = moment(value);
@@ -66,18 +72,11 @@ const buildPayload = (form) => ({
   notes: form.notes?.trim() || "",
 });
 
-const requiredLabel = (label) => (
-  <span>
-    {label} <span className="text-red-600">*</span>
-  </span>
-);
-
 function OwnVehicleForm({ mode = "add" }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const isEditMode = mode === "edit";
-  const fieldLabel = (label) => (isDetailsMode ? label : requiredLabel(label));
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(Boolean(id && !location.state?.row));
   const [submitting, setSubmitting] = useState(false);
@@ -127,9 +126,7 @@ function OwnVehicleForm({ mode = "add" }) {
   const validateForm = () => {
     if (!form.tripStartDate) return "Trip start date time is required.";
     if (!form.tripEndDateTime) return "Trip end date time is required.";
-    if (moment(form.tripEndDateTime).isBefore(moment(form.tripStartDate))) {
-      return "Trip End Date Time cannot be earlier than Trip Start Date Time.";
-    }
+    if (moment(form.tripEndDateTime).isBefore(moment(form.tripStartDate))) return "Trip End Date Time cannot be earlier than Trip Start Date Time.";
     if (!form.vehicleNumber.trim()) return "Vehicle number is required.";
     if (!form.driverName.trim()) return "Driver name is required.";
     if (form.startKm === "") return "Start KM is required.";
@@ -180,17 +177,13 @@ function OwnVehicleForm({ mode = "add" }) {
       <Card>
         <CardBody className="flex flex-col gap-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <Typography variant="h6" color="black">
-              {title}
-            </Typography>
+            <Typography variant="h6" color="black">{title}</Typography>
           </div>
 
           {error && <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
 
           {loading ? (
-            <div className="flex justify-center py-10">
-              <Spinner className="h-7 w-7" />
-            </div>
+            <div className="flex justify-center py-10"><Spinner className="h-7 w-7" /></div>
           ) : (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Input type="datetime-local" label={requiredLabel("Trip Start Date Time")} value={form.tripStartDate} onChange={(e) => setField("tripStartDate", e.target.value)} />

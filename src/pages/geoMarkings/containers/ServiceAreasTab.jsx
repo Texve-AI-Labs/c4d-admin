@@ -5,6 +5,7 @@ import ServiceAreaForm from '../ServiceAreaForm';
 import GoogleMapDrawing from '../../../components/GoogleMapDrawing';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
+import { polygonsOverlap } from '../utils/geoPolygonUtils';
 
 const ServiceAreasTab = () => {
   const [showForm, setShowForm] = useState(false);
@@ -20,6 +21,7 @@ const ServiceAreasTab = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, item: null });
+  const activeServiceAreaId = selectedItem?.id || null;
 
   useEffect(() => {
     fetchServiceAreas();
@@ -74,14 +76,47 @@ const ServiceAreasTab = () => {
 
   const handleSave = async (formData) => {
     try {
+      const selectedIndex = serviceAreas.findIndex((area) => area.id === selectedItem?.id);
+      const candidateCoordinates =
+        (Array.isArray(coordinates) && coordinates.length > 0 ? coordinates : null) ||
+        updatedServiceAreas[selectedIndex]?.coordinates ||
+        selectedItem?.coordinates ||
+        [];
+      const {
+        highlightedService,
+        services,
+        quickServices,
+        parcelSubServices,
+        driverServices,
+        newServices,
+        config_data,
+        created_at,
+        updated_at,
+        ...selectedItemRest
+      } = selectedItem || {};
+      const sanitizedServiceAreaPayload = {
+        ...formData,
+        coordinates: candidateCoordinates,
+      };
+      const blockedPolygons = serviceAreas
+        .filter((area) => String(area.id) !== String(activeServiceAreaId))
+        .map((area) => area.coordinates)
+        .filter((polygon) => Array.isArray(polygon) && polygon.length >= 3);
+
+      const hasOverlap = blockedPolygons.some((polygon) =>
+        polygonsOverlap(candidateCoordinates, polygon),
+      );
+      if (hasOverlap) {
+        setError('This service area overlaps an existing marking');
+        return;
+      }
+
       // If we're editing an existing area
       if (selectedItem) {
-        const index = serviceAreas.findIndex(area => area.id === selectedItem.id);
-        if (index !== -1) {
+        if (selectedIndex !== -1) {
           const response = await ApiRequestUtils.update(`${API_ROUTES.GEO_MARKINGS}/${selectedItem.id}`, {
-            ...selectedItem,
-            ...formData,
-            coordinates: updatedServiceAreas[index].coordinates // Always use updatedServiceAreas
+            ...selectedItemRest,
+            ...sanitizedServiceAreaPayload,
           });
           
           if (!response?.success) {
@@ -90,9 +125,8 @@ const ServiceAreasTab = () => {
         }
       } else {
         // Handle new area creation
-        const response = await ApiRequestUtils.post(API_ROUTES.GEO_MARKINGS, {
-          ...formData,
-          coordinates: coordinates,
+          const response = await ApiRequestUtils.post(API_ROUTES.GEO_MARKINGS, {
+          ...sanitizedServiceAreaPayload,
           type: 'Service Area'
         });
         
@@ -115,37 +149,14 @@ const ServiceAreasTab = () => {
     const index = serviceAreas.findIndex(a => a.id === area.id);
     setSelectedItem(area);
     setShowForm(true);
-    setCoordinates(updatedServiceAreas[index].coordinates); // Use updatedServiceAreas
+    setCoordinates(updatedServiceAreas[index]?.coordinates || area.coordinates || []); // Use updatedServiceAreas
     setTimeout(() => setShowDrawingManager(true), 500);
   };
 
-  const handleDeleteClick = (area) => {              
-    const hasZone = zones.some(
-      (zone) => zone.parent_id === area.id
-    );
+  const selectedServiceAreaPolygon = selectedItem
+    ? updatedServiceAreas[serviceAreas.findIndex((area) => area.id === selectedItem.id)]?.coordinates || selectedItem.coordinates || []
+    : [];
 
-     if (hasZone) {
-    setZoneAlertOpen(true); 
-    return;
-  }
-
-    setDeleteDialog({ open: true, item: area });
-  };
-
-  const handleDelete = async () => {
-    try {
-      const response = await ApiRequestUtils.delete(`${API_ROUTES.GEO_MARKINGS_DELETE}/${deleteDialog.item.id}`);
-      if (response?.success) {
-        await fetchServiceAreas(); // Refresh the list
-      } else {
-        throw new Error(response?.message || 'Failed to delete service area');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setDeleteDialog({ open: false, item: null });
-    }
-  };
 
   const handlePolygonComplete = (coords) => {
     setCoordinates(Array.isArray(coords) ? [...coords] : coords);
@@ -162,9 +173,10 @@ const ServiceAreasTab = () => {
         ...updated[index],
         coordinates: newCoordinates
       };
-      console.log("updated on tab", updated);
+      // console.log("updated on tab", updated);
       return updated;
     });
+    setCoordinates(newCoordinates);
   };
 
   const handlePolygonDelete = async (index) => {
@@ -175,6 +187,24 @@ const ServiceAreasTab = () => {
       setError(err.message);
     }
   };
+
+  // const handleDelete = async () => {
+  //   try {
+  //     if (!deleteDialog.item?.id) return;
+  //     const response = await ApiRequestUtils.delete(`${API_ROUTES.GEO_MARKINGS_DELETE}/${deleteDialog.item.id}`);
+  //     if (response?.success) {
+  //       await fetchServiceAreas();
+  //     } else if (/associated zone/i.test(response?.message || '')) {
+  //       setZoneAlertOpen(true);
+  //     } else {
+  //       throw new Error(response?.message || 'Failed to delete service area');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //   } finally {
+  //     setDeleteDialog({ open: false, item: null });
+  //   }
+  // };
 
   // Show create/edit form with map
   if (isCreating || selectedItem) {
@@ -199,13 +229,15 @@ const ServiceAreasTab = () => {
           <div className="h-[500px] w-full">
             <GoogleMapDrawing
               onPolygonComplete={handlePolygonComplete}
+              onDraftChange={handleDraftChange}
               onPolygonUpdate={handlePolygonUpdate}
               onDraftChange={handleDraftChange}
               onPolygonDelete={handlePolygonDelete}
-              existingPolygons={selectedItem ? updatedServiceAreas.map(area => area.coordinates) : []}
-              hideExistingPolygons={!selectedItem}
+              existingPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
+              backgroundPolygonStyle={{ fillColor: '#94a3b8', strokeColor: '#475569', fillOpacity: 0.12 }}
               showDrawingManager={showDrawingManager}
               initialPolygon={selectedItem?.coordinates}
+              isEditingExistingPolygon={!!selectedItem}
               mapHeight="500px"
             />
           </div>
@@ -214,9 +246,7 @@ const ServiceAreasTab = () => {
           <ServiceAreaForm
             onSave={handleSave}
             initialData={selectedItem}
-            coordinates={selectedItem ? 
-              updatedServiceAreas[serviceAreas.findIndex(a => a.id === selectedItem.id)]?.coordinates 
-              : coordinates}
+            coordinates={coordinates}
           />
         )}
       </div>
@@ -278,14 +308,14 @@ const ServiceAreasTab = () => {
                     onClick={() => handleEdit(area)}
                   >
                     <PencilIcon className="h-4 w-4" />
-                  </IconButton>
-                  <IconButton
+                  </IconButton>                
+                  {/* <IconButton
                     color="red"
                     variant="text"
-                    onClick={() => handleDeleteClick(area)} 
+                    onClick={() => handlePolygonDelete(serviceAreas.findIndex((item) => item.id === area.id))}
                   >
                     <TrashIcon className="h-4 w-4" />
-                  </IconButton>
+                  </IconButton> */}
                 </div>
               </div>
             </div>
@@ -311,7 +341,7 @@ const ServiceAreasTab = () => {
 </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
+      {/* <Dialog open={deleteDialog.open} handler={() => setDeleteDialog({ open: false, item: null })}>
         <DialogHeader>Confirm Deletion</DialogHeader>
         <DialogBody>
           Are you sure you want to delete the service area "{deleteDialog.item?.name}"? This action cannot be undone.
@@ -329,7 +359,7 @@ const ServiceAreasTab = () => {
             Delete
           </Button>
         </DialogFooter>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };

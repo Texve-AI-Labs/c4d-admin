@@ -22,7 +22,19 @@ import "../public/css/tailwind.css";
 
 function GlobalAutocompleteOff() {
   React.useEffect(() => {
-    return setupGlobalAutocompleteOff();
+    const cleanupAutocompleteOff = setupGlobalAutocompleteOff();
+    const preventNumberWheelChange = (event) => {
+      if (event.target?.matches?.('input[type="number"]')) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("wheel", preventNumberWheelChange, { passive: false });
+
+    return () => {
+      cleanupAutocompleteOff?.();
+      document.removeEventListener("wheel", preventNumberWheelChange);
+    };
   }, []);
 
   return null;

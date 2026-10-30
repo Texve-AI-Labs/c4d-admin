@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { Button, Switch } from "@material-tailwind/react";
+import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Switch } from "@material-tailwind/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
-import { API_ROUTES } from "@/utils/constants";
+import { API_ROUTES, PLAN_GROUP_CAR_TYPES } from "@/utils/constants";
 import { SUBSCRIPTION_EDIT_SCHEME } from "@/utils/validations";
 
 const PRIORITY_OPTIONS = [
@@ -22,6 +22,12 @@ const getApplicableEntity = (serviceType) => {
   return mapping[serviceType] || "";
 };
 
+const getErrorMessage = (error, fallbackMessage) =>
+  error?.response?.data?.message ||
+  error?.response?.data?.error ||
+  error?.message ||
+  fallbackMessage;
+
 const initialValuesTemplate = {
   groupName: "",
   description: "",
@@ -36,18 +42,20 @@ const initialValuesTemplate = {
   primaryPlanId: null,
   primaryPlanStatus: "ACTIVE",
   packagePrice: "",
+  discountPrice: 0,
   price: 0,
   name: "",
   bonusPrice: 0,
   priority: "",
   totalPrice: 0,
   type: "",
-  status: "ACTIVE",
+  // status: "ACTIVE",
   // validityDays: 0,
   earningStrategy: "",
   earningWindowDays: "",
   plans: [],
   assignments: [],
+  carType: "",
 };
 
 function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty, isValid, geoData, navigate }) {
@@ -86,11 +94,12 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
     <Form>
       <div className="p-4 border-2 grid grid-cols-1 gap-4">
         <div className="p-4 rounded-lg">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div>
               <label htmlFor="assignmentType" className="text-sm font-medium text-gray-700">Assignment Type</label>
               <Field as="select" name="assignmentType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100"  disabled>
                 <option value="">Select Assignment Type</option>
+                <option value="DRIVER_TYPE">Driver Type</option>
                 <option value="TIER">Tier</option>
                 <option value="DRIVER_ID">Driver ID</option>
                 <option value="CAB_ID">Cab ID</option>
@@ -101,7 +110,9 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
 
             <div>
               <label htmlFor="assignmentValue" className="text-sm font-medium text-gray-700">Assignment Value</label>
-              {values.assignmentType === "TIER" ? (
+              {values.assignmentType === "DRIVER_TYPE" ? (
+                <Field type="text" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 bg-gray-100 shadow-sm" disabled />
+              ) : values.assignmentType === "TIER" ? (
                 <Field as="select" name="assignmentValue" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled>
                   <option value="">Select Tier</option>
                   <option value="SILVER">Silver</option>
@@ -161,6 +172,20 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               </Field>
               <ErrorMessage name="zone" component="div" className="text-red-500 text-sm my-1" />
             </div>
+            {values.serviceType === 'RIDES_RENTAL_CABS' && (
+            <div>
+              <label htmlFor="carType" className="text-sm font-medium text-gray-700">Car Type</label>
+              <Field as="select" name="carType" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
+                <option value="">Select Car Type</option>
+                {PLAN_GROUP_CAR_TYPES.map((carType) => (
+                  <option key={carType} value={carType}>
+                    {carType}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage name="carType" component="div" className="text-red-500 text-sm my-1" />
+            </div>
+            )}
             <div>
               <label htmlFor="status" className="text-sm font-medium text-gray-700">Status</label>
               <Field as="select" name="status" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
@@ -182,7 +207,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               <label htmlFor="description" className="text-sm font-medium text-gray-700">Description</label>
               <Field as="textarea" name="description" rows="3" className="mt-1 p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" placeholder="Description for this plan group" />
             </div>
-            <div className="flex items-center">
+            <div className="hidden items-center">
               <Field type="checkbox" name="isDefault" className="mr-2 h-4 w-4 text-primary-600 border-gray-300 rounded" />
               <label htmlFor="isDefault" className="text-sm font-medium text-gray-700">Is default</label>
             </div>
@@ -206,6 +231,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     type: "",
                     status: values.status || "ACTIVE",
                     packagePrice: "",
+                    discountPrice: 0,
                     price: "",
                     bonusPrice: "",
                     totalPrice: "",
@@ -220,7 +246,12 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
             </Button>
           </div>
 
-          <div className="grid grid-cols-9 gap-2">
+          <div className="overflow-x-auto">
+          <div className="grid min-w-[1950px] grid-cols-11 gap-4 rounded-lg p-3">
+            <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
+              <div className="text-sm font-semibold text-gray-800">Plan 1</div>
+              <div className="text-xs text-gray-600">Default</div>
+            </div>
             <div className="hidden">
               <label htmlFor="serviceType" className="text-sm font-medium text-gray-700">Service Type</label>
               <Field as="select" name="serviceType" disabled className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm bg-gray-100">
@@ -237,7 +268,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                 <option value="">Select Plan Name</option>
                 <option value="Premium">Premium</option>
                 <option value="Standard">Standard</option>
-                <option value="Regular">Regular</option>
+                <option value="Regular">Basic</option>
               </Field>
               <ErrorMessage name="name" component="div" className="text-red-500 text-sm my-1" />
             </div>
@@ -255,6 +286,13 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               <Field type="number" name="packagePrice" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
               <ErrorMessage name="packagePrice" component="div" className="text-red-500 text-sm my-1" />
             </div>
+            {values.type === "PAID" && (
+            <div>
+              <label htmlFor="discountPrice" className="text-sm font-medium text-gray-700">Final Price After Discount</label>
+              <Field type="number" name="discountPrice" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+              <ErrorMessage name="discountPrice" component="div" className="text-red-500 text-sm my-1" />
+            </div>
+            )}
             <div>
               <label htmlFor="price" className="text-sm font-medium text-gray-700">Base Credits</label>
               <Field type="number" name="price" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
@@ -285,11 +323,13 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     <option value="CREDIT">Credit</option>
                     <option value="UNLIMITED">Unlimited</option>
                   </Field>
+                  <ErrorMessage name="earningStrategy" component="div" className="text-red-500 text-sm my-1" />
                 </div>
            
                 <div>
                   <label className="text-sm font-medium text-gray-700">Earning Window Days</label>
                   <Field type="number" name="earningWindowDays" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"  placeholder="Enter days" />
+                  <ErrorMessage name="earningWindowDays" component="div" className="text-red-500 text-sm my-1" />
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
                   <div>
@@ -301,20 +341,27 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                     onChange={(e) => setFieldValue("primaryPlanStatus", e.target.checked ? "ACTIVE" : "INACTIVE")}
                   />
                 </div>
+                <div className="flex items-center justify-center rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500">
+                  Default plan
+                </div>
              
-          </div>
+            </div>
 
           {values.plans && values.plans.length > 0 && (
-            <div className="mt-6 space-y-4 overflow-x-auto">
+            <div className="mt-4 space-y-3">
               {values.plans.map((plan, index) => (
-                <div key={index} className="grid grid-cols-9 gap-2 rounded-lg p-3">
+                <div key={index} className="grid min-w-[1950px] grid-cols-11 gap-4 rounded-lg p-3">
+                  <div className="hidden justify-center rounded-md bg-blue-gray-50 px-3 py-2">
+                    <div className="text-sm font-semibold text-gray-800">Plan {index + 2}</div>
+                    <div className="text-xs text-gray-600">Additional</div>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Plan Name</label>
                     <Field as="select" name={`plans[${index}].name`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm">
                       <option value="">Select Plan Name</option>
                       <option value="Premium">Premium</option>
                       <option value="Standard">Standard</option>
-                      <option value="Regular">Regular</option>
+                      <option value="Regular">Basic</option>
                     </Field>
                   </div>
                   <div>
@@ -328,7 +375,15 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
                   <div>
                     <label className="text-sm font-medium text-gray-700">Price</label>
                     <Field type="number" name={`plans[${index}].packagePrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                    <ErrorMessage name={`plans[${index}].packagePrice`} component="div" className="text-red-500 text-sm my-1" />
                   </div>
+                  {plan.type === "PAID" && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Final Price After Discount</label>
+                    <Field type="number" name={`plans[${index}].discountPrice`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                    <ErrorMessage name={`plans[${index}].discountPrice`} component="div" className="text-red-500 text-sm my-1" />
+                  </div>
+                  )}
                   <div>
                     <label className="text-sm font-medium text-gray-700">Base Credits</label>
                     <Field type="number" name={`plans[${index}].price`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
@@ -376,6 +431,7 @@ function MasterSubscriptionEditForm({ values, setFieldValue, handleSubmit, dirty
               ))}
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -397,6 +453,7 @@ const MasterSubscriptionEdit = () => {
   const [geoData, setGeoData] = useState({ serviceAreas: [] });
   const [initialValues, setInitialValues] = useState(initialValuesTemplate);
   const [existingAssignments, setExistingAssignments] = useState([]);
+  const [messageModal, setMessageModal] = useState(null);
 
   useEffect(() => {
     const fetchGeoData = async () => {
@@ -452,6 +509,7 @@ const MasterSubscriptionEdit = () => {
             assignmentValue: group.assignments?.[0]?.assignmentValue || "",
             priority: group.priority ?? "",
             zone: group.zone || group.metadata?.zone || "",
+            carType: group.carType || group.planGroup?.carType || "",
             status: normalizedStatus,
             effectiveFrom: toInputDateTime(group.effectiveFrom),
             effectiveTo: toInputDateTime(group.effectiveTo),
@@ -459,6 +517,7 @@ const MasterSubscriptionEdit = () => {
             primaryPlanId: primaryPlan.id ?? null,
             primaryPlanStatus: primaryPlan.status || normalizedStatus,
             packagePrice: primaryPlan.packagePrice || 0,
+            discountPrice: primaryPlan.discountPrice || 0,
             price: primaryPlan.price || 0,
             name: primaryPlan.name || "",
             bonusPrice: primaryPlan.bonusPrice || 0,
@@ -473,6 +532,7 @@ const MasterSubscriptionEdit = () => {
               name: p.name || "",
               type: p.type || "",
               packagePrice: p.packagePrice || 0,
+              discountPrice: p.discountPrice || 0,
               price: p.price || 0,
               bonusPrice: p.bonusPrice || 0,
               totalPrice: p.totalPrice || 0,
@@ -500,6 +560,7 @@ const MasterSubscriptionEdit = () => {
         planId: values.primaryPlanId || id,
         price: Number(values.price) || 0,
         packagePrice: Number(values.packagePrice) || 0,
+        discountPrice: values.type === "PAID" ? Number(values.discountPrice || 0) : 0,
         serviceType: values.serviceType || "",
         zone: values.zone || "",
         name: values.name || "",
@@ -519,6 +580,7 @@ const MasterSubscriptionEdit = () => {
             plan.name ||
             plan.type ||
             plan.packagePrice ||
+            plan.discountPrice ||
             plan.price ||
             plan.bonusPrice ||
             plan.totalPrice ||
@@ -529,6 +591,7 @@ const MasterSubscriptionEdit = () => {
             planId: plan.id || undefined,
             price: Number(plan.price || 0),
             packagePrice: Number(plan.packagePrice || 0),
+            discountPrice: plan.type === "PAID" ? Number(plan.discountPrice || 0) : 0,
             serviceType: plan.serviceType || "",
             zone: values.zone || "",
             name: plan.name || "",
@@ -556,6 +619,7 @@ const MasterSubscriptionEdit = () => {
           effectiveFrom: values.effectiveFrom || "",
           effectiveTo: values.effectiveTo || "",
           priority: Number(values.priority) || 0,
+          ...(values.serviceType === "RIDES_RENTAL_CABS" ? { carType: values.carType || "" } : {}),
         },
         plans: [primaryPlan, ...extraPlans],
         assignments: [
@@ -575,11 +639,26 @@ const MasterSubscriptionEdit = () => {
       }
     } catch (error) {
       console.error("Error updating master subscription:", error);
+      setMessageModal({
+        title: "Alert !",
+        message: getErrorMessage(error, "Failed to update master subscription. Please try again."),
+      });
     }
   };
 
   return (
     <div className="p-4 bg-white">
+      <Dialog open={Boolean(messageModal)} handler={() => setMessageModal(null)} size="sm">
+        <DialogHeader>{messageModal?.title || "Message"}</DialogHeader>
+        <DialogBody divider>
+          <p className="text-sm text-gray-700">{messageModal?.message}</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button color="blue" onClick={() => setMessageModal(null)}>
+            OK
+          </Button>
+        </DialogFooter>
+      </Dialog>
       <h2 className="text-2xl font-bold mb-4">Master Subscription Edit</h2>
       <Formik
         initialValues={initialValues}

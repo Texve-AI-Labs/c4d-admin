@@ -219,7 +219,7 @@ const validationSchema = Yup.object({
           autoNumber: '',
           address: '',
           insurance: '',
-          autoType: '',
+          autoType: 'AUTO',
           seater: '3',
           modelYear: '',
         }}
@@ -243,7 +243,7 @@ const validationSchema = Yup.object({
             };
             const res = await ApiRequestUtils.post(API_ROUTES.ADD_NEW_AUTO_DETAILS, payload);
             if (res?.success) {
-              navigate(`/dashboard/vendors/account/owner-onboarding-auto/details/completed/${values.accountId}`);
+              navigate(`/dashboard/vendors/account/owner-onboarding-auto/details/completed/${values.accountId}`, { replace: true });
             } else {
               window.alert(res?.message || 'Failed to add auto');
             }
@@ -354,9 +354,9 @@ const validationSchema = Yup.object({
                         <div>
                           <label className="text-sm font-medium text-gray-700">Auto Type</label>
                           <div className="space-x-4 mt-1">
-                            {['CNG', 'LPG', 'Diesel'].map((type) => (
+                            {['AUTO'].map((type) => (
                               <label key={type} className="inline-flex items-center">
-                                <Field type="radio" name="autoType" value={type} className="mr-2" onChange={handleChange} />
+                                <Field type="radio" name="autoType" value={type} className="mr-2" onChange={handleChange} disabled/>
                                 <span>{type}</span>
                               </label>
                             ))}

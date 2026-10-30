@@ -65,7 +65,7 @@ const ServiceAreaForm = ({
   ]);
   const initialQuickServices = useMemo(() => {
     return (
-      initialData?.quickServices?.filter((qs) =>
+      (initialData?.quickServices || []).filter((qs) =>
         initialServiceTypes.includes(qs),
       ) || []
     );
@@ -147,26 +147,31 @@ const ServiceAreaForm = ({
     { value: "CABS", label: "Root Cabs" },
     { value: "FOOD", label: "Root Food" },
     { value: "PARCEL", label: "Root Parcel" },
+    { value: "SHOPPING", label: "Root Shopping" },
     { value: "STAY", label: "Root Stay" },
   ];
 
   const availableQuickOptions = useMemo(() => {
     return serviceTypeOptions.filter((opt) =>
-      formData.services.includes(opt.value),
+      formData.services.includes(opt.value) && (formData.quickServices.includes(opt.value) || !(formData.highlightedService || []).includes(opt.value)),
     );
-  }, [formData.services]);
+  }, [formData.services, formData.highlightedService]);
 
   const availableHighlightedOptions = useMemo(() => {
     return serviceTypeOptions.filter((opt) =>
-      formData.services.includes(opt.value),
+      formData.services.includes(opt.value) && ((formData.highlightedService || []).includes(opt.value) || !formData.quickServices.includes(opt.value)),
     );
-  }, [formData.services]);
+  }, [formData.services, formData.quickServices]);
   const isParcelSelected = formData.services.includes(PARCEL_SERVICE_TYPE);
 
   const isValidHexColor = (value) =>
     typeof value === "string" && /^#([0-9A-Fa-f]{6})$/.test(value);
 
   const validateServices = (arr) => {
+    if (!arr.includes("RIDES")) {
+      setServicesError("RIDES is mandatory. Please select Local Rides");
+      return false;
+    }
     if (arr.length < 3) {
       setServicesError("Please select at least 3 Service Types");
       return false;
@@ -192,6 +197,29 @@ const ServiceAreaForm = ({
       return false;
     }
     setHighlightedServiceError(null);
+    return true;
+  };
+
+  const validateServiceCategoryOverlap = (quickServices, highlightedService) => {
+    const quickValues = new Set(quickServices || []);
+    const duplicatedValues = (highlightedService || []).filter((value) =>
+      quickValues.has(value),
+    );
+
+    if (duplicatedValues.length > 0) {
+      const labels = duplicatedValues
+        .map(
+          (value) =>
+            serviceTypeOptions.find((option) => option.value === value)?.label ||
+            value,
+        )
+        .join(", ");
+      const message = `Do not select ${labels} in both Quick Service and Highlighted Service`;
+      setQuickServiceError(message);
+      setHighlightedServiceError(message);
+      return false;
+    }
+
     return true;
   };
 
@@ -246,6 +274,7 @@ const ServiceAreaForm = ({
     validateServices(values);
     validateQuickServices(filteredQuick);
     validateHighlightedServices(filteredHighlighted);
+    validateServiceCategoryOverlap(filteredQuick, filteredHighlighted);
   };
   const handleParcelSubServicesChange = (selected) => {
     const values = selected ? selected.map((s) => s.value) : [];
@@ -260,6 +289,7 @@ const ServiceAreaForm = ({
     const values = selected ? selected.map((s) => s.value) : [];
     setFormData((prev) => ({ ...prev, quickServices: values }));
     validateQuickServices(values);
+    validateServiceCategoryOverlap(values, formData.highlightedService);
   };
 
   const handleHighlightedChange = (selected) => {
@@ -269,6 +299,7 @@ const ServiceAreaForm = ({
       highlightedService: values,
     }));
     validateHighlightedServices(values);
+    validateServiceCategoryOverlap(formData.quickServices, values);
   };
 
   const handleDriverServicesChange = (selected) => {
@@ -387,6 +418,14 @@ const ServiceAreaForm = ({
     if (!validateQuickServices(formData.quickServices)) hasError = true;
     if (!validateHighlightedServices(formData.highlightedService || []))
       hasError = true;
+    if (
+      !validateServiceCategoryOverlap(
+        formData.quickServices,
+        formData.highlightedService || [],
+      )
+    ) {
+      hasError = true;
+    }
 
     if (!coordinates || coordinates.length < 3) {
       setError("Please draw a valid polygon with at least 3 points");
@@ -440,7 +479,7 @@ const ServiceAreaForm = ({
 
       await onSave(payload);
     } catch (err) {
-      setError(err.message);
+      setError(err?.message || 'Failed to save service area');
     } finally {
       setIsSubmittingFull(false);
     }
@@ -512,7 +551,7 @@ const ServiceAreaForm = ({
             Service Types <span className="text-red-500">*</span>
           </label>
           <Typography variant="small" color="gray" className="mb-1">
-            Select at least 3 service types.
+            Select at least 3 service types. Local Rides (RIDES) is mandatory.
           </Typography>
           <Select
             isMulti
@@ -657,9 +696,9 @@ const ServiceAreaForm = ({
                 {/* Image */}
                 {!(
                   (service.name || "").toString().trim().toUpperCase() ===
-                    "CABS" ||
+                    "CABS" || "PARCEL" || "FOOD" || "SHOPPING" || "STAY" ||
                   (service.name || "").toString().trim().toUpperCase() ===
-                    "ROOT CABS"
+                    "ROOT CABS" || "ROOT PARCEL" || "ROOT FOOD" || "ROOT SHOPPING" || "ROOT STAY"
                 ) && (
                   <div>
                     <Typography

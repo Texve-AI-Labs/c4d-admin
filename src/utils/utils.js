@@ -21,14 +21,10 @@ export const Utils = {
                     !!values?.packageTypeSelected &&
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
-                    // !!values?.carType &&
                     !!values?.packageSelected
-                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
-                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.tripType) &&
-                    // (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
                 );
             case 'RIDES':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType;
             case 'AUTO':
                 return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType;
             case 'PARCEL':
@@ -40,19 +36,17 @@ export const Utils = {
                     !!values?.packageTypeSelected &&
                     !!values?.pickupLocation &&
                     !!values?.sourceType &&
-                    !!values?.carType &&
-                    // !!values?.packageSelected &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.dropLocation) &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.acType) &&
                     (values?.packageTypeSelected !== 'Outstation' || values?.tripType !== 'Round Trip' || !!values?.toDate) &&
                     (values?.packageTypeSelected !== 'Outstation' || !!values?.driverPickUpLocation || !!values?.driverPickUpAddress)
                 );
             case 'RENTAL_HOURLY_PACKAGE':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.sourceType && !!values?.packageSelected && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.sourceType && !!values?.packageSelected;
             case 'RENTAL_DROP_TAXI':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.acType && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.pickupLocation && !!values?.dropLocation && !!values?.sourceType && !!values?.acType;
             case 'CAR_WASH':
-                return hasPickupDateTime && !!selectedCustomer && !!values?.packageTypeSelected && !!values?.pickupLocation && !!values?.sourceType && !!values?.carType;
+                return hasPickupDateTime && !!selectedCustomer && !!values?.packageTypeSelected && !!values?.pickupLocation && !!values?.sourceType;
             default:
                 return false;
         }
@@ -120,6 +114,9 @@ export const Utils = {
 
     generateBookingTimesForDay: (date) => {
         const selectedDate = new Date(date);
+        if (Number.isNaN(selectedDate.getTime())) {
+            return [];
+        }
         const today = new Date();
 
         // Normalize dates to remove time part for comparison
@@ -581,8 +578,9 @@ export const Utils = {
         const now = new Date();
         inputDate.setSeconds(0, 0);
         now.setSeconds(0, 0);
-        const nowMinus2Min = new Date(now.getTime() - 2 * 60 * 1000);
-        return inputDate.getTime() >= nowMinus2Min.getTime();
+        // Allow a small clock drift while the operator completes the form.
+        const nowMinus5Min = new Date(now.getTime() - 5 * 60 * 1000);
+        return inputDate.getTime() >= nowMinus5Min.getTime();
     },
  
     validateDateTimeRange: ({ startDate, endDate }) => {
@@ -623,10 +621,18 @@ export const Utils = {
                 ? `${values.toDate}T${values.toTime}`
                 : '';
  
-        const rangeErrors = Utils.validateDateTimeRange({
-            startDate: rideDateTime,
-            endDate: hasReturnField ? returnDateTime : undefined,
-        });
+        const rangeErrors = values.serviceType === 'PARCEL'
+            ? {
+                startDate: !rideDateTime
+                    ? 'Start date is required'
+                    : moment(rideDateTime).format('YYYY-MM-DD') !== moment().format('YYYY-MM-DD')
+                        ? 'Parcel pickup must be booked for today.'
+                        : undefined,
+            }
+            : Utils.validateDateTimeRange({
+                startDate: rideDateTime,
+                endDate: hasReturnField ? returnDateTime : undefined,
+            });
  
         const errors = {};
         if (rangeErrors.startDate) {
@@ -700,36 +706,39 @@ export const Utils = {
     }) => {
         const firstValidationError = Utils.getFirstValidationError(errors);
         if (firstValidationError) return firstValidationError;
+        if (!values.serviceType) return 'Please select service type.';
         if (values.serviceType === 'DRIVER' || values.serviceType === 'CAR_WASH') {
-            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!selectedCustomer) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.packageTypeSelected) return 'Please select package type.';
             if (values.packageTypeSelected === "Local" && !values.packageSelected) return 'Please choose a package.';
             if (!values.pickupAddress) return 'Please select pickup location.';
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
             // if (values.packageTypeSelected === "Outstation" && !values.dropAddress) return 'Please select drop location.';
             // if (validationCheckForDriver(values)) return 'Please complete required driver trip fields.';
             if (!isValid) return 'Please correct form validation errors.';
             if (!dirty) return 'Please update at least one field.';
         } else if (values.serviceType === 'RIDES') {
-            if (!quoteDetails) return 'Please click Check Estimated Price.';
-            if (!selectedCustomer) return 'Please select customer.';
-            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
-            if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
-        } else if (values.serviceType === 'AUTO') {
-            if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!selectedCustomer) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
-        } else if (values.serviceType === 'PARCEL') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
+        } else if (values.serviceType === 'AUTO') {
+            if (!selectedCustomer) return 'Please select customer.';
+            if (!values.sourceType) return 'Please select Source Type.';
+            if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
+            if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
+        } else if (values.serviceType === 'PARCEL') {
             if (!values.customerId?.id) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.pickupAddress || !values.dropAddress) return 'Please select pickup and drop locations.';
-        } else if (values.serviceType === 'RENTAL') {
             if (!quoteDetails) return 'Please click Check Estimated Price.';
+        } else if (values.serviceType === 'RENTAL') {
+            if (!selectedCustomer) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.packageTypeSelected) return 'Please select package type.';
@@ -738,18 +747,22 @@ export const Utils = {
             if (values.packageTypeSelected === "Outstation" && !values.dropAddress) return 'Please select drop location.';
             if (values.packageTypeSelected === "Outstation" && values.tripType === "Round Trip" && !values.toDate) return 'Please select return date & time.';
             if (!values.pickupAddress) return 'Please select pickup location.';
+            if (values.packageTypeSelected === "Outstation" && !values.driverPickUpLocation && !values.driverPickUpAddress) return 'Please select driver pickup location.';
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (validationCheckForDriverRental(values)) return 'Please complete required rental trip fields.';
             if (!isValid) return 'Please correct form validation errors.';
             if (!dirty) return 'Please update at least one field.';
         } else if (values.serviceType === 'RENTAL_HOURLY_PACKAGE') {
-            if (!quoteDetails) return 'Please click Check Estimated Price.';
+            if (!selectedCustomer) return 'Please select customer.';
             if (!values.sourceType) return 'Please select Source Type.';
             if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.packageSelected) return 'Please choose a package.';
             if (!values.pickupAddress) return 'Please select pickup location.';
+            if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!isValid) return 'Please correct form validation errors.';
             if (!dirty) return 'Please update at least one field.';
         } else if (values.serviceType === 'RENTAL_DROP_TAXI') {
+            if (!selectedCustomer) return 'Please select customer.';
             if (!quoteDetails) return 'Please click Check Estimated Price.';
             if (!values.rideDate || !values.rideTime) return 'Please select pickup date & time.';
             if (!values.sourceType) return 'Please select Source Type.';

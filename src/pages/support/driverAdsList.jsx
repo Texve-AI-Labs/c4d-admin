@@ -39,7 +39,6 @@ function DriverAdsList() {
   const [alert, setAlert] = useState("");
   const [search, setSearch] = useState("");
   const [isActive, setIsActive] = useState("");
-  const [toLaunchAt, setToLaunchAt] = useState("");
   const [selectedServiceArea, setSelectedServiceArea] = useState("");
   const [selectedZone, setSelectedZone] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -76,7 +75,6 @@ function DriverAdsList() {
       if (selectedZone) params.subZoneId = selectedZone;
       if (isActive !== "") params.isActive = isActive;
       // if (fromLaunchAt) params.fromLaunchAt = fromLaunchAt;
-      if (toLaunchAt) params.toLaunchAt = toLaunchAt;
 
       const response = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_DRIVER_ADVERISEMENT, params);
 
@@ -106,7 +104,7 @@ function DriverAdsList() {
     fetchDriverAds(pagination.currentPage, true);
   }, [pagination.currentPage, pagination.itemsPerPage, search, isActive, 
     // fromLaunchAt, 
-    toLaunchAt, selectedServiceArea, selectedZone, refreshKey]);
+    selectedServiceArea, selectedZone, refreshKey]);
 
   useEffect(() => {
     fetchGeoMarkings();
@@ -122,7 +120,6 @@ function DriverAdsList() {
     setSearch("");
     setIsActive("");
     // setFromLaunchAt("");
-    setToLaunchAt("");
     setSelectedServiceArea("");
     setSelectedZone("");
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -166,6 +163,19 @@ function DriverAdsList() {
 
   const resolveImage = (row) => row?.image || row?.imageUrl || row?.banner || "";
 
+  const getTierBadgeClass = (tier) => {
+    switch (String(tier || "").toUpperCase()) {
+      case "SILVER":
+        return "bg-gray-200 text-slate-700";
+      case "GOLD":
+        return "bg-yellow-200 text-amber-800";
+      case "ELITE":
+        return "bg-indigo-200 text-indigo-800";
+      default:
+        return "bg-blue-gray-100 text-blue-gray-700";
+    }
+  };
+
   return (
     <div className="mb-8 mt-8 flex flex-col gap-12">
       <Card>
@@ -183,11 +193,12 @@ function DriverAdsList() {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <DriverAdsZone
               label="Zone"
               value={selectedServiceArea}
               refreshKey={refreshKey}
+              returnLabel
               onChange={(value) => {
                 setSelectedServiceArea(value);
                 setSelectedZone("");
@@ -221,21 +232,6 @@ function DriverAdsList() {
                 <Option value="false">Inactive</Option>
               </Select>
             </div>
-            <div>
-              <Typography variant="small" className="mb-1 font-medium text-blue-gray-700">
-                To Launch At
-              </Typography>
-              <Input
-                type="date"
-                value={toLaunchAt}
-                onChange={(e) => {
-                  setToLaunchAt(e.target.value);
-                  setPagination((prev) => ({ ...prev, currentPage: 1 }));
-                }}
-              />
-            </div>
-
-
           </div>
         </CardBody>
 
@@ -251,15 +247,19 @@ function DriverAdsList() {
             <thead className="bg-primary">
               <tr>
                 {[
-                  "Image",
-                  "Name",
+                  "Tier",
+                  // "Image",
+                  // "Name",
                   "Zone",
                   "Sub Zone",
+                  "Available Vehicle",
                   "Is Active",
                   "Created At",
-                  "Launch At",
+                  "Contract Period",
+                  "Payment Frequency",
+                  "Payment Amount",
                 ].map((heading) => (
-                  <th key={heading} className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                  <th key={heading} className="border-b border-blue-gray-50 py-3 px-5 text-left whitespace-nowrap">
                     <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
                       {heading}
                     </Typography>
@@ -270,7 +270,7 @@ function DriverAdsList() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 px-5">
+                  <td colSpan={11} className="py-8 px-5">
                     <div className="flex justify-center items-center">
                       <Spinner className="h-12 w-12" />
                     </div>
@@ -284,7 +284,12 @@ function DriverAdsList() {
                   const subZoneName = resolveGeoName(row?.subZoneId, zones);
                   return (
                     <tr key={key} className="border-b border-blue-gray-50">
-                      <td className={className}>
+                      <td className={`${className} whitespace-nowrap`}>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getTierBadgeClass(row?.tier)}`}>
+                          {resolveValue(row, ["tier"])}
+                        </span>
+                      </td>
+                      {/* <td className={`${className} whitespace-nowrap`}>
                         {resolveImage(row) ? (
                           <img
                             src={resolveImage(row)}
@@ -296,25 +301,30 @@ function DriverAdsList() {
                             No image
                           </Typography>
                         )}
-                      </td>
-                      <td className={className}>
+                      </td> */}
+                      {/* <td className={`${className} whitespace-nowrap`}>
                         <Typography className="text-xs font-semibold text-black">
                           {resolveValue(row, ["name"])}
                         </Typography>
-                      </td>
-                      <td className={className}>
+                      </td> */}
+                      <td className={`${className} whitespace-nowrap`}>
                         <Typography className="text-xs font-semibold text-black">
                           {zoneName}
                         </Typography>
                       </td>
-                      <td className={className}>
+                      <td className={`${className} whitespace-nowrap`}>
                         <Link to={`/dashboard/support/driver-ads/details/${row?.id || row?._id}`}>
                           <Typography className="text-xs font-semibold text-blue-600 underline cursor-pointer">
                             {subZoneName}
                           </Typography>
                         </Link>
                       </td>
-                      <td className={className}>
+                      <td className={`${className} whitespace-nowrap`}>
+                        <Typography className="text-xs font-semibold text-black">
+                          {row?.availableVehicle || "-"}
+                          </Typography>
+                        </td>
+                      <td className={`${className} whitespace-nowrap`}>
                         <span
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
                             row?.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
@@ -323,24 +333,26 @@ function DriverAdsList() {
                           {row?.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className={className}>
+                      <td className={`${className} whitespace-nowrap`}>
                         <Typography className="text-xs font-semibold text-black">
                           {formatDateTime(resolveValue(row, ["createdAt", "created_at"]))}
                         </Typography>
                       </td>
+                      <td className={`${className} whitespace-nowrap`}>
+                        <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["contractPeriod"])} Days</Typography>
+                      </td>
                       <td className={className}>
-                        <Typography className="text-xs font-semibold text-black">
-                          {moment(resolveValue(row, ["launchAt"])).isValid()
-                            ? moment(resolveValue(row, ["launchAt"])).format("DD-MM-YYYY")
-                            : resolveValue(row, ["launchAt"])}
-                        </Typography>
+                        <Typography className="text-xs font-semibold text-black">{resolveValue(row, ["paymentFrequency"])}</Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography className="text-xs font-semibold text-black">₹{resolveValue(row, ["paymentAmount"])}</Typography>
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 px-5 text-center">
+                  <td colSpan={11} className="py-8 px-5 text-center">
                     <Typography className="text-sm font-medium text-blue-gray-600">
                       No driver advertisements found.
                     </Typography>

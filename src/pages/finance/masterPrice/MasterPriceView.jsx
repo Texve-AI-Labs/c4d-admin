@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo  } from "react";
+import { Fragment, useState, useEffect, useMemo  } from "react";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { Card, CardBody, Typography } from "@material-tailwind/react";
@@ -7,7 +7,23 @@ import { Utils } from '@/utils/utils';
 import Select from 'react-select';
 import { ParcelExpandableRow } from "./ParcelExpandableRow";
 
+const MASTER_PRICE_FILTER_STORAGE_KEY = "masterPriceViewFilters";
+const EXPAND_ICON_PATH = "/img/expand.png";
+
+const getStoredMasterPriceFilters = () => {
+    if (typeof window === "undefined") return {};
+
+    try {
+        const storedFilters = window.sessionStorage.getItem(MASTER_PRICE_FILTER_STORAGE_KEY);
+        return storedFilters ? JSON.parse(storedFilters) : {};
+    } catch (error) {
+        console.error("Error reading master price filters:", error);
+        return {};
+    }
+};
+
 export function MasterPriceView() {
+    const [initialFilters] = useState(getStoredMasterPriceFilters);
     const normalizeText = (value) => String(value || "").trim().toLowerCase();
     const normalizeVehicleType = (value) => {
         const normalized = String(value || "").trim().toUpperCase();
@@ -24,14 +40,60 @@ export function MasterPriceView() {
     const [bikeLocalPackageList, setBikeLocalPackageList] = useState([]);
     const [parcelLocalPackageList, setParcelLocalPackageList] = useState([]);
     const navigate = useNavigate();
-    const [serviceType, setServiceType] = useState("");
+    const [serviceType, setServiceType] = useState(initialFilters.serviceType || "");
+    const [bookingType, setBookingType] = useState(initialFilters.bookingType || "");
+    const [driverPackageList, setDriverPackageList] = useState([]);
     const [ridesData, setRidesData] = useState([]);
     // const [rentalsData, setRentalsData] = useState([]);
-    const [zone, setZone] = useState("");
-    const [parcelSubService, setParcelSubService] = useState("BIKE");
+    const [zone, setZone] = useState(initialFilters.zone || "");
+    const [parcelSubService, setParcelSubService] = useState(normalizeVehicleType(initialFilters.parcelSubService));
     const [showParcelGeoError, setShowParcelGeoError] = useState(false);
     const [serviceAreas, setServiceAreas] = useState([]);
     const [subZones, setSubZones] = useState([]);
+    const [expandedRentalPeriods, setExpandedRentalPeriods] = useState({});
+
+    const getRentalPeriodKey = (tableType, period) => `${tableType}:${period || "-"}`;
+    const isRentalPeriodExpanded = (tableType, period) => expandedRentalPeriods[getRentalPeriodKey(tableType, period)] !== false;
+    const toggleRentalPeriod = (tableType, period) => {
+        const periodKey = getRentalPeriodKey(tableType, period);
+        setExpandedRentalPeriods((previous) => ({
+            ...previous,
+            [periodKey]: previous[periodKey] === false,
+        }));
+    };
+    const getPackageExpandKey = (tableType, packageId) => `${tableType}:package:${packageId || "-"}`;
+    const isPackageExpanded = (tableType, packageId) => expandedRentalPeriods[getPackageExpandKey(tableType, packageId)] !== false;
+    const togglePackageExpand = (tableType, packageId) => {
+        const packageKey = getPackageExpandKey(tableType, packageId);
+        setExpandedRentalPeriods((previous) => ({
+            ...previous,
+            [packageKey]: previous[packageKey] === false,
+        }));
+    };
+
+    const applyDriverPackageFilter = (packages, selectedBookingType = bookingType) => {
+        const filteredPackages = selectedBookingType
+            ? packages.filter((item) => normalizeText(item.bookingType) === normalizeText(selectedBookingType))
+            : packages;
+        setLocalPackageList(filteredPackages.filter((item) => item.type === "Local" && item.serviceType === "DRIVER"));
+        setOutstationPackageList(filteredPackages.filter((item) => item.type === "Outstation" && item.serviceType === "DRIVER"));
+    };
+
+    const fetchDriverPackageList = async (selectedZone = zone, selectedBookingType = bookingType) => {
+        const query = { serviceType: "DRIVER" };
+        if (selectedZone) query.zone = selectedZone;
+        if (selectedBookingType) query.bookingType = selectedBookingType;
+
+        const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.PACKAGES_LIST, query);
+        if (data?.success) {
+            const driverRows = Array.isArray(data?.data) ? data.data : [];
+            const filteredData = driverRows
+                .filter((item) => !selectedZone || normalizeText(item.zone) === normalizeText(selectedZone))
+                .filter((item) => item.serviceType === "DRIVER");
+            setDriverPackageList(filteredData);
+            applyDriverPackageFilter(filteredData, selectedBookingType);
+        }
+    };
 
     const fetchGeoData = async (selectedServiceType = "",selectedParcelSubService = parcelSubService, selectedZone = zone) => {
         try {
@@ -60,10 +122,6 @@ export function MasterPriceView() {
         } 
     };
 
-    useEffect(() => {
-        fetchGeoData();
-    }, []);
-
     const ZONE_OPTIONS = serviceAreas.map((area) => ({
         value: area.name, 
         label: area.name, 
@@ -82,21 +140,85 @@ export function MasterPriceView() {
         }
     };
 
+    useEffect(() => {
+        window.sessionStorage.setItem(MASTER_PRICE_FILTER_STORAGE_KEY, JSON.stringify({
+            serviceType,
+            zone,
+            bookingType: serviceType === "DRIVER" ? bookingType : "",
+            parcelSubService,
+        }));
+    }, [serviceType, zone, bookingType, parcelSubService]);
+
+    useEffect(() => {
+        const loadStoredFilters = async () => {
+            await fetchGeoData(serviceType, parcelSubService, zone);
+            if (!serviceType) return;
+
+            try {
+                if (serviceType === 'DRIVER') {
+                    await fetchDriverPackageList(zone, bookingType);
+                } else if (serviceType === 'RIDES') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setRidesData(filteredData || []);
+                    } else {
+                        setRidesData([]);
+                    }
+                } else if (serviceType === 'AUTO') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.AUTO_PACKAGE_LIST, {
+                        type: "Service area",
+                    });
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setAutoLocalPackageList(filteredData.filter(item => item.type === "Auto" && item.serviceType === "AUTO"));
+                    }
+                } else if (serviceType === 'BIKE') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.BIKE_PACKAGE_LIST, {
+                        type: "Service area",
+                    });
+                    if (data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setBikeLocalPackageList(filteredData.filter(item => item.type === "Bike" && item.serviceType === "BIKE"));
+                    }
+                } else if (serviceType === 'PARCEL') {
+                    await fetchParcelPackageList(zone, parcelSubService);
+                } else if (serviceType === 'RENTAL') {
+                    const data = await ApiRequestUtils.get(API_ROUTES.RENTALS_PRICE_DETAILS);
+                    if(data?.success) {
+                        const filteredData = zone
+                            ? data?.data.filter(item => item.zone === zone)
+                            : data?.data;
+                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "RENTAL"));
+                        setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "RENTAL"));
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading stored master price filters:", err);
+            }
+        };
+
+        loadStoredFilters();
+    }, []);
+
     const handleChange = async (selectedOption, field) => {
         if (field === 'serviceType') {
             const selectedServiceType = selectedOption.target.value;
         setServiceType(selectedServiceType);
+        if (selectedServiceType !== "DRIVER") {
+            setBookingType("");
+            setDriverPackageList([]);
+        }
         try {
             await fetchGeoData(selectedServiceType, parcelSubService, zone);
             if (selectedServiceType === 'DRIVER') {
-                const data = await ApiRequestUtils.get(API_ROUTES.PACKAGES_LIST);
-                if (data?.success) {
-                        const filteredData = zone
-                            ? data?.data.filter(item => item.zone === zone)
-                            : data?.data;
-                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "DRIVER"));
-                    setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "DRIVER"));
-                }
+                await fetchDriverPackageList(zone, "");
             } else if (selectedServiceType === 'RIDES') {
                 const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
                 if (data?.success) {
@@ -166,14 +288,7 @@ export function MasterPriceView() {
             setZone(selectedZone);
             try {
                 if (serviceType === 'DRIVER') {
-                    const data = await ApiRequestUtils.get(API_ROUTES.PACKAGES_LIST);
-                    if (data?.success) {
-                        const filteredData = selectedZone
-                            ? data?.data.filter(item => item.zone === selectedZone)
-                            : data?.data;
-                        setLocalPackageList(filteredData.filter(item => item.type === "Local" && item.serviceType === "DRIVER"));
-                        setOutstationPackageList(filteredData.filter(item => item.type === "Outstation" && item.serviceType === "DRIVER"));
-                    }
+                    await fetchDriverPackageList(selectedZone, bookingType);
                 } else if (serviceType === 'RIDES') {
                     const data = await ApiRequestUtils.get(API_ROUTES.RIDES_PRICE_TABLE_LIST);
                     if (data?.success) {
@@ -198,6 +313,12 @@ export function MasterPriceView() {
         } catch (err) {
             console.error("Error fetching subscription data:", err);
         }
+        } else if (field === 'bookingType') {
+            const selectedBookingType = selectedOption.target.value;
+            setBookingType(selectedBookingType);
+            if (serviceType === "DRIVER") {
+                await fetchDriverPackageList(zone, selectedBookingType);
+            }
         } else if (field === 'parcelSubServices') {
             const selectedValue = normalizeVehicleType(selectedOption?.value || "");
             setParcelSubService(selectedValue);
@@ -249,25 +370,30 @@ export function MasterPriceView() {
 
     const renderLocalPriceTable = () => {
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
                                         "Zone",
                                         "Service Type",
                                         "Trip Type",
-                                        "Package (Hrs)",
-                                        "Price",
+                                        "Booking Type",
+                                        "Base Hours",
+                                        "Price (Mini)",
+                                        "Price (Sedan)",
+                                        "Price (Muv)",
+                                        "Price (Suv)",
                                         // "Price (MUV)",
-                                        "Package KM",
-                                        "Additional Mins Price",
-                                        "Extra KM Price",
+                                        // "Package KM",
+                                        // "Additional Mins Price",
+                                        // "Additional Mins Charge",
+                                        // "Extra KM Price",
                                         "Free Extra (mins)",
-                                        "Waiting Charge",
+                                        "Waiting Charges Apply After",
                                         "Night Charge",
                                         "Cancellation Mins",
                                         "Cancellation Charge",
@@ -287,10 +413,10 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP, additionalMinCharge, extraKmPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
+                                {localPackageList.map(({ id, zone, serviceType, type, period, kilometer, priceMVP,priceSuv,priceSedan,bookingType, additionalMinCharge, extraKmPrice, extraPrice, freeExtraMinutes, waitingCharge, nightCharge, cancelCharge, dropPriceAbove, cancelMins, price }, key) => {
                                     const className = `py-3 px-5 ${key === localPackageList.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                                     return (
-                                        <tr key={id}>
+                                        <tr key={id}  className="whitespace-nowrap">
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {zone}
@@ -304,6 +430,11 @@ export function MasterPriceView() {
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {type}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {bookingType}
                                                 </Typography>
                                             </td>
                                             <td className='border-b border-blue-gray-50 py-3 px-5'>
@@ -324,26 +455,46 @@ export function MasterPriceView() {
                                                     {price}
                                                 </Typography>
                                             </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceSedan}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceMVP}
+                                                </Typography>
+                                            </td>
+                                             <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {priceSuv}
+                                                </Typography>
+                                            </td>
                                             {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {priceMVP}
                                                 </Typography>
                                             </td> */}
-                                            <td className={className}>
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {kilometer || "-"}
                                                 </Typography>
-                                            </td>
-                                            <td className={className}>
+                                            </td> */}
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {additionalMinCharge || "-"}
                                                 </Typography>
-                                            </td>
-                                            <td className={className}>
+                                            </td> */}
+                                             {/* <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                    {extraPrice || "-"}
+                                                </Typography>
+                                            </td> */}
+                                            {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {extraKmPrice || "-"}
                                                 </Typography>
-                                            </td>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {freeExtraMinutes || "-"}
@@ -396,22 +547,27 @@ export function MasterPriceView() {
         });
 
     return (
-        <div className='my-6'>
-            <h3 className="text-3xl font-bold mb-4 ml-2">Outstation</h3>
+        <div className='my-6 bg-white rounded-xl p-2'>
+            <h3 className="text-xl font-bold mb-4 ml-2">Outstation</h3>
             <Card>
                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                     <table className="w-full min-w-[640px] table-auto">
                         <thead>
-                            <tr>
+                            <tr className="whitespace-nowrap">
                                 {[
                                     "Zone",
                                     "Service Type",
                                     "Trip Type",
+                                    "Booking Type",
                                     "Base Hours",
-                                    "Base KM",
-                                    "Base Fare",
-                                    "Extra hour charge",
-                                    "Extra KM rate",
+                                    // "Base KM",
+                                    "Price (Mini)",
+                                    "Price (Sedan)",
+                                    "Price (Muv)",
+                                    "Price (Suv)",
+                                    // "Additional Mins Price",
+                                    // "Additional Mins Charge",
+                                    // "Extra KM rate",
                                     "Food Charges",
                                     "Night Charges",
                                     "Drop-only charge"
@@ -431,15 +587,15 @@ export function MasterPriceView() {
                             {filteredOutstationList.map((item, index) => {
                                 const { 
                                     id, zone, serviceType, type, period, extraCabType ,kilometer,  
-                                    dropPrice, price, additionalMinCharge, dropPriceAbove, 
-                                    nightCharge, extraKmPrice 
+                                    dropPrice, price, additionalMinCharge, dropPriceAbove, bookingType,
+                                    nightCharge, extraKmPrice, extraPrice,priceMVP, priceSuv, priceSedan 
                                 } = item;
 
                                 const isLast = index === filteredOutstationList.length - 1;
                                 const className = `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"}`;
 
                                 return (
-                                    <tr key={id}>
+                                    <tr key={id} className="whitespace-nowrap">
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {zone}
@@ -457,6 +613,13 @@ export function MasterPriceView() {
                                                 </Typography>
                                             </div>
                                         </td>
+                                         <td className={className}>
+                                            <div >
+                                                <Typography className="text-xs font-semibold text-blue-gray-900" >
+                                                    {bookingType}
+                                                </Typography>
+                                            </div>
+                                        </td>
                                         <td className={className}>
                                             <Link to={`/dashboard/finance/master-price/details/${id}`}>
                                                 <Typography variant="small" color="blue" className="font-semibold underline cursor-pointer" >
@@ -464,13 +627,13 @@ export function MasterPriceView() {
                                                 </Typography>
                                             </Link>
                                         </td>
-                                        <td className={className}>
+                                        {/* <td className={className}>
                                             <div >
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
                                                     {kilometer || '-'}
                                                 </Typography>
                                             </div>
-                                        </td>
+                                        </td> */}
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {price || '0'}
@@ -478,14 +641,34 @@ export function MasterPriceView() {
                                         </td>
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                {additionalMinCharge || '-'}
+                                                {priceSedan || '0'}
                                             </Typography>
                                         </td>
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                {extraKmPrice || '-'}
+                                                {priceMVP || '0'}
                                             </Typography>
                                         </td>
+                                        <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {priceSuv || '0'}
+                                            </Typography>
+                                        </td>
+                                        {/* <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {additionalMinCharge || '-'}
+                                            </Typography>
+                                        </td>
+                                         <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {extraPrice || '-'}
+                                            </Typography>
+                                        </td> */}
+                                        {/* <td className={className}>
+                                            <Typography className="text-xs font-semibold text-blue-gray-900">
+                                                {extraKmPrice || '-'}
+                                            </Typography>
+                                        </td> */}
                                         <td className={className}>
                                             <Typography className="text-xs font-semibold text-blue-gray-900">
                                                 {dropPriceAbove || '-'}
@@ -522,26 +705,75 @@ export function MasterPriceView() {
 };
 
     const renderRidesTable = () => {
+        const formatValue = (value) => value ?? "-";
+        const formatCategory = (value) => String(value || "-").replace(/_/g, " ");
+        const formatCarTypes = (carTypes) => Array.isArray(carTypes) && carTypes.length ? carTypes.join(", ") : "-";
+        const formatPeakHours = (peakHours) => {
+            if (!Array.isArray(peakHours) || !peakHours.length) return "-";
+
+            return peakHours
+                .map((peakHour) => {
+                    const start = peakHour.start || peakHour.from || peakHour.startTime || peakHour.fromTime || "-";
+                    const end = peakHour.end || peakHour.to || peakHour.endTime || peakHour.toTime || "-";
+                    return `${start} - ${end}`;
+                })
+                .join(", ");
+        };
+        const ridesCategoryRows = ridesData.flatMap((packageData) => {
+            const categoryPricings = Array.isArray(packageData.categoryPricings) && packageData.categoryPricings.length
+                ? packageData.categoryPricings
+                : [{
+                    id: `${packageData.id}-default`,
+                    packageId: packageData.id,
+                    category: packageData.rateParameter || "Default",
+                    carTypes: [],
+                    pricing: packageData,
+                }];
+
+            return categoryPricings.map((categoryPricing) => ({
+                packageId: packageData.id,
+                rowId: categoryPricing.id || `${packageData.id}-${categoryPricing.category}`,
+                zone: packageData.zone,
+                status: packageData.status,
+                category: categoryPricing.category,
+                carTypes: categoryPricing.carTypes,
+                pricing: categoryPricing.pricing || {},
+            }));
+        });
+        const ridesPackageGroups = Object.values(ridesCategoryRows.reduce((groups, row) => {
+            const packageKey = row.packageId || "-";
+            if (!groups[packageKey]) {
+                groups[packageKey] = { packageId: row.packageId, rows: [] };
+            }
+            groups[packageKey].rows.push(row);
+            return groups;
+        }, {}));
+
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Rides</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Rides</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
+                                        "Expand",
                                         "Zone",
-                                        "Rate Parameter",
-                                        'Base KM',
-                                        "Base Fare (Mini)",
-                                        "Base Fare (Sedan)",
-                                        "Base Fare (SUV)",
-                                        "Base Fare (MUV)",
-                                        "Rate Per KM (Mini,SUV,Sedan)",
-                                        "Rate Per KM (MUV)",
-                                        "Rate Per Min",
-                                        "Surcharge Percentage",
+                                        "Category",
+                                        "Car Types",
+                                        "Base KM",
+                                        "Base Fare",
+                                        "KM Price",
+                                        "Additional Min",
+                                        "Free Extra Mins",
+                                        "Waiting Mins",
+                                        "Waiting Charge",
+                                        "Night Hours",
+                                        "Night Charge",
+                                        "Cancel Mins",
+                                        "Cancel Charge",
+                                        "Peak Hours",
                                         "Status"
                                     ].map((el, index) => (
                                         <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
@@ -556,86 +788,109 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {ridesData.map(({
-                                    id,
-                                    zone,
-                                    baseKm,
-                                    baseFare,
-                                    baseFareSedan, 
-                                    baseFareSuv,
-                                    baseFareMVP,
-                                    kilometerPrice,
-                                    kilometerPriceMVP,
-                                    rateParameter,
-                                    minCharge,
-                                    surChargePercentage,
-                                    status,
-                                }, key) => {
-                                    const className = `py-3 px-5 ${key === ridesData?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+                                {ridesPackageGroups.map((group) => {
+                                    const expanded = isPackageExpanded("rides", group.packageId);
+                                    const visibleRows = expanded ? group.rows : group.rows.slice(0, 1);
 
                                     return (
-                                        <tr key={id}>
+                                    <Fragment key={`rides-package-${group.packageId}`}>
+                                        {visibleRows.map(({ packageId, rowId, zone, status, category, carTypes, pricing }, key) => {
+                                            const className = `py-3 px-5 ${key === visibleRows?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+
+                                            return (
+                                                <tr key={rowId} className="whitespace-nowrap">
+                                            <td className={className}>
+                                                {key === 0 ? (
+                                                    <button type="button" onClick={() => togglePackageExpand("rides", packageId)}>
+                                                        <img
+                                                            src={EXPAND_ICON_PATH}
+                                                            alt={expanded ? "Collapse" : "Expand"}
+                                                            className={`h-4 w-4 transition-transform ${expanded ? "rotate-90" : ""}`}
+                                                        />
+                                                    </button>
+                                                ) : null}
+                                            </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {zone}
+                                                    {formatValue(zone)}
                                                 </Typography>
                                             </td>
                                             <td className='border-b border-blue-gray-50 py-3 px-5'>
                                                 <div className="flex items-center gap-4">
-                                                    <Link to={`/dashboard/finance/master-price/rides-details/${id}`}>
+                                                    <Link to={`/dashboard/finance/master-price/rides-details/${packageId}`}>
                                                         <Typography
                                                             variant="small"
                                                             color="blue"
                                                             className="font-semibold underline cursor-pointer"
                                                         >
-                                                            {rateParameter}
+                                                            {formatCategory(category)}
                                                         </Typography>
                                                     </Link>
                                                 </div>
                                             </td>
-                                             <td className={className}>
+                                            <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseKm}
+                                                    {formatCarTypes(carTypes)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFare}
-                                                </Typography>
-                                            </td>
-                                              <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFareSedan}
-                                                </Typography>
-                                            </td>
-                                              <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFareSuv}
+                                                    {formatValue(pricing.baseKm)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFareMVP}
+                                                    {formatValue(pricing.baseFare)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerPrice}
+                                                    {formatValue(pricing.kilometerPrice)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerPriceMVP}
+                                                    {formatValue(pricing.additionalMinCharge)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {minCharge}
+                                                    {formatValue(pricing.freeExtraMinutes)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {surChargePercentage}%
+                                                    {formatValue(pricing.waitingMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.waitingCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {`${formatValue(pricing.nightHoursFrom)} - ${formatValue(pricing.nightHoursTo)}`}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.nightCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatPeakHours(pricing.peakHours)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
@@ -643,7 +898,10 @@ export function MasterPriceView() {
                                                     {status == 1 ? 'Active' : 'InActive'}
                                                 </Typography>
                                             </td>
-                                        </tr>
+                                                </tr>
+                                            );
+                                        })}
+                                    </Fragment>
                                     );
                                 })}
                             </tbody>
@@ -655,29 +913,87 @@ export function MasterPriceView() {
     };
 
     const renderLocalRentalsTable = () => {
+        const formatValue = (value) => value ?? "-";
+        const formatCategory = (value) => String(value || "-").replace(/_/g, " ");
+        const formatCarTypes = (carTypes) => Array.isArray(carTypes) && carTypes.length ? carTypes.join(", ") : "-";
+        const formatPeakHours = (peakHours) => {
+            if (!Array.isArray(peakHours) || !peakHours.length) return "-";
+
+            return peakHours
+                .map((peakHour) => {
+                    const start = peakHour.start || peakHour.from || peakHour.startTime || peakHour.fromTime || "-";
+                    const end = peakHour.end || peakHour.to || peakHour.endTime || peakHour.toTime || "-";
+                    return `${start} - ${end}`;
+                })
+                .join(", ");
+        };
+        const formatStatus = (status) => status === 1 || status === "ACTIVE" ? "Active" : "InActive";
+        const localRentalRows = localPackageList.flatMap((packageData) => {
+            const categoryPricings = Array.isArray(packageData.categoryPricings) && packageData.categoryPricings.length
+                ? packageData.categoryPricings
+                : [{
+                    id: `${packageData.id}-default`,
+                    packageId: packageData.id,
+                    category: packageData.type || "Local",
+                    carTypes: packageData.carType ? [packageData.carType] : [],
+                    pricing: packageData,
+                }];
+
+            return categoryPricings.map((categoryPricing) => {
+                const pricing = categoryPricing.pricing || {};
+                return {
+                    packageId: packageData.id,
+                    rowId: categoryPricing.id || `${packageData.id}-${categoryPricing.category}`,
+                    zone: packageData.zone,
+                    period: packageData.period,
+                    status: categoryPricing.status || packageData.status,
+                    category: categoryPricing.category,
+                    carTypes: categoryPricing.carTypes,
+                    pricing: pricing.common || pricing,
+                    dropOnly: pricing.DROP_ONLY || {},
+                    roundTrip: pricing.ROUND_TRIP || {},
+                };
+            });
+        });
+        const localRentalGroups = Object.values(localRentalRows.reduce((groups, row) => {
+            const periodKey = formatValue(row.period);
+            if (!groups[periodKey]) {
+                groups[periodKey] = { period: row.period, rows: [] };
+            }
+            groups[periodKey].rows.push(row);
+            return groups;
+        }, {}));
+
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
+                                        "Expand",
                                         "Zone",
-                                        "Type",
+                                        "Category",
+                                        "Car Types",
                                         "Package",
-                                        'Base KM',
+                                        "Price",
+                                        "Base KM",
                                         "Base Fare",
                                         "Kilometer",
-                                        "Kilometer Rate",
-                                        "Additional Mins",
-                                        "Additional KM Rate",
+                                        "Extra KM Price",
+                                        // "AC KM Price",
+                                        "Additional Min",
+                                        "Free Extra Mins",
+                                        "Waiting Mins",
+                                        "Waiting Charge",
+                                        "Night Hours",
                                         "Night Charge",
-                                        // "Toll Charge",
-                                        // "Driver Charge",
+                                        "Driver Charge",
                                         "Cancellation Mins",
                                         "Cancel Charge",
+                                        // "Peak Hours",
                                         "Status"
                                     ].map((el, index) => (
                                         <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
@@ -692,113 +1008,149 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {localPackageList.map(({
-                                    id,
-                                    zone,
-                                    type,
-                                    carType,
-                                    baseKm,
-                                    baseFare,
-                                    kilometerPrice,
-                                    kilometer,
-                                    additionalMinCharge,
-                                    nightCharge,
-                                    // driverCharge,
-                                    // tollCharge,
-                                    period,
-                                    extraKmPrice,
-                                    cancelMins,
-                                    cancelCharge,
-                                    status
-                                }, key) => {
-                                    const className = `py-3 px-5 ${key === localPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+                                {localRentalGroups.map((group) => {
+                                    const expanded = isRentalPeriodExpanded("local", group.period);
+                                    const visibleRows = expanded ? group.rows : group.rows.slice(0, 1);
 
                                     return (
-                                        <tr key={id}>
+                                    <Fragment key={`local-rental-${formatValue(group.period)}`}>
+                                        {visibleRows.map(({ packageId, rowId, zone, period, status, category, carTypes, pricing, dropOnly }, key) => {
+                                            const className = `py-3 px-5 ${key === visibleRows?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+
+                                            return (
+                                                <tr key={rowId} className="whitespace-nowrap">
+                                            <td className={className}>
+                                                {key === 0 ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleRentalPeriod("local", group.period)}
+                                                        className="text-sm font-semibold text-blue-700 underline"
+                                                    >
+                                                        <img
+                                                            src={EXPAND_ICON_PATH}
+                                                            alt={expanded ? "Collapse" : "Expand"}
+                                                            className={`h-4 w-4 transition-transform ${expanded ? "rotate-90" : ""}`}
+                                                        />
+                                                    </button>
+                                                ) : null}
+                                            </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {zone}
+                                                    {formatValue(zone)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {type.toUpperCase()}
+                                                    {formatCategory(category)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatCarTypes(carTypes)}
                                                 </Typography>
                                             </td>
                                             <td className='border-b border-blue-gray-50 py-3 px-5'>
                                                 <div className="flex items-center gap-4">
-                                                    <Link to={`/dashboard/finance/master-price/rentals-details/${id}`}>
+                                                    <Link to={`/dashboard/finance/master-price/rentals-details/${packageId}`}>
                                                         <Typography
                                                             variant="small"
                                                             color="blue"
                                                             className="font-semibold underline cursor-pointer"
                                                         >
-                                                            {period}
+                                                            {formatValue(period)}
                                                         </Typography>
                                                     </Link>
                                                 </div>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseKm}
+                                                    {formatValue(pricing.price)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFare}
+                                                    {formatValue(pricing.baseKm)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometer}
+                                                    {formatValue(pricing.baseFare)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerPrice}
+                                                    {formatValue(pricing.kilometer)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {additionalMinCharge}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {extraKmPrice}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {nightCharge}
+                                                    {formatValue(pricing.kilometerPrice ?? dropOnly.NON_AC?.kilometerPrice)}
                                                 </Typography>
                                             </td>
                                             {/* <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {tollCharge}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {driverCharge}
+                                                    {formatValue(dropOnly.AC?.acKilometerPrice)}
                                                 </Typography>
                                             </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {cancelMins}
+                                                    {formatValue(pricing.additionalMinCharge)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {cancelCharge}
+                                                    {formatValue(pricing.freeExtraMinutes)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {status == 1 ? 'Active' : 'InActive'}
+                                                    {formatValue(pricing.waitingMins)}
                                                 </Typography>
                                             </td>
-                                        </tr>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.waitingCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {`${formatValue(pricing.nightHoursFrom)} - ${formatValue(pricing.nightHoursTo)}`}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.nightCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.driverCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelCharge)}
+                                                </Typography>
+                                            </td>
+                                            {/* <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatPeakHours(pricing.peakHours)}
+                                                </Typography>
+                                            </td> */}
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatStatus(status)}
+                                                </Typography>
+                                            </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </Fragment>
                                     );
                                 })}
                             </tbody>
@@ -809,41 +1161,96 @@ export function MasterPriceView() {
         );
     };
     const renderOutstationRentalsTable = () => {
+        const formatValue = (value) => value ?? "-";
+        const formatCategory = (value) => String(value || "-").replace(/_/g, " ");
+        const formatCarTypes = (carTypes) => Array.isArray(carTypes) && carTypes.length ? carTypes.join(", ") : "-";
+        const formatPeakHours = (peakHours) => {
+            if (!Array.isArray(peakHours) || !peakHours.length) return "-";
+
+            return peakHours
+                .map((peakHour) => {
+                    const start = peakHour.start || peakHour.from || peakHour.startTime || peakHour.fromTime || "-";
+                    const end = peakHour.end || peakHour.to || peakHour.endTime || peakHour.toTime || "-";
+                    return `${start} - ${end}`;
+                })
+                .join(", ");
+        };
+        const formatStatus = (status) => status === 1 || status === "ACTIVE" ? "Active" : "InActive";
+        const outstationRentalRows = outstationPackageList.flatMap((packageData) => {
+            const categoryPricings = Array.isArray(packageData.categoryPricings) && packageData.categoryPricings.length
+                ? packageData.categoryPricings
+                : [{
+                    id: `${packageData.id}-default`,
+                    packageId: packageData.id,
+                    category: packageData.type || "Outstation",
+                    carTypes: packageData.carType ? [packageData.carType] : [],
+                    pricing: packageData,
+                }];
+
+            return categoryPricings.map((categoryPricing) => {
+                const pricing = categoryPricing.pricing || {};
+                return {
+                    packageId: packageData.id,
+                    rowId: categoryPricing.id || `${packageData.id}-${categoryPricing.category}`,
+                    zone: packageData.zone,
+                    period: packageData.period,
+                    status: categoryPricing.status || packageData.status,
+                    category: categoryPricing.category,
+                    carTypes: categoryPricing.carTypes,
+                    common: pricing.common || pricing,
+                    dropOnly: pricing.DROP_ONLY || {},
+                    roundTrip: pricing.ROUND_TRIP || {},
+                };
+            });
+        });
+        const outstationRentalGroups = Object.values(outstationRentalRows.reduce((groups, row) => {
+            const periodKey = formatValue(row.period);
+            if (!groups[periodKey]) {
+                groups[periodKey] = { period: row.period, rows: [] };
+            }
+            groups[periodKey].rows.push(row);
+            return groups;
+        }, {}));
+
         return (
-            <div className='my-2'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">OutStation</h3>
+            <div className='my-2 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">OutStation</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
+                                        "Expand",
                                         "Zone",
-                                        "Type",
-                                        "Package",
+                                        "Category",
+                                        "Car Types",
+                                        // "Package",
                                         "Base Km",
                                         "Base Fare",
-                                        // "Kilometer",
-                                        // "Hours Limit",
-                                        "kilometer Round Price",
-                                        "kilometer Round Price MVP",
-                                        "kilometer Round Price Suv",
-                                        "kilometer Round Price Sedan",
-                                        "Kilometer Rate",
-                                        "Additional Mins",
-                                        "Additional KM Rate",
+                                        "Kilometer",
+                                        "Drop KM Price",
+                                        "Drop Extra KM",
+                                        "Drop AC KM",
+                                        "Drop AC Extra KM",
+                                        "Round KM Price",
+                                        "Round Extra KM",
+                                        "Round AC KM",
+                                        "Round AC Extra KM",
+                                        "Additional Min",
+                                        "Free Extra Mins",
+                                        "Waiting Mins",
+                                        "Waiting Charge",
+                                        "Night Hours",
                                         "Night Charge",
-                                        // "Toll Charge",
                                         "Driver Charge",
                                         "Cancellation Mins",
                                         "Cancel Charge",
+                                        "Peak Hours",
                                         "Status"
                                     ].map((el, index) => (
                                         <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
-                                            <Typography
-                                                variant="small"
-                                                className="text-[11px] font-bold uppercase text-white"
-                                            >
+                                            <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
                                                 {el}
                                             </Typography>
                                         </th>
@@ -851,143 +1258,72 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {outstationPackageList.map(({
-                                    id,
-                                    zone,
-                                    type,
-                                    carType,
-                                    baseKm,
-                                    baseFare,
-                                    kilometerPrice,
-                                    // kilometer,
-                                    // hourLimit,
-                                    kilometerRoundPrice,
-                                    kilometerRoundPriceMVP,
-                                    kilometerRoundPriceSuv,
-                                    kilometerRoundPriceSedan,
-                                    additionalMinCharge,
-                                    nightCharge,
-                                    driverCharge,
-                                    // tollCharge,
-                                    period,
-                                    extraKmPrice,
-                                    cancelMins,
-                                    cancelCharge,
-                                    status
-                                }, key) => {
-                                    const className = `py-3 px-5 ${key === outstationPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+                                {outstationRentalGroups.map((group) => {
+                                    const expanded = isRentalPeriodExpanded("outstation", group.period);
+                                    const visibleRows = expanded ? group.rows : group.rows.slice(0, 1);
 
                                     return (
-                                        <tr key={id}>
+                                    <Fragment key={`outstation-rental-${formatValue(group.period)}`}>
+                                        {visibleRows.map(({ packageId, rowId, zone, period, status, category, carTypes, common, dropOnly, roundTrip }, key) => {
+                                            const className = `py-3 px-5 ${key === visibleRows?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+
+                                            return (
+                                                <tr key={rowId} className="whitespace-nowrap">
                                             <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-900">
-                                                    {zone}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {type.toUpperCase()}
-                                                </Typography>
-                                            </td>
-                                            <td className='border-b border-blue-gray-50 py-3 px-5'>
-                                                <div className="flex items-center gap-4">
-                                                    <Link to={`/dashboard/finance/master-price/rentals-details/${id}`}>
-                                                        <Typography
-                                                            variant="small"
-                                                            color="blue"
-                                                            className="font-semibold underline cursor-pointer"
-                                                        >
-                                                            {period}
-                                                        </Typography>
-                                                    </Link>
-                                                </div>
-                                            </td>
-                                             <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseKm}
-                                                </Typography>
+                                                {key === 0 ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleRentalPeriod("outstation", group.period)}
+                                                        className="text-sm font-semibold text-blue-700 underline"
+                                                    >
+                                                        <img
+                                                            src={EXPAND_ICON_PATH}
+                                                            alt={expanded ? "Collapse" : "Expand"}
+                                                            className={`h-4 w-4 transition-transform ${expanded ? "rotate-90" : ""}`}
+                                                        />
+                                                    </button>
+                                                ) : null}
                                             </td>
                                             <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFare}
-                                                </Typography>
+                                                <Link to={`/dashboard/finance/master-price/rentals-details/${packageId}`}>
+                                                <Typography variant="small" color="blue" className="font-semibold underline cursor-pointer">{formatValue(zone)}</Typography>
+                                                </Link>
                                             </td>
-                                            {/* <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometer}
-                                                </Typography>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatCategory(category)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatCarTypes(carTypes)}</Typography></td>
+                                            {/* <td className='border-b border-blue-gray-50 py-3 px-5'>
+                                                <Link to={`/dashboard/finance/master-price/rentals-details/${packageId}`}>
+                                                    <Typography variant="small" color="blue" className="font-semibold underline cursor-pointer">
+                                                        {formatValue(period)}
+                                                    </Typography>
+                                                </Link>
                                             </td> */}
-                                            {/* <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {hourLimit}
-                                                </Typography>
-                                            </td> */}
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerPrice}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerRoundPrice}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerRoundPriceMVP}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerRoundPriceSuv}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerRoundPriceSedan}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {additionalMinCharge}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {extraKmPrice}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {nightCharge}
-                                                </Typography>
-                                            </td>
-                                            {/* <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {tollCharge}
-                                                </Typography>
-                                            </td> */}
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {driverCharge}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {cancelMins}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {cancelCharge}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {status == 1 ? 'Active' : 'InActive'}
-                                                </Typography>
-                                            </td>
-                                        </tr>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.baseKm)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.baseFare)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.kilometer)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(dropOnly.NON_AC?.kilometerPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(dropOnly.NON_AC?.extraKilometerPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(dropOnly.AC?.acKilometerPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(dropOnly.AC?.acExtraKilometerPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(roundTrip.NON_AC?.kilometerRoundPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(roundTrip.NON_AC?.extraKilometerRoundPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(roundTrip.AC?.acKilometerRoundPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(roundTrip.AC?.acExtraKilometerRoundPrice)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.additionalMinCharge)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.freeExtraMinutes)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.waitingMins)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.waitingCharge)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{`${formatValue(common.nightHoursFrom)} - ${formatValue(common.nightHoursTo)}`}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.nightCharge)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.driverCharge)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.cancelMins)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatValue(common.cancelCharge)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatPeakHours(common.peakHours)}</Typography></td>
+                                            <td className={className}><Typography className="text-xs font-semibold text-blue-gray-600">{formatStatus(status)}</Typography></td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </Fragment>
                                     );
                                 })}
                             </tbody>
@@ -1001,13 +1337,13 @@ export function MasterPriceView() {
         const hideSubZoneColumn = false;
         const parcelTableHeaders = ["Zone", "Sub Zone", "Base Fare", "Base Km", "Kilometer Price", "Actions"];
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {parcelTableHeaders.map((el, index) => (
                                         <th key={index} className={`border-b border-blue-gray-50 py-3 px-5 text-left ${ColorStyles.bgColor}`}>
                                             <Typography
@@ -1040,20 +1376,77 @@ export function MasterPriceView() {
         );
     };
         const LocalAutoTable = () => {
+        const formatValue = (value) => value ?? "-";
+        const formatCategory = (value) => String(value || "-").replace(/_/g, " ");
+        const formatCarTypes = (carTypes) => Array.isArray(carTypes) && carTypes.length ? carTypes.join(", ") : "-";
+        const formatPeakHours = (peakHours) => {
+            if (!Array.isArray(peakHours) || !peakHours.length) return "-";
+
+            return peakHours
+                .map((peakHour) => {
+                    const start = peakHour.start || peakHour.from || peakHour.startTime || peakHour.fromTime || "-";
+                    const end = peakHour.end || peakHour.to || peakHour.endTime || peakHour.toTime || "-";
+                    return `${start} - ${end}`;
+                })
+                .join(", ");
+        };
+        const formatStatus = (status) => status === 1 || status === "ACTIVE" ? "Active" : "InActive";
+        const autoCategoryRows = autoLocalPackageList.flatMap((packageData) => {
+            const categoryPricings = Array.isArray(packageData.categoryPricings) && packageData.categoryPricings.length
+                ? packageData.categoryPricings
+                : [{
+                    id: `${packageData.id}-default`,
+                    packageId: packageData.id,
+                    category: packageData.type || "Auto",
+                    carTypes: ["Auto"],
+                    pricing: packageData,
+                }];
+
+            return categoryPricings.map((categoryPricing) => ({
+                packageId: packageData.id,
+                rowId: categoryPricing.id || `${packageData.id}-${categoryPricing.category}`,
+                zone: packageData.zone,
+                status: categoryPricing.status || packageData.status,
+                category: categoryPricing.category,
+                carTypes: categoryPricing.carTypes,
+                pricing: categoryPricing.pricing || {},
+            }));
+        });
+        const autoPackageGroups = Object.values(autoCategoryRows.reduce((groups, row) => {
+            const packageKey = row.packageId || "-";
+            if (!groups[packageKey]) {
+                groups[packageKey] = { packageId: row.packageId, rows: [] };
+            }
+            groups[packageKey].rows.push(row);
+            return groups;
+        }, {}));
+
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
-                                        "zone",
-                                        "Type",
+                                        "Expand",
+                                        "Zone",
+                                        "Category",
+                                        "Vehicle Type",
+                                        "Base KM",
                                         "Base Fare",
-                                        "base Km",
-                                        "Kilometer Rate",
+                                        "KM Price",
+                                        "Extra KM Price",
+                                        "Additional Min",
+                                        "Free Extra Mins",
+                                        "Waiting Mins",
+                                        "Waiting Charge",
+                                        "Night Hours",
+                                        "Night Charge",
+                                        "Cancel Mins",
+                                        "Cancel Charge",
+                                        "Peak Hours",
                                         "Status",
                                         "Actions"
                                     ].map((el, index) => (
@@ -1069,59 +1462,124 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {autoLocalPackageList.map(({
-                                    zone,
-                                    id,
-                                    type,
-                                    baseFare,
-                                    baseKm,
-                                    kilometerPrice,
-                                    status
-                                }, key) => {
-                                    const className = `py-3 px-5 ${key === autoLocalPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+                                {autoPackageGroups.map((group) => {
+                                    const expanded = isPackageExpanded("auto", group.packageId);
+                                    const visibleRows = expanded ? group.rows : group.rows.slice(0, 1);
 
                                     return (
-                                        <tr key={id}>
+                                    <Fragment key={`auto-package-${group.packageId}`}>
+                                        {visibleRows.map(({ packageId, rowId, zone, status, category, carTypes, pricing }, key) => {
+                                            const className = `py-3 px-5 ${key === visibleRows?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+
+                                            return (
+                                                <tr key={rowId} className="whitespace-nowrap">
+                                            <td className={className}>
+                                                {key === 0 ? (
+                                                    <button type="button" onClick={() => togglePackageExpand("auto", packageId)}>
+                                                        <img
+                                                            src={EXPAND_ICON_PATH}
+                                                            alt={expanded ? "Collapse" : "Expand"}
+                                                            className={`h-4 w-4 transition-transform ${expanded ? "rotate-90" : ""}`}
+                                                        />
+                                                    </button>
+                                                ) : null}
+                                            </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {zone}
+                                                    {formatValue(zone)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    <Link to={`/dashboard/finance/master-price/auto-edit/${id}`} className="cursor-pointer underline text-blue-600">
-                                                        {type.toUpperCase()}
+                                                    <Link to={`/dashboard/finance/master-price/auto-edit/${packageId}`} className="cursor-pointer underline text-blue-600">
+                                                        {formatCategory(category)}
                                                     </Link>
                                                 </Typography>
                                             </td>
-                                            
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFare}
+                                                    {formatCarTypes(carTypes)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseKm}
+                                                    {formatValue(pricing.baseKm)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerPrice}
+                                                    {formatValue(pricing.baseFare)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {status == 1 ? 'Active' : 'InActive'}
+                                                    {formatValue(pricing.kilometerPrice)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
-                                                <Link to={`/dashboard/finance/master-price/auto-edit/${id}`} className={`px-3 py-1 rounded-lg inline-block ${ColorStyles.editButton}`}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.extraKmPrice)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.additionalMinCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.freeExtraMinutes)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.waitingMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.waitingCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {`${formatValue(pricing.nightHoursFrom)} - ${formatValue(pricing.nightHoursTo)}`}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.nightCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatPeakHours(pricing.peakHours)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatStatus(status)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Link to={`/dashboard/finance/master-price/auto-edit/${packageId}`} className={`px-3 py-1 rounded-lg inline-block ${ColorStyles.editButton}`}>
                                                     Edit
                                                 </Link>
                                             </td>
-                                        </tr>
-                                        
+                                                </tr>
+                                            );
+                                        })}
+                                    </Fragment>
                                     );
                                 })}
                             </tbody>
@@ -1132,20 +1590,78 @@ export function MasterPriceView() {
         );
     };
     const LocalBikeTable = () => {
+        const formatValue = (value) => value ?? "-";
+        const formatCategory = (value) => String(value || "-").replace(/_/g, " ");
+        const formatCarTypes = (carTypes) => Array.isArray(carTypes) && carTypes.length ? carTypes.join(", ") : "-";
+        const formatPeakHours = (peakHours) => {
+            if (!Array.isArray(peakHours) || !peakHours.length) return "-";
+
+            return peakHours
+                .map((peakHour) => {
+                    const start = peakHour.start || peakHour.from || peakHour.startTime || peakHour.fromTime || "-";
+                    const end = peakHour.end || peakHour.to || peakHour.endTime || peakHour.toTime || "-";
+                    return `${start} - ${end}`;
+                })
+                .join(", ");
+        };
+        const formatStatus = (status) => status === 1 || status === "ACTIVE" ? "Active" : "InActive";
+        const bikeCategoryRows = bikeLocalPackageList.flatMap((packageData) => {
+            const categoryPricings = Array.isArray(packageData.categoryPricings) && packageData.categoryPricings.length
+                ? packageData.categoryPricings
+                : [{
+                    id: `${packageData.id}-default`,
+                    packageId: packageData.id,
+                    category: packageData.type || "Bike",
+                    carTypes: ["Bike"],
+                    pricing: packageData,
+                }];
+
+            return categoryPricings.map((categoryPricing) => ({
+                packageId: packageData.id,
+                rowId: categoryPricing.id || `${packageData.id}-${categoryPricing.category}`,
+                zone: packageData.zone,
+                status: categoryPricing.status || packageData.status,
+                category: categoryPricing.category,
+                carTypes: categoryPricing.carTypes,
+                pricing: categoryPricing.pricing || {},
+            }));
+        });
+        const bikePackageGroups = Object.values(bikeCategoryRows.reduce((groups, row) => {
+            const packageKey = row.packageId || "-";
+            if (!groups[packageKey]) {
+                groups[packageKey] = { packageId: row.packageId, rows: [] };
+            }
+            groups[packageKey].rows.push(row);
+            return groups;
+        }, {}));
+
         return (
-            <div className='my-6'>
-                <h3 className="text-3xl font-bold mb-4 ml-2">Local</h3>
+            <div className='my-6 bg-white rounded-xl p-2'>
+                <h3 className="text-xl font-bold mb-4 ml-2">Local</h3>
                 <Card>
                     <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 rounded-2xl">
                         <table className="w-full min-w-[640px] table-auto">
                             <thead>
-                                <tr>
+                                <tr className="whitespace-nowrap">
                                     {[
-                                        "zone",
-                                        "Type",
+                                        "Expand",
+                                        "Zone",
+                                        "Category",
+                                        // "Vehicle Type",
+                                        "Base KM",
                                         "Base Fare",
-                                        "base Km",
-                                        "Kilometer Rate",
+                                        "KM Price",
+                                        "Extra KM Price",
+                                        "Extra Price",
+                                        "Additional Min",
+                                        "Free Extra Mins",
+                                        "Waiting Mins",
+                                        "Waiting Charge",
+                                        "Night Hours",
+                                        "Night Charge",
+                                        "Cancel Mins",
+                                        "Cancel Charge",
+                                        "Peak Hours",
                                         "Status",
                                         "Actions"
                                     ].map((el, index) => (
@@ -1161,59 +1677,129 @@ export function MasterPriceView() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {bikeLocalPackageList.map(({
-                                    zone,
-                                    id,
-                                    type,
-                                    baseFare,
-                                    baseKm,
-                                    kilometerPrice,
-                                    status
-                                }, key) => {
-                                    const className = `py-3 px-5 ${key === bikeLocalPackageList?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+                                {bikePackageGroups.map((group) => {
+                                    const expanded = isPackageExpanded("bike", group.packageId);
+                                    const visibleRows = expanded ? group.rows : group.rows.slice(0, 1);
 
                                     return (
-                                        <tr key={id}>
+                                    <Fragment key={`bike-package-${group.packageId}`}>
+                                        {visibleRows.map(({ packageId, rowId, zone, status, category, carTypes, pricing }, key) => {
+                                            const className = `py-3 px-5 ${key === visibleRows?.length - 1 ? "" : "border-b border-blue-gray-50"}`;
+
+                                            return (
+                                                <tr key={rowId} className="whitespace-nowrap">
+                                            <td className={className}>
+                                                {key === 0 ? (
+                                                    <button type="button" onClick={() => togglePackageExpand("bike", packageId)}>
+                                                        <img
+                                                            src={EXPAND_ICON_PATH}
+                                                            alt={expanded ? "Collapse" : "Expand"}
+                                                            className={`h-4 w-4 transition-transform ${expanded ? "rotate-90" : ""}`}
+                                                        />
+                                                    </button>
+                                                ) : null}
+                                            </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {zone}
+                                                    {formatValue(zone)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    <Link to={`/dashboard/finance/master-price/bike-edit/${id}`} className="cursor-pointer underline text-blue-600">
-                                                        {type.toUpperCase()}
+                                                    <Link to={`/dashboard/finance/master-price/bike-edit/${packageId}`} className="cursor-pointer underline text-blue-600">
+                                                        {formatCategory(category)}
                                                     </Link>
                                                 </Typography>
                                             </td>
-                                            
+                                            {/* <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatCarTypes(carTypes)}
+                                                </Typography>
+                                            </td> */}
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseFare}
+                                                    {formatValue(pricing.baseKm)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {baseKm}
+                                                    {formatValue(pricing.baseFare)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {kilometerPrice}
+                                                    {formatValue(pricing.kilometerPrice)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {status == 1 ? 'Active' : 'InActive'}
+                                                    {formatValue(pricing.extraKmPrice)}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
-                                                <Link to={`/dashboard/finance/master-price/bike-edit/${id}`} className={`px-3 py-1 rounded-lg inline-block ${ColorStyles.editButton}`}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.extraPrice)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.additionalMinCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.freeExtraMinutes)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.waitingMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.waitingCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {`${formatValue(pricing.nightHoursFrom)} - ${formatValue(pricing.nightHoursTo)}`}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.nightCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelMins)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatValue(pricing.cancelCharge)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatPeakHours(pricing.peakHours)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Typography className="text-xs font-semibold text-blue-gray-600">
+                                                    {formatStatus(status)}
+                                                </Typography>
+                                            </td>
+                                            <td className={className}>
+                                                <Link to={`/dashboard/finance/master-price/bike-edit/${packageId}`} className={`px-3 py-1 rounded-lg inline-block ${ColorStyles.editButton}`}>
                                                     Edit
                                                 </Link>
                                             </td>
-                                        </tr>
-                                        
+                                                </tr>
+                                            );
+                                        })}
+                                    </Fragment>
                                     );
                                 })}
                             </tbody>
@@ -1226,7 +1812,7 @@ export function MasterPriceView() {
    
     return (
         <>
-            <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
+            <div className="p-4 border bg-white border-gray-300 rounded-xl shadow-sm">
                 <div className="flex items-center justify-between">
                     <div className="relative flex-grow max-w-[860px]">
                         <div className="p-4 flex flex-row flex-wrap gap-5">
@@ -1259,6 +1845,20 @@ export function MasterPriceView() {
                                 </select>
                                 {serviceType === "" && <div className="text-red-500 text-sm mt-1">Please select a service type</div>}
                             </div>
+                            {serviceType === "DRIVER" && (
+                                <div className="flex flex-col">
+                                    <label className="text-base font-medium text-gray-700">Select Booking Type:</label>
+                                    <select
+                                        value={bookingType}
+                                        onChange={(e) => handleChange(e, 'bookingType')}
+                                        className="p-2 w-[200px] rounded-lg border-2 border-gray-300"
+                                    >
+                                        <option value="">All Booking Types</option>
+                                        <option value="ROUND TRIP">ROUND TRIP</option>
+                                        <option value="DROP ONLY">DROP ONLY</option>
+                                    </select>
+                                </div>
+                            )}
                             {serviceType === "PARCEL" && (
                                 <div className="flex flex-col">
                                     <label className="text-base font-medium text-gray-700">Parcel Sub Services:</label>

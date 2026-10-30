@@ -37,6 +37,12 @@ function DriverIncentiveComponentEditor({
       : isBikePartnerType
         ? [{ value: "BIKE", label: "Bike" }]
         : SERVICE_TYPE_OPTIONS_BY_CODE[form.code] || [{ value: "RIDES", label: "Rides" }];
+  const cabServiceTypeOptions = serviceTypeOptions.filter(
+    (option) => !["AUTO", "BIKE", "PARCEL"].includes(option.value)
+  );
+  const visibleServiceTypeOptions = String(form.partnerType || "").trim().toUpperCase() === "CAB"
+    ? cabServiceTypeOptions
+    : serviceTypeOptions;
   const componentTitle = componentTitleMap[normalizedCode] || form.code || "-";
 
   return (
@@ -183,7 +189,7 @@ function DriverIncentiveComponentEditor({
                   className="w-full rounded-md border border-blue-gray-200 px-2 py-2 text-xs"
                   disabled={isAutoPartner || isBikePartnerType || isParcelPartnerType}
                 >
-                  {withCurrentOption(serviceTypeOptions, rule.serviceType).map((serviceTypeOption) => (
+                  {withCurrentOption(visibleServiceTypeOptions, rule.serviceType).map((serviceTypeOption) => (
                     <option
                       key={`${form.code}-service-${getOptionValue(serviceTypeOption)}`}
                       value={getOptionValue(serviceTypeOption)}

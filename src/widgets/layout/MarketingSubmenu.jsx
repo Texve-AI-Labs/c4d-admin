@@ -27,6 +27,10 @@ function MarketingSubmenu({ miniSidenav }) {
       );
     }
 
+    if (label === "External Promotions") {
+      return pathname.startsWith("/dashboard/vendors/external-promotions");
+    }
+
     if (label === "Dynamic Text") {
       return (
         pathname.startsWith("/dashboard/vendors/dynamic-text") ||
@@ -50,6 +54,7 @@ function MarketingSubmenu({ miniSidenav }) {
         { label: "Daily push notification", path: "/dashboard/vendors/notificationList", icon: "/img/push_notification.png" },
         { label: "Dynamic Text", path: "/dashboard/vendors/dynamic-text", icon: "/img/push_notification.png" },
         { label: "Banner Image", path: "/dashboard/user/bannerimgView", icon: "/img/banner_img.png" },
+        { label: "External Promotions", path: "/dashboard/vendors/external-promotions", icon: "/img/banner_img.png" },
         { label: "Batch notification for Customer App", path: "/dashboard/vendors/customerNotificationList", icon: "/img/customerNotification.png" },
         { label: "In-app notification for Driver App", path: "/dashboard/vendors/driverNotificationList", icon: "/img/driver_app_notification.png" },
         { label: "Skip Logs", path: "/dashboard/vendors/skip-logs", icon: "/img/driver_app_notification.png" },

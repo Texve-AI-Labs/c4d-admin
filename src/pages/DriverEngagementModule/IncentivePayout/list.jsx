@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Typography } from "@material-tailwind/react";
 import IncentiveSummaryCards from "./IncentiveSummaryCards";
 import IncentiveStatusTabs from "./IncentiveStatusTabs";
@@ -22,6 +22,15 @@ const resolvePartnerId = (source = {}, partnerType = "CAB") => {
   return source.cabId || source.cabPartnerId || source.partnerId || source.partner?.id || source.partner?._id;
 };
 
+const extractPayoutRows = (response) => {
+  if (Array.isArray(response?.rows)) return response.rows;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.rows)) return response.data.rows;
+  if (Array.isArray(response?.data?.data?.rows)) return response.data.data.rows;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
+};
+
 function IncentivePayoutList() {
   const [status, setStatus] = useState("ALL");
   const [rows, setRows] = useState([]);
@@ -37,6 +46,7 @@ function IncentivePayoutList() {
   const [viewLoading, setViewLoading] = useState(false);
   const [viewError, setViewError] = useState("");
   const [viewPayload, setViewPayload] = useState(null);
+  const viewRequestSeq = useRef(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,10 +61,10 @@ function IncentivePayoutList() {
           fetchIncentivePayoutSummary({}),
         ]);
 
-        const payoutRows = Array.isArray(response?.rows) ? response.rows : response?.data || [];
+        const payoutRows = extractPayoutRows(response);
         const mappedRows = mapPayoutRows(payoutRows);
         const nextPagination = response?.pagination || {};
-        const summaryData = summaryResponse?.data || summaryResponse?.summary || null;
+        const summaryData = summaryResponse?.data || summaryResponse?.summary || summaryResponse?.data?.summary || null;
 
         setRows(mappedRows);
         setSummaryPayload(summaryData);
@@ -96,6 +106,7 @@ function IncentivePayoutList() {
     setViewLoading(true);
     setViewError("");
     setViewPayload(row?.raw || null);
+    const requestSeq = ++viewRequestSeq.current;
 
     try {
       const source = row?.raw || {};
@@ -120,14 +131,18 @@ function IncentivePayoutList() {
           String(item?._id || item?.id || item?.requestId || "") === String(source._id || source.id || source.requestId || "")
         ) || source;
 
+      if (requestSeq !== viewRequestSeq.current) return;
+
       setViewPayload({
         selectedRow: source,
         fetchedRecord: selectedRecord,
         fetchedList: records,
       });
     } catch (error) {
+      if (requestSeq !== viewRequestSeq.current) return;
       setViewError(error?.message || "Failed to load incentive details");
     } finally {
+      if (requestSeq !== viewRequestSeq.current) return;
       setViewLoading(false);
     }
   };

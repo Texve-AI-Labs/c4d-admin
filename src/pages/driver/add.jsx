@@ -1,16 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
-import { API_ROUTES, THALUK_LIST, STATE_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
+import { API_ROUTES, THALUK_LIST, STATE_LIST, DISTRICT_LIST, KYC_PROCESS, ColorStyles } from '@/utils/constants';
 import { Alert, Button, Card, CardBody, Typography, Input, List, ListItem, Dialog, DialogHeader, DialogBody,Spinner } from '@material-tailwind/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Multiselect from 'multiselect-react-dropdown';
 import { DRIVER_ADD_SCHEMA } from '@/utils/validations';
 import { parseAddressParts } from '@/utils/addressUtils';
 import Select from 'react-select'
+import { handleDriverRegisterApiError } from './registerApiErrorHandler';
+import { saveDocumentFile } from '@/utils/downloadUtils';
+
+const RequiredMark = () => <span className="text-red-500 ml-1">*</span>;
+const ALLOWED_DOCUMENT_TYPES = ["image/jpeg", "image/png"];
+const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const DOCUMENT_REQUIREMENTS = {
+    aadhaarImage: { title: "Aadhaar Image", count: 2 },
+    drivingLicenseImage: { title: "Driving License Image", count: 2 },
+    livePhoto: { title: "Live Photo", count: 1 },
+};
+
+const DocumentUploadInstructions = () => (
+    <div className="mb-4 rounded-lg border border-blue-gray-100 bg-blue-gray-50 p-4">
+        <Typography className="text-sm font-semibold text-blue-gray-800">Document Upload Instructions</Typography>
+        <ul className="mt-2 list-disc list-inside text-sm text-blue-gray-700 space-y-1">
+            <li>All listed documents are required.</li>
+            <li>Documents: JPG or PNG only. Maximum size: 10 MB per file.</li>
+            <li>Aadhaar Image: upload 2 documents.</li>
+            <li>Driving License Image: upload 2 documents.</li>
+            <li>Live Photo: upload 1 document.</li>
+        </ul>
+    </div>
+);
 
 const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const searchTimerRef = useRef(null);
 
     const getSuggestionText = (suggestion) => {
         if (typeof suggestion === 'string') return suggestion;
@@ -31,6 +56,12 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
         form.validateField(field.name);
     }, []);
 
+    useEffect(() => () => {
+        if (searchTimerRef.current) {
+            clearTimeout(searchTimerRef.current);
+        }
+    }, []);
+
     return (
         <div className="relative">
             <Input
@@ -38,8 +69,12 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                 placeholder="Enter address"
                 {...field}
                 onChange={(e) => {
-                    form.setFieldValue(field.name, e.target.value);
-                    onSearch(e.target.value);
+                    const value = e.target.value;
+                    form.setFieldValue(field.name, value);
+                    if (searchTimerRef.current) {
+                        clearTimeout(searchTimerRef.current);
+                    }
+                    searchTimerRef.current = setTimeout(() => onSearch(value), 250);
                     form.setFieldTouched(field.name, true, false);
                 }}
                 onFocus={() => setIsFocused(true)}
@@ -56,9 +91,11 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
                     {suggestions.map((suggestion, index) => (
                         <ListItem
                             key={index}
-                            onClick={() => {
+                            onMouseDown={(e) => {
+                                e.preventDefault();
                                 const selectedText = getSuggestionText(suggestion);
                                 form.setFieldValue(field.name, selectedText);
+                                form.setFieldTouched(field.name, true, false);
                                 if (onSelect) onSelect(selectedText, suggestion);
                                 setIsFocused(false);
                                 form.validateField(field.name);
@@ -86,6 +123,7 @@ const LocationInput = ({ field, form, suggestions, onSearch, disabled, onSelect 
 const DriverAdd = () => {
     const [driverVal, setDriverVal] = useState({});
     const [alert, setAlert] = useState(null);
+    const [registrationError, setRegistrationError] = useState("");
     const [packageDetails, setPackageDetails] = useState([]);
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [districtSearchText, setDistrictSearchText] = useState("");
@@ -132,30 +170,12 @@ const DriverAdd = () => {
         });
     };
 
-    // const getPackageListDetails = async () => {
-    //     const data = await ApiRequestUtils.get(API_ROUTES.PACKAGES_LIST);
-    //     if (data?.success) {
-    //         const packageData = data?.data.map(option => {
-    //             const suffix = option.type === 'Local' ? 'hr' : option.type === 'Outstation' ? 'd' : '';
-    //             return {
-    //                 ...option,
-    //                 period: `${option.period} ${suffix}`, // Append 'hr' or 'd'
-    //             };
-    //         });
-    //         const intercityPackage = orderPackages(packageData.filter(val => val.type === 'Local'), 'Local');
-    //         const outstationPackage = packageData.filter(val => { return val.type === 'Outstation' && val.period === '1 d' });
-    //         const carWashPackage = orderPackages(packageData.filter(val => val.type === 'CarWash'), 'CarWash');
-    //         setPackageDetails([...intercityPackage, ...outstationPackage, ...carWashPackage]);
-    //     }
-    // };
-
     const getOwnersList = async () => {
         const data = await ApiRequestUtils.get(API_ROUTES.GET_ACCOUNTS);
         setOwners(data?.data);
     }
 
     useEffect(() => {
-        // getPackageListDetails();
         getOwnersList();
     }, []);
 
@@ -180,7 +200,6 @@ const DriverAdd = () => {
         fatherName: driverVal?.fatherName || "",
         dateOfBirth: driverVal?.dob || "",
         age: driverVal?.age || "",
-        // driverExperience: driverVal?.driverExperience || "",
         phoneNumber: driverVal?.phoneNumber ? driverVal?.phoneNumber.replace(/^(\+91)/, '') : "",
         license: driverVal?.license || "",
         licenseType: driverVal?.licenseType || "",
@@ -190,8 +209,10 @@ const DriverAdd = () => {
         streetName: driverVal?.street || "",
         thaluk: driverVal?.thaluk || "",
         district: driverVal?.district || "",
+        zone: driverVal?.district || "",
+        accountDistrict: driverVal?.accountDistrict || "",
         state: driverVal?.state || "",
-        pinCode: driverVal?.pincode || "",
+        pincode: driverVal?.pincode || "",
         source: driverVal?.source || "",
         reference1: driverVal?.reference1 || "",
         phoneNumber1: driverVal?.reference1_phone ? driverVal?.reference1_phone.replace(/^(\+91)/, '') : "",
@@ -199,8 +220,6 @@ const DriverAdd = () => {
         phoneNumber2: driverVal?.reference2_phone ? driverVal?.reference2_phone.replace(/^(\+91)/, '') : "",
         carType: driverVal?.carType || "",
         packages: driverVal?.packages || [],
-        //wallet: driverVal?.wallet || "",
-        // prices: [],
         aadhaarImage: '',
         panImage: '',
         policeClearance: '',
@@ -209,6 +228,8 @@ const DriverAdd = () => {
         consentForm: '',
         jobType: "",
         accountId: null,
+        maritalStatus:'',
+        alternateNumber:'',
     };
 
     const searchLocations = async (query) => {
@@ -216,7 +237,7 @@ const DriverAdd = () => {
             const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.SEARCH_ADDRESS, {
                 address: query
             });
-            console.log("data", data)
+            // console.log("data", data)
             if (data?.success && data?.data) {
                 setAddressSuggestions(data?.data)
             }
@@ -224,75 +245,6 @@ const DriverAdd = () => {
             setAddressSuggestions([]);
         }
     };
-
-    // const renderPriceTable = (title, prices, values) => {
-    //     if (prices.length === 0) return null;
-
-    //     const sortedPrices = [...prices].sort((a, b) => {
-    //         const packageA = packageDetails.find(p => p.id === a.packageId);
-    //         const packageB = packageDetails.find(p => p.id === b.packageId);
-
-    //         if (title === "LOCAL") {
-    //             const hoursA = parseInt(packageA.period);
-    //             const hoursB = parseInt(packageB.period);
-    //             return hoursA - hoursB;
-    //         } else if (title === "CAR WASH") {
-    //             const numberA = parseInt(packageA.period.match(/\d+/)[0]);
-    //             const numberB = parseInt(packageB.period.match(/\d+/)[0]);
-    //             return numberA - numberB;
-    //         }
-    //         return 0;
-    //     });
-
-    //     return (
-    //         <div className="mb-8">
-    //             <h3 className="text-xl font-bold mb-4">{title}</h3>
-    //             <Card>
-    //                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-    //                     <table className="w-full min-w-[640px] table-auto">
-    //                         <thead>
-    //                             <tr>
-    //                                 {["Package", "Price", "Extra Price", "Extra KM Price", "Night Charge", "Cancel Charge", "Cab Type"].map((el) => (
-    //                                     <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-    //                                         <Typography variant="h6" className="text-[12px] font-bold uppercase text-black">
-    //                                             {el}
-    //                                         </Typography>
-    //                                     </th>
-    //                                 ))}
-    //                             </tr>
-    //                         </thead>
-    //                         <tbody>
-    //                             {sortedPrices.map((priceItem) => (
-    //                                 <tr key={priceItem.packageId}>
-    //                                     <td className="py-3 px-5 border-b border-blue-gray-50">
-    //                                         <Typography variant="small" color="blue-gray" className="font-semibold">
-    //                                             {priceItem.period}
-    //                                         </Typography>
-    //                                     </td>
-    //                                     {['price', 'extraPrice', 'extraKmPrice', 'nightCharge', 'cancelCharge', 'extraCabType'].map((field) => (
-    //                                         <td key={field} className="py-3 px-5 border-b border-blue-gray-50">
-    //                                             <Field
-    //                                                 name={`prices[${values.prices.indexOf(priceItem)}].${field}`}
-    //                                                 type="number"
-    //                                                 className="w-full p-1 text-xs border rounded"
-    //                                                 disabled={!isEditable} 
-    //                                             />
-    //                                             <ErrorMessage 
-    //                                                 name={`prices[${values.prices.indexOf(priceItem)}].${field}`} 
-    //                                                 component="div" 
-    //                                                 className="text-red-500 text-xs" 
-    //                                             />
-    //                                         </td>
-    //                                     ))}
-    //                                 </tr>
-    //                             ))}
-    //                         </tbody>
-    //                     </table>
-    //                 </CardBody>
-    //             </Card>
-    //         </div>
-    //     );
-    // }; 
 
     const onSubmit = async (values, { setSubmitting, resetForm }) => {
         try {
@@ -302,7 +254,6 @@ const DriverAdd = () => {
                 fatherName: values.fatherName || "",
                 dob: values.dateOfBirth || "",
                 age: values.age || "",
-                // driverExperience: values.driverExperience || "",
                 phoneNumber: "+91" + values.phoneNumber,
                 license: values.license,
                 licenseType: values.licenseType || "",
@@ -312,9 +263,11 @@ const DriverAdd = () => {
                 street: values.streetName || "",
                 thaluk: values.thaluk,
                 district: values.district,
+                zone: values.district,
+                accountDistrict: values.accountDistrict,
                 state: values.state,
                 country: "India",
-                pincode: values.pinCode || "",
+                pincode: values.pincode || "",
                 reference1: values.reference1 || "",
                 reference1_phone: values.phoneNumber1 || "",
                 reference2: values.reference2 || "",
@@ -324,27 +277,24 @@ const DriverAdd = () => {
                 carType: values.carType,
                 serviceType: values.serviceType,
                 source: values.source,
+                maritalStatus:values.maritalStatus || "",
+                alternateNumber:values.alternateNumber || "",
             };
             let driverData = { driverDetails };
-            //return;
             const data = await ApiRequestUtils.post(API_ROUTES.REGISTER_DRIVER, driverData);
             //console.log('Driver operation:', data.data);
             if (!data?.success && data?.code === 203) {
-                console.error('Driver already exists');
-                setAlert({
-                    color: 'red',
-                    message: 'Driver already exists'
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(handleDriverRegisterApiError(data));
                 resetForm();
+                setSubmitting(false);
+                return;
+            }
+            if (!data?.success || !data?.data?.id) {
+                setRegistrationError(handleDriverRegisterApiError(data));
+                setSubmitting(false);
+                return;
             } else {
-                console.log('ELSE IN SUBMIT :');
-                // navigate('/dashboard/drivers', {
-                //     state: {
-                //         driverAdded: true,
-                //         driverName: data?.data?.firstName
-                //     }
-                // });
+                // console.log('ELSE IN SUBMIT :');
                 setDriverAdded({
                     driverId: data?.data?.id,
                     value: true
@@ -352,7 +302,7 @@ const DriverAdd = () => {
                 setIsEditable(false);
             }
         } catch (error) {
-            console.error('Error creating driver:', error);
+            setRegistrationError(handleDriverRegisterApiError(error));
         }
         setSubmitting(false);
     };
@@ -383,6 +333,14 @@ const DriverAdd = () => {
         id: state.value,
         name: state.label
     }));
+    const accountDistrictOptions = DISTRICT_LIST
+        .filter((district, index, list) =>
+            list.findIndex((item) => item.value === district.value) === index
+        )
+    .map((district) => ({
+        id: district.value,
+        name: district.label
+    }));
 
     const filteredState = stateOptions.filter(state =>
         state.name.toLowerCase().includes(stateSearchText.toLowerCase())
@@ -411,7 +369,7 @@ const DriverAdd = () => {
                         </label>
                         <input
                             type="file"
-                            accept="image/*, application/pdf"
+                            accept="image/jpeg,image/png"
                             id={name}
                             name={name}
                             onChange={onChange}
@@ -428,12 +386,16 @@ const DriverAdd = () => {
                             onClick={() => {
                                 if (label === 'Live Photo') {
                                     setModalData({
-                                        image: fullDocVal?.image1
+                                        image: fullDocVal?.image1,
+                                        documentId: fullDocVal?.id,
+                                        type: fullDocVal?.type || name,
                                     })
                                 } else {
                                     setModalData({
                                         image: fullDocVal?.image1,
                                         image2: fullDocVal?.image2,
+                                        documentId: fullDocVal?.id,
+                                        type: fullDocVal?.type || name,
                                     })
                                 }
                             }}
@@ -446,15 +408,44 @@ const DriverAdd = () => {
         );
     };
 
+    const validateDocumentFiles = (files, label) => {
+        const selectedFiles = Array.from(files || []);
+        const requirement = DOCUMENT_REQUIREMENTS[label];
+
+        if (!selectedFiles.length) return "Please select a document to upload.";
+        if (requirement && selectedFiles.length !== requirement.count) {
+            return `${requirement.title} requires ${requirement.count} document${requirement.count > 1 ? "s" : ""}.`;
+        }
+        if (!requirement && selectedFiles.length > 2) return "You can upload a maximum of two documents.";
+
+        for (const file of selectedFiles) {
+            const isLivePhoto = label === "livePhoto";
+            const isAllowedType = isLivePhoto
+                ? ["image/jpeg", "image/png"].includes(file.type)
+                : ALLOWED_DOCUMENT_TYPES.includes(file.type) && !/\.pdf$/i.test(file.name || "");
+            if (!isAllowedType) {
+                return isLivePhoto
+                    ? "Invalid Live Photo type. Please upload JPG or PNG."
+                    : "PDF files are not allowed. Please upload JPG or PNG.";
+            }
+            if (file.size > MAX_DOCUMENT_SIZE) {
+                return "File size exceeds 10MB limit.";
+            }
+        }
+
+        return "";
+    };
+
     const handleImageUpload = async (e, setFieldValue, label) => {
         try {
             setLoading(true);
-            const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-            const maxSize = 10 * 1024 * 1024; // 10MB
             const files = e.target.files;
-            if (files.length > 2) {
+            const validationError = validateDocumentFiles(files, label);
+
+            if (validationError) {
                 setLoading(false);
-                alert("You can upload a maximum of two documents.");
+                setRegistrationError(validationError);
+                e.target.value = "";
                 return;
             }
 
@@ -463,24 +454,6 @@ const DriverAdd = () => {
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                if (!allowedTypes.includes(file.type)) {
-                    setLoading(false);
-                    setAlert({
-                        message: "Invalid file type. Please upload JPG, PNG, or PDF.",
-                        color: "red",
-                    });
-                    setTimeout(() => setAlert(null), 5000);
-                    return;
-                }
-                if (file.size > maxSize) {
-                    setLoading(false);
-                    setAlert({
-                        message: "File size exceeds 10MB limit.",
-                        color: "red",
-                    });
-                    setTimeout(() => setAlert(null), 5000);
-                    return;
-                }
                 uploadedFiles.push(file);
 
                 const reader = new FileReader();
@@ -502,14 +475,16 @@ const DriverAdd = () => {
             formData.append('name', 'name');
 
             formData.append('image1', files[0]);
-            formData.append('extImage1', files[0].name.split('.')[1]);
+            formData.append('extImage1', files[0].name.split('.').pop());
             formData.append('fileTypeImage1', files[0].type);
+            if (files[1]) {
             formData.append('image2', files[1]);
-            formData.append('extImage2', files[1].name.split('.')[1]);
+            formData.append('extImage2', files[1].name.split('.').pop());
             formData.append('fileTypeImage2', files[1].type);
-            console.log('formData ->', formData);
+            }
+            // console.log('formData ->', formData);
             const data = await ApiRequestUtils.postDocs(API_ROUTES.UPLOAD_KYC_DOCUMENTS, formData);
-            console.log('DATA IN DOC INSERT :', data);
+            // console.log('DATA IN DOC INSERT :', data);
             if (data?.success) {
                 setImagePreviews((prev) => ({
                     ...prev,
@@ -528,7 +503,7 @@ const DriverAdd = () => {
             }
             setLoading(false); 
         } catch (err) {
-            console.log("ERR ->", err);
+            // console.log("ERR ->", err);
             setLoading(false);
         }
     };
@@ -537,24 +512,12 @@ const DriverAdd = () => {
         try {
             setLoading(true);
             const file = e.target.files[0];
-            const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            if (!allowedTypes.includes(file.type)) {
+            const validationError = validateDocumentFiles(e.target.files, label);
+
+            if (validationError) {
                 setLoading(false);
-                setAlert({
-                    message: "Invalid file type. Please upload JPG, PNG, or PDF.",
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
-                return;
-            }
-            if (file.size > maxSize) {
-                setLoading(false);
-                setAlert({
-                    message: "File size exceeds 10MB limit.",
-                    color: "red",
-                });
-                setTimeout(() => setAlert(null), 5000);
+                setRegistrationError(validationError);
+                e.target.value = "";
                 return;
             }
             setFieldValue(label, file);
@@ -572,14 +535,14 @@ const DriverAdd = () => {
             const formData = new FormData();
 
             formData.append('image1', file);
-            formData.append('extImage1', file.name.split('.')[1]);
+            formData.append('extImage1', file.name.split('.').pop());
             formData.append('fileTypeImage1', file.type);
             formData.append('type', type);
             formData.append('driverId', driverAdded.driverId);
 
             const data = await ApiRequestUtils.postDocs(API_ROUTES.UPLOAD_PHOTO, formData);
 
-            console.log('DATA IN DOC INSERT :', data);
+            // console.log('DATA IN DOC INSERT :', data);
 
             if (data?.success) {
                 setLoading(false);
@@ -622,7 +585,7 @@ const DriverAdd = () => {
         return pincodeObj ? pincodeObj.long_name : "";
     };
 
-    const handleGoogleAddressSelect = (addressText, place) => {
+    const handleGoogleAddressSelect = (addressText, place, form) => {
         const resolvedAddress =
             addressText ||
             place?.formatted_address ||
@@ -637,19 +600,36 @@ const DriverAdd = () => {
 
         const parsedAddress = parseAddress(resolvedAddress, place?.address_components);
 
-        setFieldValue("address", resolvedAddress);
+        form?.setFieldValue?.("address", resolvedAddress);
 
         if (isSameAddress) {
-            setFieldValue("streetName", parsedAddress.street);
-            setFieldValue("thaluk", parsedAddress.taluk);
-            setFieldValue("district", parsedAddress.district);
-            setFieldValue("state", parsedAddress.state);
-            setFieldValue("pinCode", parsedAddress.pincode);
+            form?.setFieldValue?.("streetName", parsedAddress.street);
+            form?.setFieldValue?.("thaluk", parsedAddress.taluk);
+            form?.setFieldValue?.("district", parsedAddress.district);
+            form?.setFieldValue?.("state", parsedAddress.state);
+            form?.setFieldValue?.("pincode", parsedAddress.pincode);
         }
     };
 
     return (
         <div className="p-4 mx-auto bg-white rounded-lg shadow-md max-w-7xl">
+            {registrationError ? (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                        <h2 className="text-lg font-semibold text-red-900">Alert !</h2>
+                        <p className="mt-3 text-sm text-gray-700">{registrationError}</p>
+                        <div className="mt-6 flex justify-end">
+                            <Button
+                                type="button"
+                                onClick={() => setRegistrationError("")}
+                                className="bg-blue-600"
+                            >
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
             {alert && (
                 <div className='mb-2'>
                     <Alert
@@ -667,13 +647,13 @@ const DriverAdd = () => {
                 onSubmit={onSubmit}
                 enableReinitialize={true}
             >
-                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue }) => (
+                {({ handleSubmit, values, errors, dirty, isValid, handleChange, setFieldValue, setFieldTouched }) => (
                     <Form className="space-y-4">
                         <div className={`grid grid-cols-1 gap-7`}>
                             <div className="grid grid-cols-1 gap-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation</label>
+                                        <label htmlFor="salutation" className="text-sm font-medium text-gray-700">Salutation<RequiredMark /></label>
                                         <Field as="select" name="salutation" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
                                             <option value="">Select salutation</option>
                                             <option value="Mr">Mr</option>
@@ -684,17 +664,17 @@ const DriverAdd = () => {
                                         <ErrorMessage name="salutation" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name</label>
+                                        <label htmlFor="firstName" className="text-sm font-medium text-gray-700">Full Name<RequiredMark /></label>
                                         <Field type="text" name="firstName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
-                                        <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name</label>
+                                        <label htmlFor="fatherName" className="text-sm font-medium text-gray-700">Father / Guardian Name<RequiredMark /></label>
                                         <Field type="text" name="fatherName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                         <ErrorMessage name="fatherName" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
                                     <div>
-                                        <label htmlFor="dateOfBirth" className="text-sm font-medium text-gray-700">Date of Birth</label>
+                                        <label htmlFor="dateOfBirth" className="text-sm font-medium text-gray-700">Date of Birth<RequiredMark /></label>
                                         <Field type="date" disabled={!isEditable} name="dateOfBirth" className="p-2 w-full rounded-xl border-2 border-gray-300" value={values.dateOfBirth} max={currentDate()}
                                             onChange={(e) => {
                                                 setFieldValue('dateOfBirth', e.target.value);
@@ -719,25 +699,18 @@ const DriverAdd = () => {
                                         <Field type="text" name="age" className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" disabled />
                                         <ErrorMessage name="age" component="div" className="text-red-500 text-sm my-1" />
                                     </div>
-
-                                     {/* <div>
-                                        <label htmlFor="driverExperience" className="text-sm font-medium text-gray-700">Driver Experience</label>
-                                        <Field type="text" name="driverExperience" className="p-2 w-full rounded-md border-gray-300 shadow-sm" />
-                                        <ErrorMessage name="driverExperience" component="div" className="text-red-500 text-sm my-1" />
-                                    </div> */}
-
                                     <div>
-                                        <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                        <label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
                                         <Field type="tel" name="phoneNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                         <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="license" className="text-sm font-medium text-gray-700">License Number</label>
-                                        <Field type="text" name="license" disabled={!isEditable} className="p-2 w-full rounded-md  border-2 border-gray-300" maxLength={15} />
+                                        <label htmlFor="license" className="text-sm font-medium text-gray-700">License Number<RequiredMark /></label>
+                                        <Field type="text" name="license" disabled={!isEditable} className="p-2 w-full rounded-md  border-2 border-gray-300" maxLength={16} />
                                         <ErrorMessage name="license" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-700 mb-2">License Type</p>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">License Type<RequiredMark /></p>
                                         <div className="space-x-4">
                                             <label className="inline-flex items-center">
                                                 <Field type="radio" name="licenseType" disabled={!isEditable} value="type1" className="form-radio" />
@@ -748,15 +721,15 @@ const DriverAdd = () => {
                                                 <span className="ml-2">Yellow Board</span>
                                             </label>
                                         </div>
-                                        <ErrorMessage name="mode" component="div" className="text-red-500 text-sm" />
+                                        <ErrorMessage name="licenseType" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="licenseExpiryDate" className="text-sm font-medium text-gray-700">License Expiry Date</label>
+                                        <label htmlFor="licenseExpiryDate" className="text-sm font-medium text-gray-700">License Expiry Date<RequiredMark /></label>
                                         <Field type="date" name="licenseExpiryDate" disabled={!isEditable} className="p-2 w-full rounded-xl border-2 border-gray-300" value={values.licenseExpiryDate} min={currentDate()} ></Field>
                                         <ErrorMessage name="licenseExpiryDate" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-700 mb-2">Preference</p>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Preference<RequiredMark /></p>
                                         <div className="space-x-4">
                                             <label className="inline-flex items-center">
                                                 <Field type="radio" disabled={!isEditable} name="transmissionType" value="Automatic" className="form-radio" />
@@ -766,11 +739,15 @@ const DriverAdd = () => {
                                                 <Field type="radio" disabled={!isEditable} name="transmissionType" value="Manual" className="form-radio" />
                                                 <span className="ml-2">Manual</span>
                                             </label>
+                                            <label className="inline-flex items-center">
+                                                <Field type="radio" disabled={!isEditable} name="transmissionType" value="Both" className="form-radio" />
+                                                <span className="ml-2">Both</span>
+                                            </label>
                                         </div>
                                         <ErrorMessage name="transmissionType" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <label htmlFor="source" className="text-sm font-medium text-gray-700">Source</label>
+                                        <label htmlFor="source" className="text-sm font-medium text-gray-700">Source<RequiredMark /></label>
                                         <Field as="select" name="source" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50">
                                             <option value="">Select Source</option>
                                             <option value="Walk In">Walk In</option>
@@ -781,7 +758,7 @@ const DriverAdd = () => {
                                         <ErrorMessage name="source" component="div" className="text-red-500 text-sm" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-gray-700 mb-2">Service Type</p>
+                                        <p className="text-sm font-medium text-gray-700 mb-2">Service Type<RequiredMark /></p>
                                         <div className="space-x-4">
                                             <label className="inline-flex items-center">
                                                 <Field
@@ -793,26 +770,6 @@ const DriverAdd = () => {
                                                 />
                                                 <span className="ml-2">Acting Driver</span>
                                             </label>
-                                            {/* <label className="inline-flex items-center">
-                                                <Field
-                                                    type="radio"
-                                                    name="serviceType"
-                                                    value="DRIVER_WITH_CAB"
-                                                    className="form-radio"
-                                                    disabled={!isEditable}
-                                                />
-                                                <span className="ml-2">Driver With Vehicle</span>
-                                            </label>
-                                            <label className="inline-flex items-center">
-                                                <Field
-                                                    type="radio"
-                                                    name="serviceType"
-                                                    value="OWNER"
-                                                    className="form-radio"
-                                                    disabled={!isEditable}
-                                                />
-                                                <span className="ml-2">OWNER</span>
-                                            </label> */}
                                         </div>
                                         <ErrorMessage
                                             name="serviceType"
@@ -821,7 +778,7 @@ const DriverAdd = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label htmlFor="address" className="text-sm font-medium text-gray-700">Current Address</label>
+                                        <label htmlFor="address" className="text-sm font-medium text-gray-700">Current Address<RequiredMark /></label>
                                         <Field name="address">
                                             {({ field, form }) => (
                                                 <LocationInput
@@ -830,7 +787,7 @@ const DriverAdd = () => {
                                                     suggestions={addressSuggestions}
                                                     onSearch={searchLocations}
                                                     disabled={!isEditable}
-                                                    onSelect={handleGoogleAddressSelect}
+                                                    onSelect={(selectedText, suggestion) => handleGoogleAddressSelect(selectedText, suggestion, form)}
                                                 />
                                             )}
                                         </Field>
@@ -852,13 +809,13 @@ const DriverAdd = () => {
                                                 setFieldValue("thaluk", currentAddress.taluk);
                                                 setFieldValue("district", currentAddress.district);
                                                 setFieldValue("state", currentAddress.state);
-                                                setFieldValue("pinCode", currentAddress.pincode);
+                                                setFieldValue("pincode", currentAddress.pincode);
                                             } else {
                                                 setFieldValue("streetName", "");
                                                 setFieldValue("thaluk", "");
                                                 setFieldValue("district", "");
                                                 setFieldValue("state", "");
-                                                setFieldValue("pinCode", "");
+                                                setFieldValue("pincode", "");
                                             }
                                         }}
                                         className="mr-2"
@@ -875,19 +832,23 @@ const DriverAdd = () => {
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label htmlFor="streetName" className="text-sm font-medium text-gray-700">Street Name</label>
+                                            <label htmlFor="streetName" className="text-sm font-medium text-gray-700">Street Name<RequiredMark /></label>
                                             <Field type="text" name="streetName" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                             <ErrorMessage name="streetName" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
                                             <label htmlFor="thaluk" className="text-sm font-medium text-gray-700">
-                                                Thaluk
+                                                Thaluk<RequiredMark />
                                             </label>
                                             <select
                                                 id="thaluk"
                                                 name="thaluk"
                                                 value={values.thaluk}
-                                                onChange={(e) => setFieldValue("thaluk", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("thaluk", e.target.value);
+                                                    setFieldTouched("thaluk", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("thaluk", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
@@ -906,17 +867,21 @@ const DriverAdd = () => {
                                         </div>
                                         <div>
                                             <label htmlFor="district" className="text-sm font-medium text-gray-700">
-                                                District
+                                                Zone<RequiredMark />
                                             </label>
                                             <select
                                                 id="district"
                                                 name="district"
                                                 value={values.district}
-                                                onChange={(e) => setFieldValue("district", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("district", e.target.value);
+                                                    setFieldTouched("district", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("district", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
-                                                <option value="" disabled>Select District</option>
+                                                <option value="" disabled>Select Zone</option>
                                                 {filteredDistricts.map((district) => (
                                                     <option key={district.id} value={district.id}>
                                                         {district.name}
@@ -930,14 +895,47 @@ const DriverAdd = () => {
                                             />
                                         </div>
                                         <div>
+                                            <label htmlFor="accountDistrict" className="text-sm font-medium text-gray-700">
+                                                Account District<RequiredMark />
+                                            </label>
+                                            <select
+                                                id="accountDistrict"
+                                                name="accountDistrict"
+                                                value={values.accountDistrict}
+                                                onChange={(e) => {
+                                                    setFieldValue("accountDistrict", e.target.value);
+                                                    setFieldTouched("accountDistrict", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("accountDistrict", true, true)}
+                                                className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
+                                                disabled={!isEditable}
+                                            >
+                                                <option value="" disabled>Select District</option>
+                                                {accountDistrictOptions.map((district) => (
+                                                    <option key={district.id} value={district.id}>
+                                                        {district.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ErrorMessage
+                                                name="accountDistrict"
+                                                component="div"
+                                                className="text-red-500 text-sm mt-1"
+                                            />
+                                        </div>
+                                        <div>
                                             <label htmlFor="state" className="text-sm font-medium text-gray-700">
-                                                State
+                                                State<RequiredMark />
                                             </label>
                                             <select
                                                 id="state"
                                                 name="state"
                                                 value={values.state}
-                                                onChange={(e) => setFieldValue("state", e.target.value)}
+                                                onChange={(e) => {
+                                                    setFieldValue("state", e.target.value);
+                                                    setFieldTouched("state", true, true);
+                                                }}
+                                                onBlur={() => setFieldTouched("state", true, true)}
                                                 className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-primary-500 focus:ring focus:ring-primary-300 focus:ring-opacity-50"
                                                 disabled={!isEditable}
                                             >
@@ -955,126 +953,48 @@ const DriverAdd = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label htmlFor="pinCode" className="text-sm font-medium text-gray-700">Pincode</label>
-                                            <Field type="text" name="pinCode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
-                                            <ErrorMessage name="pinCode" component="div" className="text-red-500 text-sm my-1" />
+                                            <label htmlFor="pincode" className="text-sm font-medium text-gray-700">Pincode<RequiredMark /></label>
+                                            <Field type="text" name="pincode" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
+                                            <ErrorMessage name="pincode" component="div" className="text-red-500 text-sm my-1" />
+                                        </div>
+                                    <div>
+                                        <label htmlFor="maritalStatus" className="text-sm font-medium text-gray-700">Marital Status<RequiredMark /></label>
+                                        <Field as="select" name="maritalStatus" disabled={!isEditable} className={`p-2 w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50 ${!isEditable ? "bg-gray-100" : ""}`}>
+                                            <option value="">Select Marital Status</option>
+                                            <option value="SINGLE">Single</option>
+                                            <option value="MARRIED">Married</option>
+                                        </Field>
+                                        <ErrorMessage name="maritalStatus" component="div" className="text-red-500 text-sm" />
+                                    </div>
+									<div>
+                                        <label htmlFor="alternateNumber" className="text-sm font-medium text-gray-700">Alternate Number<RequiredMark /></label>
+                                        <Field type="text" name="alternateNumber" disabled={!isEditable} className="p-2 w-full rounded-md border-gray-300 border-2" />
+                                        <ErrorMessage name="alternateNumber" component="div" className="text-red-500 text-sm my-1" />
                                         </div>
                                         <div>
-                                            <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1</label>
+                                            <label htmlFor="reference1" className="text-sm font-medium text-gray-700">Reference 1<RequiredMark /></label>
                                             <Field type="text" name="reference1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
                                             <ErrorMessage name="reference1" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="phoneNumber1" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                            <label htmlFor="phoneNumber1" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
                                             <Field type="tel" name="phoneNumber1" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber1" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="reference2" className="text-sm font-medium text-gray-700">Reference 2</label>
+                                            <label htmlFor="reference2" className="text-sm font-medium text-gray-700">Reference 2<RequiredMark /></label>
                                             <Field type="text" name="reference2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" />
                                             <ErrorMessage name="reference2" component="div" className="text-red-500 text-sm" />
                                         </div>
                                         <div>
-                                            <label htmlFor="phoneNumber2" className="text-sm font-medium text-gray-700">Phone Number</label>
+                                            <label htmlFor="phoneNumber2" className="text-sm font-medium text-gray-700">Phone Number<RequiredMark /></label>
                                             <Field type="tel" name="phoneNumber2" disabled={!isEditable} className="p-2 w-full rounded-md border-2 border-gray-300" maxLength={10} />
                                             <ErrorMessage name="phoneNumber2" component="div" className="text-red-500 text-sm" />
                                         </div>
-                                        {/* <div>
-                                            <p className="text-sm font-medium text-gray-700 mb-2">Car Type</p>
-                                            <div className="space-x-4">
-                                                <label className="inline-flex items-center">
-                                                    <Field type="radio" name="carType" disabled={!isEditable}  value="Sedan" className="form-radio" />
-                                                    <span className="ml-2">Sedan</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <Field type="radio" name="carType" disabled={!isEditable}  value="SUV" className="form-radio" />
-                                                    <span className="ml-2">SUV</span>
-                                                </label>
-                                                <label className="inline-flex items-center">
-                                                    <Field type="radio" name="carType" disabled={!isEditable}  value="Hatchback" className="form-radio" />
-                                                    <span className="ml-2">Hatchback</span>
-                                                </label>
                                             </div>
-                                            <ErrorMessage name="carType" component="div" className="text-red-500 text-sm" />
-                                        </div> */}
-                                        {/* <div>
-                                            <label htmlFor="wallet" className="text-sm font-medium text-gray-700">Wallet</label>
-                                            <Field type="number" name="wallet" className="p-2 w-full rounded-md border-gray-300" />
-                                            <ErrorMessage name="wallet" component="div" className="text-red-500 text-sm" />
-                                        </div> */}
-                                        {/* {values.jobType !== "CAB" &&  */}
-                                        {/* <div>
-                                            <label htmlFor="packages" className="text-sm font-medium text-gray-700">Package</label>
-                                            <Multiselect
-                                                options={packageDetails}
-                                                displayValue="period"
-                                                selectedValues={packageDetails.filter(option => values.packages.includes(option.id))}
-                                                onSelect={(selectedList) => {
-                                                    setFieldValue("packages", selectedList.map(item => item.id));
-                                                    const newPrices = selectedList.map(item => ({
-                                                        packageId: item.id,
-                                                        period: item.period,
-                                                        price: item.price,
-                                                        extraPrice: item.extra_price,
-                                                        extraKmPrice: item.extraKmPrice,
-                                                        nightCharge: item.nightCharge,
-                                                        cancelCharge: item.cancelCharge,
-                                                        extraCabType: item.extraCabType
-                                                    }));
-                                                    setFieldValue("prices", newPrices);
-                                                }}
-                                                onRemove={(selectedList, removedItem) => {
-                                                    setFieldValue("packages", selectedList.map(item => item.id));
-                                                    setFieldValue("prices", values.prices.filter(price => price.packageId !== removedItem.id));
-                                                }}
-                                                placeholder="Select options"
-                                                className="w-full rounded-md border-gray-300"
-                                                showCheckbox={true}
-                                                disable={!isEditable}
-                                                style={{
-                                                    chips: {
-                                                        backgroundColor: '#3b82f6',
-                                                        color: 'white',
-                                                    },
-                                                }}
-                                            />
-                                        </div> */}
-                                        {/* } */}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        {/* {values.packages.length > 0 && values.jobType !== "CAB" && (
-                            <div>
-                                <h2 className="text-2xl font-bold mb-4">Price Details</h2>
-                                {renderPriceTable(
-                                    "LOCAL",
-                                    values.prices.filter(price => {
-                                        const package_ = packageDetails.find(p => p.id === price.packageId);
-                                        return package_?.type === 'Local';
-                                    }),
-                                    values
-                                )}
-
-                                {renderPriceTable(
-                                    "OUTSTATION",
-                                    values.prices.filter(price => {
-                                        const package_ = packageDetails.find(p => p.id === price.packageId);
-                                        return package_?.type === 'Outstation';
-                                    }),
-                                    values
-                                )}
-
-                                {renderPriceTable(
-                                    "CAR WASH",
-                                    values.prices.filter(price => {
-                                        const package_ = packageDetails.find(p => p.id === price.packageId);
-                                        return package_?.type === 'CarWash';
-                                    }),
-                                    values
-                                )}
-                            </div>
-                        )} */}
                         {!driverAdded.value &&
                             <div className='flex flex-row'>
                                 <Button
@@ -1111,6 +1031,9 @@ const DriverAdd = () => {
                                 </div>
                                 <Card>
                                     <CardBody className="overflow-x-auto px-0 pt-0 pb-2">
+                                        <div className="px-5 pt-4">
+                                            <DocumentUploadInstructions />
+                                        </div>
                                         <table className="w-full min-w-[640px] table-auto">
                                             <thead>
                                                 <tr>
@@ -1222,19 +1145,6 @@ const DriverAdd = () => {
                                 </Button>
                             </div>
                         }
-                        {/* {driverAdded.value && isEditable && 
-                            <div className='flex flex-row'>
-                            <Button
-                                fullWidth
-                                color="black"
-                                onClick={handleSubmit}
-                                disabled={!dirty || !isValid}
-                                className='my-6 mx-2'
-                            >
-                                Save
-                            </Button>
-                        </div>  
-                        } */}
                     </Form>
                 )}
             </Formik>
@@ -1254,37 +1164,6 @@ const DriverAdd = () => {
                     <DialogBody divider>
                         <div className="flex flex-col items-center space-y-3">
                             <div className={`flex ${modalData.image2 ? "flex-row space-x-6" : "flex-col"} justify-center`}>
-                                {/* {modalData.image.toLowerCase().endsWith(".pdf") ? (
-                                    <iframe
-                                        src={modalData.image}
-                                        className="w-full rounded-lg shadow-md"
-                                        style={{ height: "45vh" }}
-                                    />
-                                ) : (
-                                    <img
-                                        src={modalData.image}
-                                        alt="Document"
-                                        className="rounded-lg shadow-md"
-                                        style={{ width: "45%", height: "45vh", objectFit: "contain" }}
-                                    />
-                                )
-                                }
-                                {modalData.image2 && (
-                                    modalData.image2.toLowerCase().endsWith(".pdf") ? (
-                                        <iframe
-                                            src={modalData.image2}
-                                            className="rounded-lg shadow-md"
-                                            style={{ height: "45vh", width: "45%" }}
-                                        />
-                                    ) : (
-                                        <img
-                                            src={modalData.image2}
-                                            alt="Document"
-                                            className="rounded-lg shadow-md"
-                                            style={{ height: "45vh", width: "45%", objectFit: "contain" }}
-                                        />
-                                    )
-                                )} */}
                                 {modalData.image && (
                                     <iframe
                                         src={modalData.image}
@@ -1302,23 +1181,13 @@ const DriverAdd = () => {
                             </div>
 
                             <div className="flex justify-center mt-4">
-                                <a
-                                    href={modalData.image}
-                                    download
-                                    target="_blank"
-                                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                >
+                                <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId, documentType: modalData.type, imageIndex: 1 })} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">
                                     Download Image 1
-                                </a>
+                                </button>
                                 {modalData.image2 && (
-                                    <a
-                                        href={modalData.image2}
-                                        download
-                                        target="_blank"
-                                        className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700"
-                                    >
+                                    <button type="button" onClick={() => saveDocumentFile({ documentId: modalData.documentId, documentType: modalData.type, imageIndex: 2 })} className="ml-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">
                                         Download Image 2
-                                    </a>
+                                    </button>
                                 )}
                             </div>
                         </div>

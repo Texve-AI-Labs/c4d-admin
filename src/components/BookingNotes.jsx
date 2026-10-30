@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { ApiRequestUtils } from '@/utils/apiRequestUtils';
 import { API_ROUTES } from '@/utils/constants';
-import { UserIcon } from '@heroicons/react/24/solid';
+import { StarIcon, UserIcon } from '@heroicons/react/24/solid';
 import moment from "moment";
 import { Typography } from '@material-tailwind/react';
 
-const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
+const formatStatusLabel = (value) => {
+  if (!value) return 'N/A';
+  return String(value)
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const formatBookingLogStatus = (status, assignmentStatus) => {
+  if (status === 'BOOKING_ACCEPTED') {
+    return 'DRIVER_ACCEPTED';
+  }
+  return status;
+};
+
+const issueReasonOptionsByRating = {
+  1: ['Late arrival', 'Route Confusion', 'Aggressive Driver', 'Unprofessional & Rude', 'Poor Communication'],
+  2: ['Late arrival', 'Route Confusion', 'Aggressive Driver', 'Unprofessional & Rude', 'Poor Communication'],
+  3: ['Late arrival', 'Route Confusion', 'Poor Communication'],
+  4: ['Late arrival', 'Poor Communication'],
+};
+
+const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
   const [text, setText] = useState('');
   const [noteType, setNoteType] = useState('')
+  const [rating, setRating] = useState(1);
+  const [issueReason, setIssueReason] = useState('');
+  const [customIssueReason, setCustomIssueReason] = useState('');
   const [items, setItems] = useState([]);
   const [bookingLogs, setBookingLogs] = useState([]);
   const [bookingFollowupLogs,setBookingFollowupLogs] = useState([]);
@@ -15,6 +40,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
   const [bookingExtraCharges, setBookingExtraCharges] = useState([]); 
   const [errorMessage, setErrorMessage] = useState('');
   const [tripDetailsLogs, setTripDetailsLogs] = useState([]);
+  const [quoteExpiryLogs, setQuoteExpiryLogs] = useState([]);
   const [tripFare, setTripFare] = useState(0);
   const [fuelCost, setFuelCost] = useState(0);
   const [tollCost, setTollCost] = useState(0);
@@ -31,6 +57,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
         setBookingLogs([]);
         setQuotationLogs([]);
         setBookingFollowupLogs([]);
+        setQuoteExpiryLogs([]);
         return;
       }
 
@@ -67,6 +94,8 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
           } else {
             setTripDetailsLogs([]);
           }
+          const quoteExpiryReason = data?.data?.quoteExpiryReason || bookingDetails?.quoteExpiryReason;
+          setQuoteExpiryLogs(quoteExpiryReason ? [quoteExpiryReason] : []);
         } else {
           console.warn('API call failed, falling back to notesData:', data?.message);
           setItems(fallbackNotes);
@@ -75,6 +104,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
           setTripDetailsLogs([]);
           setBookingFollowupLogs([]);
           setBookingExtraCharges([]);
+          setQuoteExpiryLogs(bookingDetails?.quoteExpiryReason ? [bookingDetails.quoteExpiryReason] : []);
         }
       } catch (error) {
         console.error('Error fetching notes:', error);
@@ -84,34 +114,90 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
         setTripDetailsLogs([]);
         setBookingFollowupLogs([]);
         setBookingExtraCharges([]);
+        setQuoteExpiryLogs(bookingDetails?.quoteExpiryReason ? [bookingDetails.quoteExpiryReason] : []);
       }
     };
 
     fetchNotes();
-  }, [bookingId, notesData]);
+  }, [bookingId, notesData, bookingDetails]);
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (assignCompliance = false) => {
     setErrorMessage(''); 
     if (!noteType) {
       setErrorMessage('Please select a note type first');
       return;
     }
 
-    if (!text.trim()) {
+    const isFeedback = noteType === 'FEEDBACK';
+    const isLowFeedbackRating = isFeedback && Number(rating) <= 4;
+
+    if (assignCompliance && !isLowFeedbackRating) {
+      setErrorMessage('Compliance assignment is available only for ratings 4 or below');
+      return;
+    }
+
+    if ((!isFeedback || !isLowFeedbackRating) && !text.trim()) {
       setErrorMessage('Please enter some text');
       return;
     }
 
+    if (isFeedback && (rating === '' || Number(rating) < 1 || Number(rating) > 5)) {
+      setErrorMessage('Please select a rating from 1 to 5');
+      return;
+    }
+
+    const finalIssueReason = issueReason === 'Other'
+      ? customIssueReason.trim()
+      : issueReason;
+
+    if (isLowFeedbackRating && !finalIssueReason) {
+      setErrorMessage('Please select an issue reason');
+      return;
+    }
+
+    const noteText = isFeedback
+      ? isLowFeedbackRating
+        ? `Issue Reason: ${finalIssueReason} | Rating: ${Number(rating)}`
+        : `${text.trim()} | Rating: ${Number(rating)}`
+      : text.trim();
+
     const newItem = {
-      notes: text.trim(),
+      notes: noteText,
       bookingId: bookingId,
       noteType: noteType,
+      ...(noteType === 'FEEDBACK' ? { rating: Number(rating) } : {}),
     };
 
     try {
-      addNotes(newItem)
+      await addNotes(newItem);
+
+      if (assignCompliance) {
+        const complianceResponse = await ApiRequestUtils.post(
+          API_ROUTES['COMPLIANCE-ESCALATIONS'],
+          {
+            bookingId,
+            issueReason: finalIssueReason,
+            customerRating: Number(rating),
+            action: 'Assigned to compliance team',
+          }
+        );
+
+        if (complianceResponse?.message === 'Active compliance escalation already exists') {
+          setErrorMessage(complianceResponse.message);
+          return;
+        }
+
+        if (!complianceResponse?.success) {
+          setErrorMessage(complianceResponse?.message || 'Failed to create compliance escalation');
+          return;
+        }
+      }
+
       setText('');
       setNoteType(''); 
+      setRating(1);
+      setIssueReason('');
+      setCustomIssueReason('');
       const data = await ApiRequestUtils.getWithQueryParam(API_ROUTES.GET_NOTES_BOOKING, { bookingId });
       // console.log('API response after adding note:', data);
       if (data?.success) {
@@ -132,6 +218,7 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
     { id: 'extra', label: 'Extra Booking Charges Log' },
     { id: 'estimates', label: 'Check Estimate Price Log' },
     { id: 'status', label: 'Booking Status Log' },
+    { id: 'quoteExpiry', label: 'Quote Expiry Log' },
   ];
 
   return (
@@ -159,7 +246,11 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
         <select
           id="noteType"
           value={noteType}
-          onChange={(e) => setNoteType(e.target.value)}
+          onChange={(e) => {setNoteType(e.target.value);
+            setIssueReason('');
+            setCustomIssueReason('');
+            if (e.target.value !== 'FEEDBACK') setRating(1);
+          }}
           className="p-2 w-full rounded-md border bg-white border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
         >
           <option value="">Select Note Type</option>
@@ -169,22 +260,127 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
           <option value="FEEDBACK">Feedback</option>
         </select>
       </div>
+      {noteType === 'FEEDBACK' && (
+        <div className="pt-2">
+          <label htmlFor="feedbackRating" className="flex items-center gap-1 text-sm font-medium text-gray-700">
+            Rating (1-5)
+            <StarIcon className="h-4 w-4 text-yellow-500" />
+          </label>
+          <div className="mt-1 flex items-center gap-3">
+            <input
+              id="feedbackRating"
+              type="number"
+              min="1"
+              max="5"
+              step="1"
+              value={rating}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                if (nextValue === '') {
+                  setRating('');
+                  setIssueReason('');
+                  setCustomIssueReason('');
+                  return;
+                }
+
+                const nextRating = Number(nextValue);
+                if (/^\d+$/.test(nextValue) && nextRating >= 1 && nextRating <= 5) {
+                  setRating(nextRating);
+                  setIssueReason('');
+                  setCustomIssueReason('');
+                }
+              }}
+              onBlur={() => {
+                if (rating === '') setRating(1);
+              }}
+              className="w-24 rounded-md border border-gray-300 bg-white p-2 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+            />
+            <span className="flex items-center gap-1 text-sm font-medium text-gray-700">
+              {rating} Star{rating === 1 ? '' : 's'}
+              <span className="flex" aria-label={`${rating} Star${rating === 1 ? '' : 's'}`}>
+                {Array.from({ length: rating }, (_, index) => (
+                  <StarIcon key={index} className="h-4 w-4 text-yellow-500" />
+                ))}
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+      {noteType === 'FEEDBACK' && Number(rating) <= 4 && rating !== '' && (
+        <div className="pt-2">
+          <span className="text-sm font-medium text-gray-700">
+            Issue Reason
+          </span>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[
+              ...(issueReasonOptionsByRating[Number(rating)] || []),
+              'Other',
+            ].map((reason) => {
+              const isSelected = issueReason === reason;
+              const isOther = reason === 'Other';
+
+              return (
+                <button
+                  key={reason}
+                  type="button"
+                  onClick={() => {
+                    setIssueReason(reason);
+                    if (!isOther) setCustomIssueReason('');
+                  }}
+                  className={`rounded-md border px-3 py-2 text-sm transition-colors ${
+                    isSelected
+                      ? isOther
+                        ? 'border-amber-600 bg-amber-500 text-white'
+                        : 'border-blue-600 bg-blue-600 text-white'
+                      : isOther
+                        ? 'border-gray-300 bg-white text-gray-700 hover:bg-amber-50'
+                        : 'border-gray-300 bg-white text-gray-700 hover:bg-blue-50'
+                  }`}
+                >
+                  {reason}
+                </button>
+              );
+            })}
+          </div>
+          {issueReason === 'Other' && (
+            <textarea
+              id="customIssueReason"
+              value={customIssueReason}
+              onChange={(e) => setCustomIssueReason(e.target.value)}
+              placeholder="Enter issue reason"
+              className="mt-2 min-h-[70px] w-full rounded-lg border border-amber-300 bg-white p-3 text-base focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+            />
+          )}
+        </div>
+      )}
       <div className="mb-4 pt-2">
+        {(noteType !== 'FEEDBACK' || Number(rating) === 5) && (
         <textarea
           className="border border-gray-200 rounded-lg p-3 mb-2 bg-white text-base min-h-[60px] w-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           placeholder="Enter text..."
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
+        )}
         {errorMessage && (
           <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
         )}
-        <button
-          onClick={handleAddItem}
-          className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-        >
-          Add Note
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => handleAddItem(false)}
+            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          >
+            Add Note
+          </button>
+          {noteType === 'FEEDBACK' && Number(rating) <= 4 && rating !== '' && (
+            <button
+              onClick={() => handleAddItem(true)}
+              className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+            >
+              Assign to Compliance Team
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1">
@@ -207,10 +403,20 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
                   </span>
                 </div>
                 <p className="text-base text-gray-700">Note Type: 
-                  <span className='text-primary-600'>
+                  <span className='text-primary-600 pl-2'>
                       {item?.noteType || 'N/A'}
                   </span>
                   </p>
+                {item?.noteType === 'FEEDBACK' && item?.rating !== undefined && (
+                  <p className="flex items-center gap-1 text-base text-gray-700">
+                    Rating: <span className="font-medium">{item.rating} Star{Number(item.rating) === 1 ? '' : 's'}</span>
+                    <span className="flex" aria-label={`${item.rating} Star${Number(item.rating) === 1 ? '' : 's'}`}>
+                      {Array.from({ length: Number(item.rating) || 0 }, (_, index) => (
+                        <StarIcon key={index} className="h-4 w-4 text-yellow-500" />
+                      ))}
+                    </span>
+                  </p>
+                )}
                 <p className="text-base text-gray-700">{item?.notes}</p>
               </li>
             ))}
@@ -432,10 +638,29 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
               ...bookingFollowupLogs.map((log) => ({ ...log, type: "followup" })),
             ]
               .map((log) => (
-              <li
-                key={`${log.type}-${log.id}`}
-                className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
-              >
+              <React.Fragment key={`${log.type}-${log.id}`}>
+              {log.type === 'booking' &&
+                log?.new_status === 'CONFIRMED' &&
+                bookingDetails?.assignmentStatus === 'ASSIGNED' && (
+                  <li className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 mb-2">
+                      <UserIcon className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-800">
+                        {log?.createdBy?.name || 'System'}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-auto">
+                        {moment(log?.created_at).format('DD-MM-YYYY / hh:mm A')}
+                      </span>
+                    </div>
+                    <div className="text-base text-gray-700 flex items-center gap-2">
+                      Customer Trip Status changed from{' '}
+                      <span className="font-medium text-primary-600">Confirmed</span>{' '}
+                      to{' '}
+                      <span className="font-medium text-green-600">Driver Accepted</span>
+                    </div>
+                  </li>
+                )}
+              <li className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-2 mb-2">
                   <UserIcon className="h-5 w-5 text-gray-600" />
                   <span className="text-sm font-medium text-gray-800">
@@ -453,22 +678,65 @@ const TextBoxWithList = ({addNotes, notesData, bookingId }) => {
                   <>
                     Customer Trip Status changed from{' '}
                     <span className="font-medium text-primary-600">{
-                    log?.old_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.old_status || 'N/A'}</span>{' '}
+                    formatStatusLabel(formatBookingLogStatus(log?.old_status, log?.old_assignmentStatus || log?.assignmentStatus))}</span>{' '}
                     to{' '}
-                    <span className="font-medium text-green-600">{log?.new_status === 'BOOKING_ACCEPTED' ? 'DRIVER_ACCEPTED' : log?.new_status || 'N/A'}</span>
+                    <span className="font-medium text-green-600">{formatStatusLabel(formatBookingLogStatus(log?.new_status, log?.new_assignmentStatus || log?.assignmentStatus))}</span>
                         </>
                       ) : (
                         <>
                           Follow-up Status changed from{" "}
                           <span className="font-medium text-primary-600">
-                            {log?.previousStatus === "NONE" ? "QUOTED" : log?.previousStatus || "N/A"}
+                            {formatStatusLabel(log?.previousStatus === "NONE" ? "QUOTED" : log?.previousStatus)}
                           </span>{" "}
                           to{" "}
                           <span className="font-medium text-green-600">
-                            {log?.newStatus === "NONE" ? "QUOTED" : log?.newStatus || "N/A"}
+                            {formatStatusLabel(log?.newStatus === "NONE" ? "QUOTED" : log?.newStatus)}
                           </span>
                   </>
                 )}
+                  </span>
+                </div>
+              </li>
+              </React.Fragment>
+            ))}
+          </ul>
+        )}
+      </div>
+  </>
+)}
+{activeTab === 'quoteExpiry' && (
+  <>
+    <div className="flex-1">
+      {quoteExpiryLogs.length === 0 ? (
+        <p className="text-center text-gray-500 text-base mt-5">No quote expiry logs yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {quoteExpiryLogs.map((log, index) => (
+            <li
+              key={log?.id || `${log?.quoteExpiredAt || 'quote-expiry'}-${index}`}
+              className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <UserIcon className="h-5 w-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-800">
+                  {log?.quoteExpiredBy?.name || 'System'}
+                </span>
+                <span className="text-sm text-gray-500 ml-auto">
+                  {log?.quoteExpiredAt ? moment(log.quoteExpiredAt).format('DD-MM-YYYY / hh:mm A') : 'N/A'}
+                </span>
+              </div>
+              <div className="text-base text-gray-700 flex items-center gap-2">
+                <span>
+                  Quote Expiry changed from{' '}
+                  <span className="font-medium text-primary-600">
+                    {formatStatusLabel(log?.oldStatus || 'QUOTED')}
+                  </span>{' '}
+                  to{' '}
+                  <span className="font-medium text-green-600">
+                    {formatStatusLabel(log?.newStatus || 'QUOTE_EXPIRED')}.
+                  </span>
+                  {' '}because Reason:{' '}
+                  <span className="font-medium">{log?.reason || 'N/A'}</span>
                   </span>
                 </div>
               </li>

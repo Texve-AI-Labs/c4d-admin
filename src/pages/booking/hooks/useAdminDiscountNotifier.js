@@ -27,6 +27,7 @@ export const useAdminDiscountNotifier = ({
 }) => {
   const lastNotifiedStatusRef = useRef('');
   const lastNotifiedQuoteRefRef = useRef('');
+  const decisionInFlightRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -74,8 +75,11 @@ export const useAdminDiscountNotifier = ({
 
   const handleAdminDiscountDecision = async (action) => {
     if (!enabled) return;
+    if (decisionInFlightRef.current) return;
     const discountId = quoteMeta?.adminDiscount?.id;
     if (!discountId) return;
+
+    decisionInFlightRef.current = true;
 
     const remarks = action === 'approve' ? 'Approved by super user' : 'Rejected by super user';
     const route = action === 'approve' ? API_ROUTES.ADMIN_DISCOUNT_APPROVE : API_ROUTES.ADMIN_DISCOUNT_REJECT;
@@ -85,27 +89,31 @@ export const useAdminDiscountNotifier = ({
       `Discount ID: ${discountId}`
     );
 
-    const response = await ApiRequestUtils.update(route, { discountId, remarks });
-    if (response?.success) {
-      const updatedStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
-      setQuoteMeta((prev) => ({
-        ...(prev || {}),
-        adminDiscount: {
-          ...(prev?.adminDiscount || {}),
-          status: updatedStatus,
-        },
-      }));
-      if (typeof setQuoteDetails === 'function') {
-        setQuoteDetails((prev) => ({
+    try {
+      const response = await ApiRequestUtils.update(route, { discountId, remarks });
+      if (response?.success) {
+        const updatedStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
+        setQuoteMeta((prev) => ({
           ...(prev || {}),
           adminDiscount: {
             ...(prev?.adminDiscount || {}),
             status: updatedStatus,
           },
         }));
+        if (typeof setQuoteDetails === 'function') {
+          setQuoteDetails((prev) => ({
+            ...(prev || {}),
+            adminDiscount: {
+              ...(prev?.adminDiscount || {}),
+              status: updatedStatus,
+            },
+          }));
+        }
+      } else {
+        showAdminDiscountToast('error', 'Unable to update admin discount status.', response?.message || '');
       }
-    } else {
-      showAdminDiscountToast('error', 'Unable to update admin discount status.', response?.message || '');
+    } finally {
+      decisionInFlightRef.current = false;
     }
   };
 

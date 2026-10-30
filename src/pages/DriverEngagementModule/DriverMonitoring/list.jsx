@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Typography } from "@material-tailwind/react";
 import MonitoringStatCards from "./MonitoringStatCards";
 import MonitoringFilters from "./MonitoringFilters";
@@ -15,7 +15,30 @@ const resolvePartnerId = (source = {}, partnerType = "CAB") => {
   if (normalizedType === "AUTO") {
     return source.autoId || source.autoPartnerId || source.partnerId || source.partner?.id || source.partner?._id;
   }
+  if (normalizedType === "BIKE" || normalizedType === "PARCEL") {
+    return source.partnerId || source.bikeId || source.parcelId || source.driverId || source.id || source.partner?.id || source.partner?._id;
+  }
   return source.driverId || source.partnerId || source.id || source.partner?.id || source.partner?._id;
+};
+
+const useDebouncedValue = (value, delay = 300) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+const extractMonitoringRows = (response) => {
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.rows)) return response.rows;
+  if (Array.isArray(response?.data?.rows)) return response.data.rows;
+  if (Array.isArray(response?.data?.data?.rows)) return response.data.data.rows;
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  return [];
 };
 
 function DriverMonitoringList() {
@@ -38,6 +61,8 @@ function DriverMonitoringList() {
   const [viewLoading, setViewLoading] = useState(false);
   const [viewError, setViewError] = useState("");
   const [viewPayload, setViewPayload] = useState(null);
+  const viewRequestSeq = useRef(0);
+  const debouncedSearch = useDebouncedValue(search, 350);
 
   useEffect(() => {
     const loadZones = async () => {
@@ -67,13 +92,14 @@ function DriverMonitoringList() {
           page: pagination.currentPage,
           limit: pagination.itemsPerPage,
           partnerType: selectedPartnerType,
-          search,
+          search: debouncedSearch,
           tier: selectedTier,
           zone: selectedZone,
           vehicleType: selectedVehicle,
         });
 
-        const normalizedRows = normalizeMonitoringRows(response?.data || []);
+        const monitoringRows = extractMonitoringRows(response);
+        const normalizedRows = normalizeMonitoringRows(monitoringRows);
         const nextPagination = response?.pagination || {};
 
         setRows(normalizedRows);
@@ -99,7 +125,7 @@ function DriverMonitoringList() {
     pagination.currentPage,
     pagination.itemsPerPage,
     selectedPartnerType,
-    search,
+    debouncedSearch,
     selectedTier,
     selectedZone,
     selectedVehicle,
@@ -122,6 +148,7 @@ function DriverMonitoringList() {
     setViewLoading(true);
     setViewError("");
     setViewPayload(row?.raw || null);
+    const requestSeq = ++viewRequestSeq.current;
 
     try {
       const source = row?.raw || {};
@@ -135,13 +162,17 @@ function DriverMonitoringList() {
         offset: 0,
       });
 
+      if (requestSeq !== viewRequestSeq.current) return;
+
       setViewPayload({
         selectedRow: source,
         history: response?.data || response?.rows || response || {},
       });
     } catch (error) {
+      if (requestSeq !== viewRequestSeq.current) return;
       setViewError(error?.message || "Failed to load partner history");
     } finally {
+      if (requestSeq !== viewRequestSeq.current) return;
       setViewLoading(false);
     }
   };

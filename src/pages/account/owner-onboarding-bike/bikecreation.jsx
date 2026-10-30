@@ -142,7 +142,9 @@ const LocationInput = ({ field, form, suggestions, onSearch, onSelect, type }) =
           {suggestions.map((suggestion, index) => (
             <ListItem
               key={index}
-              onClick={() => {
+              onMouseDown={(event) => {
+                // Select before the input blur hides the suggestion list.
+                event.preventDefault();
                 form.setFieldValue(field.name, getSuggestionText(suggestion));
                 if (onSelect) onSelect(suggestion);
                 setIsFocused(false);
@@ -360,6 +362,7 @@ const ParcelCabAdd = () => {
 
             if (res?.success) {
               navigate(`/dashboard/vendors/account/owner-onboarding-bike`, {
+                replace: true,
                 state: {
                   accountUpdated: true,
                   accountName: values.ownerName || values.name || "Bike",
@@ -480,7 +483,8 @@ const ParcelCabAdd = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Vehicle Type</label>
                   <div className="space-x-4 mt-1">
-                    {['BIKE','AUTO'].map((type) => (
+                    {/* AUTO kept disabled for future enablement */}
+                    {['BIKE'].map((type) => (
                       <label key={type} className="inline-flex items-center">
                         <Field type="radio" name="autoType" value={type} className="mr-2 border-2" onChange={handleChange} />
                         <span>{type}</span>

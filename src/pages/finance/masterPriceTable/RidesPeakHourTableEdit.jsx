@@ -14,7 +14,7 @@ import {
 import moment from "moment";
 import Swal from "sweetalert2";
 
-const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
+const RidesPeakHourTableEdit = ({ initialPriceData, onUpdate, title = "Edit Peak Hours Table" }) => {
     const [priceData, setPriceData] = useState(initialPriceData);
     const [openModal, setOpenModal] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -22,10 +22,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
     const [formData, setFormData] = useState({
         start: "",
         end: "",
-        kilometerPrice: "",
-        kilometerPriceMUV: "",
-        kilometerPriceSuv: "",
-        kilometerPriceSedan: ""
+        kilometerPrice: ""
     });
 
     useEffect(() => {
@@ -47,10 +44,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
             setFormData({
                 start: entry.start ? moment(entry.start, ["HH:mm", "YYYY-MM-DDTHH:mm:ssZ"]).format("HH:mm") : "",
                 end: entry.end ? moment(entry.end, ["HH:mm", "YYYY-MM-DDTHH:mm:ssZ"]).format("HH:mm") : "",
-                kilometerPrice: entry.kilometerPrice || "",
-                kilometerPriceMUV: entry.kilometerPriceMVP || "",
-                kilometerPriceSuv: entry.kilometerPriceSuv || "",
-                kilometerPriceSedan: entry.kilometerPriceSedan || ""
+                kilometerPrice: entry.kilometerPrice || ""
             });
         } else {
             setIsEditMode(false);
@@ -58,10 +52,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
             setFormData({
                 start: "",
                 end: "",
-                kilometerPrice: "",
-                kilometerPriceMUV: "",
-                kilometerPriceSuv: "",
-                kilometerPriceSedan: ""
+                kilometerPrice: ""
             });
         }
         setOpenModal(true);
@@ -130,10 +121,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
         const payload = {
             start: formData.start,
             end: formData.end,
-            kilometerPrice: parseFloat(formData.kilometerPrice) || null,
-            kilometerPriceMVP: parseFloat(formData.kilometerPriceMUV) || null,
-            kilometerPriceSuv: parseFloat(formData.kilometerPriceSuv) || null,
-            kilometerPriceSedan: parseFloat(formData.kilometerPriceSedan) || null
+            kilometerPrice: parseFloat(formData.kilometerPrice) || null
         };
 
         let newData;
@@ -169,7 +157,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
     return (
         <>
             <div className="flex flex-row justify-between px-2 mb-2 mt-4">
-                <h2 className="text-2xl font-bold mb-4">Edit Peak Hours Table</h2>
+                <h2 className="text-2xl font-bold mb-4">{title}</h2>
                 <Button
                     className="text-xs font-semibold text-white bg-black px-4 py-2"
                     onClick={() => handleOpenModal()}
@@ -186,10 +174,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
                                     {[
                                         "Start Time",
                                         "End Time",
-                                        "Kilometer Price (MINI)",
-                                        "Kilometer Price (MUV)",
-                                        "Kilometer Price (SUV)",
-                                        "Kilometer Price (Sedan)",
+                                        "Kilometer Price",
                                         "Edit/Delete"
                                     ].map((el, index) => (
                                         <th
@@ -212,10 +197,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
                                         {
                                             start,
                                             end,
-                                            kilometerPrice,
-                                            kilometerPriceMVP,
-                                            kilometerPriceSuv,
-                                            kilometerPriceSedan
+                                            kilometerPrice
                                         },
                                         index
                                     ) => {
@@ -244,21 +226,6 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
                                                 <td className={className}>
                                                     <Typography className="text-xs font-semibold text-blue-gray-600">
                                                         {kilometerPrice || "-"}
-                                                    </Typography>
-                                                </td>
-                                                <td className={className}>
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {kilometerPriceMVP || "-"}
-                                                    </Typography>
-                                                </td>
-                                                <td className={className}>
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {kilometerPriceSuv || "-"}
-                                                    </Typography>
-                                                </td>
-                                                <td className={className}>
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {kilometerPriceSedan || "-"}
                                                     </Typography>
                                                 </td>
                                                 <td className={`${className} space-x-2`}>
@@ -307,30 +274,9 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
                         />
                         <Input
                             type="number"
-                            label="Kilometer Price (MINI)"
+                            label="Kilometer Price"
                             name="kilometerPrice"
                             value={formData.kilometerPrice}
-                            onChange={handleInputChange}
-                        />
-                        <Input
-                            type="number"
-                            label="Kilometer Price (MUV)"
-                            name="kilometerPriceMUV"
-                            value={formData.kilometerPriceMUV}
-                            onChange={handleInputChange}
-                        />
-                        <Input
-                            type="number"
-                            label="Kilometer Price (SUV)"
-                            name="kilometerPriceSuv"
-                            value={formData.kilometerPriceSuv}
-                            onChange={handleInputChange}
-                        />
-                        <Input
-                            type="number"
-                            label="Kilometer Price (Sedan)"
-                            name="kilometerPriceSedan"
-                            value={formData.kilometerPriceSedan}
                             onChange={handleInputChange}
                         />
                     </div>
@@ -344,7 +290,7 @@ const RidesPeakHourTableEdit = ({ initialPriceData , onUpdate }) => {
                     >
                         Cancel
                     </Button>
-                    <Button variant="gradient" color="green" onClick={handleSubmit} disabled={!formData.start || !formData.end || !formData.kilometerPrice || !formData.kilometerPriceMUV || !formData.kilometerPriceSedan || !formData.kilometerPriceSuv}>
+                    <Button variant="gradient" color="green" onClick={handleSubmit} disabled={!formData.start || !formData.end || !formData.kilometerPrice}>
                         {isEditMode ? "Update" : "Add"}
                     </Button>
                 </DialogFooter>

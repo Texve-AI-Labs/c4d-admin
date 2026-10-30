@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Card, CardBody, CardHeader, Spinner, Typography } from "@material-tailwind/react";
+import { Button, Card, CardBody, CardHeader, Checkbox, Popover, PopoverContent, PopoverHandler, Spinner, Typography } from "@material-tailwind/react";
+import { FaFilter } from "react-icons/fa";
 import { ApiRequestUtils } from "@/utils/apiRequestUtils";
 import { API_ROUTES, ColorStyles } from "@/utils/constants";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -14,17 +15,58 @@ const badgeClassByValue = (value) => {
   return "bg-gray-100 text-gray-700 border-gray-200";
 };
 
+const ENTITY_TYPE_OPTIONS = [
+  { value: "ALL", label: "All" },
+  { value: "CAB", label: "Rides Rental Cabs" },
+  { value: "DRIVER", label: "Driver" },
+  { value: "AUTO", label: "Auto" },
+  { value: "BIKE", label: "Bike" },
+  { value: "PARCEL", label: "Parcel" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "All" },
+  { value: "true", label: "Active" },
+  { value: "false", label: "Inactive" },
+];
+
+function FilterPopover({ label, value, options, onChange }) {
+  return (
+    <Popover placement="bottom-start">
+      <PopoverHandler>
+        <button type="button" className="flex items-center cursor-pointer">
+          <Typography variant="small" className="mr-1 text-sm font-bold text-blue-gray-700">{label}</Typography>
+          <FaFilter className="text-blue-gray-700 text-xs" />
+        </button>
+      </PopoverHandler>
+      <PopoverContent className="p-2">
+        {options.map((option) => (
+          <div key={option.value} className="mb-2 flex items-center">
+            <Checkbox color="blue" checked={value === option.value} onChange={() => onChange(option.value)} />
+            <Typography color="blue-gray" className="ml-2 font-medium">{option.label}</Typography>
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const WithdrawalRulesList = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [entityTypeFilter, setEntityTypeFilter] = useState(searchParams.get("entityType") || "");
-  const [isActiveFilter, setIsActiveFilter] = useState(searchParams.get("isActive") || "");
+  const [entityTypeFilter, setEntityTypeFilter] = useState(() => sessionStorage.getItem("withdrawalRulesEntityType") || searchParams.get("entityType") || "ALL");
+  const [isActiveFilter, setIsActiveFilter] = useState(() => sessionStorage.getItem("withdrawalRulesStatus") || searchParams.get("isActive") || "ALL");
 
   useEffect(() => {
-    setEntityTypeFilter(searchParams.get("entityType") || "");
-    setIsActiveFilter(searchParams.get("isActive") || "");
+    sessionStorage.setItem("withdrawalRulesEntityType", entityTypeFilter);
+    sessionStorage.setItem("withdrawalRulesStatus", isActiveFilter);
+  }, [entityTypeFilter, isActiveFilter]);
+
+  useEffect(() => {
+    if (searchParams.has("entityType")) setEntityTypeFilter(searchParams.get("entityType") || "ALL");
+    if (searchParams.has("isActive")) setIsActiveFilter(searchParams.get("isActive") || "ALL");
   }, [searchParams]);
 
   useEffect(() => {
@@ -32,8 +74,8 @@ const WithdrawalRulesList = () => {
       try {
         setLoading(true);
         const query = {};
-        if (entityTypeFilter) query.entityType = entityTypeFilter;
-        if (isActiveFilter !== "") query.isActive = isActiveFilter;
+        if (entityTypeFilter !== "ALL") query.entityType = entityTypeFilter;
+        if (isActiveFilter !== "ALL") query.isActive = isActiveFilter;
         const res = await ApiRequestUtils.getWithQueryParam(API_ROUTES.ADMIN_WITHDRAWAL_RULES, query);
         if (res?.success && Array.isArray(res.data)) {
           setItems(res.data);
@@ -55,68 +97,12 @@ const WithdrawalRulesList = () => {
 
   return (
     <div className="mb-8 flex flex-col gap-6 mt-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Entity Type</label>
-            <select
-              value={entityTypeFilter}
-              onChange={(e) => {
-                const next = e.target.value;
-                setEntityTypeFilter(next);
-                setSearchParams((prev) => {
-                  const nextParams = new URLSearchParams(prev);
-                  if (next) nextParams.set("entityType", next);
-                  else nextParams.delete("entityType");
-                  return nextParams;
-                });
-              }}
-              className="rounded-md border border-gray-300 px-3 py-2"
-            >
-              <option value="">All</option>
-              <option value="RIDES_RENTAL_CABS">RIDES_RENTAL_CABS</option>
-              <option value="ACTING_DRIVER">ACTING_DRIVER</option>
-              <option value="AUTO">AUTO</option>
-              <option value="BIKE">BIKE</option>
-              <option value="PARCEL">PARCEL</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              value={isActiveFilter}
-              onChange={(e) => {
-                const next = e.target.value;
-                setIsActiveFilter(next);
-                setSearchParams((prev) => {
-                  const nextParams = new URLSearchParams(prev);
-                  if (next !== "") nextParams.set("isActive", next);
-                  else nextParams.delete("isActive");
-                  return nextParams;
-                });
-              }}
-              className="rounded-md border border-gray-300 px-3 py-2"
-            >
-              <option value="">All</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          </div>
-        </div>
-        <Button
-          size="sm"
-          className={`rounded-xl p-4 ${ColorStyles.continueButtonColor}`}
-          onClick={() => navigate("/dashboard/finance/withdrawal-rules/add")}
-        >
-          Add New
-        </Button>
-      </div>
-
       <Card className="mt-2">
         <CardHeader variant="gradient" className={`mb-4 p-6 rounded-xl ${ColorStyles.bgColor}`}>
-          <Typography variant="h6" color="white">
-            Withdrawal Rules List
-          </Typography>
+          <div className="flex items-center justify-between gap-4">
+            <Typography variant="h6" color="white">Withdrawal Rules List</Typography>
+            <Button size="sm" className="rounded-xl bg-white px-5 py-3 text-black shadow-none hover:shadow-none" onClick={() => navigate("/dashboard/finance/withdrawal-rules/add")}>Add New</Button>
+          </div>
         </CardHeader>
         <CardBody className="pt-0 px-0">
           {loading ? (
@@ -128,16 +114,16 @@ const WithdrawalRulesList = () => {
               <table className="w-full min-w-[1100px] table-auto">
                 <thead>
                   <tr>
-                    <th className="py-3 px-5 text-left">Entity Type</th>
-                    <th className="py-3 px-5 text-left">Tier</th>
-                    <th className="py-3 px-5 text-left">Name</th>
-                    <th className="py-3 px-5 text-left">Withdrawal Allowed</th>
-                    <th className="py-3 px-5 text-left">Min Amount</th>
-                    <th className="py-3 px-5 text-left">Max Amount</th>
-                    <th className="py-3 px-5 text-left">Minimum Hold Amount</th>
-                    <th className="py-3 px-5 text-left">Description</th>
-                    <th className="py-3 px-5 text-left">Status</th>
-                    <th className="py-3 px-5 text-left">Action</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left"><FilterPopover label="Entity Type" value={entityTypeFilter} options={ENTITY_TYPE_OPTIONS} onChange={setEntityTypeFilter} /></th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Tier</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Name</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Withdrawal Allowed</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Min Amount</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Max Amount</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Minimum Hold Amount</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Description</th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left"><FilterPopover label="Status" value={isActiveFilter} options={STATUS_OPTIONS} onChange={setIsActiveFilter} /></th>
+                    <th className="whitespace-nowrap py-3 px-5 text-left">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,13 +142,13 @@ const WithdrawalRulesList = () => {
                             {item.tier ?? "-"}
                           </span>
                         </td>
-                        <td className="py-3 px-5">{item.name ?? "-"}</td>
+                        <td className="whitespace-nowrap py-3 px-5">{item.name ?? "-"}</td>
                         <td className="py-3 px-5">
                           {item.isWithdrawalAllowed === true ? "Yes" : item.isWithdrawalAllowed === false ? "No" : "-"}
                         </td>
-                        <td className="py-3 px-5">{item.minWithdrawalAmount ?? "-"}</td>
-                        <td className="py-3 px-5">{item.maxWithdrawalAmount ?? "-"}</td>
-                        <td className="py-3 px-5">{item.minimumHoldAmount ?? "-"}</td>
+                        <td className="whitespace-nowrap py-3 px-5">₹ {item.minWithdrawalAmount ?? "-"}</td>
+                        <td className="whitespace-nowrap py-3 px-5">₹ {item.maxWithdrawalAmount ?? "-"}</td>
+                        <td className="whitespace-nowrap py-3 px-5">₹ {item.minimumHoldAmount ?? "-"}</td>
                         <td className="py-3 px-5">{item.description ?? "-"}</td>
                         <td className="py-3 px-5">
                           <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${badgeClassByValue(item.isActive ? "ACTIVE" : "INACTIVE")}`}>

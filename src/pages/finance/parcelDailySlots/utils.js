@@ -76,13 +76,13 @@ export const getDayChip = (value) => {
   const normalized = String(value || "").toUpperCase();
   const base = "inline-flex rounded-full px-2 py-0.5 text-xs font-semibold text-white";
 
-  if (normalized === "MONDAY") return { label: normalized, className: `${base} bg-indigo-600` };
-  if (normalized === "TUESDAY") return { label: normalized, className: `${base} bg-sky-600` };
-  if (normalized === "WEDNESDAY") return { label: normalized, className: `${base} bg-emerald-600` };
-  if (normalized === "THURSDAY") return { label: normalized, className: `${base} bg-amber-600` };
+  if (normalized === "MONDAY") return { label: normalized, className: `${base} bg-yellow-600` };
+  if (normalized === "TUESDAY") return { label: normalized, className: `${base} bg-blue-600` };
+  if (normalized === "WEDNESDAY") return { label: normalized, className: `${base} bg-green-600` };
+  if (normalized === "THURSDAY") return { label: normalized, className: `${base} bg-orange-600` };
   if (normalized === "FRIDAY") return { label: normalized, className: `${base} bg-pink-600` };
-  if (normalized === "SATURDAY") return { label: normalized, className: `${base} bg-violet-600` };
-  if (normalized === "SUNDAY") return { label: normalized, className: `${base} bg-red-500` };
+  if (normalized === "SATURDAY") return { label: normalized, className: `${base} bg-red-600` };
+  if (normalized === "SUNDAY") return { label: normalized, className: `${base} bg-pink-500` };
 
   return { label: normalized || "-", className: `${base} bg-blue-gray-500` };
 };

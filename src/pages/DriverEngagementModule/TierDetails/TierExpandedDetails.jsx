@@ -6,6 +6,7 @@ import {
   formatMetricLabel,
   formatPeriodLabel,
   formatConditionServiceTypeLabel,
+  formatOnlineHoursSlots,
   formatServiceTypeLabel,
   safeText,
 } from "./listFormatters";
@@ -353,7 +354,7 @@ function TierExpandedDetails({ row }) {
                             <table className="w-full min-w-[980px] table-auto text-left">
                               <thead>
                                 <tr>
-                                  {["Rule #", "Amount", "Metric", "Period", "Service Type", "Operator", "Value", "Mandatory"].map((head) => (
+                                  {["Rule #", "Amount", "Metric", "Period", "Service Type", "Operator", "Value", "Mandatory", "Slot"].map((head) => (
                                     <th key={`${row.id}-${componentIndex}-${tierKey}-${head}`} className="border-b border-blue-gray-100 px-3 py-2">
                                       <Typography variant="small" className="text-[11px] font-semibold text-blue-gray-700">
                                         {head}
@@ -365,6 +366,7 @@ function TierExpandedDetails({ row }) {
                               <tbody>
                                 {rules.map((rule, ruleIndex) => {
                                   const condition = rule?.condition || {};
+                                  const slots = formatOnlineHoursSlots(condition?.slots);
                                   return (
                                     <tr key={`${row.id}-${componentIndex}-${tierKey}-${ruleIndex}`}>
                                       <td className="border-b border-blue-gray-100 px-3 py-2 text-xs text-blue-gray-800">{ruleIndex + 1}</td>
@@ -375,6 +377,22 @@ function TierExpandedDetails({ row }) {
                                       <td className="border-b border-blue-gray-100 px-3 py-2 text-xs text-blue-gray-800">{safeText(condition?.op)}</td>
                                       <td className="border-b border-blue-gray-100 px-3 py-2 text-xs text-blue-gray-800">{safeText(condition?.value)}</td>
                                       <td className="border-b border-blue-gray-100 px-3 py-2 text-xs text-blue-gray-800">{formatBoolLabel(condition?.isMandatory)}</td>
+                                      <td className="border-b border-blue-gray-100 px-3 py-2 text-xs text-blue-gray-800">
+                                        {slots.length > 0 ? (
+                                          <div className="flex flex-wrap gap-2">
+                                            {slots.map((slot, slotIndex) => (
+                                              <span
+                                                key={`${row.id}-${componentIndex}-${tierKey}-${ruleIndex}-slot-${slotIndex}`}
+                                                className="rounded-full bg-blue-gray-100 px-2 py-1 text-[11px] font-medium text-blue-gray-700"
+                                              >
+                                                {slot.label}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          "-"
+                                        )}
+                                      </td>
                                     </tr>
                                   );
                                 })}

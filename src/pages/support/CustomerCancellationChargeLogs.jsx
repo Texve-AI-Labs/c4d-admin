@@ -4,6 +4,10 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
   Input,
   Option,
   Select,
@@ -17,6 +21,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 
 const DEFAULT_PAGE_SIZE = 20;
 const SERVICE_TYPE_OPTIONS = ["","BIKE","RIDES", "AUTO", "PARCEL", "DRIVER", "RENTAL"];
+const DATE_RANGE_ERROR = "Please select a valid date range. From Date cannot be in the future or later than To Date.";
 
 const normalizeRows = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -102,10 +107,19 @@ const getServiceTypeChipClass = (value) => {
   return "bg-gray-100 text-gray-800";
 };
 
+const isInvalidDateRange = ({ fromDate, toDate }) => {
+  const today = moment().format("YYYY-MM-DD");
+  if (fromDate && fromDate > today) return true;
+  if (toDate && toDate > today) return true;
+  if (fromDate && toDate && fromDate > toDate) return true;
+  return false;
+};
+
 function CustomerCancellationChargeLogs() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [apiErrorMessage, setApiErrorMessage] = useState("");
   const [sortOrder, setSortOrder] = useState("desc");
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -120,6 +134,7 @@ function CustomerCancellationChargeLogs() {
     toDate: "",
   });
   const [draftFilters, setDraftFilters] = useState(filters);
+  const today = moment().format("YYYY-MM-DD");
 
   const fetchLogs = async (page = 1, nextFilters = filters) => {
     setLoading(true);
@@ -129,15 +144,38 @@ function CustomerCancellationChargeLogs() {
         page,
         limit: pagination.itemsPerPage,
       };
-      if (nextFilters.bookingId) query.bookingId = Number(nextFilters.bookingId);
+      if (nextFilters.bookingId) query.bookingId = nextFilters.bookingId;
       if (nextFilters.serviceType) query.serviceType = nextFilters.serviceType;
       if (nextFilters.fromDate) query.fromDate = nextFilters.fromDate;
       if (nextFilters.toDate) query.toDate = nextFilters.toDate;
 
-      const response = await ApiRequestUtils.getWithQueryParam(
-        API_ROUTES.CUSTOMER_CANCELLATION_CHARGE_LOGS,
-        query
-      );
+      let apiAlertMessage = "";
+      const originalAlert = window.alert;
+      window.alert = (title, message) => {
+        apiAlertMessage = message || title || "";
+      };
+
+      let response;
+      try {
+        response = await ApiRequestUtils.getWithQueryParam(
+          API_ROUTES.CUSTOMER_CANCELLATION_CHARGE_LOGS,
+          query
+        );
+      } finally {
+        window.alert = originalAlert;
+      }
+
+      if (!response && apiAlertMessage) {
+        setRows([]);
+        setApiErrorMessage(apiAlertMessage);
+        return;
+      }
+
+      if (response?.code === 400 || response?.success === false) {
+        setRows([]);
+        setApiErrorMessage(response?.message || "Failed to fetch customer cancellation charge logs.");
+        return;
+      }
 
       const payload = response?.data ?? response?.result ?? response;
       const nextRows = normalizeRows(payload);
@@ -149,7 +187,7 @@ function CustomerCancellationChargeLogs() {
     } catch (err) {
       console.error("Failed to fetch customer cancellation charge logs:", err);
       setRows([]);
-      setError("Failed to fetch customer cancellation charge logs.");
+      setApiErrorMessage(err?.response?.data?.message || err?.message || "Failed to fetch customer cancellation charge logs.");
     } finally {
       setLoading(false);
     }
@@ -171,13 +209,21 @@ function CustomerCancellationChargeLogs() {
   }, [rows, sortOrder]);
 
   const handleApplyFilters = () => {
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
-    setFilters({
+    const nextFilters = {
       bookingId: draftFilters.bookingId.trim(),
       serviceType: draftFilters.serviceType,
       fromDate: draftFilters.fromDate,
       toDate: draftFilters.toDate,
-    });
+    };
+
+    if (isInvalidDateRange(nextFilters)) {
+      setError(DATE_RANGE_ERROR);
+      return;
+    }
+
+    setError("");
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    setFilters(nextFilters);
   };
 
   const handleClearFilters = () => {
@@ -258,12 +304,17 @@ function CustomerCancellationChargeLogs() {
 
         <CardBody className="pt-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Input
-              label="Booking ID"
-              type="number"
-              value={draftFilters.bookingId}
-              onChange={(e) => setDraftFilters((prev) => ({ ...prev, bookingId: e.target.value }))}
-            />
+            <div>
+              <Typography variant="small" className="mb-1 font-medium text-gray-700">
+                Booking ID / Booking Number
+              </Typography>
+              <Input
+                type="text"
+                placeholder="8503 or C4D00008503"
+                value={draftFilters.bookingId}
+                onChange={(e) => setDraftFilters((prev) => ({ ...prev, bookingId: e.target.value }))}
+              />
+            </div>
             <Select
               label="Service Type"
               value={draftFilters.serviceType}
@@ -278,12 +329,15 @@ function CustomerCancellationChargeLogs() {
             <Input
               label="From Date"
               type="date"
+              max={today}
               value={draftFilters.fromDate}
               onChange={(e) => setDraftFilters((prev) => ({ ...prev, fromDate: e.target.value }))}
             />
             <Input
               label="To Date"
               type="date"
+              min={draftFilters.fromDate || undefined}
+              max={today}
               value={draftFilters.toDate}
               onChange={(e) => setDraftFilters((prev) => ({ ...prev, toDate: e.target.value }))}
             />
@@ -291,7 +345,7 @@ function CustomerCancellationChargeLogs() {
 
           {error ? (
             <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-              <Typography variant="small" className="text-gray-700">
+              <Typography variant="small" className="text-red-700">
                 {error}
               </Typography>
             </div>
@@ -318,9 +372,9 @@ function CustomerCancellationChargeLogs() {
                     "Payment Total",
                     "Created At",
                   ].map((label) => (
-                    <th key={label} className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                    <th key={label} className="whitespace-nowrap border-b border-blue-gray-50 py-3 px-5 text-left">
                       <div className="flex items-center">
-                        <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
+                        <Typography variant="small" className="whitespace-nowrap text-[11px] font-bold uppercase text-black">
                           {label}
                         </Typography>
                         {label === "Created At" && (
@@ -487,6 +541,19 @@ function CustomerCancellationChargeLogs() {
           </div>
         </CardBody>
       </Card>
+      <Dialog open={Boolean(apiErrorMessage)} handler={() => setApiErrorMessage("")} size="sm">
+        <DialogHeader className="text-red-700">Request Failed</DialogHeader>
+        <DialogBody divider>
+          <Typography className="text-sm font-medium text-gray-800">
+            {apiErrorMessage}
+          </Typography>
+        </DialogBody>
+        <DialogFooter>
+          <Button className="bg-red-600" onClick={() => setApiErrorMessage("")}>
+            Close
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }

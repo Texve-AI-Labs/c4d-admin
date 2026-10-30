@@ -29,6 +29,7 @@ function OnlineHoursRulesSection(props) {
       payoutFrequencyOptions={PAYOUT_FREQUENCY_OPTIONS}
       syncPeriodWithPayoutFrequency
       hideMandatory
+      disablePayoutFrequency={props.disablePayoutFrequency}
     />
   );
 }

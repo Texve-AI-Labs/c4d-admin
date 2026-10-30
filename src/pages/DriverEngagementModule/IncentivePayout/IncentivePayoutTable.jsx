@@ -3,6 +3,7 @@ import { Card, CardBody, Typography, Button } from "@material-tailwind/react";
 
 const TABLE_HEAD = [
   "Driver",
+  "Partner Type",
   "Phone Number",
   "Car Type",
   "Incentive Rule",
@@ -33,6 +34,17 @@ const STATUS_CLASS = {
   PAID: "bg-emerald-50 text-emerald-700",
   CANCELLED: "bg-red-50 text-red-700",
 };
+
+const TYPE_CLASS = {
+  WEEKLY_TIER_BONUS: "bg-slate-800 text-slate-50",
+  ONLINE_HOURS_BONUS: "bg-indigo-800 text-indigo-50",
+  SERVICE_TRIP_BONUS: "bg-emerald-800 text-emerald-50",
+  DISPATCH_BONUS: "bg-amber-800 text-amber-50",
+  TIER_BONUS: "bg-purple-800 text-purple-50",
+  DEFAULT: "bg-blue-gray-800 text-blue-gray-50",
+};
+
+const getTypeClass = (value) => TYPE_CLASS[String(value || "").trim().toUpperCase()] || TYPE_CLASS.DEFAULT;
 
 function IncentivePayoutTable({ rows, loading, pagination, onPageChange, onView }) {
   const {
@@ -82,10 +94,15 @@ function IncentivePayoutTable({ rows, loading, pagination, onPageChange, onView 
               return (
                 <tr key={row.id}>
                   <td className={cellClass}><Typography variant="small" className="font-semibold text-blue-gray-700">{safeText(row.driver)}</Typography></td>
+                  <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.raw?.partnerType || row.partnerType)}</Typography></td>
                   <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.driverPhoneNumber)}</Typography></td>
                   <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.partnerCarType)}</Typography></td>
                   <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.incentiveRule)}</Typography></td>
-                  <td className={cellClass}><Typography variant="small" className="text-blue-gray-700">{safeText(row.type)}</Typography></td>
+                  <td className={cellClass}>
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm whitespace-nowrap ${getTypeClass(row.type)}`}>
+                      {safeText(row.type)}
+                    </span>
+                  </td>
                   <td className={cellClass}><Typography variant="small" className="font-semibold text-blue-gray-700">{safeText(row.amountDisplay)}</Typography></td>
                   <td className={cellClass}>
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CLASS[row.status] || "bg-blue-gray-50 text-blue-gray-700"}`}>
@@ -110,28 +127,28 @@ function IncentivePayoutTable({ rows, loading, pagination, onPageChange, onView 
           </tbody>
         </table>
 
-        <div className="flex flex-col items-start justify-between gap-3 border-t border-blue-gray-100 px-4 py-3 sm:flex-row sm:items-center">
-          <Typography variant="small" color="gray">{`Showing ${startIndex}-${endIndex} of ${totalItems}`}</Typography>
+        <div className="flex flex-col items-center justify-center gap-3 border-t border-blue-gray-100 px-4 py-4 text-center">
+          {/* <Typography variant="small" color="gray" className="text-blue-gray-600">{`Showing ${startIndex}-${endIndex} of ${totalItems}`}</Typography> */}
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 rounded-full bg-white px-3 py-2 shadow-sm">
             <Button
               size="sm"
-              variant="outlined"
-              color="blue-gray"
+              variant="filled"
+              color="blue"
               disabled={currentPage <= 1 || loading}
               onClick={() => onPageChange(currentPage - 1)}
-              className="normal-case"
+              className="normal-case shadow-none"
             >
               Previous
             </Button>
-            <Typography variant="small" className="font-semibold text-blue-gray-700">{`Page ${currentPage} / ${totalPages}`}</Typography>
+            <Typography variant="small" className="min-w-[96px] rounded-full bg-blue-gray-100 px-3 py-2 text-center font-semibold text-blue-gray-700">{`Page ${currentPage} / ${totalPages}`}</Typography>
             <Button
               size="sm"
-              variant="outlined"
-              color="blue-gray"
+              variant="filled"
+              color="blue"
               disabled={currentPage >= totalPages || loading}
               onClick={() => onPageChange(currentPage + 1)}
-              className="normal-case"
+              className="normal-case shadow-none"
             >
               Next
             </Button>

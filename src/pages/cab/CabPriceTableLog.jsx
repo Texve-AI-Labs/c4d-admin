@@ -28,7 +28,7 @@ const CabPriceTableLog = ({ id }) => {
         "waiting_mins": "Free Waiting Time",
         "base_fare": "Base Fare",
         "kilometer": "Kilometer",
-        "extra_km_price": "Extra Kilometer Price",
+        // "extra_km_price": "Extra Kilometer Price",
         "waiting_charge": "Waiting Charges",
         "drop_price": "Drop Only",
         "additional_mins": "Additional Mins",

@@ -7,20 +7,50 @@ import {
     Card,
     CardBody,
     CardHeader,
+    Spinner,
     Typography,
 } from "@material-tailwind/react";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import FinanceSubscriptionTabs from "@/pages/finance/components/FinanceSubscriptionTabs";
+
+const MASTER_SUBSCRIPTION_FILTERS_KEY = "masterSubscriptionFilters";
+
+const getStoredFilters = () => {
+    try {
+        return JSON.parse(sessionStorage.getItem(MASTER_SUBSCRIPTION_FILTERS_KEY) || "{}") || {};
+    } catch {
+        return {};
+    }
+};
+
+const storeFilters = (filters) => {
+    try {
+        sessionStorage.setItem(MASTER_SUBSCRIPTION_FILTERS_KEY, JSON.stringify(filters));
+    } catch {
+        // Ignore storage errors such as private browsing restrictions.
+    }
+};
 
 export function MasterSubscriptionView() {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
+    const location = useLocation();
+    const [searchQuery, setSearchQuery] = useState(() => getStoredFilters().searchQuery || '');
     const [allAccounts, setAllAccounts] = useState([]);
-    const [serviceFilter, setServiceFilter] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [serviceFilter, setServiceFilter] = useState(() => getStoredFilters().serviceFilter || '');
+    const [statusFilter, setStatusFilter] = useState(() => getStoredFilters().statusFilter || '');
     const [expandedGroups, setExpandedGroups] = useState({});
+    const [tabLoadingPath, setTabLoadingPath] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        storeFilters(
+            { searchQuery, serviceFilter, statusFilter }
+        );
+    }, [searchQuery, serviceFilter, statusFilter]);
 
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
                 const params = { includePlans: true, includeAssignments: true };
                 if (serviceFilter) {
@@ -36,6 +66,8 @@ export function MasterSubscriptionView() {
                 }
             } catch (error) {
                 console.error("Error fetching subscription data:", error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
@@ -114,15 +146,23 @@ export function MasterSubscriptionView() {
             ? "bg-blue-100 text-blue-700 border-blue-200"
             : "bg-gray-100 text-gray-700 border-gray-200";
     };
+    const handleTabClick = (path) => {
+        if (path === location.pathname) return;
+        setTabLoadingPath(path);
+        navigate(path);
+    };
 
     return (
+        <div className="p-4 bg-white rounded-xl sm:p-6 lg:p-8"> 
         <div className="mb-8 flex flex-col gap-12">
+            <FinanceSubscriptionTabs activePath={location.pathname} loadingPath={tabLoadingPath} onTabClick={handleTabClick} />
             <div className="p-4 border border-gray-300 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-grow">
                         <div className="relative flex-grow max-w-[320px]">
                             <input
                                 type="text"
+                                value={searchQuery}
                                 className="w-full px-4 py-2 pl-10 text-sm border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                                 placeholder="Search Subscription"
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -163,7 +203,14 @@ export function MasterSubscriptionView() {
                 </div>
             </div>
             <Card>
-                {masterSubscriptionList.length > 0 ? (
+                {loading ? (
+                    <div className="flex min-h-[240px] items-center justify-center">
+                        <div className="flex flex-col items-center gap-3">
+                            <Spinner className="h-10 w-10 text-primary-600" />
+                            <p className="text-sm text-gray-500">Loading master subscriptions...</p>
+                        </div>
+                    </div>
+                ) : masterSubscriptionList.length > 0 ? (
                     <>
                         <CardHeader variant="gradient" className={`mb-8 p-6 flex-1 justify-between items-center ${ColorStyles.bgColor}`}>
                             <Typography variant="h6" color="white">
@@ -177,6 +224,7 @@ export function MasterSubscriptionView() {
                                         {[
                                             "Service Type",
                                             "Plan Group",
+                                            "Car Type",
                                             "Assignment Type",
                                             "Assignment Value",
                                             "Zone",
@@ -215,6 +263,9 @@ export function MasterSubscriptionView() {
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {group.name || '-'}
+                                                </td>
+                                                <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
+                                                    {group.carType || '-'}
                                                 </td>
                                                 <td className="border-b border-blue-gray-50 py-3 px-5 text-black whitespace-nowrap">
                                                     {formatAssignmentType(group.assignments?.[0]?.assignmentType)}
@@ -262,6 +313,7 @@ export function MasterSubscriptionView() {
                                                                         {[
                                                                             "Plan Name",
                                                                             "Price",
+                                                                            "Final Price After Discount",
                                                                             "Base Credits",
                                                                             "Bonus Credits",
                                                                             "Total Credits",
@@ -287,7 +339,7 @@ export function MasterSubscriptionView() {
                                                                     {group.plans.map((plan) => (
                                                                         <tr key={plan.id} className="hover:bg-blue-gray-100">
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
-                                                                                {plan.name || '-'}
+                                                                                {plan.name === 'Regular' ? 'Basic' : plan.name}
                                                                             </td>
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-blue-600 underline cursor-pointer whitespace-nowrap">
                                                                                 <Link to={`/dashboard/finance/master-subscription/details/${group.id}`}>
@@ -295,6 +347,9 @@ export function MasterSubscriptionView() {
                                                                                         ? 'Free'
                                                                                         : plan.packagePrice}
                                                                                 </Link>
+                                                                            </td>
+                                                                            <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
+                                                                                {plan.type === "PAID" ? Number(plan.discountPrice || 0) : '-'}
                                                                             </td>
                                                                             <td className="border-b border-blue-gray-50 py-2 px-3 text-black whitespace-nowrap">
                                                                                 {Number(plan.price || 0) === 0 ? 'Free' : plan.price}
@@ -343,6 +398,7 @@ export function MasterSubscriptionView() {
                     </CardHeader>
                 )}
             </Card>
+        </div>
         </div>
     );
 }

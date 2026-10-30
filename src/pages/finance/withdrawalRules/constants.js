@@ -1,9 +1,9 @@
 export const WITHDRAWAL_RULE_ENTITY_TYPES = [
-  { label: "CAB", value: "CAB" },
-  { label: "ACTING_DRIVER", value: "ACTING_DRIVER" },
-  { label: "AUTO", value: "AUTO" },
-  { label: "BIKE", value: "BIKE" },
-  { label: "PARCEL", value: "PARCEL" },
+  { label: "Rides Rental Cabs", value: "CAB" },
+  { label: "Driver", value: "DRIVER" },
+  { label: "Auto", value: "AUTO" },
+  { label: "Bike", value: "BIKE" },
+  { label: "Parcel", value: "PARCEL" },
 ];
 
 export const WITHDRAWAL_RULE_TIERS = [

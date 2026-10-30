@@ -12,10 +12,11 @@ const validationSchema = Yup.object({
   serviceType: Yup.string().required("Service Type is required"),
   zone: Yup.string().required("Zone is required"),
   eligibleForReturnTrip: Yup.boolean().required("Eligible For Return Trip is required"),
-  status: Yup.string().required("Status is required"),
+  // status: Yup.string().required("Status is required"),
 });
 
 const handleEditSubmit = async (id, values, { setSubmitting, setFieldError }, navigate) => {
+  // console.log("Submitting values for edit:", values);
   try {
     const response = await ApiRequestUtils.update(`${API_ROUTES.UPDATE_RETURN_TRIP_ELIGIBILITY}/${id}`, values, 0, { suppressAlert: true });
     if (response?.success === false) {
@@ -28,15 +29,6 @@ const handleEditSubmit = async (id, values, { setSubmitting, setFieldError }, na
   } finally {
     setSubmitting(false);
   }
-};
-
-const normalizePlanName = (value) => {
-  if (!value) return "";
-  const normalized = String(value).trim().toLowerCase();
-  if (normalized === "premium") return "Premium";
-  if (normalized === "standard") return "Standard";
-  if (normalized === "regular") return "Regular";
-  return value;
 };
 
 export default function ReturnTripDriverSubscriptionEdit() {
@@ -63,11 +55,11 @@ export default function ReturnTripDriverSubscriptionEdit() {
         if (row) {
           setForm({
             tier: row.tier || "",
-            planName: normalizePlanName(row.planName),
+            planName: row.planName || "",
             serviceType: row.serviceType || "RIDES_RENTAL_CABS",
             zone: row.zone || "ALL",
             eligibleForReturnTrip: Boolean(row.eligibleForReturnTrip),
-            status: row.status || "ACTIVE",
+            status: "ACTIVE",
             notes: row.notes || "",
           });
         }
@@ -109,9 +101,9 @@ export default function ReturnTripDriverSubscriptionEdit() {
                 <label className="block text-sm font-medium">Plan Name</label>
                 <Field as="select" name="planName" className="mt-1 w-full rounded-md border p-2">
                   <option value="">Select Plan Name</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Regular">Regular</option>
+                  <option value="premium">Premium</option>
+                  <option value="standard">Standard</option>
+                  <option value="regular">Basic</option>
                 </Field>
                 <ErrorMessage name="planName" component="div" className="mt-1 text-sm text-red-600" />
               </div>
@@ -150,7 +142,7 @@ export default function ReturnTripDriverSubscriptionEdit() {
                 </div>
                 <ErrorMessage name="eligibleForReturnTrip" component="div" className="mt-1 text-sm text-red-600" />
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium">Status</label>
                 <div className="mt-2 flex items-center gap-3 rounded-md border p-2">
                   <span className="text-sm text-gray-600">Inactive</span>
@@ -164,7 +156,7 @@ export default function ReturnTripDriverSubscriptionEdit() {
                   <span className="text-sm text-gray-600">Active</span>
                 </div>
                 <ErrorMessage name="status" component="div" className="mt-1 text-sm text-red-600" />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium">Notes</label>
                 <Field as="textarea" name="notes" rows="4" className="mt-1 w-full rounded-md border p-2" />

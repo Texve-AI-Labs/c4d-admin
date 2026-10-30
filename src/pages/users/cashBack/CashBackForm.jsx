@@ -175,7 +175,8 @@ const CashBackForm = ({
                   type="number"
                   name="config.cashbackDiscount"
                   step="0.01"
-                  min="0"
+                  min="1"
+                  max="100"
                   className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm"
                   placeholder="Enter cashback discount"
                 />

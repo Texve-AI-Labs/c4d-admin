@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { ASYNC_STORAGE_KEYS, getBaseUrl, KYC_PROCESS } from "./constants";
+import { ASYNC_STORAGE_KEYS, getBaseUrl, getNgrokSkipHeaders, KYC_PROCESS } from "./constants";
+import { attachNetworkErrorInterceptor, notifyAndThrowNetworkError } from "./networkError";
 
 const showDefaultFailureAlert = (message) => {
     if (typeof window !== "undefined" && typeof window.alert === "function") {
@@ -7,21 +8,28 @@ const showDefaultFailureAlert = (message) => {
     }
 };
 
+attachNetworkErrorInterceptor();
+
 export const ApiRequestUtils = {
     post: async (apiRoute, body, custID = 0, options = {}) => {
         const token = localStorage.getItem('token') || body?.sessionId || null ;
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning' : true,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
         }
-const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
+let data;
+        try {
+            const response = await axios.post(getBaseUrl() + apiRoute, body, {
             headers
         });
+            data = response.data;
+        } catch (error) {
+            notifyAndThrowNetworkError(error);
+        }
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             if (options?.suppressAlert) return data;
             showDefaultFailureAlert(data?.message);
@@ -36,14 +44,20 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
         }
-        const { data } = await axios.get(getBaseUrl() + apiRoute, {
+        let data;
+        try {
+        const response = await axios.get(getBaseUrl() + apiRoute, {
             headers
         });
+            data = response.data;
+        } catch (error) {
+            notifyAndThrowNetworkError(error);
+        }
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             alert('Failure', data.message, [{
                 style: 'default', onPress: () => {
@@ -58,15 +72,21 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
 
     getWithQueryParam: async (apiRoute, params) => {
         const token = localStorage.getItem('token');
-        const { data } = await axios.get(getBaseUrl() + apiRoute, {
+        let data;
+        try {
+        const response = await axios.get(getBaseUrl() + apiRoute, {
             headers: {
                 'Content-Type': 'application/json',
                 'token': token,
                 'custID': 63,
-                // 'ngrok-skip-browser-warning': '69420',
+                ...getNgrokSkipHeaders(),
             },
             params: params
         });
+            data = response.data;
+        } catch (error) {
+            notifyAndThrowNetworkError(error);
+        }
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             alert('Failure', data.message, [{
                 style: 'default', onPress: () => {
@@ -84,7 +104,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -106,7 +126,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/json',
             'token': token,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         }
         if (custID != 0) {
             headers['custID'] = custID;
@@ -133,7 +153,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
                 'Content-Type': 'application/json',
                 'token': token,
                 'custID': 63,
-                // 'ngrok-skip-browser-warning': '69420',
+                ...getNgrokSkipHeaders(),
             },
             data: body
         });
@@ -151,11 +171,14 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
     },
     postDocs: async (apiRoute, body) => {
         const token = localStorage.getItem('token');
+        const headers = {
+            'Content-Type': 'multipart/form-data',
+            'token': token,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...getNgrokSkipHeaders(),
+        };
         const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                'token': token
-            }
+            headers
         });
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             // Alert.alert('Failure', data.message, [{
@@ -173,10 +196,10 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const { data } = await axios.put(getBaseUrl() + apiRoute, body, {
             headers: {
                 'Content-Type': 'multipart/form-data',
-                'token': token
+                'token': token,
+                ...getNgrokSkipHeaders(),
             }
         });
-        console.log('data in POST DOCS :', data);
         if (!data.success && (data.code === 400 || data.code === 415)) { // Unauthorized request
             // Alert.alert('Failure', data.message, [{
             //     style: 'default', onPress: () => {
@@ -195,8 +218,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
         const headers = {
             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'token': token,
-            // 'ngrok-skip-browser-warning' : true,
-            // 'ngrok-skip-browser-warning': '69420',
+            ...getNgrokSkipHeaders(),
         };
 
         if (custID !== 0) {
@@ -211,6 +233,23 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
 
         return response;
     },
+    fetchDocumentDownload: async (apiRoute, params = {}) => {
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('No authentication token found');
+
+        const response = await axios.get(getBaseUrl() + apiRoute, {
+            headers: {
+                'token': token,
+                ...(token ? { Authorization: 'Bearer ' + token } : {}),
+                ...getNgrokSkipHeaders(),
+            },
+            params,
+            responseType: 'blob',
+        });
+
+        return response;
+    },
+
    fetchPdfDowload: async (apiRoute) => {
     const token = localStorage.getItem('token');
     if (!token) throw new Error('No authentication token found');
@@ -218,6 +257,7 @@ const { data } = await axios.post(getBaseUrl() + apiRoute, body, {
     const response = await axios.get(getBaseUrl() + apiRoute, {
         headers: {
             'token': token,
+            ...getNgrokSkipHeaders(),
         },
         responseType: 'blob', 
     });

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Card, CardBody, Chip, IconButton, Typography, Button } from "@material-tailwind/react";
 import { PencilIcon } from "@heroicons/react/24/solid";
 import CabDriverWalletLog from '@/components/CabDriverWallet';
+import { safeText } from "@/utils/text";
 
 const getSuggestionText = (suggestion) => {
   if (typeof suggestion === "string") return suggestion;
@@ -41,10 +42,7 @@ const formatVehicleTypeValue = (value) => {
   const raw = String(value).trim();
   if (!raw) return "-";
   const normalized = raw.toUpperCase();
-  if (["EV", "CNG", "LPG"].includes(normalized)) return normalized;
-  if (normalized === "PETROL" || normalized === "DIESEL") {
-    return normalized[0] + normalized.slice(1).toLowerCase();
-  }
+  if (["AUTO"].includes(normalized)) return normalized;
   return raw
     .toLowerCase()
     .split(/\s+/)
@@ -70,6 +68,7 @@ const VehicleInfoSection = ({
   const sections = Array.isArray(vehicleSections) ? vehicleSections : [];
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [draftValues, setDraftValues] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [activeLogTabBySection, setActiveLogTabBySection] = useState({});
 
   const editableLabels = useMemo(
@@ -82,6 +81,17 @@ const VehicleInfoSection = ({
     (section?.vehicleDetailsRows || []).forEach((row) => {
       if (editableLabels.has(row.label)) map[row.label] = row.value === "-" ? "" : row.value;
     });
+    const rawAddress = section?.rawValues?.curAddress;
+    if (rawAddress && typeof rawAddress === "object") {
+      map.AddressPlaceId =
+        rawAddress.placeId ||
+        rawAddress.place_id ||
+        rawAddress.placeID ||
+        rawAddress.id ||
+        "";
+    } else if (typeof rawAddress === "string") {
+      map.AddressPlaceId = section?.rawValues?.curAddressPlaceId || "";
+    }
     return map;
   };
 
@@ -138,6 +148,7 @@ const VehicleInfoSection = ({
                         onClick={() => {
                           setEditingSectionId(section.id);
                           setDraftValues(getInitialDraft(section));
+                          setFieldErrors({});
                         }}
                       >
                         <PencilIcon className="h-4 w-4" />
@@ -200,11 +211,7 @@ const VehicleInfoSection = ({
                               className="h-9 px-2.5 w-full max-w-[220px] rounded-md border border-gray-300 bg-white text-sm"
                             >
                               <option value="">Select</option>
-                              <option value="Petrol">Petrol</option>
-                              <option value="EV">EV</option>
-                              <option value="CNG">CNG</option>
-                              <option value="LPG">LPG</option>
-                              <option value="Diesel">Diesel</option>
+                              <option value="AUTO">Auto</option>
                             </select>
                           ) : row.label === "Address" ? (
                             <div className="relative w-full max-w-[220px]">
@@ -217,10 +224,16 @@ const VehicleInfoSection = ({
                                     [row.label]: value,
                                     AddressPlaceId: "",
                                   }));
+                                  setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "" }));
                                   onVehicleAddressSearch?.(section.id, value);
                                 }}
                                 className="h-9 px-2.5 w-full rounded-md border border-gray-300 bg-white text-sm"
                               />
+                              {fieldErrors.AddressPlaceId ? (
+                                <Typography className="mt-1 text-xs text-red-500">
+                                  {fieldErrors.AddressPlaceId}
+                                </Typography>
+                              ) : null}
                               {(getVehicleAddressSuggestionsBySection?.(section.id) || []).length > 0 ? (
                                 <div className="absolute z-20 mt-1 w-full max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
                                   {(getVehicleAddressSuggestionsBySection?.(section.id) || []).map((suggestion, idx) => (
@@ -240,6 +253,7 @@ const VehicleInfoSection = ({
                                             suggestion?.id ||
                                             "",
                                           }));
+                                          setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "" }));
                                           onVehicleAddressSearch?.(section.id, "");
                                         }
                                       }
@@ -265,7 +279,7 @@ const VehicleInfoSection = ({
                             />
                           )
                         ) : row.label === "Status" || row.label === "Subscription Status" || row.label === "Credit Status" ? (
-                          <Chip value={row.value} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
+                          <Chip value={safeText(row.value)} color={getStatusChipColor(row.value)} variant="ghost" className="w-fit" />
                         ) : row.label === "Address" ? (
                           <Typography className="text-blue-gray-900 font-medium break-words">
                             {formatAddressValue(row.value)}
@@ -275,7 +289,7 @@ const VehicleInfoSection = ({
                             {formatVehicleTypeValue(row.value)}
                           </Typography>
                         ) : (
-                          <Typography className="text-blue-gray-900 font-medium break-words">{row.value}</Typography>
+                          <Typography className="text-blue-gray-900 font-medium break-words">{safeText(row.value)}</Typography>
                         )}
                       </div>
                       );
@@ -304,9 +318,14 @@ const VehicleInfoSection = ({
                           className="h-8 px-3 text-xs normal-case bg-primary"
                           disabled={vehicleDetailsSavingId === section.id}
                           onClick={() => {
+                            if (!String(draftValues?.AddressPlaceId || "").trim()) {
+                              setFieldErrors((prev) => ({ ...prev, AddressPlaceId: "Address place id is required." }));
+                              return;
+                            }
                             onSaveVehicleDetails?.(section.id, draftValues, () => {
                               setEditingSectionId(null);
                               setDraftValues({});
+                              setFieldErrors({});
                             });
                           }}
                         >

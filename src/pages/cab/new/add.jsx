@@ -15,15 +15,24 @@ const makeAddressPayload = (name, placeId) => ({
     ...(placeId ? { placeId } : {}),
 });
 
-const LuggageAutoSync = ({ carType, setFieldValue, getLuggageForCarType, luggageCapacityMap }) => {
+const CAPACITY_CATEGORY_BY_CAR_TYPE = {
+    MINI: "ECONOMY_GO",
+    SEDAN: "COMFORT",
+    SUV: "PREMIUM",
+    MUV: "PREMIUM_XL",
+};
+
+const VehicleCapacityAutoSync = ({ carType, setFieldValue, getLuggageForCarType, getSeaterForCarType, luggageCapacityMap, seaterCapacityMap }) => {
     useEffect(() => {
         const normalizedCarType = String(carType || '').toLowerCase();
         if (!normalizedCarType) {
             setFieldValue('luggage', '', false);
+            setFieldValue('seater', '', false);
             return;
         }
         setFieldValue('luggage', getLuggageForCarType(normalizedCarType), false);
-    }, [carType, luggageCapacityMap, setFieldValue, getLuggageForCarType]);
+        setFieldValue('seater', getSeaterForCarType(normalizedCarType), false);
+    }, [carType, luggageCapacityMap, seaterCapacityMap, setFieldValue, getLuggageForCarType, getSeaterForCarType]);
 
     return null;
 };
@@ -167,6 +176,7 @@ const CabAddNew = () => {
     const [carType, setCarType] = useState([]);
     const [selectedCarType, setSelectedCarType] = useState('');
     const [luggageCapacityMap, setLuggageCapacityMap] = useState({});
+    const [seaterCapacityMap, setSeaterCapacityMap] = useState({});
     const [luggageCapacityError, setLuggageCapacityError] = useState("");
     const { id } = useParams();
     const navigate = useNavigate();
@@ -305,23 +315,37 @@ const CabAddNew = () => {
             });
             if (data?.luggageCapacity) {
                 setLuggageCapacityMap(data?.luggageCapacity || {});
+                setSeaterCapacityMap(data?.seaterCapacity || {});
                 setLuggageCapacityError("");
             } else {
                 setLuggageCapacityMap({});
+                setSeaterCapacityMap({});
                 setLuggageCapacityError("Unable to load luggage capacity for this zone.");
             }
         } catch (error) {
             console.error("Failed to fetch luggage capacity:", error);
             setLuggageCapacityMap({});
+            setSeaterCapacityMap({});
             setLuggageCapacityError("Unable to load luggage capacity for this zone.");
         }
     };
 
     const getLuggageForCarType = (carTypeValue) => {
         const normalized = String(carTypeValue || "").toLowerCase();
-        const apiValue = Number(luggageCapacityMap?.[normalized]);
+        const key = normalized.toUpperCase();
+        const category = CAPACITY_CATEGORY_BY_CAR_TYPE[key];
+        const apiValue = Number(luggageCapacityMap?.carTypes?.[key] ?? luggageCapacityMap?.categories?.[category] ?? luggageCapacityMap?.[category] ?? luggageCapacityMap?.[normalized]);
+        console.log("[Cab Creation Luggage Capacity]", { carType: key, category: CAPACITY_CATEGORY_BY_CAR_TYPE[key], capacity: apiValue, luggageCapacityMap });
         if (Number.isFinite(apiValue) && apiValue > 0) return String(apiValue);
         return "";
+    };
+
+    const getSeaterForCarType = (carTypeValue) => {
+        const normalized = String(carTypeValue || "").toUpperCase();
+        const category = CAPACITY_CATEGORY_BY_CAR_TYPE[normalized];
+        const apiValue = Number(seaterCapacityMap?.carTypes?.[normalized] ?? seaterCapacityMap?.categories?.[category] ?? seaterCapacityMap?.[category] ?? seaterCapacityMap?.[normalized]);
+        console.log("[Cab Creation Seater Capacity]", { carType: normalized, category: CAPACITY_CATEGORY_BY_CAR_TYPE[normalized], capacity: apiValue, seaterCapacityMap });
+        return Number.isFinite(apiValue) && apiValue > 0 ? String(apiValue) : "";
     };
 
     const handleAddressSelect = (suggestion) => {
@@ -571,8 +595,9 @@ const CabAddNew = () => {
                 driverId: values.driverId,
             }
             // console.log('CAB DETAILS :', cabDetails);
-            const prices = values.prices;
-            let res = { cabDetails: JSON.stringify(cabDetails), prices: JSON.stringify(prices) };
+            // const prices = values.prices;
+            let res = { cabDetails: JSON.stringify(cabDetails) };
+            // prices: JSON.stringify(prices),
             const resp = await ApiRequestUtils.post(API_ROUTES.REGISTER_CAB, res);
             // console.log('CAB DATA :', resp);
             if (!resp?.success && resp?.code === 203) {
@@ -582,7 +607,7 @@ const CabAddNew = () => {
                 resetForm();
             }
             else if (resp?.success && resp?.code === 200) {
-                navigate(`/dashboard/vendors/account/owner-onboarding-cab`);
+                navigate(`/dashboard/vendors/account/owner-onboarding-cab`, { replace: true });
             }
 
         } catch (error) {
@@ -624,11 +649,13 @@ const CabAddNew = () => {
             >
                 {({ handleSubmit, values, errors, handleChange, setFieldValue, touched, validateForm, setTouched }) => (
                     <Form className="space-y-6">
-                        <LuggageAutoSync
+                        <VehicleCapacityAutoSync
                             carType={values.carType}
                             setFieldValue={setFieldValue}
                             getLuggageForCarType={getLuggageForCarType}
+                            getSeaterForCarType={getSeaterForCarType}
                             luggageCapacityMap={luggageCapacityMap}
+                            seaterCapacityMap={seaterCapacityMap}
                         />
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -696,7 +723,7 @@ const CabAddNew = () => {
                             </div>
                             <div>
                                 <label htmlFor="seater" className="text-sm font-medium text-gray-700">Seater</label>
-                                <Field type="text" name="seater" className="p-2 w-full border-2 rounded-md border-gray-300" maxLength={10} />
+                                <Field type="text" name="seater" className="p-2 w-full border-2 rounded-md border-gray-300 bg-gray-50" maxLength={10} readOnly />
                                 <ErrorMessage name="seater" component="div" className="text-red-500 text-sm" />
                             </div>
                             <div>

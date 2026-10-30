@@ -20,6 +20,17 @@ export const badgeClassByValue = (value) => {
   return "bg-gray-100 text-gray-700 border-gray-200";
 };
 
+export const formatDisplayLabel = (value) => {
+  if (!value) return "-";
+  const normalized = String(value).toUpperCase();
+  if (normalized === "IN_PROGRESS") return "In Progress";
+  return normalized
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
 export const formatDateTime = (value) => {
   if (!value) return "-";
   const date = new Date(value);

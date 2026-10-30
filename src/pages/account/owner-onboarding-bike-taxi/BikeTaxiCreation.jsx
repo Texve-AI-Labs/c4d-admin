@@ -243,7 +243,7 @@ const validationSchema = Yup.object({
             };
             const res = await ApiRequestUtils.post(API_ROUTES.ADD_NEW_BIKE_TAXI, payload);
             if (res?.success) {
-              navigate(`/dashboard/vendors/account/owner-onboarding-bike-taxi/details/completed/${values.accountId}`);
+              navigate(`/dashboard/vendors/account/owner-onboarding-bike-taxi/details/completed/${values.accountId}`, { replace: true });
             } else {
               window.alert(res?.message || 'Failed to add Bike Taxi');
             }
@@ -354,7 +354,7 @@ const validationSchema = Yup.object({
                         <div>
                           <label className="text-sm font-medium text-gray-700">Bike Type</label>
                           <div className="space-x-4 mt-1">
-                            {['Petrol','EV'].map((type) => (
+                            {['BIKE','SCOOTY'].map((type) => (
                               <label key={type} className="inline-flex items-center">
                                 <Field type="radio" name="bikeType" value={type} className="mr-2" onChange={handleChange} />
                                 <span>{type}</span>

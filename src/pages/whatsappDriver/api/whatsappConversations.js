@@ -1,0 +1,62 @@
+import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { ApiRequestUtils } from "@/utils/apiRequestUtils";
+import { getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
+
+const BASE = "/whatsapp-conversations";
+
+const compactParams = (params = {}) =>
+  Object.fromEntries(Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ""));
+
+export const whatsappConversationsApi = {
+  getConversations: (params) => ApiRequestUtils.getWithQueryParam(BASE, compactParams(params)),
+
+  getMessages: (conversationId, params) =>
+    ApiRequestUtils.getWithQueryParam(`${BASE}/${conversationId}/messages`, compactParams(params)),
+
+  markAsRead: (conversationId) => ApiRequestUtils.post(`${BASE}/${conversationId}/mark-read`, {}),
+
+  sendReply: (conversationId, body) => ApiRequestUtils.post(`${BASE}/${conversationId}/reply`, body),
+
+  sendMediaReply: (conversationId, body) => ApiRequestUtils.postDocs(`${BASE}/${conversationId}/reply-media`, body),
+
+  downloadMediaForRetry: async (media) => {
+    const endpoint = media?.id ? `${getBaseUrl()}/whatsapp-media/${media.id}/download` : media?.directUrl;
+    if (!endpoint) throw new Error("Media file is unavailable");
+    const token = localStorage.getItem("token") || localStorage.getItem("rootcabs_access_token") || "";
+    const response = await fetch(endpoint, {
+      headers: media?.id
+        ? {
+            ...getNgrokSkipHeaders(),
+            ...(token ? { token, Authorization: `Bearer ${token}` } : {}),
+          }
+        : undefined,
+    });
+    if (!response.ok) throw new Error("Unable to retrieve the media file for retry");
+    return response.blob();
+  },
+
+  getReplyTemplates: (conversationId, limit = 100) =>
+    ApiRequestUtils.getWithQueryParam(`${BASE}/${conversationId}/reply-templates`, { limit }),
+
+  getTemplateDetail: (templateId) => ApiRequestUtils.get(`/whatsapp-templates/${templateId}`),
+
+  sendTemplateReply: (conversationId, body) => ApiRequestUtils.post(`${BASE}/${conversationId}/reply-template`, body),
+
+  forwardMessage: (conversationId, body) => ApiRequestUtils.post(`${BASE}/${conversationId}/forward`, body),
+
+  subscribeEvents: ({ token, signal, onOpen, onMessage, onClose, onError }) =>
+    fetchEventSource(`${getBaseUrl()}${BASE}/events`, {
+      method: "GET",
+      headers: {
+        Accept: "text/event-stream",
+        ...getNgrokSkipHeaders(),
+        token,
+      },
+      signal,
+      openWhenHidden: true,
+      onopen: onOpen,
+      onmessage: onMessage,
+      onclose: onClose,
+      onerror: onError,
+    }),
+};

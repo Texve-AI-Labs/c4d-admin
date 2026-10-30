@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { API_ROUTES, getBaseUrl } from "@/utils/constants";
+import { API_ROUTES, getBaseUrl, getNgrokSkipHeaders } from "@/utils/constants";
 
 export const useBookingSummarySSE = ({
   enabled,
@@ -35,8 +35,7 @@ export const useBookingSummarySSE = ({
       method: "GET",
       headers: {
         Accept: "text/event-stream",
-        // "ngrok-skip-browser-warning": "true",
-        // 'ngrok-skip-browser-warning': '69420',
+        ...getNgrokSkipHeaders(),
         token: localStorage.getItem("token") || "",
       },
       signal: abortController.signal,

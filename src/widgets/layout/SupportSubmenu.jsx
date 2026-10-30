@@ -16,14 +16,20 @@ function SupportSubmenu({ permissions = [] }) {
 
   const items = [
     { label: "Rate Card", path: "/dashboard/rental-rate-card", requiredPermission: "Support" },
+    { label: "Hourly Package Rate Card", path: "/dashboard/hourly-package-rate-card", requiredPermission: "Support" },
     { label: "Leads", path: "/dashboard/leads", requiredPermission: "Support" },
+    { label: "Payment Failed Records", path: "/dashboard/support/payment-failed-records", requiredPermission: "Support" },
+    { label: "Subscription Extend", path: "/dashboard/support/subscription-extend", requiredPermission: "Users" },
     { label: "Own Vehicle", path: "/dashboard/support/own-vehicle", permissionsAny: ["Support", "Sales", "Users"] },
     ...(BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW
       ? [{ label: "Admin Discount History", path: "/dashboard/support/admin-discount-history", requiredPermission: "Users" }]
       : []),
     { label: "Driver Ads", path: "/dashboard/support/driver-ads", requiredPermission: "Support" },
+    { label: "Driver Ads Reg", path: "/dashboard/support/driver-ads-reg", requiredPermission: "Support" },    
     { label: "Support Review & Reward Management", path: "/dashboard/support/review-reward-management", requiredPermission: "Support" },
+    { label: "Compliance Management", path: "/dashboard/support/compliance-management", requiredPermission: "Users" },
     { label: "Customer Cancellation Charge Logs", path: "/dashboard/support/customer-cancellation-charge-logs", requiredPermission: "Users" },
+    { label: "Acting Driver Cancellation Logs", path: "/dashboard/support/acting-driver-cancellation-logs", requiredPermission: "Users" },
   ];
   const filteredItems = items.filter(({ requiredPermission, permissionsAny }) => {
     if (Array.isArray(permissionsAny) && permissionsAny.length > 0) {

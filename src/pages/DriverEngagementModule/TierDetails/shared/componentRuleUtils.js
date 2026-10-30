@@ -29,6 +29,7 @@ export const createComponentRuleCondition = ({
   value = "1",
   amount = "0",
   isMandatory = true,
+  slots = [],
 } = {}) => ({
   metric,
   period,
@@ -37,6 +38,12 @@ export const createComponentRuleCondition = ({
   value: String(value ?? ""),
   amount: String(amount ?? ""),
   isMandatory,
+  slots: Array.isArray(slots)
+    ? slots.map((slot) => ({
+        start: String(slot?.start || ""),
+        end: String(slot?.end || ""),
+      }))
+    : [],
 });
 
 export const createTierRuleState = (payoutFrequency = "DAILY") => ({
@@ -98,12 +105,21 @@ export const getComponentUiServiceType = (condition = {}) => {
 export const buildComponentRuleConditionPayload = (rule = {}) => {
   const normalizedServiceType = String(rule?.serviceType || "").trim().toUpperCase();
   const normalizedParcelVehicleType = String(rule?.parcelVehicleType || "").trim().toUpperCase();
+  const normalizedSlots = Array.isArray(rule?.slots)
+    ? rule.slots
+        .filter((slot) => slot?.start || slot?.end)
+        .map((slot) => ({
+          start: String(slot?.start || ""),
+          end: String(slot?.end || ""),
+        }))
+    : [];
 
   if (normalizedServiceType === "ANY") {
     return {
       serviceType: "ANY",
       bookingType: null,
       packageType: null,
+      ...(normalizedSlots.length ? { slots: normalizedSlots } : {}),
     };
   }
 
