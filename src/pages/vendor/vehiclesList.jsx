@@ -141,7 +141,7 @@ export function VehiclesList({ id = 0 }) {
               <table className="w-full min-w-[640px] table-auto">
                 <thead className="whitespace-nowrap">
                   <tr>
-                    {["Driver Name", "Cab Name", "Phone Number","Vehicle Type", "Vehicle Number", "Address","Registration Date", "Available Status", "Check Status", "Subscription Status"].map((el) => (
+                    {["Account Name", "Account Type", "Account Phone Number", "Driver Name", "Cab Name", "Phone Number","Vehicle Type", "Vehicle Number", "Address", "Registration Date", "Available Status", "Check Status", "Subscription Status"].map((el) => (
                       <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                         <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
                           {el}
@@ -153,7 +153,7 @@ export function VehiclesList({ id = 0 }) {
                 <tbody className="whitespace-nowrap">
                   {loading ? (
                       <tr>
-                      <td colSpan={9} className="py-3 px-5">
+                      <td colSpan={12} className="py-3 px-5">
                         <div className="flex justify-center items-center">
                           <Spinner className="h-12 w-12" />
                         </div>
@@ -163,6 +163,24 @@ export function VehiclesList({ id = 0 }) {
                   vehicleList.map(
                     ({ id, driverName, name, vehicleType, carType, type, assigned,firstName,driverAddress,curAddress,Account, carNumber, Drivers, subscriptionStatus, phoneNumber,status, created_at }) => (                      
                     <tr key={id}>
+                      <td className="py-3 px-5 border-b border-blue-gray-50">
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Account.name || '-')}</Typography>
+                      </td>
+                      <td className="py-3 px-5 border-b border-blue-gray-50">
+                        <Chip
+                          variant="ghost"
+                          color={
+                            String(Account?.type || '').toUpperCase() === 'COMPANY' ? 'red' :
+                            String(Account?.type || '').toUpperCase() === 'INDIVIDUAL' ? 'yellow' :
+                            'blue-gray'
+                          }
+                          value={safeText(Account?.type)}
+                          className="w-fit px-2 py-0.5 text-[11px] font-medium"
+                        />
+                      </td>
+                      <td className="py-3 px-5 border-b border-blue-gray-50">
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Account.phoneNumber|| "-")}</Typography>
+                      </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
                         <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Drivers?.[0]?.firstName || driverName || Account?.name || '')}</Typography>
                       </td>
@@ -178,8 +196,8 @@ export function VehiclesList({ id = 0 }) {
                       <td className="py-3 px-5 border-b border-blue-gray-50">
                         <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(carNumber)}</Typography>
                       </td>
-                        <td className="py-3 px-5 border-b border-blue-gray-50">
-                          <Typography className="text-xs font-semibold text-blue-gray-600">
+                        <td className="w-[360px] min-w-[360px] max-w-[420px] whitespace-normal break-words py-3 px-5 border-b border-blue-gray-50">
+                          <Typography className="whitespace-normal break-words text-xs font-semibold text-blue-gray-600">
                               {safeText(Drivers?.[0]?.curAddress?.name || Drivers?.[0]?.curAddress ||  driverAddress || curAddress || 'N/A')}
                           </Typography>
                         </td>
