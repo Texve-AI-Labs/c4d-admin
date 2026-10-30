@@ -7,8 +7,8 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/solid";
  
-const GEO_INTELLIGENCE_URL = import.meta.env.VITE_GEO_INTELLIGENCE_UAT;
-const OPERATIONAL_URL = "https://operational-dashboard-96d1b.web.app";
+const GEO_INTELLIGENCE_URL = import.meta.env.VITE_GEO_INTELLIGENCE_UAT || "https://geointelligence-cd5f6.web.app";
+// const OPERATIONAL_URL = "https://operational-dashboard-96d1b.web.app";
 const ROOTCABS_DASHBOARD = import.meta.env.VITE_ROOTCABS_DASHBOARD_UAT || "https://rootcabs-dashboard-uat.web.app";
 
 const FULLSCREEN_REQUEST = "geo-intelligence:fullscreen-request";
@@ -21,7 +21,7 @@ const GeoIntelligence = () => {
   const tabs = useMemo(
     () => [
       { key: "geo", label: "Geo Intelligence", url: GEO_INTELLIGENCE_URL },
-      { key: "ops", label: "Operational", url: OPERATIONAL_URL },
+      // { key: "ops", label: "Operational", url: OPERATIONAL_URL },
       { key: "rod", label: "Root Cabs Dashboard", url: ROOTCABS_DASHBOARD },
     ],
     []
@@ -39,8 +39,8 @@ const GeoIntelligence = () => {
   const activeTitle =
     activeTab === "geo"
       ? "Geo Intelligence"
-      : activeTab === "ops"
-      ? "Operational"
+      // : activeTab === "ops"
+      // ? "Operational"
       : "Root Cabs Dashboard";
 
   useEffect(() => {
