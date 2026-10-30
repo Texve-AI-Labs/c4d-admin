@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { TrashIcon } from "@heroicons/react/24/outline";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useNavigate } from "react-router-dom";
 import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Switch } from "@material-tailwind/react";
@@ -432,21 +431,6 @@ function MasterSubscriptionAddForm({ values, setFieldValue, handleSubmit, dirty,
                       }
                     />
                     </div>
-                  <div className="flex items-center justify-center">
-                    <button
-                      type="button"
-                      className="rounded-md border border-red-200 p-2 text-red-600 hover:bg-red-50"
-                      title="Remove plan"
-                      onClick={() =>
-                        setFieldValue(
-                          "plans",
-                          values.plans.filter((_, planIndex) => planIndex !== index)
-                        )
-                      }
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>
