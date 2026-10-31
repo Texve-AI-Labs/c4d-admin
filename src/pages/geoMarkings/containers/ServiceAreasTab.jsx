@@ -231,7 +231,6 @@ const ServiceAreasTab = () => {
               onPolygonComplete={handlePolygonComplete}
               onDraftChange={handleDraftChange}
               onPolygonUpdate={handlePolygonUpdate}
-              onDraftChange={handleDraftChange}
               onPolygonDelete={handlePolygonDelete}
               existingPolygons={Array.isArray(selectedServiceAreaPolygon) ? [selectedServiceAreaPolygon] : []}
               backgroundPolygonStyle={{ fillColor: '#94a3b8', strokeColor: '#475569', fillOpacity: 0.12 }}
