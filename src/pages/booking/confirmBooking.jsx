@@ -352,6 +352,9 @@ const ConfirmBooking = (props) => {
         return 'Outstation';
     };
     const formatStatus = (status = '', assignmentStatus = '') => {
+         if (status === 'QUOTED' && assignmentStatus === 'QUOTE_EXPIRED') {
+                return 'Quote Expired';
+            }
          if (status === 'CONFIRMED' && assignmentStatus === 'ASSIGNED') {
                 return 'Driver Accepted';
             }
@@ -889,6 +892,8 @@ const handleSaveDriverEndLocation = async () => {
         finalEstimatedFareAfterDiscounts + quoteCancelChargeAmount;
     const currentBookingStatus = String(bookingDetails?.status || "").toUpperCase();
     const normalizedBookingStatus = currentBookingStatus.replace(/\s+/g, "_");
+    const isQuoteExpired = currentBookingStatus === BOOKING_STATUS.QUOTED &&
+        String(bookingDetails?.assignmentStatus || "").toUpperCase() === BOOKING_STATUS.QUOTE_EXPIRED;
     const showPaymentReceiptSummary = [ BOOKING_STATUS.END_OTP, BOOKING_STATUS.ENDED, BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.ENDED, "END OTP","PAYMENT REQUESTED","TRIP ENDED","ENDED"].includes(currentBookingStatus) || [BOOKING_STATUS.END_OTP,BOOKING_STATUS.ENDED,BOOKING_STATUS.PAYMENT_REQUESTED,BOOKING_STATUS.ENDED].includes(normalizedBookingStatus);
     const showQuoteSummary = !showPaymentReceiptSummary;
     const displayFareBreakdown = (() => {
@@ -1228,10 +1233,10 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                                         : "bg-blue-100 text-blue-800"
                             }`}
                         >
-                            {formatStatus(bookingDetails.status)}
+                            {formatStatus(bookingDetails.status, bookingDetails.assignmentStatus)}
                         </div>
 
-                        {bookingDetails?.assignmentStatus && (
+                        {bookingDetails?.assignmentStatus && bookingDetails.assignmentStatus !== 'QUOTE_EXPIRED' && (
                             <div
                                 className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                                     bookingDetails.assignmentStatus === "ASSIGNED"
@@ -1307,7 +1312,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                             </div>
                         </div>
                     )}
-                    {(!isTerminalStatus && (
+                    {(!isQuoteExpired && !isTerminalStatus && (
                         (bookingDetails.status === "QUOTED" && bookingDetails.followup !== "FOLLOWUP") ||
                         (bookingDetails.ownership === "ASSIGNED_TO_SUPPORT" &&
                             bookingDetails.status === "QUOTED" &&
@@ -1348,7 +1353,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                     )
                 }
 
-                {bookingDetails?.status === 'QUOTED' && bookingDetails?.serviceType !== 'PARCEL' && bookingDetails?.serviceType !== 'BIKE' &&(
+                {!isQuoteExpired && bookingDetails?.status === 'QUOTED' && bookingDetails?.serviceType !== 'PARCEL' && bookingDetails?.serviceType !== 'BIKE' &&(
                     <Button
                         color="white"
                         variant="outlined"
