@@ -1315,6 +1315,8 @@ if (!statusFilter.includes('All')) {
                                 { key: 'confirmedCount', label: 'Confirmed', icon: FaCalendarAlt, color: 'bg-purple-50 text-purple-900', spinnerColor: 'text-purple-900', chipColor: 'bg-purple-600 text-white' },
                                 { key: 'endedCount', label: 'Trip Completed', icon: FaCheckCircle, color: 'bg-green-50 text-green-900', spinnerColor: 'text-green-900', chipColor: 'bg-green-600 text-white' },
                                 { key: 'supportCount', label: 'Support Cancelled', icon: FaExclamationTriangle, color: 'bg-red-50 text-red-900', spinnerColor: 'text-red-900', chipColor: 'bg-red-600 text-white' },
+                                { key: 'currentOnlineDrivers', label: 'Current Online Drivers', value: todayOnlineDrivers, color: 'bg-blue-100 text-blue-900' },
+                                { key: 'onlineAtHour', label: `Online at ${String(selectedHour).padStart(2, '0')}:00`, value: selectedDriver?.count || 0, color: 'bg-green-100 text-green-900' },
                             ].map((item, index) => {
                                 const IconComponent = item.icon;
                                 return (
@@ -1326,7 +1328,11 @@ if (!statusFilter.includes('All')) {
                                             {item.label}
                                         </Typography>
                                         <div className="flex items-center justify-center w-full min-h-[32px]">
-                                            {summaryLoading ? (
+                                            {item.value !== undefined ? (
+                                                <Typography variant="h6" className="font-bold text-2xl">
+                                                    {item.value}
+                                                </Typography>
+                                            ) : summaryLoading ? (
                                                 <Spinner className={`h-5 w-5 ${item.spinnerColor}`} />
                                             ) : (
                                                 <Typography variant="h6" className="font-bold text-2xl">
@@ -1337,27 +1343,6 @@ if (!statusFilter.includes('All')) {
                                     </div>
                                 );
                             })}
-                        <div className="bg-gradient-to-r from-blue-100 to-blue-100 text-blue-900 p-2 rounded-lg shadow-md flex flex-col items-center justify-center min-w-[120px]">
-                            <div className="flex items-center justify-center mb-1 w-full">
-                            <Typography variant="small" className="font-bold text-xs text-blue-900">
-                                    Current Online Drivers
-                            </Typography>
-                        </div>
-                            <div className='flex gap-2 items-center'>
-                                <Typography variant="h3" className="font-bold text-2xl text-blue-900">{todayOnlineDrivers}</Typography>
-                                {/* <FaUsers className="w-5 h-5 mr-2 text-blue-900" /> */}
-                            </div>
-                        </div>
-                        <div className="bg-gradient-to-r from-green-100 to-green-100 text-green-900 p-2 rounded-lg text-center flex flex-col items-end min-w-[120px]">
-                            <div className="flex items-center justify-center w-full">
-                                <Typography variant="small" className="font-bold text-xs text-green-900">Online at {String(selectedHour).padStart(2, '0')}:00</Typography>
-                                {/* <FaSync className="w-4 h-4 mr-2 text-green-900" /> */}
-                            </div>
-                            <div className="flex items-center justify-center w-full">
-                                <Typography variant="h3" className="font-bold text-2xl text-green-900">{selectedDriver?.count || 0}</Typography>
-                            </div>
-                            {/* <Typography variant="small" className="mt-1 font-medium text-xs text-green-900">Updated: {selectedTime}</Typography> */}
-                        </div>
                     </div>
                 </div>                    
                         {/* {showDriverHours && (
