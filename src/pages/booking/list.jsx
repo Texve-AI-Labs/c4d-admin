@@ -1084,7 +1084,7 @@ if (!statusFilter.includes('All')) {
             { label: 'Today', value: 'TODAY' },
             ...(!isParcelList ? [
             { label: 'Future', value: 'REMAINING' }] : []),
-            { label: 'Custom date', value: 'CUSTOM_DATE' },],
+            ],
         [allTabLabel, isParcelList, isSuperUser]
     );
     const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
