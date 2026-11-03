@@ -20,6 +20,20 @@ const formatBookingLogStatus = (status, assignmentStatus) => {
   return status;
 };
 
+const normalizeQuoteExpiryLog = (value, bookingDetails = {}) => {
+  if (!value && bookingDetails?.assignmentStatus !== 'QUOTE_EXPIRED') return null;
+
+  const log = value && typeof value === 'object'
+    ? value
+    : { reason: value };
+
+  return {
+    ...log,
+    oldStatus: log.oldStatus || 'QUOTED',
+    newStatus: 'QUOTE_EXPIRED',
+  };
+};
+
 const issueReasonOptionsByRating = {
   1: ['Late arrival', 'Route Confusion', 'Aggressive Driver', 'Unprofessional & Rude', 'Poor Communication'],
   2: ['Late arrival', 'Route Confusion', 'Aggressive Driver', 'Unprofessional & Rude', 'Poor Communication'],
@@ -94,8 +108,11 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
           } else {
             setTripDetailsLogs([]);
           }
-          const quoteExpiryReason = data?.data?.quoteExpiryReason || bookingDetails?.quoteExpiryReason;
-          setQuoteExpiryLogs(quoteExpiryReason ? [quoteExpiryReason] : []);
+          const quoteExpiryLog = normalizeQuoteExpiryLog(
+            data?.data?.quoteExpiryReason || bookingDetails?.quoteExpiryReason,
+            bookingDetails
+          );
+          setQuoteExpiryLogs(quoteExpiryLog ? [quoteExpiryLog] : []);
         } else {
           console.warn('API call failed, falling back to notesData:', data?.message);
           setItems(fallbackNotes);
@@ -104,7 +121,11 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
           setTripDetailsLogs([]);
           setBookingFollowupLogs([]);
           setBookingExtraCharges([]);
-          setQuoteExpiryLogs(bookingDetails?.quoteExpiryReason ? [bookingDetails.quoteExpiryReason] : []);
+          const quoteExpiryLog = normalizeQuoteExpiryLog(
+            bookingDetails?.quoteExpiryReason,
+            bookingDetails
+          );
+          setQuoteExpiryLogs(quoteExpiryLog ? [quoteExpiryLog] : []);
         }
       } catch (error) {
         console.error('Error fetching notes:', error);
@@ -114,7 +135,11 @@ const TextBoxWithList = ({addNotes, notesData, bookingId, bookingDetails }) => {
         setTripDetailsLogs([]);
         setBookingFollowupLogs([]);
         setBookingExtraCharges([]);
-        setQuoteExpiryLogs(bookingDetails?.quoteExpiryReason ? [bookingDetails.quoteExpiryReason] : []);
+        const quoteExpiryLog = normalizeQuoteExpiryLog(
+          bookingDetails?.quoteExpiryReason,
+          bookingDetails
+        );
+        setQuoteExpiryLogs(quoteExpiryLog ? [quoteExpiryLog] : []);
       }
     };
 

@@ -39,6 +39,11 @@ const LEGACY_BOOKING_SEARCH_KEY = 'bookingSearchId';
 const getDateFilterFromTab = (tab) =>
     tab === 'TODAY' ? 'Today' : tab === 'REMAINING' ? 'Future' : tab === 'CUSTOM_DATE' ? 'Custom date' : 'All';
 
+const isQuoteExpiredBooking = (booking) =>
+    booking?.status === BOOKING_STATUS.QUOTE_EXPIRED ||
+    (booking?.status === BOOKING_STATUS.QUOTED &&
+        booking?.assignmentStatus === BOOKING_STATUS.QUOTE_EXPIRED);
+
 const getCustomDateRangeError = (startDate, endDate) => {
     const today = moment().format('YYYY-MM-DD');
     if (startDate && startDate > today) return 'Start date cannot be a future date.';
@@ -1586,7 +1591,7 @@ if (!statusFilter.includes('All')) {
                                                             options={[
                                                                 { value: 'All', label: 'All' },
                                                                 { value: 'QUOTED', label: 'Quoted' },
-                                                                { value: 'QUOTE_EXPIRED', label: 'Quote Expired'},
+                                                                // { value: 'QUOTE_EXPIRED', label: 'Quote Expired'},
                                                                 { value: 'BOOKING_ACCEPTED', label: 'Driver Accepted' },
                                                                 { value: 'CONFIRMED', label: 'Booking Confirmed' },
                                                                 { value: 'REQUEST_DRIVER', label: 'Request Driver' },
@@ -1594,7 +1599,7 @@ if (!statusFilter.includes('All')) {
                                                                 { value: 'TRIP_ENDED', label: 'Trip Ended' },
                                                                 { value: 'END_OTP', label: 'End OTP' },
                                                                 { value: 'ENDED', label: 'Ended' },
-                                                                { value: 'DRIVER_NOT_AVAILABLE', label: 'Driver Not Available'},
+                                                                // { value: 'DRIVER_NOT_AVAILABLE', label: 'Driver Not Available'},
                                                                 { value: 'CUSTOMER_CANCELLED', label: 'Customer Cancelled' },
                                                                 { value: 'DRIVER_CANCELLED', label: 'Driver Cancelled' },
                                                                 { value: 'SUPPORT_CANCELLED', label: 'Support Cancelled' },
@@ -1830,6 +1835,7 @@ if (!statusFilter.includes('All')) {
                                                 (statusFilter.includes('All') ||
                                                 (statusFilter.includes('COMPLETED') && booking.status === 'ENDED'  && booking.tripStatus === true) ||
                                                 (statusFilter.includes('ENDED') && booking.status === 'ENDED' && booking.tripStatus === false) ||
+                                                (statusFilter.includes('QUOTE_EXPIRED') && isQuoteExpiredBooking(booking)) ||
                                                 (statusFilter.includes(booking.status) && booking.status !== 'ENDED'))
                                                 &&
                                                 (serviceTypeFilter.includes('All') || serviceTypeFilter.includes(booking.serviceType)) &&
@@ -1852,7 +1858,10 @@ if (!statusFilter.includes('All')) {
                                                     const hasAssignedDriverOrCab = Boolean(hasAssignedDriver ||(hasAssignedVehicle && ['BOOKING_ACCEPTED', 'QUOTED', 'CONFIRMED'].includes(data?.status))
                                                     );
                                                     const isBikeService = String(data?.serviceType || '').toUpperCase() === 'BIKE';
-                                                    const displayBookingStatus = data?.status === "CONFIRMED" && data?.assignmentStatus === "ASSIGNED"
+                                                    const isQuoteExpired = isQuoteExpiredBooking(data);
+                                                    const displayBookingStatus = isQuoteExpired
+                                                        ? BOOKING_STATUS.QUOTE_EXPIRED
+                                                        : data?.status === "CONFIRMED" && data?.assignmentStatus === "ASSIGNED"
                                                         ? "DRIVER_ACCEPTED"
                                                         : data?.status === "CONFIRMED"
                                                             ? "BOOKING CONFIRMED"
@@ -2027,6 +2036,7 @@ if (!statusFilter.includes('All')) {
                                                                 // color={"blue"}
                                                               value={displayBookingStatus}
                                                                 className={`py-0.5 px-2 text-[11px] font-medium w-fit ${
+                                                                    isQuoteExpired ? "bg-gray-600 text-white" :
                                                                     data?.status === "QUOTED" ? "bg-yellow-600 text-white ":
                                                                     data?.status === "REQUEST_DRIVER" ? "bg-orange-600 text-white" :
                                                                     data?.status === "CONFIRMED" ? "bg-green-600 text-white" : 
@@ -2044,7 +2054,7 @@ if (!statusFilter.includes('All')) {
                                                                     
                                                                 }`}
                                                             />
-                                                            {data?.status === 'QUOTED' && data?.userId !== null ? (
+                                                            {data?.status === 'QUOTED' && !isQuoteExpired && data?.userId !== null ? (
                                                             <FaEdit
                                                                 className="text-red-700 text-sm cursor-pointer"
                                                                 title="Edit quote status"
