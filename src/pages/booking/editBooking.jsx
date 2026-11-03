@@ -1652,7 +1652,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                         {BOOKING_FEATURES.ADMIN_DISCOUNT_FLOW && values.serviceType && (
                                             <div className="mt-4 p-3 border border-gray-300 rounded-xl bg-white">
                                                 <Typography variant="h6" className="mb-2">Admin Discount (Optional)</Typography>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="block text-sm font-medium text-black-700">Discount Type</label>
                                                         <Field
@@ -1678,7 +1678,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                                                             onChange={(e) => setFieldValue('adminDiscountValue', sanitizeAdminDiscountValue(e.target.value))}
                                                         />
                                                     </div>
-                                                    <div>
+                                                    <div className="col-span-2">
                                                         <label className="block text-sm font-medium text-black-700">Remarks</label>
                                                         <Field
                                                             type="text"
