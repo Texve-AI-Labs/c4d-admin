@@ -21,6 +21,7 @@ import moment from "moment";
 import { useBookingQuerySummary } from "./hooks/useBookingQuerySummary";
 import { useBookingSummaryRealtime } from "./hooks/useBookingSummaryRealtime";
 import { useRealtimeEvents } from "@/context/realtimeEvents";
+import { isSuperUserRole } from "@/utils/roleUtils";
 // import DateRangeFilter from './DateRangeFilter';
 
 const isBrowser = () => typeof window !== 'undefined';
@@ -206,6 +207,9 @@ export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookin
         return features;
     }, [type, location.pathname]);
     const hasFeature = (feature) => bookingFeatures.includes(feature);
+    const isSuperUser = isSuperUserRole();
+    const isParcelList = String(type || '').toUpperCase() === 'PARCEL'
+        || String(location.pathname || '').toLowerCase().includes('/booking/list/parcel');
     const bookingFiltersKey = getBookingFiltersKey(location.pathname);
     const bookingSearchKey = getBookingSearchKey(location.pathname);
     const bookingSearchContextKey = getBookingSearchContextKey(location.pathname);
@@ -1068,20 +1072,20 @@ if (!statusFilter.includes('All')) {
             "Booking ID", "Customer Name", "Driver Name", "Source", "Booking Date", "Created Date", "Zone", "Status", "Trip Owner", "Follow Up", "Support Approval", "Assign Captain"];
 
     const tabs = useMemo(
-        () =>
-            isCompactFeatureList
+        () => isSuperUser
         ? [
             { label: allTabLabel, value:'ALL_BOOKINGS'},
             { label: 'Today', value: 'TODAY' },
-            { label: 'Custom date', value: 'CUSTOM_DATE' }
+            ...(!isParcelList ? [
+            { label: 'Future', value: 'REMAINING' }] : []),
+            { label: 'Custom date', value: 'CUSTOM_DATE' },
         ]
         : [
-            { label: allTabLabel, value:'ALL_BOOKINGS'},
             { label: 'Today', value: 'TODAY' },
-            { label: 'Future', value: 'REMAINING' },
-            { label: 'Custom date', value: 'CUSTOM_DATE' },
-                  ],
-        [bookingFeatures, allTabLabel, isCompactFeatureList]
+            ...(!isParcelList ? [
+            { label: 'Future', value: 'REMAINING' }] : []),
+            { label: 'Custom date', value: 'CUSTOM_DATE' },],
+        [allTabLabel, isParcelList, isSuperUser]
     );
     const tabValues = useMemo(() => tabs.map((tab) => tab.value), [tabs]);
 
