@@ -126,6 +126,7 @@ const pricingNumberFields = [
 
 const cloneCategoryPricing = () => JSON.parse(JSON.stringify(emptyCategoryPricing));
 const toNumber = (value) => Number(value || 0);
+const withSeconds = (value) => value ? (String(value).length === 5 ? `${value}:00` : value) : '';
 const FormLevelError = ({ error }) => (
     typeof error === 'string' ? <div className="text-red-500 text-sm">{error}</div> : null
 );
@@ -141,8 +142,8 @@ const buildCategoryPricingsPayload = (categoryPricings) => categoryPricings.map(
         cancelCharge: toNumber(categoryPricing.pricing.cancelCharge),
         extraKmPrice: toNumber(categoryPricing.pricing.extraKmPrice),
         nightCharge: toNumber(categoryPricing.pricing.nightCharge),
-        nightHoursFrom: categoryPricing.pricing.nightHoursFrom,
-        nightHoursTo: categoryPricing.pricing.nightHoursTo,
+        nightHoursFrom: withSeconds(categoryPricing.pricing.nightHoursFrom),
+        nightHoursTo: withSeconds(categoryPricing.pricing.nightHoursTo),
         waitingMins: Utils.convertMinutesToTimeFormat(categoryPricing.pricing.waitingMins),
         waitingCharge: toNumber(categoryPricing.pricing.waitingCharge),
         freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
