@@ -88,13 +88,29 @@ const ServiceAreaForm = ({
   }, [initialData?.highlightedService, initialServiceTypes]);
 
   const initialNewServices = useMemo(() => {
-    const ns = initialData?.newServices;
+    let ns = initialData?.newServices;
+    if (typeof ns === "string") {
+      try {
+        ns = JSON.parse(ns);
+      } catch {
+        ns = null;
+      }
+    }
     let raw = [];
+    if (ns && typeof ns.data === "string") {
+      try {
+        ns = { ...ns, data: JSON.parse(ns.data) };
+      } catch {
+        ns = null;
+      }
+    }
     if (ns && ns.data && Array.isArray(ns.data)) raw = ns.data;
     else if (Array.isArray(ns)) raw = ns;
     return raw.map((service) => {
       const { imageFile, imagePreview, ...rest } = service || {};
-      const url = (rest.url || rest.image || "").trim();
+      const url = [rest.url, rest.imageUrl, rest.image]
+        .find((value) => typeof value === "string" && value.trim())
+        ?.trim() || "";
       return { ...rest, url, imagePreview: url || undefined };
     });
   }, [initialData]);
@@ -145,7 +161,7 @@ const ServiceAreaForm = ({
 
   const newServiceNameOptions = [
     { value: "CABS", label: "Root Cabs" },
-    { value: "FOOD", label: "Root Food" },
+    // { value: "FOOD", label: "Root Food" },
     { value: "PARCEL", label: "Root Parcel" },
     { value: "SHOPPING", label: "Root Shopping" },
     { value: "STAY", label: "Root Stay" },
@@ -444,22 +460,29 @@ const ServiceAreaForm = ({
             service.imageFile instanceof File ? service.imageFile : null;
           const extFromFile = file?.name?.split(".").pop()?.toLowerCase() || "";
 
-          let imageValue = service.image || "";
-          if (!imageValue && file) {
-            imageValue = await fileToBase64(file);
-          }
-
-          return {
+          const cleanService = {
             name: service.name,
             accentColor: service.accentColor || "#1D4ED8",
             backgroundColor: service.backgroundColor || "#EAEEFF",
             pillColor: service.pillColor || "#1E3A8A",
             isUpdate: !!service.isUpdate,
-            image: imageValue,
-            extImage: service.extImage || extFromFile || "",
-            fileTypeImage:
-              service.fileTypeImage || (file ? file.type || "" : ""),
           };
+
+          // Existing service images are represented by `url` and must not be
+          // uploaded again. Include upload fields only when a new file was
+          // selected in this form.
+          if (file) {
+            cleanService.image = await fileToBase64(file);
+            cleanService.extImage = extFromFile;
+            cleanService.fileTypeImage = file.type || "";
+          } else if (typeof service.url === "string" && service.url.trim()) {
+            // Keep the existing service image when the admin changes another
+            // service. The backend can replace the array without losing this
+            // service's previously uploaded URL.
+            cleanService.url = service.url.trim();
+          }
+
+          return cleanService;
         }),
       );
 
@@ -694,12 +717,7 @@ const ServiceAreaForm = ({
                 </div>
 
                 {/* Image */}
-                {!(
-                  (service.name || "").toString().trim().toUpperCase() ===
-                    "CABS" || "PARCEL" || "FOOD" || "SHOPPING" || "STAY" ||
-                  (service.name || "").toString().trim().toUpperCase() ===
-                    "ROOT CABS" || "ROOT PARCEL" || "ROOT FOOD" || "ROOT SHOPPING" || "ROOT STAY"
-                ) && (
+                {(
                   <div>
                     <Typography
                       variant="small"
