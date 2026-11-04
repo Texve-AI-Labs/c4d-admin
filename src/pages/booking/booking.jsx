@@ -26,7 +26,7 @@ import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
 import EditBooking from './editBooking';
 import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { getCapacityValues } from './utils/capacityMapping';
 
 const debounce = (func, delay) => {
@@ -327,6 +327,41 @@ const Booking = (props) => {
     const [dropTaxiModalContent, setDropTaxiModalContent] = useState("Booking not available for the selected route. Try outstation service.");
     const [quotationLogs, setQuotationLogs] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [isBookingMinimized, setIsBookingMinimized] = useState(false);
+    const [minimizedBookingQueue, setMinimizedBookingQueue] = useState([]);
+
+    const minimizeBookingModal = () => {
+        const item = {
+            id: `${editBookingView ? 'edit' : 'new'}-${bookingData?.id || Date.now()}`,
+            type: editBookingView ? 'edit' : 'new',
+            bookingData: editBookingView ? bookingData : null,
+            label: editBookingView && bookingData?.bookingNumber
+                ? `Edit Booking - ${bookingData.bookingNumber}`
+                : 'New Booking',
+        };
+        setMinimizedBookingQueue((current) => [
+            ...current.filter((entry) => entry.id !== item.id),
+            item,
+        ]);
+        setIsBookingMinimized(true);
+        setIsOpen(false);
+    };
+
+    const restoreBookingModal = (item) => {
+        setMinimizedBookingQueue((current) => current.filter((entry) => entry.id !== item.id));
+        if (item.type === 'edit') {
+            setBookingData(item.bookingData);
+            setEditBooking(item.bookingData);
+            setBookingView(false);
+            setEditBookingView(true);
+        } else {
+            setBookingView(false);
+            setEditBookingView(false);
+            setBookingStage(0);
+        }
+        setIsBookingMinimized(false);
+        setIsOpen(true);
+    };
     const adminStatusSyncKeyRef = useRef('');
     const adminStatusAppliedTsRef = useRef(0);
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser') || "{}");
@@ -610,6 +645,7 @@ const Booking = (props) => {
             setBookingView(false);
             setEditBookingView(true);
             setShowQuickCreateCustomer(false);
+            setIsBookingMinimized(false);
             setIsOpen(true);
 
             const { editBooking: _ignoredEditBooking, ...rest } = params;
@@ -2456,6 +2492,7 @@ const priceDetailsCardClass = isPeakHour
                             setDriverPackageNotice(null);
                             setRentalRoundTripEstimatedDurationText('');
                             setRentalRoundTripMinReturnAt('');
+                            setIsBookingMinimized(false);
                             setIsOpen(true);
                         }}
                         className={`relative rounded-xl px-6 py-2 mr-2 text-sm w-40 h-10 mt-2 ${ColorStyles.addButtonColor}`}
@@ -2472,13 +2509,37 @@ const priceDetailsCardClass = isPeakHour
 	                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearBookingSearchState} />
             </div>
             <div>
-                {isOpen && (
+                {minimizedBookingQueue.length > 0 && (
+                    <div className="fixed bottom-5 right-5 z-[70] flex max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2">
+                        {minimizedBookingQueue.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => restoreBookingModal(item)}
+                                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-left text-sm font-semibold text-white shadow-lg hover:bg-blue-700"
+                            >
+                                {item.type === 'edit' ? <PencilIcon className="h-4 w-4 shrink-0" /> : <PlusIcon className="h-4 w-4 shrink-0" />}
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+                {isOpen && !isBookingMinimized && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 w-full" 
                     onClick={(e) => {
                         e.stopPropagation();
                     }}>
                         <div className="bg-black-gray-500 rounded-2xl  h-screen p-2 w-[75%]  shadow-lg relative" onClick={(e) => e.stopPropagation()}>
-                                <div className='justify-end items-end  absolute -right-6'>
+                                <div className='flex gap-2 justify-end items-center absolute right-4 top-4 z-10'>
+                                    <button
+                                        type="button"
+                                        onClick={minimizeBookingModal}
+                                        className="h-8 w-8 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center border border-blue-700 hover:bg-blue-700 transition-colors"
+                                        title="Minimize booking"
+                                        aria-label="Minimize booking"
+                                    >
+                                        <MinusIcon className="h-4 w-4" />
+                                    </button>
                                     <button
                                         onClick={
                                             () => {
@@ -2526,7 +2587,9 @@ const priceDetailsCardClass = isPeakHour
                                                         </Typography>
                                                     </div>}
                                                 </>
-                                            ) : (bookingStage === 0 ? 'New Booking' :  bookingStage === 1 ? 'New Booking' :  bookingData?.requestType === 'REQUEST_ALL' ? `Request Cab - ${bookingData?.bookingNumber}` :  bookingData?.serviceType === 'RENTAL' ? `Assign Cab - ${bookingData?.bookingNumber}` : `Assign Captain - ${bookingData?.bookingNumber}`)}
+                                            ) : editBookingView && bookingData?.bookingNumber
+                                                ? `Edit Booking - ${bookingData.bookingNumber}`
+                                                : (bookingStage === 0 ? 'New Booking' : bookingStage === 1 ? 'New Booking' : bookingData?.requestType === 'REQUEST_ALL' ? `Request Cab - ${bookingData?.bookingNumber}` : bookingData?.serviceType === 'RENTAL' ? `Assign Cab - ${bookingData?.bookingNumber}` : `Assign Captain - ${bookingData?.bookingNumber}`)}
                                         </div>
                                     </Typography>
                                 </div>}
