@@ -2381,8 +2381,8 @@ const priceDetailsCardClass = isPeakHour
 
 
     return (
-        <div className='flex flex-row space-x-6 justify-between w-full'>
-            <div className='w-full'>
+        <div className='flex flex-col lg:flex-row gap-6 w-full items-start'>
+            <div className={`w-full min-w-0 ${isOpen ? 'lg:w-[60%]' : ''}`}>
                 <div className='py-2  rounded-xl flex justify-between bg-white mb-2'>
                     {customerData && (
                         <div className="p-2 flex w-[40%] flex-col relative">
@@ -2506,9 +2506,9 @@ const priceDetailsCardClass = isPeakHour
                     
 
                 </div>
-	                <BookingsList onRegisterRefresh={setRefreshFn}  customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearBookingSearchState} />
+                <BookingsList onRegisterRefresh={setRefreshFn} customerId={selectedCustomer} searchBookingId={searchBookingId} setIsOpen={setIsOpen} bookingStage={bookingStage} onAssignDriver={onAssignDriver} onSelectBooking={onSelectBooking} type={props.typeProp} onTypeChange={handleTypeChange} onClearSearch={clearBookingSearchState} sidePanelOpen={isOpen} />
             </div>
-            <div>
+            <div className={isOpen ? 'w-full lg:w-[40%]' : minimizedBookingQueue.length > 0 ? 'w-0 h-0' : 'hidden'}>
                 {minimizedBookingQueue.length > 0 && (
                     <div className="fixed bottom-5 right-5 z-[70] flex max-w-[calc(100vw-2rem)] flex-col items-stretch gap-2">
                         {minimizedBookingQueue.map((item) => (
@@ -2525,11 +2525,11 @@ const priceDetailsCardClass = isPeakHour
                     </div>
                 )}
                 {isOpen && !isBookingMinimized && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 w-full" 
+                    <div className="w-full" 
                     onClick={(e) => {
                         e.stopPropagation();
                     }}>
-                        <div className="bg-black-gray-500 rounded-2xl  h-screen p-2 w-[75%]  shadow-lg relative" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-white rounded-2xl h-screen p-2 w-full shadow-lg relative" onClick={(e) => e.stopPropagation()}>
                                 <div className='flex gap-2 justify-end items-center absolute right-4 top-4 z-10'>
                                     <button
                                         type="button"
@@ -2563,7 +2563,7 @@ const priceDetailsCardClass = isPeakHour
                                         X
                                     </button>
                                 </div>
-                            <div className="flex-1 bg-surface-muted rounded-xl max-h-screen overflow-y-auto overflow-x-hidden shadow p-4">
+                            <div className="flex-1 bg-white rounded-xl max-h-screen overflow-y-auto overflow-x-hidden shadow p-4">
                                 {/* max-h-screen overflow-y-auto shadow p-4 */}
 
                                 {!showQuickCreateCustomer && !editBookingView && <div className='text-2xl font-bold mb-8'>

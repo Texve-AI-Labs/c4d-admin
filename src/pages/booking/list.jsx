@@ -189,7 +189,7 @@ const loadBookingFilters = ({ filtersKey, searchKey, setActiveTab, setStatusFilt
             }
         };
 
-export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange, onClearSearch }) {
+export function BookingsList({  onRegisterRefresh , customerId = 0, searchBookingId = '', bookingStage, onAssignDriver, onSelectBooking, type, setIsOpen = false, onTypeChange, onClearSearch, sidePanelOpen = false }) {
     const navigate = useNavigate();
     const location = useLocation();
     const bookingFeatures = useMemo(() => {
@@ -1307,7 +1307,7 @@ if (!statusFilter.includes('All')) {
                     </div>
                 
                     {/* Status Cards Grid */}
-                        <div className="grid grid-cols-1 py-12 sm:grid-cols-2 md:grid-cols-8 gap-2">
+                        <div className={`${sidePanelOpen ? 'grid grid-cols-4' : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-8'} py-12 gap-2`}>
                             {[
                                 { key: 'totalBookingCount', label: 'Total Enquiry', icon: FaChartBar, color: 'bg-blue-gray-50 text-orange', spinnerColor: 'text-orange', chipColor: 'bg-orange-200 text-orange' },
                                 { key: 'uniqueCustomerPerDayBookingCount', label: 'Total Unique Enquiry', icon: FaChartBar, color: 'bg-blue-50 text-blue-900', spinnerColor: 'text-blue-900', chipColor: 'bg-blue-600 text-white' },
