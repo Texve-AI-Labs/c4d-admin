@@ -75,6 +75,9 @@ import InvoiceDetails from "./pages/finance/invoice/InvoiceDetails";
 import WithdrawalRulesList from "./pages/finance/withdrawalRules/list";
 import WithdrawalRulesAdd from "./pages/finance/withdrawalRules/add";
 import WithdrawalRulesEdit from "./pages/finance/withdrawalRules/edit";
+import FutureBookingEligibilityList from "./pages/finance/futureBookingEligibility/list";
+import FutureBookingEligibilityForm from "./pages/finance/futureBookingEligibility/form";
+import FutureBookingEligibilityDetails from "./pages/finance/futureBookingEligibility/details";
 import WalletTransactionList from "./pages/finance/walletTransaction/list";
 import { MasterPriceDetailsAndEdit } from "./pages/finance/masterPrice/MasterPriceDetailsAndEdit";
 import MasterPriceTableAdd from "./pages/finance/masterPriceTable/MasterPriceTableAdd";
@@ -2124,6 +2127,38 @@ export const routes = [
         name: "Withdrawal Rules Edit",
         path: "/finance/withdrawal-rules/edit/:id",
         element: <WithdrawalRulesEdit />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future Booking Eligibility",
+        path: "/finance/future-booking-eligibility",
+        element: <FutureBookingEligibilityList />,
+        display: true,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future Booking Eligibility Add",
+        path: "/finance/future-booking-eligibility/add",
+        element: <FutureBookingEligibilityForm />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future Booking Eligibility Edit",
+        path: "/finance/future-booking-eligibility/edit/:id",
+        element: <FutureBookingEligibilityForm />,
+        display: false,
+        permission: "Users",
+      },
+      {
+        icon: <UserIcon {...icon} />,
+        name: "Future Booking Eligibility Details",
+        path: "/finance/future-booking-eligibility/details/:id",
+        element: <FutureBookingEligibilityDetails />,
         display: false,
         permission: "Users",
       },
