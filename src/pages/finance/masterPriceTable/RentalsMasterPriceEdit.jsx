@@ -27,7 +27,7 @@ const normalizeCategoryPricings = (priceData) => {
                         common: {
                             baseKm: common.baseKm ?? '',
                             baseFare: common.baseFare ?? '',
-                            kilometer: common.kilometer ?? '',
+                            // kilometer: common.kilometer ?? '',
                             peakHours: Array.isArray(common.peakHours) ? common.peakHours : [],
                             cancelMins: toMinutes(common.cancelMins),
                             nightCharge: common.nightCharge ?? '',

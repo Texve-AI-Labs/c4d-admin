@@ -24,7 +24,7 @@ const numberField = (label) => Yup.number()
 const commonOutstationSchema = Yup.object().shape({
     baseKm: numberField('Base Km'),
     baseFare: numberField('Base Fare'),
-    kilometer: numberField('Kilometer'),
+    // kilometer: numberField('Kilometer'),
     cancelMins: numberField('Cancellation Mins'),
     nightCharge: numberField('Night Charge'),
     waitingMins: numberField('Waiting Mins'),
@@ -141,7 +141,7 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
                 common: {
                     baseKm: toNumber(item.pricing.common.baseKm),
                     baseFare: toNumber(item.pricing.common.baseFare),
-                    kilometer: toNumber(item.pricing.common.kilometer),
+                    // kilometer: toNumber(item.pricing.common.kilometer),
                     peakHours: [],
                     cancelMins: minutesToTime(item.pricing.common.cancelMins),
                     nightCharge: toNumber(item.pricing.common.nightCharge),
