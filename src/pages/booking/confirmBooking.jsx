@@ -1354,7 +1354,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                     )
                 }
 
-                {!isQuoteExpired && bookingDetails?.status === 'QUOTED' && bookingDetails?.serviceType !== 'PARCEL' && bookingDetails?.serviceType !== 'BIKE' &&(
+                {!isQuoteExpired && ['QUOTED', 'CONFIRMED'].includes(bookingDetails?.status) && bookingDetails?.serviceType !== 'PARCEL' && bookingDetails?.serviceType !== 'BIKE' && (
                     <Button
                         color="white"
                         variant="outlined"
