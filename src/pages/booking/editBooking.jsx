@@ -12,6 +12,7 @@ import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { buildAdminDiscountPayload, isAdminDiscountEffective, sanitizeAdminDiscountValue } from './utils/adminDiscount';
 import { useAdminDiscountNotifier } from './hooks/useAdminDiscountNotifier';
 import { getCapacityValues } from './utils/capacityMapping';
+import { getPricingPayload } from './utils/pricingMode';
 
 const getZoneCategories = (response) => {
     const rows = Array.isArray(response?.data) ? response.data : [];
@@ -761,6 +762,9 @@ useEffect(() => {
 }, [bookingData]);
 
 const getQuoteOutstationDetails = async (values, setFieldValue) => {
+    if (values?.serviceType === 'RENTAL_DROP_TAXI' || (values?.serviceType === 'RENTAL' && values?.packageTypeSelected === 'Outstation' && values?.tripType === 'Drop Only')) {
+        await calculateDistance(values);
+    }
     const isRentalOutstationRoundTrip =
         values?.serviceType === 'RENTAL' &&
         values?.packageTypeSelected === 'Outstation' &&
@@ -801,6 +805,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
 
     const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
     const quoteData = {
+        ...getPricingPayload(values),
         serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
         customerId: values?.customerId?.id,
         packageType: driverPackageType,
@@ -1125,7 +1130,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
     };
 
     const calculateDistance = async (values) => {
-        const isDropTaxi = values.serviceType === 'RENTAL_DROP_TAXI';
+        const isDropTaxi = values.serviceType === 'RENTAL_DROP_TAXI' || (values.serviceType === 'RENTAL' && values.packageTypeSelected === 'Outstation' && values.tripType === 'Drop Only');
         const calculateDistance = await ApiRequestUtils.getWithQueryParam(API_ROUTES.DISTANCE_CHECKING, {
             pickupLat: values.pickupLocation?.lat || bookingData?.pickupLat,
             pickupLong: values.pickupLocation?.lng || bookingData?.pickupLong,
@@ -1137,7 +1142,11 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
 
         if (calculateDistance?.success) {
             const distanceData = calculateDistance?.data || {};
+            values.useRoundTripOdometer = isDropTaxi &&
+                distanceData?.suggestedService === 'OUTSTATION' &&
+                distanceData?.reason === 'UNDER_MIN_THRESHOLD';
             const shouldShowAlert = distanceData?.showAlert === true;
+            if (values.useRoundTripOdometer) return true;
             if (values.serviceType === "RIDES") {
                 return !shouldShowAlert;
             } else if (values.serviceType === "AUTO") {
@@ -1329,6 +1338,14 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
     const editSubmit = async (values) => {
         let data;
         let editBookingData;
+        const isRentalDropOnly = values?.serviceType === 'RENTAL_DROP_TAXI' || (
+            values?.serviceType === 'RENTAL' &&
+            String(values?.packageTypeSelected || '').toUpperCase() === 'OUTSTATION' &&
+            String(values?.tripType || '').toUpperCase() === 'DROP ONLY'
+        );
+        if (isRentalDropOnly) {
+            await calculateDistance(values);
+        }
         const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
         const categoryPayload = isCategoryService(values?.serviceType)
             ? {
@@ -1360,6 +1377,7 @@ const getQuoteOutstationDetails = async (values, setFieldValue) => {
                     (values?.serviceType === 'RENTAL' && values?.packageTypeSelected == 'Local');
 
                 data = {
+                    ...getPricingPayload(values),
                     packageType: values?.packageTypeSelected,
                     customerId: bookingData?.Customer?.id,
                     bookingId: bookingData?.id,

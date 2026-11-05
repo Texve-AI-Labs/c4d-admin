@@ -1895,6 +1895,7 @@ bookingDetails?.Package?.categoryPricing?.pricing?.kilometerPrice
                             <div className="flex flex-col-2 gap-2">
                                 <span className="text-gray-500 font-semibold">Service Type:</span>
                                 <span className="text-gray-900 font-medium">{bookingDetails.serviceType === 'DRIVER' ? 'ACTING DRIVER' : bookingDetails.serviceType == "RIDES" ? 'Local Rides' : bookingDetails?.packageType == "Local" ? 'Hourly Package' : (bookingDetails?.serviceType == "RENTAL" && bookingDetails?.bookingType == "DROP ONLY") ? 'Drop Taxi' : bookingDetails?.serviceType == 'AUTO' ? 'Auto' : bookingDetails?.serviceType == 'BIKE' ? 'Bike' : bookingDetails?.serviceType == "PARCEL" ? 'Parcel' : 'Outstation'}</span>
+                                {bookingDetails?.useRoundTripOdometer === true && <span className="ml-3 text-gray-900 font-medium">Pricing mode: Round-trip odometer</span>}
                             </div>
                             {bookingDetails?.serviceType !== 'DRIVER' && bookingDetails?.serviceType !== 'RIDES' && bookingDetails?.serviceType !== 'PARCEL' && bookingDetails?.serviceType !== 'AUTO' &&  bookingDetails?.serviceType !== 'BIKE' && !isHourlyShowingPrice(bookingDetails) && (
                                 <>
