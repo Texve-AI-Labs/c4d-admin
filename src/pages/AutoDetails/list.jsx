@@ -141,7 +141,7 @@ export function AutoDetailsList({ id = 0 }) {
               <table className="w-full min-w-[640px] table-auto">
                 <thead className="whitespace-nowrap">
                   <tr>
-                    {["Driver Name", "Auto Name", "Phone Number", "Auto Number", "Current Address","Registration Date", "Available Status", "Subscription Status"].map((el) => (
+                    {["Driver Name", "Auto Name", "Phone Number", "Auto Number", "Current Address","Registration Date", "Available Status", "Plan Name", "Plan Type", "Subscription Status"].map((el) => (
                       <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                         <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
                             {el}
@@ -161,7 +161,7 @@ export function AutoDetailsList({ id = 0 }) {
                     </tr>
                   ) : (
                   vehicleList.map(
-                    ({ id, driverName, name, vehicleType, carType, type, assigned,firstName,driverAddress,curAddress,Account, autoNumber, Drivers, subscriptionStatus, phoneNumber,status, created_at }) => (                      
+                    ({ id, driverName, name, vehicleType, carType, type, assigned,firstName,driverAddress,curAddress,Account, autoNumber, Drivers, Subscriptions, subscriptionStatus, phoneNumber,status, created_at }) => (                      
                     <tr key={id}>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
                         <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Drivers[0]?.firstName || driverName || Account?.name || '')}</Typography>
@@ -201,6 +201,12 @@ export function AutoDetailsList({ id = 0 }) {
                         >
                           Check Status
                         </Typography>}
+                      </td>
+                      <td className="py-3 px-5 border-b border-blue-gray-50">
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Subscriptions?.[0]?.Plan?.name === "Regular" ? "Basic" : Subscriptions?.[0]?.Plan?.name)}</Typography>
+                      </td>
+                      <td className="py-3 px-5 border-b border-blue-gray-50">
+                        <Typography className="text-xs font-semibold text-blue-gray-600">{safeText(Subscriptions?.[0]?.Plan?.type)}</Typography>
                       </td>
                       <td className="py-3 px-5 border-b border-blue-gray-50">
                         <Chip
