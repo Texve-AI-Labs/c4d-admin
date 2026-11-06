@@ -177,6 +177,9 @@ const GstView = () => {
                   <th className="py-3 px-3 text-left align-top whitespace-normal">Total TAX (%)</th>
                   )}
                   {isDistanceRule && (
+                  <th className="py-3 px-3 text-left align-top whitespace-nowrap">Minimum Threshold</th>
+                  )}
+                  {isDistanceRule && (
                   <th className="py-3 px-3 text-left align-top whitespace-nowrap">Service Area Rules</th>
                   )}
                   {isLuggagePolicy && POLICY_CATEGORIES.map(({ category }) => (
@@ -193,7 +196,7 @@ const GstView = () => {
               <tbody>
                 {gstList.length === 0 ? (
                   <tr>
-                    <td colSpan={isLuggagePolicy ? 9 : isAcceptWindow ? 7 : isDriverFeedback ? 5 : 6} className="text-center py-4 whitespace-nowrap">No Settings Entries Found</td>
+                    <td colSpan={isLuggagePolicy ? 9 : isAcceptWindow ? 7 : isDriverFeedback ? 5 : isDistanceRule ? 7 : 6} className="text-center py-4 whitespace-nowrap">No Settings Entries Found</td>
                   </tr>
                 ) : (
                   gstList.map((item, index) => (
@@ -215,9 +218,12 @@ const GstView = () => {
                       <td className="py-3 px-3 align-top whitespace-normal break-words">{item.config?.totalGst}%</td>
                       )}
                       {isDistanceRule && (
+                      <td className="py-3 px-3 align-top whitespace-normal break-words">{item.config?.minThresholdKm ? `${item.config.minThresholdKm} KM` : '-'}</td>
+                      )}
+                      {isDistanceRule && (
                       <td className="py-3 px-3 align-top whitespace-normal break-words">
                         {Array.isArray(item.config?.serviceAreaRules) && item.config.serviceAreaRules.length
-                          ? item.config.serviceAreaRules.map((rule) => `${rule.serviceAreaName}: ${rule.thresholdKm} KM`).join(', ')
+                          ? item.config.serviceAreaRules.map((rule) => `${rule.serviceAreaName}: ${rule.thresholdKm} KM (min: ${rule.minThresholdKm ?? '-'} KM)`).join(', ')
                           : '-'}
                       </td>
                       )}
