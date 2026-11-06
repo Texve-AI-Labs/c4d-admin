@@ -285,7 +285,11 @@ function SupportReviewRewardManagement() {
   const ticketStatus = String(ticket?.status || "").toUpperCase();
   const selectedStatus = String(status || ticketStatus || "UNDER_REVIEW").toUpperCase();
   const isTerminalTicket = isTerminalStatus(ticket?.status || "");
-  const allowedStatusOptions = getAllowedStatusOptions(selectedStatus);
+  const disputedAmount = Number(ticket?.disputedAmount);
+  const hasZeroDisputedAmount = Number.isFinite(disputedAmount) && disputedAmount === 0;
+  const allowedStatusOptions = hasZeroDisputedAmount
+    ? Array.from(new Set([selectedStatus, "REJECTED"]))
+    : getAllowedStatusOptions(selectedStatus);
 
   const setFieldValue = (key, value) => {
     if (key === "status") setStatus(value);

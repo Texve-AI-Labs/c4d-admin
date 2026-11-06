@@ -51,7 +51,14 @@ function SupportTicketDetails({
                 <InfoCard label="Category" value={ticket?.category || "-"} />
                 <InfoCard label="Description" value={ticket?.description || "-"} />
                 <InfoCard label="Customer" value={customer?.firstName || customer?.name || "-"} />
-                <InfoCard label="Disputed Amount" value={ticket?.disputedAmount ? `₹ ${Number(ticket?.disputedAmount).toFixed(2)}` : "-"} />
+                <InfoCard
+                  label="Disputed Amount"
+                  value={
+                    ticket?.disputedAmount !== null && ticket?.disputedAmount !== undefined && ticket?.disputedAmount !== ""
+                      ? `₹ ${Number(ticket.disputedAmount).toFixed(2)}`
+                      : "-"
+                  }
+                />
                 <InfoCard label="Proof" value={ticket?.proofUrl ? "Available" : "Not provided"} />
               </div>
             </div>
