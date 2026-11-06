@@ -18,6 +18,8 @@ const emptyForm = {
   driverName: "",
   startKm: "",
   endKm: "",
+  startOdometer: "",
+  endOdometer: "",
   totalTripAmount: "",
   fuelType: "CNG",
   fuelAmount: "",
@@ -51,6 +53,8 @@ const rowToForm = (row = {}) => ({
   driverName: row?.driverName || "",
   startKm: row?.startKm ?? "",
   endKm: row?.endKm ?? "",
+  startOdometer: row?.startOdometer ?? "",
+  endOdometer: row?.endOdometer ?? "",
   totalTripAmount: row?.totalTripAmount ?? "",
   fuelType: row?.fuelType || "CNG",
   fuelAmount: row?.fuelAmount ?? "",
@@ -65,6 +69,8 @@ const buildPayload = (form) => ({
   driverName: form.driverName.trim(),
   startKm: Number(form.startKm),
   endKm: Number(form.endKm),
+  startOdometer: Number(form.startOdometer),
+  endOdometer: Number(form.endOdometer),
   totalTripAmount: Number(form.totalTripAmount || 0),
   fuelType: form.fuelType,
   fuelAmount: Number(form.fuelAmount || 0),
@@ -131,12 +137,14 @@ function OwnVehicleForm({ mode = "add" }) {
     if (!form.driverName.trim()) return "Driver name is required.";
     if (form.startKm === "") return "Start KM is required.";
     if (form.endKm === "") return "End KM is required.";
+    if (form.startOdometer === "") return "Start Odometer is required.";
+    if (form.endOdometer === "") return "End Odometer is required.";
     if (form.totalTripAmount === "") return "Total Trip Amount is required.";
     if (!form.fuelType) return "Fuel type is required.";
     if (form.fuelAmount === "") return "Fuel Amount is required.";
     if (form.otherExpense === "") return "Other Expense is required.";
     if (Number(form.endKm) < Number(form.startKm)) return "End KM should be greater than or equal to Start KM.";
-    const numberFields = ["startKm", "endKm", "totalTripAmount", "fuelAmount", "otherExpense"];
+    const numberFields = ["startKm", "endKm", "startOdometer", "endOdometer", "totalTripAmount", "fuelAmount", "otherExpense"];
     if (numberFields.some((key) => Number(form[key] || 0) < 0)) return "KM and amount values cannot be negative.";
     return "";
   };
@@ -192,6 +200,8 @@ function OwnVehicleForm({ mode = "add" }) {
               <Input label={requiredLabel("Driver Name")} value={form.driverName} onChange={(e) => setField("driverName", e.target.value)} />
               <Input type="number" label={requiredLabel("Start KM")} value={form.startKm} onChange={(e) => setField("startKm", e.target.value)} />
               <Input type="number" label={requiredLabel("End KM")} value={form.endKm} onChange={(e) => setField("endKm", e.target.value)} />
+              <Input type="number" label={requiredLabel("Start Odometer")} value={form.startOdometer} onChange={(e) => setField("startOdometer", e.target.value)} />
+              <Input type="number" label={requiredLabel("End Odometer")} value={form.endOdometer} onChange={(e) => setField("endOdometer", e.target.value)} />
               <Input type="number" label={requiredLabel("Total Trip Amount")} value={form.totalTripAmount} onChange={(e) => setField("totalTripAmount", e.target.value)} />
               <Select label={requiredLabel("Fuel Type")} value={form.fuelType} onChange={(value) => setField("fuelType", value)}>
                 {fuelTypeOptions.map((option) => (
@@ -201,6 +211,7 @@ function OwnVehicleForm({ mode = "add" }) {
               <Input type="number" label={requiredLabel("Fuel Amount")} value={form.fuelAmount} onChange={(e) => setField("fuelAmount", e.target.value)} />
               <Input type="number" label={requiredLabel("Other Expense")} value={form.otherExpense} onChange={(e) => setField("otherExpense", e.target.value)} />
               <Input label="Total KM Preview" value={Number.isFinite(totalKm) ? totalKm : 0} readOnly />
+              <Input label="Total Odometer" value={Number(form.endOdometer || 0) - Number(form.startOdometer || 0)} readOnly />
               <Input label="Closing Amount Preview" value={Number.isFinite(closingAmount) ? closingAmount : 0} readOnly />
               <div>
                 <Textarea label="Notes" value={form.notes} onChange={(e) => setField("notes", e.target.value)} />

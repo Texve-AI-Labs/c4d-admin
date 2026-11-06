@@ -240,7 +240,7 @@ function OwnVehicle() {
             <table className="w-full min-w-[1500px] table-auto">
               <thead>
                 <tr className={ColorStyles.bgColor}>
-                  {["Trip Start Date Time", "Trip End Date Time", "Vehicle Number", "Driver Name", "Start KM", "End KM", "Total KM", "Total Trip Amount", "Fuel Type", "Fuel Amount", "Other Expense", "Closing Amount", "Created At", "Updated At", "Actions"].map((header) => (
+                  {["Trip Start Date Time", "Trip End Date Time", "Vehicle Number", "Driver Name", "Start KM", "End KM", "Total KM", "Start Odometer", "End Odometer", "Total Odometer", "Total Trip Amount", "Fuel Type", "Fuel Amount", "Other Expense", "Closing Amount", "Created At", "Updated At", "Actions"].map((header) => (
                     <th key={header} className="border-b border-blue-gray-50 px-3 py-3 text-left whitespace-nowrap">
                       <Typography variant="small" className="text-[11px] font-bold uppercase text-white">
                         {header}
@@ -264,6 +264,9 @@ function OwnVehicle() {
                       <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.startKm)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.endKm)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.totalKm ?? Number(row?.endKm || 0) - Number(row?.startKm || 0))}</td>
+                      <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.startOdometer)}</td>
+                      <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.endOdometer)}</td>
+                      <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.totalOdometer ?? Number(row?.endOdometer || 0) - Number(row?.startOdometer || 0))}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatAmount(row?.totalTripAmount)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatValue(row?.fuelType)}</td>
                       <td className="px-3 py-3 whitespace-nowrap">{formatAmount(row?.fuelAmount)}</td>
@@ -316,6 +319,9 @@ function OwnVehicle() {
                       ["Start KM", formatValue(row?.startKm)],
                       ["End KM", formatValue(row?.endKm)],
                       ["Total KM", formatValue(row?.totalKm ?? Number(row?.endKm || 0) - Number(row?.startKm || 0))],
+                      ["Start Odometer", formatValue(row?.startOdometer)],
+                      ["End Odometer", formatValue(row?.endOdometer)],
+                      ["Total Odometer", formatValue(row?.totalOdometer ?? Number(row?.endOdometer || 0) - Number(row?.startOdometer || 0))],
                       ["Trip Amount", formatAmount(row?.totalTripAmount)],
                       ["Fuel Type", formatValue(row?.fuelType)],
                       ["Fuel Amount", formatAmount(row?.fuelAmount)],

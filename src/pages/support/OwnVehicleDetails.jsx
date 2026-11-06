@@ -96,6 +96,9 @@ function OwnVehicleDetails() {
                 <DetailField label="Driver Name" value={record?.driverName} />
                 <DetailField label="Start KM" value={record?.startKm} />
                 <DetailField label="End KM" value={record?.endKm} />
+                <DetailField label="Start Odometer" value={record?.startOdometer} />
+                <DetailField label="End Odometer" value={record?.endOdometer} />
+                <DetailField label="Total Odometer" value={record?.totalOdometer ?? Number(record?.endOdometer || 0) - Number(record?.startOdometer || 0)} />
                 <DetailField label="Total Trip Amount" value={formatAmount(record?.totalTripAmount)} />
                 <DetailField label="Fuel Type" value={record?.fuelType} />
                 <DetailField label="Fuel Amount" value={formatAmount(record?.fuelAmount)} />
