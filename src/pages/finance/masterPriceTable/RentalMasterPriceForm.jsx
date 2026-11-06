@@ -73,7 +73,7 @@ const OutstationPricingFields = ({ prefix, disabled }) => (
             <div className="grid grid-cols-2 gap-4">
                 <NumberInput name={`${prefix}.pricing.common.baseKm`} label="Base Km" disabled={disabled} />
                 <NumberInput name={`${prefix}.pricing.common.baseFare`} label="Base Fare" disabled={disabled} />
-                <NumberInput name={`${prefix}.pricing.common.kilometer`} label="Kilometer" disabled={disabled} />
+                {/* <NumberInput name={`${prefix}.pricing.common.kilometer`} label="Kilometer" disabled={disabled} /> */}
                 <NumberInput name={`${prefix}.pricing.common.cancelMins`} label="Cancellation Mins" disabled={disabled} />
                 <NumberInput name={`${prefix}.pricing.common.cancelCharge`} label="Cancellation Charge" disabled={disabled} />
                 <NumberInput name={`${prefix}.pricing.common.waitingMins`} label="Waiting Mins" disabled={disabled} />
@@ -335,7 +335,7 @@ export const createOutstationCategoryPricing = () => ({
         common: {
             baseKm: '',
             baseFare: '',
-            kilometer: '',
+            // kilometer: '',
             peakHours: [],
             cancelMins: '',
             nightCharge: '',

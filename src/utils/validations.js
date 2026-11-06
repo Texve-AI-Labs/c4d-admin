@@ -866,6 +866,10 @@ export const DISTANCE_RULE_SCHEMA = Yup.object({
       .typeError('Default threshold must be a number')
       .positive('Default threshold must be greater than 0')
       .required('Default threshold is required'),
+    minThresholdKm: Yup.number()
+      .typeError('Default minimum threshold must be a number')
+      .positive('Default minimum threshold must be greater than 0')
+      .required('Default minimum threshold is required'),
     serviceAreaRules: Yup.array()
       .of(
         Yup.object({
@@ -875,6 +879,10 @@ export const DISTANCE_RULE_SCHEMA = Yup.object({
             .typeError('Threshold must be a number')
             .positive('Threshold must be greater than 0')
             .required('Threshold is required'),
+          minThresholdKm: Yup.number()
+            .typeError('Minimum threshold must be a number')
+            .positive('Minimum threshold must be greater than 0')
+            .required('Minimum threshold is required'),
         })
       )
       .min(1, 'At least one service area rule is required'),

@@ -28,6 +28,7 @@ import DistanceExceedModal from '@/components/DistanceExceedModal';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import { getCapacityValues } from './utils/capacityMapping';
+import { getPricingPayload } from './utils/pricingMode';
 
 const debounce = (func, delay) => {
   let timeoutId;
@@ -956,6 +957,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
 
         const selectedCategory = categoryOptions.find((item) => item.id === Number(values?.categoryId));
         const quoteData = {
+            ...getPricingPayload(values),
             serviceType: values?.serviceType == "RENTAL_DROP_TAXI" ? 'RENTAL' : values?.serviceType || mappedServiceType,
             customerId: values?.customerId?.id,
             userId: loggedInUserId || undefined,
@@ -1261,6 +1263,7 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
         toDate: "",
         customerId: '',
         serviceType: '',
+        useRoundTripOdometer: false,
         carType: '',
         cabType: '',
         transmissionType: '',
@@ -1341,7 +1344,11 @@ const addQuotationLog = (values, quoteDetails, bookingId = null) => {
 
         if (calculateDistance?.success) {
             const distanceData = calculateDistance?.data || {};
+            values.useRoundTripOdometer = isDropTaxi &&
+                distanceData?.suggestedService === 'OUTSTATION' &&
+                distanceData?.reason === 'UNDER_MIN_THRESHOLD';
             const shouldShowAlert = distanceData?.showAlert === true;
+            if (values.useRoundTripOdometer) return true;
             if (values.serviceType === "RIDES" || values.serviceType === "AUTO") {
                 return !shouldShowAlert;
             } else if (isRentalOutstationRoundTrip) {
@@ -1752,6 +1759,7 @@ const sendQuotationLogs = async (bookingId, userId, fallbackSubZoneId = null) =>
         const driverPackagePeriod = selectedPackage?.period ?? selectedPackagePeriod ?? '';
 
         const bookingData = {
+            ...getPricingPayload(values),
             carId: values?.carSelected?.id,
             packageType: values.serviceType === 'DRIVER' ? (values?.packageTypeSelected || 'Local') : values?.packageTypeSelected,
             date: values?.rideDate,

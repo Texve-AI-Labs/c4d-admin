@@ -23,10 +23,12 @@ const DistanceRuleAdd = () => {
     config: {
       reason: '',
       thresholdKm: '',
+      minThresholdKm: '',
       serviceAreaRules: [
         {
           reason: '',
           thresholdKm: '',
+          minThresholdKm: '',
           serviceAreaName: '',
         },
       ],
@@ -64,9 +66,11 @@ const DistanceRuleAdd = () => {
         config: {
           reason: values.config.reason,
           thresholdKm: Number(values.config.thresholdKm),
+          minThresholdKm: Number(values.config.minThresholdKm),
           serviceAreaRules: values.config.serviceAreaRules.map((rule) => ({
             reason: rule.reason,
             thresholdKm: Number(rule.thresholdKm),
+            minThresholdKm: Number(rule.minThresholdKm),
             serviceAreaName: rule.serviceAreaName,
           })),
         },
@@ -120,6 +124,12 @@ const DistanceRuleAdd = () => {
               </div>
 
               <div>
+                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Minimum Threshold (KM)</label>
+                <Field name="config.minThresholdKm" type="number" min="1" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                <ErrorMessage name="config.minThresholdKm" component="div" className="text-red-500 text-sm" />
+              </div>
+
+              <div>
                 <label className="text-sm font-medium text-gray-700">Status</label>
                 <Field as="select" name="isActive" className="p-2 w-full rounded-md border border-gray-300 shadow-sm">
                   <option value={true}>Active</option>
@@ -138,14 +148,14 @@ const DistanceRuleAdd = () => {
                       type="button"
                       size="sm"
                       className="bg-primary text-white"
-                      onClick={() => push({ reason: '', thresholdKm: '', serviceAreaName: '' })}
+                      onClick={() => push({ reason: '', thresholdKm: '', minThresholdKm: '', serviceAreaName: '' })}
                     >
                       Add Rule
                     </Button>
                   </div>
 
                   {values.config.serviceAreaRules.map((_, index) => (
-                    <div key={index} className="grid grid-cols-1 gap-4 rounded-md bg-gray-50 p-3 md:grid-cols-3">
+                    <div key={index} className="grid grid-cols-1 gap-4 rounded-md bg-gray-50 p-3 md:grid-cols-4">
                       <div>
                         <label className="text-sm font-medium text-gray-700">Service Area Name</label>
                         <Field as="select" name={`config.serviceAreaRules.${index}.serviceAreaName`} className="p-2 w-full rounded-md border border-gray-300 shadow-sm">
@@ -162,6 +172,11 @@ const DistanceRuleAdd = () => {
                         <label className="text-sm font-medium text-gray-700">Reason</label>
                         <Field name={`config.serviceAreaRules.${index}.reason`} type="text" disabled placeholder="OVER_120_KM" className="p-2 w-full rounded-md border border-gray-300 bg-gray-100 shadow-sm" />
                         <ErrorMessage name={`config.serviceAreaRules.${index}.reason`} component="div" className="text-red-500 text-sm" />
+                      </div>
+                                            <div>
+                        <label className="text-sm font-medium text-gray-700">Minimum Threshold (KM)</label>
+                        <Field name={`config.serviceAreaRules.${index}.minThresholdKm`} type="number" min="1" className="p-2 w-full rounded-md border border-gray-300 shadow-sm" />
+                        <ErrorMessage name={`config.serviceAreaRules.${index}.minThresholdKm`} component="div" className="text-red-500 text-sm" />
                       </div>
                       <div>
                         <label className="text-sm font-medium text-gray-700">Threshold (KM)</label>

@@ -19,6 +19,7 @@ const FINANCE_GROUPS = [
       { label: "Joining Bonus", path: "/dashboard/finance/joining-bonus" },
       { label: "Driver Radius & Bonus Configuration", path: "/dashboard/finance/driver-radius-bonus" },
       { label: "Return Trip Driver Master Subscription Table", path: "/dashboard/finance/master-subscription/return-trip-driver" },
+      { label: "Future Booking Eligibility", path: "/dashboard/finance/future-booking-eligibility", requiredPermission: "Users" },
       { label: "Master Price Table", path: "/dashboard/finance/master-price", requiredPermission: "Users" },
       { label: "Driver Estimation & Request control", path: "/dashboard/finance/category-driver-eligible", requiredPermission: "Users" },
     ],
@@ -89,6 +90,7 @@ const ROUTE_MATCHERS = {
   "Acting Driver Slot Config": ["/finance/acting-driver-slot-config", "/finance/acting-driver-slot-config/add", "/finance/acting-driver-slot-config/edit", "/finance/acting-driver-slot-config/details"],
   "Acting Driver Daily Slots": ["/finance/acting-driver-daily-slots", "/finance/acting-driver-daily-slots/add", "/finance/acting-driver-daily-slots/details"],
   "Withdrawal Rules": ["/finance/withdrawal-rules", "/finance/withdrawal-rules/add", "/finance/withdrawal-rules/edit"],
+  "Future Booking Eligibility": ["/finance/future-booking-eligibility", "/finance/future-booking-eligibility/add", "/finance/future-booking-eligibility/edit", "/finance/future-booking-eligibility/details"],
   "Withdrawal Transaction": ["/finance/wallet-transaction"],
   "Return Trip Driver Master Subscription Table": ["/finance/master-subscription/return-trip-driver", "/finance/master-subscription/return-trip-driver/add", "/finance/master-subscription/return-trip-driver/edit", "/finance/master-subscription/return-trip-driver/details"],
 };

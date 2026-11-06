@@ -145,7 +145,7 @@ export function BikeTaxiLists({ id = 0 }) {
               <table className="w-full min-w-[640px] table-auto whitespace-nowrap">
                 <thead>
                   <tr>
-                    {["Name", "Company", "Vehicle Number", "Current Address", "Registration Date", "Available Status"].map((el) => (
+                    {["Name", "Company", "Vehicle Number", "Current Address", "Registration Date", "Plan Name", "Plan Type", "Available Status"].map((el) => (
                       <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
                         <Typography variant="small" className="text-[11px] font-bold uppercase text-black">
                           {el}
@@ -156,7 +156,7 @@ export function BikeTaxiLists({ id = 0 }) {
                 </thead>
                 <tbody>
                   {bikeList.length > 0 ? (
-                    bikeList.map(({ id, name, company, bikeNumber, created_at, status, subscriptionStatus, Drivers }, index) => {
+                    bikeList.map(({ id, name, company, bikeNumber, created_at, status, subscriptionStatus, Drivers, Subscriptions }, index) => {
                       const className = `py-3 px-5 ${index === bikeList.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                       return (
                         <tr key={id}>
@@ -184,6 +184,12 @@ export function BikeTaxiLists({ id = 0 }) {
                             <Typography className="text-xs font-semibold text-blue-gray-900">
                               {created_at ? moment(created_at).format("DD-MM-YYYY") : "-"}
                             </Typography>
+                          </td>
+                          <td className={className}>
+                            <Typography className="text-xs font-semibold text-blue-gray-900">{safeText(Subscriptions?.[0]?.Plan?.name === "Regular" ? "Basic" : Subscriptions?.[0]?.Plan?.name)}</Typography>
+                          </td>
+                          <td className={className}>
+                            <Typography className="text-xs font-semibold text-blue-gray-900">{safeText(Subscriptions?.[0]?.Plan?.type)}</Typography>
                           </td>
                           <td className={className}>
                             <div className="flex flex-col gap-1">
