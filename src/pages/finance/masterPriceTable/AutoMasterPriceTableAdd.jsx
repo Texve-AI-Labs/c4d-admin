@@ -107,6 +107,7 @@ const emptyCategoryPricing = {
         additionalMinCharge: '',
         surChargePercentage: 0,
         peakHours: [],
+        premiumConfig: { isPremium: false, multiplier: 1 },
     },
 };
 
@@ -148,6 +149,10 @@ const buildCategoryPricingsPayload = (categoryPricings) => categoryPricings.map(
         waitingCharge: toNumber(categoryPricing.pricing.waitingCharge),
         freeExtraMinutes: toNumber(categoryPricing.pricing.freeExtraMinutes),
         additionalMinCharge: toNumber(categoryPricing.pricing.additionalMinCharge),
+        premiumConfig: {
+            isPremium: Boolean(categoryPricing.pricing.premiumConfig?.isPremium),
+            multiplier: toNumber(categoryPricing.pricing.premiumConfig?.multiplier || 1),
+        },
         surChargePercentage: toNumber(categoryPricing.pricing.surChargePercentage ?? 0),
         peakHours: categoryPricing.pricing.peakHours.map((peakHour) => ({
             start: peakHour.start,
@@ -334,6 +339,14 @@ const AutoMasterPriceTableAdd = () => {
                                                         className="w-full"
                                                     />
                                                     <ErrorMessage name={`categoryPricings.${index}.carTypes`} component="div" className="text-red-500 text-sm" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-sm font-medium text-gray-700">Premium Service</label>
+                                                    <Field type="checkbox" name={`categoryPricings.${index}.pricing.premiumConfig.isPremium`} className="ml-2" />
+                                                </div>
+                                                <div>
+                                                    <label className="text-sm font-medium text-gray-700">Premium Multiplier</label>
+                                                    <Field type="number" min="0" step="0.01" name={`categoryPricings.${index}.pricing.premiumConfig.multiplier`} className="p-2 w-full rounded-md border-2 border-gray-300 shadow-sm" />
                                                 </div>
                                                 {pricingNumberFields.map(([label, name]) => (
                                                     <div key={name}>

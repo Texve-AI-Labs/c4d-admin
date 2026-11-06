@@ -62,6 +62,11 @@ const LocalPricingFields = ({ prefix, disabled }) => (
         <NumberInput name={`${prefix}.pricing.driverCharge`} label="Driver Charge" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.freeExtraMinutes`} label="Free Extra Minutes" disabled={disabled} />
         <NumberInput name={`${prefix}.pricing.additionalMinCharge`} label="Additional Min Charge" disabled={disabled} />
+        <div>
+            <label className="text-sm font-medium text-gray-700">Premium Service</label>
+            <Field type="checkbox" name={`${prefix}.pricing.premiumConfig.isPremium`} disabled={disabled} className="ml-2" />
+        </div>
+        <NumberInput name={`${prefix}.pricing.premiumConfig.multiplier`} label="Premium Multiplier" disabled={disabled} />
         <TimeRangeInput fromName={`${prefix}.pricing.nightHoursFrom`} toName={`${prefix}.pricing.nightHoursTo`} disabled={disabled} />
     </div>
 );
@@ -82,6 +87,11 @@ const OutstationPricingFields = ({ prefix, disabled }) => (
                 <NumberInput name={`${prefix}.pricing.common.driverCharge`} label="Driver Charge" disabled={disabled} />
                 <NumberInput name={`${prefix}.pricing.common.freeExtraMinutes`} label="Free Extra Minutes" disabled={disabled} />
                 <NumberInput name={`${prefix}.pricing.common.additionalMinCharge`} label="Additional Min Charge" disabled={disabled} />
+                <div>
+                    <label className="text-sm font-medium text-gray-700">Premium Service</label>
+                    <Field type="checkbox" name={`${prefix}.pricing.common.premiumConfig.isPremium`} disabled={disabled} className="ml-2" />
+                </div>
+                <NumberInput name={`${prefix}.pricing.common.premiumConfig.multiplier`} label="Premium Multiplier" disabled={disabled} />
                 <TimeRangeInput fromName={`${prefix}.pricing.common.nightHoursFrom`} toName={`${prefix}.pricing.common.nightHoursTo`} disabled={disabled} />
             </div>
         </div>
@@ -325,6 +335,7 @@ export const createLocalCategoryPricing = () => ({
         nightHoursTo: '',
         freeExtraMinutes: '',
         additionalMinCharge: '',
+        premiumConfig: { isPremium: false, multiplier: 1 },
     },
 });
 
@@ -347,6 +358,7 @@ export const createOutstationCategoryPricing = () => ({
             waitingCharge: '',
             freeExtraMinutes: '',
             additionalMinCharge: '',
+            premiumConfig: { isPremium: false, multiplier: 1 },
         },
         DROP_ONLY: {
             AC: {

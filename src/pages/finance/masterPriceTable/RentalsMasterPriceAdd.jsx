@@ -153,6 +153,10 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
                     waitingCharge: toNumber(item.pricing.common.waitingCharge),
                     freeExtraMinutes: toNumber(item.pricing.common.freeExtraMinutes),
                     additionalMinCharge: toNumber(item.pricing.common.additionalMinCharge),
+                    premiumConfig: {
+                        isPremium: Boolean(item.pricing.common.premiumConfig?.isPremium),
+                        multiplier: toNumber(item.pricing.common.premiumConfig?.multiplier || 1),
+                    },
                 },
                 DROP_ONLY: {
                     AC: {
@@ -200,6 +204,10 @@ const buildCategoryPricingsPayload = (values) => values.categoryPricings.map((it
             nightHoursTo: withSeconds(item.pricing.nightHoursTo),
             freeExtraMinutes: toNumber(item.pricing.freeExtraMinutes),
             additionalMinCharge: toNumber(item.pricing.additionalMinCharge),
+            premiumConfig: {
+                isPremium: Boolean(item.pricing.premiumConfig?.isPremium),
+                multiplier: toNumber(item.pricing.premiumConfig?.multiplier || 1),
+            },
             surChargePercentage: 0,
         },
     };

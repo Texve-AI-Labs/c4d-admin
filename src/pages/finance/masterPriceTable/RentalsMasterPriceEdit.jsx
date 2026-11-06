@@ -39,6 +39,10 @@ const normalizeCategoryPricings = (priceData) => {
                             waitingCharge: common.waitingCharge ?? '',
                             freeExtraMinutes: common.freeExtraMinutes ?? '',
                             additionalMinCharge: common.additionalMinCharge ?? '',
+                            premiumConfig: {
+                                isPremium: Boolean(common.premiumConfig?.isPremium),
+                                multiplier: (common.premiumConfig?.multiplier || 1),
+                            },
                         },
                         DROP_ONLY: {
                             AC: {
@@ -85,6 +89,10 @@ const normalizeCategoryPricings = (priceData) => {
                     nightHoursTo: toTimeValue(pricing.nightHoursTo),
                     freeExtraMinutes: pricing.freeExtraMinutes ?? '',
                     additionalMinCharge: pricing.additionalMinCharge ?? '',
+                    premiumConfig: {
+                        isPremium: Boolean(pricing.premiumConfig?.isPremium),
+                        multiplier: (pricing.premiumConfig?.multiplier || 1),
+                    },
                 },
             };
         });

@@ -66,6 +66,10 @@ const normalizeCategoryPricings = (priceData) => {
                 cancelMins: Utils.convertTimeFormatToMinutes(item.pricing?.cancelMins) ?? '',
                 freeExtraMinutes: item.pricing?.freeExtraMinutes ?? '',
                 additionalMinCharge: item.pricing?.additionalMinCharge ?? '',
+                premiumConfig: {
+                    isPremium: Boolean(item.pricing?.premiumConfig?.isPremium),
+                    multiplier: item.pricing?.premiumConfig?.multiplier ?? 1,
+                },
                 surChargePercentage: item.pricing?.surChargePercentage ?? 0,
                 nightHoursFrom: toTimeValue(item.pricing?.nightHoursFrom),
                 nightHoursTo: toTimeValue(item.pricing?.nightHoursTo),
@@ -173,6 +177,8 @@ const PriceDetails = () => {
                                 <ReadOnlyField label="Waiting Charge" value={categoryPricing.pricing.waitingCharge} />
                                 <ReadOnlyField label="Free Extra Minutes" value={categoryPricing.pricing.freeExtraMinutes} />
                                 <ReadOnlyField label="Additional Min Charge" value={categoryPricing.pricing.additionalMinCharge} />
+                                <ReadOnlyField label="Premium Service" value={categoryPricing.pricing.premiumConfig?.isPremium ? 'Yes' : 'No'} />
+                                <ReadOnlyField label="Premium Multiplier" value={categoryPricing.pricing.premiumConfig?.multiplier ?? 1} />
                                 <ReadOnlyField
                                     label="Night Hours"
                                     value={`${categoryPricing.pricing.nightHoursFrom || '-'} to ${categoryPricing.pricing.nightHoursTo || '-'}`}
